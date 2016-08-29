@@ -86,7 +86,7 @@ namespace NScumm.Sci.Engine
                     }
                 }
 
-                // TODO: debugC(1, kDebugLevelVM, "Detected move count handling: %s", (_moveCountType == kIncrementMoveCount) ? "increment" : "ignore");
+                DebugC(1, DebugLevels.VM, "Detected move count handling: {0}", _moveCountType == MoveCountType.Increment ? "increment" : "ignore");
             }
 
             return _moveCountType;
@@ -176,7 +176,7 @@ namespace NScumm.Sci.Engine
                     }
                 }
 
-                // TODO: debugC(1, kDebugLevelSound, "Detected DoSound type: %s", getSciVersionDesc(_doSoundType));
+                DebugC(1, DebugLevels.Sound, "Detected DoSound type: {0}", ResourceManager.GetSciVersionDesc(_doSoundType));
             }
 
             return _doSoundType;
@@ -291,68 +291,65 @@ namespace NScumm.Sci.Engine
 
         public SciVersion DetectLofsType()
         {
-            if (_lofsType == SciVersion.NONE)
+            if (_lofsType != SciVersion.NONE) return _lofsType;
+
+            // This detection only works (and is only needed) for SCI 1
+            if (ResourceManager.GetSciVersion() <= SciVersion.V01)
             {
-                // This detection only works (and is only needed) for SCI 1
-                if (ResourceManager.GetSciVersion() <= SciVersion.V01)
-                {
-                    _lofsType = SciVersion.V0_EARLY;
-                    return _lofsType;
-                }
-
-                if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1)
-                {
-                    // SCI1.1 type, i.e. we compensate for the fact that the heap is attached
-                    // to the end of the script
-                    _lofsType = SciVersion.V1_1;
-                    return _lofsType;
-                }
-
-                if (ResourceManager.GetSciVersion() == SciVersion.V3)
-                {
-                    // SCI3 type, same as pre-SCI1.1, really, as there is no separate heap
-                    // resource
-                    _lofsType = SciVersion.V3;
-                    return _lofsType;
-                }
-
-                // Find a function of the "Game" object (which is the game super class) which invokes lofsa/lofss
-                SciObject gameObject = _segMan.GetObject(SciEngine.Instance.GameObject);
-                SciObject gameSuperObject = _segMan.GetObject(gameObject.SuperClassSelector);
-                bool found = false;
-                if (gameSuperObject != null)
-                {
-                    string gameSuperClassName = _segMan.GetObjectName(gameObject.SuperClassSelector);
-
-                    for (int m = 0; m < gameSuperObject.MethodCount; m++)
-                    {
-                        found = AutoDetectLofsType(gameSuperClassName, m);
-                        if (found)
-                            break;
-                    }
-                }
-                else
-                {
-                    Warning("detectLofsType(): Could not find superclass of game object");
-                }
-
-                if (!found)
-                {
-                    Warning("detectLofsType(): failed, taking an educated guess");
-
-                    if (ResourceManager.GetSciVersion() >= SciVersion.V1_MIDDLE)
-                        _lofsType = SciVersion.V1_MIDDLE;
-                    else
-                        _lofsType = SciVersion.V0_EARLY;
-                }
-
-                // TODO: debugC(1, kDebugLevelVM, "Detected Lofs type: %s", getSciVersionDesc(_lofsType));
+                _lofsType = SciVersion.V0_EARLY;
+                return _lofsType;
             }
+
+            if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
+            {
+                // SCI1.1 type, i.e. we compensate for the fact that the heap is attached
+                // to the end of the script
+                _lofsType = SciVersion.V1_1;
+                return _lofsType;
+            }
+
+            if (ResourceManager.GetSciVersion() == SciVersion.V3)
+            {
+                // SCI3 type, same as pre-SCI1.1, really, as there is no separate heap
+                // resource
+                _lofsType = SciVersion.V3;
+                return _lofsType;
+            }
+
+            // Find a function of the "Game" object (which is the game super class) which invokes lofsa/lofss
+            SciObject gameObject = _segMan.GetObject(SciEngine.Instance.GameObject);
+            SciObject gameSuperObject = _segMan.GetObject(gameObject.SuperClassSelector);
+            bool found = false;
+            if (gameSuperObject != null)
+            {
+                string gameSuperClassName = _segMan.GetObjectName(gameObject.SuperClassSelector);
+
+                for (int m = 0; m < gameSuperObject.MethodCount; m++)
+                {
+                    found = AutoDetectLofsType(gameSuperClassName, m);
+                    if (found)
+                        break;
+                }
+            }
+            else
+            {
+                Warning("detectLofsType(): Could not find superclass of game object");
+            }
+
+            if (!found)
+            {
+                Warning("detectLofsType(): failed, taking an educated guess");
+
+                if (ResourceManager.GetSciVersion() >= SciVersion.V1_MIDDLE)
+                    _lofsType = SciVersion.V1_MIDDLE;
+                else
+                    _lofsType = SciVersion.V0_EARLY;
+            }
+
+            DebugC(1, DebugLevels.VM, "Detected Lofs type: {0}", ResourceManager.GetSciVersionDesc(_lofsType));
 
             return _lofsType;
         }
-
-
 
         private bool AutoDetectLofsType(string gameSuperClassName, int methodNum)
         {
@@ -467,7 +464,7 @@ namespace NScumm.Sci.Engine
             else
                 _messageFunctionType = SciVersion.V1_1;
 
-            // TODO: debugC(1, kDebugLevelVM, "Detected message function type: %s", getSciVersionDesc(_messageFunctionType));
+            DebugC(1, DebugLevels.VM, "Detected message function type: {0}", ResourceManager.GetSciVersionDesc(_messageFunctionType));
             return _messageFunctionType;
         }
 
@@ -555,7 +552,7 @@ namespace NScumm.Sci.Engine
                     }
                 }
 
-                // TODO: debugC(1, kDebugLevelVM, "Detected graphics functions type: %s", getSciVersionDesc(_gfxFunctionsType));
+                DebugC(1, DebugLevels.VM, "Detected graphics functions type: {0}", ResourceManager.GetSciVersionDesc(_gfxFunctionsType));
             }
 
             return _gfxFunctionsType;
@@ -625,7 +622,7 @@ namespace NScumm.Sci.Engine
                     if (_segMan.FindObjectByName("Cursor") == Register.NULL_REG)
                     {
                         _setCursorType = SciVersion.V0_EARLY;
-                        //TODO: debugC(1, kDebugLevelGraphics, "Detected SetCursor type: %s", getSciVersionDesc(_setCursorType));
+                        DebugC(1, DebugLevels.Graphics, "Detected SetCursor type: {0}", ResourceManager.GetSciVersionDesc(_setCursorType));
                         return _setCursorType;
                     }
 
@@ -637,7 +634,7 @@ namespace NScumm.Sci.Engine
                     if (objAddr == Register.NULL_REG)
                     {
                         _setCursorType = SciVersion.V1_1;
-                        //TODO: debugC(1, kDebugLevelGraphics, "Detected SetCursor type: %s", getSciVersionDesc(_setCursorType));
+                        DebugC(1, DebugLevels.Graphics, "Detected SetCursor type: {0}", ResourceManager.GetSciVersionDesc(_setCursorType));
                         return _setCursorType;
                     }
 
@@ -654,7 +651,7 @@ namespace NScumm.Sci.Engine
                         _setCursorType = SciVersion.V0_EARLY;
                 }
 
-                //TODO: debugC(1, kDebugLevelGraphics, "Detected SetCursor type: %s", getSciVersionDesc(_setCursorType));
+                DebugC(1, DebugLevels.Graphics, "Detected SetCursor type: {0}", ResourceManager.GetSciVersionDesc(_setCursorType));
             }
 
             return _setCursorType;

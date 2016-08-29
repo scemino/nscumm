@@ -193,7 +193,7 @@ namespace NScumm.Sci.Sound
 
                 case SciVersion.V1_EARLY:
                 case SciVersion.V1_LATE:
-                case SciVersion.V2_1:
+                case SciVersion.V2_1_EARLY:
                     // directly set master volume (global volume is merged with channel volumes)
                     ((MidiPlayer)MidiDriver).Volume = masterVolume;
                     break;
@@ -221,7 +221,7 @@ namespace NScumm.Sci.Sound
 
                 case SciVersion.V1_EARLY:
                 case SciVersion.V1_LATE:
-                case SciVersion.V2_1:
+                case SciVersion.V2_1_EARLY:
                     // Send previous channel volumes again to actually update the volume
                     for (int i = 0; i < 15; i++)
                         if (_channelRemap[i] != -1)
@@ -520,7 +520,7 @@ namespace NScumm.Sci.Sound
                                 if (!_jumpingToTick)
                                 {
                                     _pSnd.SetSignal(info.Param1);
-                                    // TODO: debugC(4, kDebugLevelSound, "signal %04x", info.basic.param1);
+                                    DebugC(4, DebugLevels.Sound, "signal {0:X4}", info.Param1);
                                 }
                             }
                         }
@@ -573,7 +573,7 @@ namespace NScumm.Sci.Sound
                             case (int)SciMidiCommands.UpdateCue:
                                 if (!_jumpingToTick)
                                 {
-                                    int inc;
+                                    int inc = 0;
                                     switch (_soundVersion)
                                     {
                                         case SciVersion.V0_EARLY:
@@ -582,14 +582,15 @@ namespace NScumm.Sci.Sound
                                             break;
                                         case SciVersion.V1_EARLY:
                                         case SciVersion.V1_LATE:
-                                        case SciVersion.V2_1:
+                                        case SciVersion.V2_1_EARLY:
                                             inc = 1;
                                             break;
                                         default:
-                                            throw new InvalidOperationException("unsupported _soundVersion");
+                                            Error("unsupported _soundVersion");
+                                            break;
                                     }
                                     _pSnd.dataInc += inc;
-                                    // TODO: debugC(4, kDebugLevelSound, "datainc %04x", inc);
+                                    DebugC(4, DebugLevels.Sound, "datainc {0:X4}", inc);
 
                                 }
                                 return true;
@@ -649,7 +650,7 @@ namespace NScumm.Sci.Sound
                             _pSnd.status = SoundStatus.Stopped;
                             _pSnd.SetSignal(Register.SIGNAL_OFFSET);
 
-                            // TODO: debugC(4, kDebugLevelSound, "signal EOT");
+                            DebugC(4, DebugLevels.Sound, "signal EOT");
                         }
                     }
 
@@ -1064,7 +1065,7 @@ namespace NScumm.Sci.Sound
                             if (s._voices != op2)
                             {
                                 // CHECKME: Should we directly call remapChannels() if _mainThreadCalled?
-                                // TODO: debugC(2, kDebugLevelSound, "Dynamic voice change (%d to %d)", s._voices, op2);
+                                DebugC(2, DebugLevels.Sound, "Dynamic voice change ({0} to {1})", s._voices, op2);
                                 _music.NeedsRemap();
                             }
                             s._voices = (sbyte)op2;
@@ -1082,7 +1083,7 @@ namespace NScumm.Sci.Sound
                                     _pSnd._chan[channel]._mute = m;
                                     // CHECKME: Should we directly call remapChannels() if _mainThreadCalled?
                                     _music.NeedsRemap();
-                                    // TODO: debugC(2, kDebugLevelSound, "Dynamic mute change (arg = %d, mainThread = %d)", m, _mainThreadCalled);
+                                    DebugC(2, DebugLevels.Sound, "Dynamic mute change (arg = {0}, mainThread = {1})", m, _mainThreadCalled);
                                 }
                             }
                             break;

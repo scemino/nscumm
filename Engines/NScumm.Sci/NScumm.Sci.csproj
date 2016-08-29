@@ -45,6 +45,8 @@
   <ItemGroup>
     <Compile Include="Debug.cs" />
     <Compile Include="Decompressor.cs" />
+    <Compile Include="Engine\KPathing.cs" />
+    <Compile Include="Engine\KVideo.cs" />
     <Compile Include="Engine\Savegame.cs" />
     <Compile Include="Event.cs" />
     <Compile Include="ResourceId.cs" />
@@ -53,203 +55,84 @@
     <Compile Include="SciEngine.cs" />
     <Compile Include="SciMetaEngine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Sound\Drivers\MidiDriver_CMS.cs" />
+    <Compile Include="Sound\Drivers\MidiDriver_PCJr.cs" />
+    <Compile Include="Sound\Drivers\MidiPlayer_Midi.cs" />
     <Compile Include="Util.cs" />
-    <Compile Include="Sound\MidiParserSci.cs">
-      <Link>Sound\MidiParserSci.cs</Link>
-    </Compile>
-    <Compile Include="Sound\Audio.cs">
-      <Link>Sound\Audio.cs</Link>
-    </Compile>
-    <Compile Include="Sound\Music.cs">
-      <Link>Sound\Music.cs</Link>
-    </Compile>
-    <Compile Include="Sound\SoundCommandParser.cs">
-      <Link>Sound\SoundCommandParser.cs</Link>
-    </Compile>
-    <Compile Include="Sound\Drivers\Adlib.cs">
-      <Link>Sound\Drivers\Adlib.cs</Link>
-    </Compile>
-    <Compile Include="Sound\Drivers\MidiDriver.cs">
-      <Link>Sound\Drivers\MidiDriver.cs</Link>
-    </Compile>
-    <Compile Include="Parser\Grammar.cs">
-      <Link>Parser\Grammar.cs</Link>
-    </Compile>
-    <Compile Include="Parser\Said.cs">
-      <Link>Parser\Said.cs</Link>
-    </Compile>
-    <Compile Include="Parser\Vocabulary.cs">
-      <Link>Parser\Vocabulary.cs</Link>
-    </Compile>
-    <Compile Include="Engine\Kernel.cs">
-      <Link>Engine\Kernel.cs</Link>
-    </Compile>
-    <Compile Include="Engine\KEvent.cs">
-      <Link>Engine\KEvent.cs</Link>
-    </Compile>
-    <Compile Include="Engine\KFile.cs">
-      <Link>Engine\KFile.cs</Link>
-    </Compile>
-    <Compile Include="Engine\KGraphics.cs">
-      <Link>Engine\KGraphics.cs</Link>
-    </Compile>
-    <Compile Include="Engine\KLists.cs">
-      <Link>Engine\KLists.cs</Link>
-    </Compile>
-    <Compile Include="Engine\KMath.cs">
-      <Link>Engine\KMath.cs</Link>
-    </Compile>
-    <Compile Include="Engine\KMenu.cs">
-      <Link>Engine\KMenu.cs</Link>
-    </Compile>
-    <Compile Include="Engine\KMisc.cs">
-      <Link>Engine\KMisc.cs</Link>
-    </Compile>
-    <Compile Include="Engine\KMovement.cs">
-      <Link>Engine\KMovement.cs</Link>
-    </Compile>
-    <Compile Include="Engine\KParse.cs">
-      <Link>Engine\KParse.cs</Link>
-    </Compile>
-    <Compile Include="..\..\NScumm.Desktop\bin\Debug\plugins\Engine\KPathing.cs" />
-    <Compile Include="Engine\KScripts.cs">
-      <Link>Engine\KScripts.cs</Link>
-    </Compile>
-    <Compile Include="Engine\KSound.cs">
-      <Link>Engine\KSound.cs</Link>
-    </Compile>
-    <Compile Include="Engine\KString.cs">
-      <Link>Engine\KString.cs</Link>
-    </Compile>
-    <Compile Include="..\..\NScumm.Desktop\bin\Debug\plugins\Engine\KVideo.cs" />
-    <Compile Include="Engine\File.cs">
-      <Link>Engine\File.cs</Link>
-    </Compile>
-    <Compile Include="Engine\GameFeatures.cs">
-      <Link>Engine\GameFeatures.cs</Link>
-    </Compile>
-    <Compile Include="Engine\Gc.cs">
-      <Link>Engine\Gc.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Animate.cs">
-      <Link>Graphics\Animate.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Cache.cs">
-      <Link>Graphics\Cache.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Compare.cs">
-      <Link>Graphics\Compare.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Controls16.cs">
-      <Link>Graphics\Controls16.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Controls32.cs">
-      <Link>Graphics\Controls32.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\CoordAdjuster.cs">
-      <Link>Graphics\CoordAdjuster.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Cursor.cs">
-      <Link>Graphics\Cursor.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Font.cs">
-      <Link>Graphics\Font.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Fontsjis.cs">
-      <Link>Graphics\Fontsjis.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Helpers.cs">
-      <Link>Graphics\Helpers.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\MacIconBar.cs">
-      <Link>Graphics\MacIconBar.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Menu.cs">
-      <Link>Graphics\Menu.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Paint.cs">
-      <Link>Graphics\Paint.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Paint16.cs">
-      <Link>Graphics\Paint16.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Paint32.cs">
-      <Link>Graphics\Paint32.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Palette.cs">
-      <Link>Graphics\Palette.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Picture.cs">
-      <Link>Graphics\Picture.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Ports.cs">
-      <Link>Graphics\Ports.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Text16.cs">
-      <Link>Graphics\Text16.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Text32.cs">
-      <Link>Graphics\Text32.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Transitions.cs">
-      <Link>Graphics\Transitions.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\View.cs">
-      <Link>Graphics\View.cs</Link>
-    </Compile>
-    <Compile Include="Engine\Message.cs">
-      <Link>Engine\Message.cs</Link>
-    </Compile>
-    <Compile Include="Engine\Object.cs">
-      <Link>Engine\Object.cs</Link>
-    </Compile>
-    <Compile Include="Engine\SegManager.cs">
-      <Link>Engine\SegManager.cs</Link>
-    </Compile>
-    <Compile Include="Engine\Segment.cs">
-      <Link>Engine\Segment.cs</Link>
-    </Compile>
-    <Compile Include="Engine\Selector.cs">
-      <Link>Engine\Selector.cs</Link>
-    </Compile>
-    <Compile Include="Engine\State.cs">
-      <Link>Engine\State.cs</Link>
-    </Compile>
-    <Compile Include="Engine\StaticSelectors.cs">
-      <Link>Engine\StaticSelectors.cs</Link>
-    </Compile>
-    <Compile Include="Engine\Vm.cs">
-      <Link>Engine\Vm.cs</Link>
-    </Compile>
-    <Compile Include="Engine\VmTypes.cs">
-      <Link>Engine\VmTypes.cs</Link>
-    </Compile>
-    <Compile Include="Engine\Workarounds.cs">
-      <Link>Engine\Workarounds.cs</Link>
-    </Compile>
-    <Compile Include="Engine\Script.cs">
-      <Link>Engine\Script.cs</Link>
-    </Compile>
-    <Compile Include="Engine\ScriptPatcher.cs">
-      <Link>Engine\ScriptPatcher.cs</Link>
-    </Compile>
-    <Compile Include="Graphics\Screen.cs">
-      <Link>Graphics\Screen.cs</Link>
-    </Compile>
-    <Compile Include="..\..\NScumm.Desktop\bin\Debug\plugins\Sound\Drivers\MidiDriver_CMS.cs" />
-    <Compile Include="..\..\NScumm.Desktop\bin\Debug\plugins\Sound\Drivers\MidiDriver_PCJr.cs" />
-    <Compile Include="..\..\NScumm.Desktop\bin\Debug\plugins\Sound\Drivers\MidiPlayer_Midi.cs" />
+    <Compile Include="Sound\MidiParserSci.cs" />
+    <Compile Include="Sound\Audio.cs" />
+    <Compile Include="Sound\Music.cs" />
+    <Compile Include="Sound\SoundCommandParser.cs" />
+    <Compile Include="Sound\Drivers\Adlib.cs" />
+    <Compile Include="Sound\Drivers\MidiDriver.cs" />
+    <Compile Include="Parser\Grammar.cs" />
+    <Compile Include="Parser\Said.cs" />
+    <Compile Include="Parser\Vocabulary.cs" />
+    <Compile Include="Engine\Kernel.cs" />
+    <Compile Include="Engine\KEvent.cs" />
+    <Compile Include="Engine\KFile.cs" />
+    <Compile Include="Engine\KGraphics.cs" />
+    <Compile Include="Engine\KLists.cs" />
+    <Compile Include="Engine\KMath.cs" />
+    <Compile Include="Engine\KMenu.cs" />
+    <Compile Include="Engine\KMisc.cs" />
+    <Compile Include="Engine\KMovement.cs" />
+    <Compile Include="Engine\KParse.cs" />
+    <Compile Include="Engine\KScripts.cs" />
+    <Compile Include="Engine\KSound.cs" />
+    <Compile Include="Engine\KString.cs" />
+    <Compile Include="Engine\File.cs" />
+    <Compile Include="Engine\GameFeatures.cs" />
+    <Compile Include="Engine\Gc.cs" />
+    <Compile Include="Graphics\Animate.cs" />
+    <Compile Include="Graphics\Cache.cs" />
+    <Compile Include="Graphics\Compare.cs" />
+    <Compile Include="Graphics\Controls16.cs" />
+    <Compile Include="Graphics\Controls32.cs" />
+    <Compile Include="Graphics\CoordAdjuster.cs" />
+    <Compile Include="Graphics\Cursor.cs" />
+    <Compile Include="Graphics\Font.cs" />
+    <Compile Include="Graphics\Fontsjis.cs" />
+    <Compile Include="Graphics\Helpers.cs" />
+    <Compile Include="Graphics\MacIconBar.cs" />
+    <Compile Include="Graphics\Menu.cs" />
+    <Compile Include="Graphics\Paint.cs" />
+    <Compile Include="Graphics\Paint16.cs" />
+    <Compile Include="Graphics\Paint32.cs" />
+    <Compile Include="Graphics\Palette.cs" />
+    <Compile Include="Graphics\Picture.cs" />
+    <Compile Include="Graphics\Ports.cs" />
+    <Compile Include="Graphics\Text16.cs" />
+    <Compile Include="Graphics\Text32.cs" />
+    <Compile Include="Graphics\Transitions.cs" />
+    <Compile Include="Graphics\View.cs" />
+    <Compile Include="Engine\Message.cs" />
+    <Compile Include="Engine\Object.cs" />
+    <Compile Include="Engine\SegManager.cs" />
+    <Compile Include="Engine\Segment.cs" />
+    <Compile Include="Engine\Selector.cs" />
+    <Compile Include="Engine\State.cs" />
+    <Compile Include="Engine\StaticSelectors.cs" />
+    <Compile Include="Engine\Vm.cs" />
+    <Compile Include="Engine\VmTypes.cs" />
+    <Compile Include="Engine\Workarounds.cs" />
+    <Compile Include="Engine\Script.cs" />
+    <Compile Include="Engine\ScriptPatcher.cs" />
+    <Compile Include="Graphics\Screen.cs" />
+    <Compile Include="Sound\Drivers\MidiDriver_CMS.cs" />
+    <Compile Include="Sound\Drivers\MidiDriver_PCJr.cs" />
+    <Compile Include="Sound\Drivers\MidiPlayer_Midi.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <Folder Include="..\..\NScumm.Desktop\bin\Debug\plugins\Sound\" />
-    <Folder Include="..\..\NScumm.Desktop\bin\Debug\plugins\Sound\Drivers\" />
-    <Folder Include="..\..\NScumm.Desktop\bin\Debug\plugins\Parser\" />
-    <Folder Include="..\..\NScumm.Desktop\bin\Debug\plugins\Engine\" />
-    <Folder Include="..\..\NScumm.Desktop\bin\Debug\plugins\Graphics\" />
+    <Folder Include="Sound\" />
+    <Folder Include="Sound\Drivers\" />
+    <Folder Include="Parser\" />
+    <Folder Include="Engine\" />
+    <Folder Include="Graphics\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>

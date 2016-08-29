@@ -47,6 +47,7 @@
     <Compile Include="Common\Disposable.cs" />
     <Compile Include="Common\Huffman.cs" />
     <Compile Include="Common\RandomSource.cs" />
+    <Compile Include="DebugHelper.cs" />
     <Compile Include="Graphics\ThumbnailHeader.cs" />
     <Compile Include="Graphics\YUVToRGBManager.cs" />
     <Compile Include="IAudioManager.cs" />

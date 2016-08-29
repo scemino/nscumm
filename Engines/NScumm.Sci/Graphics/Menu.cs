@@ -948,7 +948,7 @@ namespace NScumm.Sci.Graphics
                 // PQ2 demo calls this, for example, but has no menus (bug report #3034507). Some SCI
                 // fan games (Al Pond 2, Aquarius) call this too on non-existent menu items. The
                 // original interpreter ignored these as well.
-                // TODO: debugC(kDebugLevelGraphics, "Tried to setAttribute() on non-existent menu-item %d:%d", menuId, itemId);
+                DebugC(DebugLevels.Graphics, "Tried to setAttribute() on non-existent menu-item {0}:{1}", menuId, itemId);
                 return;
             }
 

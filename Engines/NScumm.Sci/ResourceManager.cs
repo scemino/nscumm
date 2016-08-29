@@ -39,9 +39,9 @@ namespace NScumm.Sci
         None = 0,
         LZW,
         Huffman,
-        LZW1,          // LZW-like compression used in SCI01 and SCI1
-        LZW1View,      // Comp3 + view Post-processing
-        LZW1Pic,       // Comp3 + pic Post-processing
+        LZW1, // LZW-like compression used in SCI01 and SCI1
+        LZW1View, // Comp3 + view Post-processing
+        LZW1Pic, // Comp3 + pic Post-processing
 #if ENABLE_SCI32
         STACpack,  // ? Used in SCI32
 #endif
@@ -65,7 +65,9 @@ namespace NScumm.Sci
         V1_LATE, // Dr. Brain 1, EcoQuest 1, Longbow, PQ3, SQ1, LSL5, KQ5 CD
         V1_1, // Dr. Brain 2, EcoQuest 1 CD, EcoQuest 2, KQ6, QFG3, SQ4CD, XMAS 1992 and many more
         V2, // GK1, PQ4 floppy, QFG4 floppy
-        V2_1, // GK2, KQ7, LSL6 hires, MUMG Deluxe, Phantasmagoria 1, PQ4CD, PQ:SWAT, QFG4CD, Shivers 1, SQ6, Torin
+        V2_1_EARLY, // GK2 demo, KQ7 1.4/1.51, LSL6 hires, PQ4CD, QFG4 floppy
+        V2_1_MIDDLE, // GK2, KQ7 2.00b, MUMG Deluxe, Phantasmagoria 1, PQ:SWAT, QFG4CD, Shivers 1, SQ6, Torin
+        V2_1_LATE, // demos of LSL7, Lighthouse, RAMA
         V3 // LSL7, Lighthouse, RAMA, Phantasmagoria 2
     }
 
@@ -85,12 +87,12 @@ namespace NScumm.Sci
     // Game view types, sorted by the number of colors
     enum ViewType
     {
-        Unknown,   // uninitialized, or non-SCI
-        Ega,       // EGA SCI0/SCI1 and Amiga SCI0/SCI1 ECS 16 colors
-        Amiga,     // Amiga SCI1 ECS 32 colors
-        Amiga64,   // Amiga SCI1 AGA 64 colors (i.e. Longbow)
-        Vga,       // VGA SCI1 256 colors
-        Vga11      // VGA SCI1.1 and newer 256 colors
+        Unknown, // uninitialized, or non-SCI
+        Ega, // EGA SCI0/SCI1 and Amiga SCI0/SCI1 ECS 16 colors
+        Amiga, // Amiga SCI1 ECS 32 colors
+        Amiga64, // Amiga SCI1 AGA 64 colors (i.e. Longbow)
+        Vga, // VGA SCI1 256 colors
+        Vga11 // VGA SCI1.1 and newer 256 colors
     }
 
     enum ResourceType
@@ -133,14 +135,15 @@ namespace NScumm.Sci
         // Mac-only resources
         MacIconBarPictN, // IBIN resources (icon bar, not selected)
         MacIconBarPictS, // IBIS resources (icon bar, selected)
-        MacPict,        // PICT resources (inventory)
+        MacPict, // PICT resources (inventory)
 
-        Rave,  // KQ6 hires RAVE (special sync) resources
+        Rave, // KQ6 hires RAVE (special sync) resources
 
         Invalid
     }
 
     /** Resource error codes. Should be in sync with s_errorDescriptions */
+
     enum ResourceErrorCodes
     {
         NONE = 0,
@@ -148,10 +151,10 @@ namespace NScumm.Sci
         EMPTY_RESOURCE = 2,
         RESMAP_INVALID_ENTRY = 3, /**< Invalid resource.map entry */
         RESMAP_NOT_FOUND = 4,
-        NO_RESOURCE_FILES_FOUND = 5,  /**< No resource at all was found */
+        NO_RESOURCE_FILES_FOUND = 5, /**< No resource at all was found */
         UNKNOWN_COMPRESSION = 6,
-        DECOMPRESSION_ERROR = 7,  /**< sanity checks failed during decompression */
-        RESOURCE_TOO_BIG = 8  /**< Resource size exceeds SCI_MAX_RESOURCE_SIZE */
+        DECOMPRESSION_ERROR = 7, /**< sanity checks failed during decompression */
+        RESOURCE_TOO_BIG = 8 /**< Resource size exceeds SCI_MAX_RESOURCE_SIZE */
     }
 
     internal partial class ResourceManager
@@ -160,42 +163,54 @@ namespace NScumm.Sci
         /// Max number of simultaneously opened volumes.
         /// </summary>
         private const int MAX_OPENED_VOLUMES = 5;
+
         private const int SCI0_RESMAP_ENTRIES_SIZE = 6;
         private const int SCI1_RESMAP_ENTRIES_SIZE = 6;
         private const int KQ5FMT_RESMAP_ENTRIES_SIZE = 7;
         private const int SCI11_RESMAP_ENTRIES_SIZE = 5;
         private string _directory;
         private List<ResourceSource> _sources;
+
         /// <summary>
         /// Amount of resource bytes in locked memory
         /// </summary>
         protected int _memoryLocked;
+
         /// <summary>
         /// Amount of resource bytes under LRU control
         /// </summary>
         protected int _memoryLRU;
+
         /// <summary>
         /// Last Resource Used list
         /// </summary>
         protected List<ResourceSource.Resource> _LRU;
+
         protected ResourceMap _resMap;
+
         /// <summary>
         /// Currently loaded audio map for SCI1
         /// </summary>
         protected ResourceSource _audioMapSCI1;
+
         /// <summary>
         /// resource.0xx version
         /// </summary>
         protected ResVersion _volVersion;
+
         /// <summary>
         /// resource.map version
         /// </summary>
         protected ResVersion _mapVersion;
+
         /// <summary>
         /// Used to determine if the game has EGA or VGA graphics
         /// </summary>
         private ViewType _viewType;
-        private static SciVersion s_sciVersion = SciVersion.NONE;   // FIXME: Move this inside a suitable class, e.g. SciEngine
+
+        private static SciVersion s_sciVersion = SciVersion.NONE;
+        // FIXME: Move this inside a suitable class, e.g. SciEngine
+
         /// <summary>
         /// List of opened volume files
         /// </summary>
@@ -207,12 +222,12 @@ namespace NScumm.Sci
         private static readonly string[] s_resourceTypeSuffixes =
         {
             "v56", "p56", "scr", "tex", "snd",
-               "", "voc", "fon", "cur", "pat",
+            "", "voc", "fon", "cur", "pat",
             "bit", "pal", "cda", "aud", "syn",
-            "msg", "map", "hep",    "",    "",
-            "trn", "rbt", "vmd", "chk",    "",
+            "msg", "map", "hep", "", "",
+            "trn", "rbt", "vmd", "chk", "",
             "etc", "duk", "clu", "tga", "zzz",
-               "",    "",    "", ""
+            "", "", "", ""
         };
 
         private static readonly string[] s_resourceTypeNames =
@@ -227,29 +242,37 @@ namespace NScumm.Sci
             "rave"
         };
 
-        private static readonly ResourceType[] s_resTypeMapSci0 = {
-            ResourceType.View, ResourceType.Pic, ResourceType.Script, ResourceType.Text,          // 0x00-0x03
-	        ResourceType.Sound, ResourceType.Memory, ResourceType.Vocab, ResourceType.Font,       // 0x04-0x07
-	        ResourceType.Cursor, ResourceType.Patch, ResourceType.Bitmap, ResourceType.Palette,   // 0x08-0x0B
-	        ResourceType.CdAudio, ResourceType.Audio, ResourceType.Sync, ResourceType.Message,    // 0x0C-0x0F
-	        ResourceType.Map, ResourceType.Heap, ResourceType.Audio36, ResourceType.Sync36,       // 0x10-0x13
-	        ResourceType.Translation, ResourceType.Rave                                           // 0x14
+        private static readonly ResourceType[] s_resTypeMapSci0 =
+        {
+            ResourceType.View, ResourceType.Pic, ResourceType.Script, ResourceType.Text, // 0x00-0x03
+            ResourceType.Sound, ResourceType.Memory, ResourceType.Vocab, ResourceType.Font, // 0x04-0x07
+            ResourceType.Cursor, ResourceType.Patch, ResourceType.Bitmap, ResourceType.Palette, // 0x08-0x0B
+            ResourceType.CdAudio, ResourceType.Audio, ResourceType.Sync, ResourceType.Message, // 0x0C-0x0F
+            ResourceType.Map, ResourceType.Heap, ResourceType.Audio36, ResourceType.Sync36, // 0x10-0x13
+            ResourceType.Translation, ResourceType.Rave // 0x14
         };
 
         // TODO: 12 should be "Wave", but SCI seems to just store it in Audio resources
-        private static readonly ResourceType[] s_resTypeMapSci21 = {
-            ResourceType.View, ResourceType.Pic, ResourceType.Script, ResourceType.Animation,     // 0x00-0x03
-	        ResourceType.Sound, ResourceType.Etc, ResourceType.Vocab, ResourceType.Font,          // 0x04-0x07
-	        ResourceType.Cursor, ResourceType.Patch, ResourceType.Bitmap, ResourceType.Palette,   // 0x08-0x0B
-	        ResourceType.Invalid, ResourceType.Audio, ResourceType.Sync, ResourceType.Message,    // 0x0C-0x0F
-	        ResourceType.Map, ResourceType.Heap, ResourceType.Chunk, ResourceType.Audio36,        // 0x10-0x13
-	        ResourceType.Sync36, ResourceType.Translation, ResourceType.Robot, ResourceType.VMD,  // 0x14-0x17
-	        ResourceType.Duck, ResourceType.Clut, ResourceType.TGA, ResourceType.ZZZ              // 0x18-0x1B
+        private static readonly ResourceType[] s_resTypeMapSci21 =
+        {
+            ResourceType.View, ResourceType.Pic, ResourceType.Script, ResourceType.Animation, // 0x00-0x03
+            ResourceType.Sound, ResourceType.Etc, ResourceType.Vocab, ResourceType.Font, // 0x04-0x07
+            ResourceType.Cursor, ResourceType.Patch, ResourceType.Bitmap, ResourceType.Palette, // 0x08-0x0B
+            ResourceType.Invalid, ResourceType.Audio, ResourceType.Sync, ResourceType.Message, // 0x0C-0x0F
+            ResourceType.Map, ResourceType.Heap, ResourceType.Chunk, ResourceType.Audio36, // 0x10-0x13
+            ResourceType.Sync36, ResourceType.Translation, ResourceType.Robot, ResourceType.VMD, // 0x14-0x17
+            ResourceType.Duck, ResourceType.Clut, ResourceType.TGA, ResourceType.ZZZ // 0x18-0x1B
         };
 
-        public bool IsSci11Mac { get { return _volVersion == ResVersion.Sci11Mac; } }
+        public bool IsSci11Mac
+        {
+            get { return _volVersion == ResVersion.Sci11Mac; }
+        }
 
-        public ViewType ViewType { get { return _viewType; } }
+        public ViewType ViewType
+        {
+            get { return _viewType; }
+        }
 
         public bool IsGMTrackIncluded()
         {
@@ -294,6 +317,44 @@ namespace NScumm.Sci
             _volumeFiles = new List<Stream>();
         }
 
+        public static string GetSciVersionDesc(SciVersion version)
+        {
+            switch (version)
+            {
+                case SciVersion.NONE:
+                    return "Invalid SCI version";
+                case SciVersion.V0_EARLY:
+                    return "Early SCI0";
+                case SciVersion.V0_LATE:
+                    return "Late SCI0";
+                case SciVersion.V01:
+                    return "SCI01";
+                case SciVersion.V1_EGA_ONLY:
+                    return "SCI1 EGA";
+                case SciVersion.V1_EARLY:
+                    return "Early SCI1";
+                case SciVersion.V1_MIDDLE:
+                    return "Middle SCI1";
+                case SciVersion.V1_LATE:
+                    return "Late SCI1";
+                case SciVersion.V1_1:
+                    return "SCI1.1";
+                case SciVersion.V2:
+                    return "SCI2";
+                case SciVersion.V2_1_EARLY:
+                    return "Early SCI2.1";
+                case SciVersion.V2_1_MIDDLE:
+                    return "Middle SCI2.1";
+                case SciVersion.V2_1_LATE:
+                    return "Late SCI2.1";
+                case SciVersion.V3:
+                    return "SCI3";
+                default:
+                    return "Unknown";
+            }
+        }
+
+
         /// <summary>
         /// Detects, if SCI1.1 game uses palette merging or copying - this is supposed to only get used on SCI1.1 games
         /// </summary>
@@ -310,7 +371,8 @@ namespace NScumm.Sci
                 if ((data[0] == 0 && data[1] == 1) || (data[0] == 0 && data[1] == 0 && data.ToUInt16(29) == 0))
                     return true;
                 // Hardcoded: Laura Bow 2 floppy uses new palette resource, but still palette merging + 16 bit color matching
-                if ((SciEngine.Instance.GameId == SciGameId.LAURABOW2) && (!SciEngine.Instance.IsCD) && (!SciEngine.Instance.IsDemo))
+                if ((SciEngine.Instance.GameId == SciGameId.LAURABOW2) && (!SciEngine.Instance.IsCD) &&
+                    (!SciEngine.Instance.IsDemo))
                     return true;
                 return false;
             }
@@ -333,11 +395,10 @@ namespace NScumm.Sci
                     AddSource(new VolumeResourceSource(name, map, number));
                 }
 #if ENABLE_SCI32
-                // GK1CD hires content
+// GK1CD hires content
                 if (Common::File::exists("alt.map") && Common::File::exists("resource.alt"))
                     AddSource(new VolumeResourceSource("resource.alt", addExternalMap("alt.map", 10), 10));
 #endif
-
             }
             else
             {
@@ -389,8 +450,8 @@ namespace NScumm.Sci
                 _mapVersion = _volVersion;
             }
 
-            //debugC(1, kDebugLevelResMan, "resMan: Detected resource map version %d: %s", _mapVersion, versionDescription(_mapVersion));
-            //debugC(1, kDebugLevelResMan, "resMan: Detected volume version %d: %s", _volVersion, versionDescription(_volVersion));
+            DebugC(1, DebugLevels.ResMan, "resMan: Detected resource map version {0}: {1}", _mapVersion, GetVersionDescription(_mapVersion));
+            DebugC(1, DebugLevels.ResMan, "resMan: Detected volume version {0}: {1}", _volVersion, GetVersionDescription(_volVersion));
 
             if ((_mapVersion == ResVersion.Unknown) && (_volVersion == ResVersion.Unknown))
             {
@@ -415,29 +476,28 @@ namespace NScumm.Sci
 
             DetectSciVersion();
 
-            // TODO: debug
-            // debugC(1, kDebugLevelResMan, "resMan: Detected %s", getSciVersionDesc(getSciVersion()));
+            DebugC(1, DebugLevels.ResMan, "resMan: Detected {0}", GetSciVersionDesc(GetSciVersion()));
 
             switch (_viewType)
             {
                 case ViewType.Ega:
-                    //debugC(1, kDebugLevelResMan, "resMan: Detected EGA graphic resources");
+                    DebugC(1, DebugLevels.ResMan, "resMan: Detected EGA graphic resources");
                     break;
                 case ViewType.Amiga:
-                    //debugC(1, kDebugLevelResMan, "resMan: Detected Amiga ECS graphic resources");
+                    DebugC(1, DebugLevels.ResMan, "resMan: Detected Amiga ECS graphic resources");
                     break;
                 case ViewType.Amiga64:
-                    //debugC(1, kDebugLevelResMan, "resMan: Detected Amiga AGA graphic resources");
+                    DebugC(1, DebugLevels.ResMan, "resMan: Detected Amiga AGA graphic resources");
                     break;
                 case ViewType.Vga:
-                    //debugC(1, kDebugLevelResMan, "resMan: Detected VGA graphic resources");
+                    DebugC(1, DebugLevels.ResMan, "resMan: Detected VGA graphic resources");
                     break;
                 case ViewType.Vga11:
-                    //debugC(1, kDebugLevelResMan, "resMan: Detected SCI1.1 VGA graphic resources");
+                    DebugC(1, DebugLevels.ResMan, "resMan: Detected SCI1.1 VGA graphic resources");
                     break;
                 default:
 #if ENABLE_SCI32
-                    error("resMan: Couldn't determine view type");
+                    Error("resMan: Couldn't determine view type");
 #else
                     if (GetSciVersion() >= SciVersion.V2)
                     {
@@ -451,6 +511,33 @@ namespace NScumm.Sci
                     break;
 #endif
             }
+        }
+
+        private string GetVersionDescription(ResVersion version)
+        {
+            switch (version)
+            {
+                case ResVersion.Unknown:
+                    return "Unknown";
+                case ResVersion.Sci0Sci1Early:
+                    return "SCI0 / Early SCI1";
+                case ResVersion.Sci1Middle:
+                    return "Middle SCI1";
+                case ResVersion.KQ5FMT:
+                    return "KQ5 FM Towns";
+                case ResVersion.Sci1Late:
+                    return "Late SCI1";
+                case ResVersion.Sci11:
+                    return "SCI1.1";
+                case ResVersion.Sci11Mac:
+                    return "Mac SCI1.1+";
+                case ResVersion.Sci2:
+                    return "SCI2/2.1";
+                case ResVersion.Sci3:
+                    return "SCI3";
+            }
+
+            return "Version not valid";
         }
 
         public int GetAudioLanguage()
@@ -508,8 +595,8 @@ namespace NScumm.Sci
         /// Finds the location of the game object from script 0.
         /// </summary>
         /// <param name="addSci11ScriptOffset">
-        /// Adjust the return value for SCI1.1 and newer 
-        /// games.Needs to be false when the heap is accessed directly inside 
+        /// Adjust the return value for SCI1.1 and newer
+        /// games.Needs to be false when the heap is accessed directly inside
         /// findSierraGameId().
         /// </param>
         /// <returns></returns>
@@ -546,7 +633,7 @@ namespace NScumm.Sci
                 ushort offset = !IsSci11Mac ? buf.ToUInt16(offsetPtr) : buf.ToUInt16BigEndian(offsetPtr);
                 return Register.Make(1, offset);
             }
-            else if (GetSciVersion() >= SciVersion.V1_1 && GetSciVersion() <= SciVersion.V2_1)
+            if (GetSciVersion() >= SciVersion.V1_1 && GetSciVersion() <= SciVersion.V2_1_LATE)
             {
                 var buf = script.data;
                 offsetPtr = 4 + 2 + 2;
@@ -565,10 +652,7 @@ namespace NScumm.Sci
 
                 return Register.Make(1, offset);
             }
-            else
-            {
-                return Register.Make(1, (ushort)RelocateOffsetSci3(script.data, 22));
-            }
+            return Register.Make(1, (ushort)RelocateOffsetSci3(script.data, 22));
         }
 
         public ResourceSource.Resource FindResource(ResourceId id, bool locked)
@@ -598,7 +682,8 @@ namespace NScumm.Sci
                 retval._lockers++;
             }
             else if (retval._status != ResourceStatus.Locked)
-            { // Don't lock it
+            {
+                // Don't lock it
                 if (retval._status == ResourceStatus.Allocated)
                     AddToLRU(retval);
             }
@@ -620,12 +705,13 @@ namespace NScumm.Sci
         {
             if (res._status != ResourceStatus.Locked)
             {
-                // TODO: debugC(kDebugLevelResMan, 2, "[resMan] Attempt to unlock unlocked resource %s", res._id.toString().c_str());
+                DebugC(DebugLevels.ResMan, 2, "[resMan] Attempt to unlock unlocked resource {0}", res._id);
                 return;
             }
 
             if (--res._lockers == 0)
-            { // No more lockers?
+            {
+                // No more lockers?
                 res._status = ResourceStatus.Allocated;
                 _memoryLocked -= res.size;
                 AddToLRU(res);
@@ -667,6 +753,7 @@ namespace NScumm.Sci
             return false;
 #else
             Error("no sci32 support");
+            return false;
 #endif
         }
 
@@ -706,7 +793,7 @@ namespace NScumm.Sci
 
                 if (seekerType == 0)
                     break;
-                if (seekerType == 7)    // exports
+                if (seekerType == 7) // exports
                     return buf;
 
                 int seekerSize = buffer.ToUInt16(buf + 2);
@@ -748,7 +835,8 @@ namespace NScumm.Sci
             for (var i = (int)ResourceType.View; i < (int)ResourceType.Invalid; ++i)
             {
                 // Ignore the types that can't be patched (and Robot/VMD is handled externally for now)
-                if (s_resourceTypeSuffixes[i] != null || (i >= (int)ResourceType.Robot && i != (int)ResourceType.Chunk))
+                if (s_resourceTypeSuffixes[i] != null ||
+                    (i >= (int)ResourceType.Robot && i != (int)ResourceType.Chunk))
                     continue;
 
                 files.Clear();
@@ -764,15 +852,17 @@ namespace NScumm.Sci
 
                 if (i == (int)ResourceType.View)
                 {
-                    files.AddRange(ServiceLocator.FileStorage.EnumerateFiles("*.v16"));  // EGA SCI1 view patches
-                    files.AddRange(ServiceLocator.FileStorage.EnumerateFiles("*.v32"));  // Amiga SCI1 view patches
-                    files.AddRange(ServiceLocator.FileStorage.EnumerateFiles("*.v64"));  // Amiga AGA SCI1 (i.e. Longbow) view patches
+                    files.AddRange(ServiceLocator.FileStorage.EnumerateFiles("*.v16")); // EGA SCI1 view patches
+                    files.AddRange(ServiceLocator.FileStorage.EnumerateFiles("*.v32")); // Amiga SCI1 view patches
+                    files.AddRange(ServiceLocator.FileStorage.EnumerateFiles("*.v64"));
+                    // Amiga AGA SCI1 (i.e. Longbow) view patches
                 }
                 else if (i == (int)ResourceType.Pic)
                 {
-                    files.AddRange(ServiceLocator.FileStorage.EnumerateFiles("*.p16"));  // EGA SCI1 picture patches
-                    files.AddRange(ServiceLocator.FileStorage.EnumerateFiles("*.p32"));  // Amiga SCI1 picture patches
-                    files.AddRange(ServiceLocator.FileStorage.EnumerateFiles("*.p64"));  // Amiga AGA SCI1 (i.e. Longbow) picture patches
+                    files.AddRange(ServiceLocator.FileStorage.EnumerateFiles("*.p16")); // EGA SCI1 picture patches
+                    files.AddRange(ServiceLocator.FileStorage.EnumerateFiles("*.p32")); // Amiga SCI1 picture patches
+                    files.AddRange(ServiceLocator.FileStorage.EnumerateFiles("*.p64"));
+                    // Amiga AGA SCI1 (i.e. Longbow) picture patches
                 }
                 else if (i == (int)ResourceType.Script)
                 {
@@ -846,7 +936,7 @@ namespace NScumm.Sci
             //updateResource(resourceId, resSrc, file.size());
             //_sources.push_back(resSrc);
 
-            //debugC(1, kDebugLevelResMan, "Patching %s - OK", name.c_str());
+            DebugC(1, DebugLevels.ResMan, "Patching {0} - OK", name);
         }
 
         private void ReadResourcePatchesBase36()
@@ -904,7 +994,8 @@ namespace NScumm.Sci
                         var br = new BinaryReader(stream);
                         var tag = br.ReadUInt32();
 
-                        if (tag == ScummHelper.MakeTag('R', 'I', 'F', 'F') || tag == ScummHelper.MakeTag('F', 'O', 'R', 'M'))
+                        if (tag == ScummHelper.MakeTag('R', 'I', 'F', 'F') ||
+                            tag == ScummHelper.MakeTag('F', 'O', 'R', 'M'))
                         {
                             stream.Dispose();
                             ProcessWavePatch(resource36, name);
@@ -938,11 +1029,11 @@ namespace NScumm.Sci
             try
             {
                 int resourceNr = Convert.ToInt32(filename.Substring(1, 3), 36); // 3 characters
-                int noun = Convert.ToInt32(filename.Substring(4, 2), 36);       // 2 characters
-                int verb = Convert.ToInt32(filename.Substring(6, 2), 36);       // 2 characters
-                                                                                // Skip '.'
-                int cond = Convert.ToInt32(filename.Substring(9, 2), 36);       // 2 characters
-                int seq = Convert.ToInt32(filename.Substring(11, 1), 36);       // 1 character
+                int noun = Convert.ToInt32(filename.Substring(4, 2), 36); // 2 characters
+                int verb = Convert.ToInt32(filename.Substring(6, 2), 36); // 2 characters
+                // Skip '.'
+                int cond = Convert.ToInt32(filename.Substring(9, 2), 36); // 2 characters
+                int seq = Convert.ToInt32(filename.Substring(11, 1), 36); // 1 character
 
                 return new ResourceId(type, (ushort)resourceNr, (byte)noun, (byte)verb, (byte)cond, (byte)seq);
             }
@@ -1027,7 +1118,7 @@ namespace NScumm.Sci
             if (patchDataOffset + 2 >= fsize)
             {
                 Debug("Patching %s failed - patch starting at offset %d can't be in file of size %d",
-                      source.LocationName, patchDataOffset + 2, fsize);
+                    source.LocationName, patchDataOffset + 2, fsize);
                 //delete source;
                 return;
             }
@@ -1038,7 +1129,7 @@ namespace NScumm.Sci
             newrsc._fileOffset = 0;
 
 
-            // TODO: debugC(1, kDebugLevelResMan, "Patching %s - OK", source.getLocationName().c_str());
+            DebugC(1, DebugLevels.ResMan, "Patching {0} - OK", source.LocationName);
         }
 
         private ResourceSource.Resource UpdateResource(ResourceId resId, ResourceSource src, int size)
@@ -1115,7 +1206,8 @@ namespace NScumm.Sci
                         offset = ptr.ToUInt32();
                         ptr.Offset += 4;
                     }
-                    else {
+                    else
+                    {
                         offset += ptr.ToUInt24();
                         ptr.Offset += 3;
                     }
@@ -1173,7 +1265,8 @@ namespace NScumm.Sci
                     AddResource(new ResourceId(ResourceType.Audio, n), src, offset, (int)size);
                 }
             }
-            else {
+            else
+            {
                 bool isEarly = (entrySize != 11);
 
                 if (!isEarly)
@@ -1197,7 +1290,8 @@ namespace NScumm.Sci
                         offset = ptr.ToUInt32();
                         ptr.Offset += 4;
                     }
-                    else {
+                    else
+                    {
                         offset += ptr.ToUInt24();
                         ptr.Offset += 3;
                     }
@@ -1210,7 +1304,9 @@ namespace NScumm.Sci
                         // FIXME: The sync36 resource seems to be two bytes too big in KQ6CD
                         // (bytes taken from the RAVE resource right after it)
                         if (syncSize > 0)
-                            AddResource(new ResourceId(ResourceType.Sync36, (ushort)map._volumeNumber, n & 0xffffff3f), src, offset, syncSize);
+                            AddResource(
+                                new ResourceId(ResourceType.Sync36, (ushort)map._volumeNumber, n & 0xffffff3f), src,
+                                offset, syncSize);
                     }
 
                     if ((n & 0x40) != 0)
@@ -1222,12 +1318,14 @@ namespace NScumm.Sci
 
                         if (kq6HiresSyncSize > 0)
                         {
-                            AddResource(new ResourceId(ResourceType.Rave, (ushort)map._volumeNumber, n & 0xffffff3f), src, (uint)(offset + syncSize), kq6HiresSyncSize);
+                            AddResource(new ResourceId(ResourceType.Rave, (ushort)map._volumeNumber, n & 0xffffff3f),
+                                src, (uint)(offset + syncSize), kq6HiresSyncSize);
                             syncSize += kq6HiresSyncSize;
                         }
                     }
 
-                    AddResource(new ResourceId(ResourceType.Audio36, (ushort)map._volumeNumber, n & 0xffffff3f), src, (uint)(offset + syncSize));
+                    AddResource(new ResourceId(ResourceType.Audio36, (ushort)map._volumeNumber, n & 0xffffff3f), src,
+                        (uint)(offset + syncSize));
                 }
             }
 
@@ -1296,7 +1394,7 @@ namespace NScumm.Sci
                         if (_mapVersion < ResVersion.Sci11)
                         {
                             volume_nr = (int)(fileOffset >> 28); // most significant 4 bits
-                            fileOffset &= 0x0FFFFFFF;     // least significant 28 bits
+                            fileOffset &= 0x0FFFFFFF; // least significant 28 bits
                         }
                         else
                         {
@@ -1345,7 +1443,7 @@ namespace NScumm.Sci
         private ResourceErrorCodes ReadResourceMapSCI0(ExtMapResourceSource map)
         {
             Stream fileStream = null;
-            ResourceType type = ResourceType.Invalid;   // to silence a false positive in MSVC
+            ResourceType type = ResourceType.Invalid; // to silence a false positive in MSVC
             ushort number, id;
             uint offset;
 
@@ -1456,7 +1554,8 @@ namespace NScumm.Sci
             // PQ4 CD and QFG4 CD are SCI2.1, but use the resource types of the
             // corresponding SCI2 floppy disk versions.
             if (SciEngine.Instance != null && (SciEngine.Instance.GameId == SciGameId.LSL6HIRES ||
-                    SciEngine.Instance.GameId == SciGameId.QFG4 || SciEngine.Instance.GameId == SciGameId.PQ4))
+                                               SciEngine.Instance.GameId == SciGameId.QFG4 ||
+                                               SciEngine.Instance.GameId == SciGameId.PQ4))
                 forceSci0 = true;
 
             if (_mapVersion < ResVersion.Sci2 || forceSci0)
@@ -1499,7 +1598,8 @@ namespace NScumm.Sci
                 int szPacked;
                 ResourceCompression compression;
 
-                if (res.ReadResourceInfo(_volVersion, fileStream, out szPacked, out compression) != ResourceErrorCodes.NONE)
+                if (res.ReadResourceInfo(_volVersion, fileStream, out szPacked, out compression) !=
+                    ResourceErrorCodes.NONE)
                 {
                     if (res._source._resourceFile != null)
                         fileStream.Dispose();
@@ -1602,7 +1702,7 @@ namespace NScumm.Sci
         || viewCompression == ResourceCompression.STACpack
                 || _volVersion == ResVersion.Sci2 // kq7
 #endif
-        )
+            )
             {
                 // SCI1.1 VGA views
                 _viewType = ViewType.Vga11;
@@ -1610,7 +1710,7 @@ namespace NScumm.Sci
             else
             {
 #if ENABLE_SCI32
-                // Otherwise we detect it from a view
+// Otherwise we detect it from a view
                 _viewType = detectViewType();
 #else
                 if (_volVersion == ResVersion.Sci2 && viewCompression == ResourceCompression.Unknown)
@@ -1635,7 +1735,7 @@ namespace NScumm.Sci
 
                 // TODO: Decide between SCI2.1 and SCI3
                 if (res != null)
-                    s_sciVersion = SciVersion.V2_1;
+                    s_sciVersion = SciVersion.V2_1_EARLY;
                 else
                     s_sciVersion = SciVersion.V1_1;
                 return;
@@ -1657,7 +1757,7 @@ namespace NScumm.Sci
                 }
                 else if (hasHeapResources)
                 {
-                    s_sciVersion = SciVersion.V2_1;
+                    s_sciVersion = SciVersion.V2_1_EARLY;
                     return;
                 }
                 else
@@ -2162,7 +2262,6 @@ namespace NScumm.Sci
 
             while (fileStream.Position <= fileStream.Length)
             {
-
                 directoryType = br.ReadByte();
                 directoryOffset = br.ReadUInt16();
 
@@ -2260,7 +2359,7 @@ namespace NScumm.Sci
             {
                 if (curVersion > ResVersion.Sci0Sci1Early)
                     fileStream.ReadByte();
-                fileStream.Seek(2, SeekOrigin.Current);    // resId
+                fileStream.Seek(2, SeekOrigin.Current); // resId
                 dwPacked = (curVersion < ResVersion.Sci2) ? br.ReadUInt16() : br.ReadUInt32();
                 dwUnpacked = (curVersion < ResVersion.Sci2) ? br.ReadUInt16() : br.ReadUInt32();
 
@@ -2288,11 +2387,10 @@ namespace NScumm.Sci
 
                 int offs = curVersion < ResVersion.Sci11 ? 4 : 0;
                 if ((curVersion < ResVersion.Sci2 && wCompression > chk)
-                        || (curVersion == ResVersion.Sci2 && wCompression != 0 && wCompression != 32)
-                        || (wCompression == 0 && dwPacked != dwUnpacked + offs)
-                        || (dwUnpacked < dwPacked - offs))
+                    || (curVersion == ResVersion.Sci2 && wCompression != 0 && wCompression != 32)
+                    || (wCompression == 0 && dwPacked != dwUnpacked + offs)
+                    || (dwUnpacked < dwPacked - offs))
                 {
-
                     // Retry with a newer SCI version
                     if (curVersion == ResVersion.Sci0Sci1Early)
                     {
@@ -2329,7 +2427,8 @@ namespace NScumm.Sci
                 if (curVersion < ResVersion.Sci11)
                     fileStream.Seek(dwPacked - 4, SeekOrigin.Current);
                 else if (curVersion == ResVersion.Sci11)
-                    fileStream.Seek((sci11Align && ((9 + dwPacked) % 2) != 0) ? dwPacked + 1 : dwPacked, SeekOrigin.Current);
+                    fileStream.Seek((sci11Align && ((9 + dwPacked) % 2) != 0) ? dwPacked + 1 : dwPacked,
+                        SeekOrigin.Current);
                 else if (curVersion >= ResVersion.Sci2)
                     fileStream.Seek(dwPacked, SeekOrigin.Current);
             }
@@ -2428,7 +2527,10 @@ namespace NScumm.Sci
             }
         }
 
-        public byte SoundPriority { get { return _soundPriority; } }
+        public byte SoundPriority
+        {
+            get { return _soundPriority; }
+        }
 
         public SoundResource(uint resourceNr, ResourceManager resMan, SciVersion soundVersion)
         {
@@ -2512,7 +2614,7 @@ namespace NScumm.Sci
 
                 case SciVersion.V1_EARLY:
                 case SciVersion.V1_LATE:
-                case SciVersion.V2_1:
+                case SciVersion.V2_1_EARLY:
                     data = new ByteAccess(resource.data);
                     // Count # of tracks
                     _trackCount = 0;
@@ -2561,7 +2663,8 @@ namespace NScumm.Sci
                         _tracks[trackNr].digitalSampleStart = 0;
                         _tracks[trackNr].digitalSampleEnd = 0;
                         if (_tracks[trackNr].type != 0xF0)
-                        { // Digital track marker - not supported currently
+                        {
+                            // Digital track marker - not supported currently
                             channelNr = 0;
                             while ((channelCount--) != 0)
                             {
@@ -2570,7 +2673,8 @@ namespace NScumm.Sci
 
                                 if (dataOffset >= resource.size)
                                 {
-                                    Warning($"Invalid offset inside sound resource {resourceNr}: track {trackNr}, channel {channelNr}");
+                                    Warning(
+                                        $"Invalid offset inside sound resource {resourceNr}: track {trackNr}, channel {channelNr}");
                                     data.Offset += 6;
                                     continue;
                                 }
@@ -2586,7 +2690,8 @@ namespace NScumm.Sci
                                 channel.data.Offset += 2; // skip over header
                                 channel.size -= 2; // remove header size
                                 if (channel.number == 0xFE)
-                                { // Digital channel
+                                {
+                                    // Digital channel
                                     _tracks[trackNr].digitalChannelNr = (short)channelNr;
                                     _tracks[trackNr].digitalSampleRate = channel.data.ToUInt16();
                                     _tracks[trackNr].digitalSampleSize = channel.data.ToUInt16(2);

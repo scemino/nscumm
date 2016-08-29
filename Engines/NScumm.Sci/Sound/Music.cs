@@ -622,7 +622,7 @@ namespace NScumm.Sci.Sound
                 {
                     if (_playList[i] != pSnd && _playList[i].playBed)
                     {
-                        // TODO: debugC(2, kDebugLevelSound, "Automatically stopping old playBed song from soundPlay");
+                        DebugC(2, DebugLevels.Sound, "Automatically stopping old playBed song from soundPlay");
                         MusicEntry old = _playList[i];
                         Monitor.Exit(_mutex);
                         SoundStop(old);

@@ -174,7 +174,7 @@ namespace NScumm.Sci.Engine
         private static Register kFlushResources(EngineState s, int argc, StackPtr argv)
         {
             Gc.Run(s);
-            // TODO: debugC(kDebugLevelRoom, "Entering room number %d", argv[0].toUint16());
+            DebugC(DebugLevels.Room, "Entering room number {0}", argv[0].ToUInt16());
             return s.r_acc;
         }
 
@@ -418,7 +418,7 @@ namespace NScumm.Sci.Engine
                     // In SCI1, its usage is still unknown
                     // In SCI1.1, it's NOP
                     // In SCI32, it's used for remapping cursor ID's
-                    if (ResourceManager.GetSciVersion() >= SciVersion.V2_1) // Set Mac cursor remap
+                    if (ResourceManager.GetSciVersion() >= SciVersion.V2_1_EARLY) // Set Mac cursor remap
                         SciEngine.Instance._gfxCursor.SetMacCursorRemapList(argc - 1, argv + 1);
                     else if (ResourceManager.GetSciVersion() != SciVersion.V1_1)
                     {
@@ -505,20 +505,20 @@ namespace NScumm.Sci.Engine
             {
                 case GetTimeMode.TICKS:
                     retval = (int)(elapsedTime * 60 / 1000);
-                    // TODO: debugC(kDebugLevelTime, "GetTime(elapsed) returns %d", retval);
+                    DebugC(DebugLevels.Time, "GetTime(elapsed) returns {0}", retval);
                     break;
                 case GetTimeMode.TIME_12HOUR:
                     retval = ((loc_time.Hour % 12) << 12) | (loc_time.Minute << 6) | (loc_time.Second);
-                    // TODO: debugC(kDebugLevelTime, "GetTime(12h) returns %d", retval);
+                    DebugC(DebugLevels.Time, "GetTime(12h) returns {0}", retval);
                     break;
                 case GetTimeMode.TIME_24HOUR:
                     retval = (loc_time.Hour << 11) | (loc_time.Minute << 5) | (loc_time.Second >> 1);
-                    // TODO: debugC(kDebugLevelTime, "GetTime(24h) returns %d", retval);
+                    DebugC(DebugLevels.Time, "GetTime(24h) returns {0}", retval);
                     break;
                 case GetTimeMode.DATE:
                     // Year since 1980 (0 = 1980, 1 = 1981, etc.)
                     retval = loc_time.Day | ((loc_time.Month + 1) << 5) | (((loc_time.Year - 1980) & 0x7f) << 9);
-                    // TODO: debugC(kDebugLevelTime, "GetTime(date) returns %d", retval);
+                    DebugC(DebugLevels.Time, "GetTime(date) returns {0}", retval);
                     break;
                 default:
                     throw new InvalidOperationException($"Attempt to use unknown GetTime mode {mode}");
@@ -612,7 +612,7 @@ namespace NScumm.Sci.Engine
                                 opt = argv[6].ToUInt16();
                         }
 
-                        //TODO: if (DebugMan.isDebugChannelEnabled(kDebugLevelAvoidPath))
+                        // TODO: if (DebugManager.Instance.IsDebugChannelEnabled(DebugLevels.AvoidPath))
                         //{
                         //    Debug("[avoidpath] Pathfinding input:");
                         //    DrawPoint(s, start, 1, width, height);
@@ -627,8 +627,8 @@ namespace NScumm.Sci.Engine
                         //    // Update the whole screen
                         //    SciEngine.Instance._gfxScreen.CopyToScreen();
                         //    SciEngine.Instance.System.GraphicsManager.UpdateScreen();
-                        //    if (SciEngine.Instance._gfxPaint16==null)
-                        //        SciEngine.Instance.System.DelayMillis(2500);
+                        //    if (SciEngine.Instance._gfxPaint16 == null)
+                        //        ServiceLocator.Platform.Sleep(2500);
                         //}
 
                         PathfindingState p = ConvertPolygonSet(s, poly_list, start, end, width, height, opt);
@@ -744,8 +744,8 @@ namespace NScumm.Sci.Engine
                 }
             }
 
-            //TODO: if (openSet.Count==0)
-            //    debugC(kDebugLevelAvoidPath, "AvoidPath: End point (%i, %i) is unreachable", s.vertex_end.v.x, s.vertex_end.v.y);
+            if (openSet.Count==0)
+                DebugC(DebugLevels.AvoidPath, "AvoidPath: End point ({0}, {1}) is unreachable", s.vertex_end.v.X, s.vertex_end.v.Y);
         }
 
         private static List<Vertex> VisibleVertices(PathfindingState s, Vertex vertex_cur)
@@ -853,24 +853,24 @@ namespace NScumm.Sci.Engine
             // Sentinel
             WritePoint(arrayRef, offset, new Point(POLY_LAST_POINT, POLY_LAST_POINT));
 
-            //if (DebugMan.isDebugChannelEnabled(kDebugLevelAvoidPath))
-            //{
-            //    Debug("\nReturning path:");
+            if (DebugManager.Instance.IsDebugChannelEnabled(DebugLevels.AvoidPath))
+            {
+                Debug("\nReturning path:");
 
-            //    SegmentRef outputList = s._segMan.Dereference(output);
-            //    if (!outputList.IsValid || outputList.skipByte)
-            //    {
-            //        Warning("output_path: Polygon data pointer is invalid, skipping polygon");
-            //        return output;
-            //    }
+                SegmentRef outputList = s._segMan.Dereference(output);
+                if (!outputList.IsValid || outputList.skipByte)
+                {
+                    Warning("output_path: Polygon data pointer is invalid, skipping polygon");
+                    return output;
+                }
 
-            //    for (int i = 0; i < offset; i++)
-            //    {
-            //        Point pt = ReadPoint(outputList, i);
-            //        // debugN(-1, " (%i, %i)", pt.x, pt.y);
-            //    }
-            //    Debug(";\n");
-            //}
+                for (int i = 0; i < offset; i++)
+                {
+                    Point pt = ReadPoint(outputList, i);
+                    // debugN(-1, " (%i, %i)", pt.x, pt.y);
+                }
+                Debug(";\n");
+            }
 
             return output;
         }

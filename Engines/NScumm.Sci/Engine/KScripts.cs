@@ -89,7 +89,7 @@ namespace NScumm.Sci.Engine
             ushort address = scr.ValidateExportFunc(index, true);
 
             // Point to the heap for SCI1.1 - SCI2.1 games
-            if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+            if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
                 address += scr.ScriptSize;
 
             // Bugfix for the intro speed in PQ2 version 1.002.011.
@@ -171,7 +171,7 @@ namespace NScumm.Sci.Engine
                 throw new InvalidOperationException($"Attempt to clone non-object/class at {parentAddr} failed");
             }
 
-            //debugC(kDebugLevelMemory, "Attempting to clone from %04x:%04x", PRINT_REG(parentAddr));
+            DebugC(DebugLevels.Memory, "Attempting to clone from {0}", parentAddr);
 
             ushort infoSelector = (ushort)parentObj.InfoSelector.Offset;
             var cloneObj = s._segMan.AllocateClone(out cloneAddr);
@@ -250,7 +250,7 @@ namespace NScumm.Sci.Engine
                                 // Happens in CD games (e.g. LSL6CD) with the message
                                 // resource. It isn't fatal, and it's usually caused
                                 // by leftover scripts.
-                                // TODO: debugC(kDebugLevelResMan, "[resMan] Attempt to unlock non-existant resource %s", id.toString().c_str());
+                                DebugC(DebugLevels.ResMan, "[resMan] Attempt to unlock non-existant resource {0}", id);
                             }
                         }
                     }

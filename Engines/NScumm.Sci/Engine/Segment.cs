@@ -16,11 +16,11 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using NScumm.Core.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using NScumm.Core;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
 {
@@ -338,7 +338,7 @@ namespace NScumm.Sci.Engine
 
             // Note that this also includes the 'base' object, which is part of the script and therefore also emits the locals.
             tmp.Add(clone.Pos);
-            //debugC(kDebugLevelGC, "[GC] Reporting clone-pos %04x:%04x", PRINT_REG(clone->pos));
+            DebugC(DebugLevels.GC, "[GC] Reporting clone-pos {0}", clone.Pos);
 
             return tmp;
         }

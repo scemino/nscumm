@@ -70,16 +70,16 @@ namespace NScumm.Sci.Sound
 
         public void kDoSoundStop(int argc, StackPtr argv)
         {
-            // TODO: debugC(kDebugLevelSound, "kDoSound(stop): %04x:%04x", PRINT_REG(argv[0]));
+            DebugC(DebugLevels.Sound, "kDoSound(stop): {0}", argv[0]);
             ProcessStopSound(argv[0], false);
         }
 
         public Register kDoSoundPause(int argc, StackPtr argv, Register acc)
         {
-            // TODO: if (argc == 1)
-            //debugC(kDebugLevelSound, "kDoSound(pause): %04x:%04x", PRINT_REG(argv[0]));
-            //else
-            //    debugC(kDebugLevelSound, "kDoSound(pause): %04x:%04x, %04x:%04x", PRINT_REG(argv[0]), PRINT_REG(argv[1]));
+            if (argc == 1)
+                DebugC(DebugLevels.Sound, "kDoSound(pause): {0}", argv[0]);
+            else
+                DebugC(DebugLevels.Sound, "kDoSound(pause): {0}, {1}", argv[0], argv[1]);
 
             if (_soundVersion <= SciVersion.V0_LATE)
             {
@@ -121,7 +121,7 @@ namespace NScumm.Sci.Sound
                     if (musicSlot == null)
                     {
                         // This happens quite frequently
-                        // TODO: debugC(kDebugLevelSound, "kDoSound(pause): Slot not found (%04x:%04x)", PRINT_REG(obj));
+                        DebugC(DebugLevels.Sound, "kDoSound(pause): Slot not found ({0})", obj);
                         return acc;
                     }
 
@@ -141,7 +141,7 @@ namespace NScumm.Sci.Sound
         {
             Register obj = argv[0];
 
-            // TODO: debugC(kDebugLevelSound, "doSoundSetHold: %04x:%04x, %d", PRINT_REG(argv[0]), argv[1].toUint16());
+            DebugC(DebugLevels.Sound, "doSoundSetHold: {0}, {1}", argv[0], argv[1].ToUInt16());
 
             MusicEntry musicSlot = _music.GetSlot(obj);
             if (musicSlot == null)
@@ -160,12 +160,12 @@ namespace NScumm.Sci.Sound
             Register obj = argv[0];
             short value = argv[1].ToInt16();
 
-            // TODO: debugC(kDebugLevelSound, "kDoSound(setPriority): %04x:%04x, %d", PRINT_REG(obj), value);
+            DebugC(DebugLevels.Sound, "kDoSound(setPriority): {0}, {1}", obj, value);
 
             MusicEntry musicSlot = _music.GetSlot(obj);
             if (musicSlot == null)
             {
-                // TODO: debugC(kDebugLevelSound, "kDoSound(setPriority): Slot not found (%04x:%04x)", PRINT_REG(obj));
+                DebugC(DebugLevels.Sound, "kDoSound(setPriority): Slot not found ({0})", obj);
                 return;
             }
 
@@ -193,7 +193,7 @@ namespace NScumm.Sci.Sound
             Register obj = argv[0];
             short value = argv[1].ToInt16();
 
-            // TODO: debugC(kDebugLevelSound, "kDoSound(setLoop): %04x:%04x, %d", PRINT_REG(obj), value);
+            DebugC(DebugLevels.Sound, "kDoSound(setLoop): {0}, {1}", obj, value);
 
             MusicEntry musicSlot = _music.GetSlot(obj);
             if (musicSlot == null)
@@ -244,7 +244,7 @@ namespace NScumm.Sci.Sound
                 return;
             }
 
-            // TODO: debugC(kDebugLevelSound, "kDoSound(setVolume): %d", value);
+            DebugC(DebugLevels.Sound, "kDoSound(setVolume): {0}", value);
 
             value = (short)ScummHelper.Clip(value, 0, MUSIC_VOLUME_MAX);
 
@@ -263,7 +263,7 @@ namespace NScumm.Sci.Sound
 
             if (argc == 1)
             {
-                // TODO: debugC(kDebugLevelSound, "doSoundGlobalReverb: %d", argv[0].toUint16() & 0xF);
+                DebugC(DebugLevels.Sound, "doSoundGlobalReverb: {0}", argv[0].ToUInt16() & 0xF);
                 if (reverb <= 10)
                     _music.GlobalReverb = (sbyte)reverb;
             }
@@ -290,7 +290,7 @@ namespace NScumm.Sci.Sound
                 param = (ushort)(pitch >> 7);
             }
 
-            // TODO: debugC(kDebugLevelSound, "kDoSound(sendMidi): %04x:%04x, %d, %d, %d, %d", PRINT_REG(obj), channel, midiCmd, controller, param);
+            DebugC(DebugLevels.Sound, "kDoSound(sendMidi): {0}, {1}, {2}, {3}, {4}", obj, channel, midiCmd, controller, param);
             if (channel != 0)
                 channel--; // channel is given 1-based, we are using 0-based
 
@@ -322,7 +322,7 @@ namespace NScumm.Sci.Sound
         {
             Register obj = argv[0];
 
-            // TODO: debugC(kDebugLevelSound, "kDoSound(update): %04x:%04x", PRINT_REG(argv[0]));
+            DebugC(DebugLevels.Sound, "kDoSound(update): {0}", argv[0]);
 
             MusicEntry musicSlot = _music.GetSlot(obj);
             if (musicSlot == null)
@@ -346,7 +346,7 @@ namespace NScumm.Sci.Sound
 
             if (argc > 0)
             {
-                // TODO: debugC(kDebugLevelSound, "kDoSound(masterVolume): %d", argv[0].ToInt16());
+                DebugC(DebugLevels.Sound, "kDoSound(masterVolume): {0}", argv[0].ToInt16());
                 int vol = (short)ScummHelper.Clip(argv[0].ToInt16(), 0, MUSIC_MASTERVOLUME_MAX);
                 vol = vol * Mixer.MaxMixerVolume / MUSIC_MASTERVOLUME_MAX;
                 ConfigManager.Instance.Set<int>("music_volume", vol);
@@ -361,7 +361,7 @@ namespace NScumm.Sci.Sound
             ushort previousState = _music.SoundOn ? (ushort)1 : (ushort)0;
             if (argc > 0)
             {
-                // TODO: debugC(kDebugLevelSound, "kDoSound(mute): %d", argv[0].toUint16());
+                DebugC(DebugLevels.Sound, "kDoSound(mute): {0}", argv[0].ToUInt16());
                 _music.SoundOn = argv[0].ToUInt16() != 0;
             }
 
@@ -370,7 +370,7 @@ namespace NScumm.Sci.Sound
 
         public void kDoSoundInit(int argc, StackPtr argv)
         {
-            // TODO: debugC(kDebugLevelSound, "kDoSound(init): %04x:%04x", PRINT_REG(argv[0]));
+            DebugC(DebugLevels.Sound, "kDoSound(init): {0}", argv[0]);
             ProcessInitSound(argv[0]);
         }
 
@@ -387,7 +387,7 @@ namespace NScumm.Sci.Sound
             MusicEntry musicSlot = _music.GetSlot(obj);
             if (musicSlot == null)
             {
-                // TODO: debugC(kDebugLevelSound, "kDoSound(fade): Slot not found (%04x:%04x)", PRINT_REG(obj));
+                DebugC(DebugLevels.Sound, "kDoSound(fade): Slot not found ({0})", obj);
                 return;
             }
 
@@ -396,7 +396,7 @@ namespace NScumm.Sci.Sound
             // If sound is not playing currently, set signal directly
             if (musicSlot.status != SoundStatus.Playing)
             {
-                // TODO: debugC(kDebugLevelSound, "kDoSound(fade): %04x:%04x fading requested, but sound is currently not playing", PRINT_REG(obj));
+                DebugC(DebugLevels.Sound, "kDoSound(fade): {0} fading requested, but sound is currently not playing", obj);
                 SciEngine.WriteSelectorValue(_segMan, obj, o => o.signal, Register.SIGNAL_OFFSET);
                 return;
             }
@@ -442,7 +442,7 @@ namespace NScumm.Sci.Sound
                     throw new InvalidOperationException($"kDoSound(fade): unsupported argc {argc}");
             }
 
-            // TODO: debugC(kDebugLevelSound, "kDoSound(fade): %04x:%04x to %d, step %d, ticker %d", PRINT_REG(obj), musicSlot.fadeTo, musicSlot.fadeStep, musicSlot.fadeTickerStep);
+            DebugC(DebugLevels.Sound, "kDoSound(fade): {0} to {1}, step {2}, ticker {3}", obj, musicSlot.fadeTo, musicSlot.fadeStep, musicSlot.fadeTickerStep);
             return;
         }
 
@@ -456,7 +456,7 @@ namespace NScumm.Sci.Sound
 
         public void kDoSoundPlay(int argc, StackPtr argv)
         {
-            // TODO: debugC(kDebugLevelSound, "kDoSound(play): %04x:%04x", PRINT_REG(argv[0]));
+            DebugC(DebugLevels.Sound, "kDoSound(play): {0}", argv[0]);
 
             bool playBed = false;
             if (argc >= 2 && !argv[1].IsNull)
@@ -472,7 +472,7 @@ namespace NScumm.Sci.Sound
 
         public void kDoSoundDispose(int argc, StackPtr argv)
         {
-            // debugC(kDebugLevelSound, "kDoSound(dispose): %04x:%04x", PRINT_REG(argv[0]));
+            DebugC(DebugLevels.Sound, "kDoSound(dispose): {0}", argv[0]);
             ProcessDisposeSound(argv[0]);
         }
 
@@ -536,8 +536,8 @@ namespace NScumm.Sci.Sound
             if (_soundVersion >= SciVersion.V1_EARLY)
                 musicSlot.volume = (short)SciEngine.ReadSelectorValue(_segMan, obj, s => s.vol);
 
-            // TODO: debugC(kDebugLevelSound, "kDoSound(play): %04x:%04x number %d, loop %d, prio %d, vol %d, bed %d", PRINT_REG(obj),
-            //        resourceId, musicSlot.loop, musicSlot.priority, musicSlot.volume, playBed ? 1 : 0);
+            DebugC(DebugLevels.Sound, "kDoSound(play): {0} number {1}, loop {2}, prio {3}, vol {4}, bed {5}", obj,
+                resourceId, musicSlot.loop, musicSlot.priority, musicSlot.volume, playBed ? 1 : 0);
 
             _music.SoundPlay(musicSlot);
 
@@ -583,8 +583,8 @@ namespace NScumm.Sci.Sound
                 newSound.volume = (short)ScummHelper.Clip((int)SciEngine.ReadSelectorValue(_segMan, obj, s => s.vol), 0, MUSIC_VOLUME_MAX);
             newSound.reverb = -1;  // initialize to SCI invalid, it'll be set correctly in soundInitSnd() below
 
-            // TODO: debugC(kDebugLevelSound, "kDoSound(init): %04x:%04x number %d, loop %d, prio %d, vol %d", PRINT_REG(obj),
-            //resourceId, newSound.loop, newSound.priority, newSound.volume);
+            DebugC(DebugLevels.Sound, "kDoSound(init): {0} number {1}, loop {2}, prio {3}, vol {4}", obj,
+                resourceId, newSound.loop, newSound.priority, newSound.volume);
 
             InitSoundResource(newSound);
 

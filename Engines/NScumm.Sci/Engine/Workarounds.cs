@@ -278,7 +278,7 @@ namespace NScumm.Sci.Engine
                             }
                             if (matched)
                             {
-                                // TODO: debugC(kDebugLevelWorkarounds, "Workaround: '%s:%s' in script %d, localcall %x", workaround.objectName, workaround.methodName, curScriptNr, curLocalCallOffset);
+                                DebugC(DebugLevels.Workarounds, "Workaround: '{0}:{1}' in script {2}, localcall {3:X}", workaround.objectName, workaround.methodName, curScriptNr, curLocalCallOffset);
                                 trackOrigin = null;
                                 return workaround.newValue;
                             }

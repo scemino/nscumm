@@ -19,6 +19,7 @@
 
 using NScumm.Sci.Graphics;
 using System;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
 {
@@ -85,7 +86,7 @@ namespace NScumm.Sci.Engine
             // POST: (dx != 0)  ==>  ABS(tmp) > ABS(dx)
             // POST: (dx != 0)  ==>  ABS(tmp) ~>=~ ABS(dy)
 
-            // TODO: debugC(kDebugLevelBresen, "c: %d, tmp: %d", c, tmp);
+            DebugC(DebugLevels.Bresen, "c: {0}, tmp: {1}", c, tmp);
 
             // Compute x step
             if (tmp != 0 && dx != 0)
@@ -120,8 +121,8 @@ namespace NScumm.Sci.Engine
             // Always force vy to be upwards
             vy = -Math.Abs(vy);
 
-            // TODO: debugC(kDebugLevelBresen, "SetJump for object at %04x:%04x", PRINT_REG(object));
-            // TODO: debugC(kDebugLevelBresen, "xStep: %d, yStep: %d", vx, vy);
+            DebugC(DebugLevels.Bresen, "SetJump for object at {0}", @object);
+            DebugC(DebugLevels.Bresen, "xStep: {0}, yStep: {1}", vx, vy);
 
             SciEngine.WriteSelectorValue(segMan, @object, o => o.xStep, (ushort)vx);
             SciEngine.WriteSelectorValue(segMan, @object, o => o.yStep, (ushort)vy);

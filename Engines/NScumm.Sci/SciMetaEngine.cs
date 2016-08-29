@@ -51,6 +51,35 @@ namespace NScumm.Sci
         public Core.Language Language { get; set; }
     }
 
+    // our engine debug levels
+    static class DebugLevels
+    {
+        public const int Error = 1 << 0;
+        public const int Nodes = 1 << 1;
+        public const int Graphics = 1 << 2;
+        public const int Strings = 1 << 3;
+        public const int Memory = 1 << 4;
+        public const int FuncCheck = 1 << 5;
+        public const int Bresen = 1 << 6;
+        public const int Sound = 1 << 7;
+        public const int BaseSetter = 1 << 8;
+        public const int Parser = 1 << 9;
+        public const int Said = 1 << 10;
+        public const int File = 1 << 11;
+        public const int Time = 1 << 12;
+        public const int Room = 1 << 13;
+        public const int AvoidPath = 1 << 14;
+        public const int DclInflate = 1 << 15;
+        public const int VM = 1 << 16;
+        public const int Scripts = 1 << 17;
+        public const int GC = 1 << 18;
+        public const int ResMan = 1 << 19;
+        public const int OnStartup = 1 << 20;
+        public const int DebugMode = 1 << 21;
+        public const int ScriptPatcher = 1 << 22;
+        public const int Workarounds = 1 << 23;
+    }
+
     internal enum SciGameId
     {
         ASTROCHICKEN,

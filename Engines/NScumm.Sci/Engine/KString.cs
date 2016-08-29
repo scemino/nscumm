@@ -73,7 +73,7 @@ namespace NScumm.Sci.Engine
             string source_str = SciEngine.Instance.Kernel.LookupText(position, index);
             var source = 0;
 
-            // TODO: debugC(kDebugLevelStrings, "Formatting \"%s\"", source);
+            DebugC(DebugLevels.Strings, "Formatting \"{0}\"", source);
 
 
             var arguments = new ushort[argc];

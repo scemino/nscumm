@@ -530,7 +530,7 @@ namespace NScumm.Sci.Engine
             // TODO/FIXME: Is "/" a good value? Maybe "" or "." or "C:\" are better?
             s._segMan.Strcpy(argv[0], "/");
 
-            // TODO: debugC(kDebugLevelFile, "kGetCWD() . %s", "/");
+            DebugC(DebugLevels.File, "kGetCWD() . {0}", "/");
 
             return argv[0];
         }
@@ -563,17 +563,17 @@ namespace NScumm.Sci.Engine
             // having it saved in the ScummVM save directory.
             if (name == "sq4sg.dir")
             {
-                // TODO: debugC(kDebugLevelFile, "Not opening unused file sq4sg.dir");
+                DebugC(DebugLevels.File, "Not opening unused file sq4sg.dir");
                 return Register.SIGNAL_REG;
             }
 
             if (string.IsNullOrEmpty(name))
             {
                 // Happens many times during KQ1 (e.g. when typing something)
-                // TODO: debugC(kDebugLevelFile, "Attempted to open a file with an empty filename");
+                DebugC(DebugLevels.File, "Attempted to open a file with an empty filename");
                 return Register.SIGNAL_REG;
             }
-            // TODO: debugC(kDebugLevelFile, "kFileIO(open): %s, 0x%x", name.c_str(), mode);
+            DebugC(DebugLevels.File, "kFileIO(open): {0}, 0x{1:X}", name, mode);
 
 #if ENABLE_SCI32
             if (name == PHANTASMAGORIA_SAVEGAME_INDEX)
@@ -620,7 +620,7 @@ namespace NScumm.Sci.Engine
                 {
                     // Game scripts are trying to create a file with the save
                     // description, stop them here
-                    debugC(kDebugLevelFile, "Not creating unused file %s", name.c_str());
+            DebugC(DebugLevels.File, "Not creating unused file {0}", name);
                     return SIGNAL_REG;
                 }
                 else if (mode == _K_FILE_MODE_OPEN_OR_FAIL)
@@ -696,24 +696,22 @@ namespace NScumm.Sci.Engine
                     inFile = Core.Engine.OpenFileRead(englishName);
                 }
 
-                // TODO: if (inFile == null)
-                // TODO: debugC(kDebugLevelFile, "  . file_open(_K_FILE_MODE_OPEN_OR_FAIL): failed to open file '%s'", englishName.c_str());
+                if (inFile == null)
+                    DebugC(DebugLevels.File, "  . file_open(_K_FILE_MODE_OPEN_OR_FAIL): failed to open file '{0}'", englishName);
             }
             else if (mode == _K_FILE_MODE_CREATE)
             {
                 // Create the file, destroying any content it might have had
                 outFile = saveFileMan.OpenForSaving(wrappedName, isCompressed);
-                // TODO:
-                //if (outFile==null)
-                //    debugC(kDebugLevelFile, "  . file_open(_K_FILE_MODE_CREATE): failed to create file '%s'", englishName.c_str());
+                if (outFile == null)
+                    DebugC(DebugLevels.File, "  . file_open(_K_FILE_MODE_CREATE): failed to create file '{0}'", englishName);
             }
             else if (mode == _K_FILE_MODE_OPEN_OR_CREATE)
             {
                 // Try to open file, create it if it doesn't exist
                 outFile = saveFileMan.OpenForSaving(wrappedName, isCompressed);
-                // TODO:
-                //if (outFile==null)
-                //    debugC(kDebugLevelFile, "  . file_open(_K_FILE_MODE_CREATE): failed to create file '%s'", englishName.c_str());
+                if (outFile == null)
+                    DebugC(DebugLevels.File, "  . file_open(_K_FILE_MODE_CREATE): failed to create file '{0}'", englishName);
 
                 // QfG1 opens the character export file with _K_FILE_MODE_CREATE first,
                 // closes it immediately and opens it again with this here. Perhaps
@@ -728,7 +726,7 @@ namespace NScumm.Sci.Engine
 
             if (inFile == null && outFile == null)
             { // Failed
-              // TODO: debugC(kDebugLevelFile, "  . file_open() failed");
+                DebugC(DebugLevels.File, "  . file_open() failed");
                 return Register.SIGNAL_REG;
             }
 
@@ -747,13 +745,13 @@ namespace NScumm.Sci.Engine
             s._fileHandles[handle]._out = outFile;
             s._fileHandles[handle]._name = englishName;
 
-            // TODO: debugC(kDebugLevelFile, "  . opened file '%s' with handle %d", englishName.c_str(), handle);
+            DebugC(DebugLevels.File, "  . opened file '{0}' with handle {1}", englishName, handle);
             return Register.Make(0, (ushort)handle);
         }
 
         private static Register kFileIOClose(EngineState s, int argc, StackPtr argv)
         {
-            // TODO: debugC(kDebugLevelFile, "kFileIO(close): %d", argv[0].toUint16());
+            DebugC(DebugLevels.File, "kFileIO(close): {0}", argv[0].ToUInt16());
 
             if (argv[0] == Register.SIGNAL_REG)
                 return s.r_acc;
@@ -788,7 +786,7 @@ namespace NScumm.Sci.Engine
             ushort size = argv[2].ToUInt16();
             int bytesRead = 0;
             byte[] buf = new byte[size];
-            // TODO: debugC(kDebugLevelFile, "kFileIO(readRaw): %d, %d", handle, size);
+            DebugC(DebugLevels.File, "kFileIO(readRaw): {0}, {1}", handle, size);
 
 #if ENABLE_SCI32
                         if (handle == VIRTUALFILE_HANDLE)
@@ -837,7 +835,7 @@ namespace NScumm.Sci.Engine
             var buf = new byte[size];
             bool success = false;
             s._segMan.Memcpy(new ByteAccess(buf), argv[1], size);
-            // TODO: debugC(kDebugLevelFile, "kFileIO(writeRaw): %d, %d", handle, size);
+            DebugC(DebugLevels.File, "kFileIO(writeRaw): {0}, {1}", handle, size);
 
 #if ENABLE_SCI32
                         if (handle == VIRTUALFILE_HANDLE)
@@ -934,7 +932,7 @@ namespace NScumm.Sci.Engine
                 catch (Exception) { }
             }
 
-            // TODO: debugC(kDebugLevelFile, "kFileIO(unlink): %s", name.c_str());
+            DebugC(DebugLevels.File, "kFileIO(unlink): {0}", name);
             if (result)
                 return Register.NULL_REG;
             return Register.Make(0, 2); // DOS - file not found error code
@@ -945,13 +943,13 @@ namespace NScumm.Sci.Engine
             ushort maxsize = argv[1].ToUInt16();
             var buf = new byte[maxsize];
             ushort handle = argv[2].ToUInt16();
-            // TODO:      debugC(kDebugLevelFile, "kFileIO(readString): %d, %d", handle, maxsize);
+            DebugC(DebugLevels.File, "kFileIO(readString): {0}, {1}", handle, maxsize);
             uint bytesRead;
 
 #if ENABLE_SCI32
-                        if (handle == VIRTUALFILE_HANDLE)
-                            bytesRead = s._virtualIndexFile.readLine(buf, maxsize);
-                        else
+            if (handle == VIRTUALFILE_HANDLE)
+                bytesRead = s._virtualIndexFile.readLine(buf, maxsize);
+            else
 #endif
             bytesRead = (uint)fgets_wrapper(s, buf, maxsize, handle);
 
@@ -991,7 +989,7 @@ namespace NScumm.Sci.Engine
                 dest[0] = 0;
             }
 
-            // TODO: debugC(kDebugLevelFile, "  . FGets'ed \"%s\"", dest);
+            DebugC(DebugLevels.File, "  . FGets'ed \"{0}\"", dest);
             return readBytes;
         }
 
@@ -1000,7 +998,7 @@ namespace NScumm.Sci.Engine
         {
             int handle = argv[0].ToUInt16();
             var str = s._segMan.GetString(argv[1]);
-            // TODO: DebugC(kDebugLevelFile, "kFileIO(writeString): %d", handle);
+            DebugC(DebugLevels.File, "kFileIO(writeString): {0}", handle);
 
             // Handle sciAudio calls in fanmade games here. sciAudio is an
             // external .NET library for playing MP3 files in fanmade games.
@@ -1046,7 +1044,7 @@ namespace NScumm.Sci.Engine
             ushort handle = argv[0].ToUInt16();
             ushort offset = (ushort)Math.Abs(argv[1].ToInt16()); // can be negative
             SeekOrigin whence = (SeekOrigin)argv[2].ToUInt16();
-            // TODO: debugC(kDebugLevelFile, "kFileIO(seek): %d, %d, %d", handle, offset, whence);
+            DebugC(DebugLevels.File, "kFileIO(seek): {0}, {1}, {2}", handle, offset, whence);
 
 #if ENABLE_SCI32
                         if (handle == VIRTUALFILE_HANDLE)
@@ -1081,7 +1079,7 @@ namespace NScumm.Sci.Engine
             string mask = s._segMan.GetString(argv[0]);
             Register buf = argv[1];
             int attr = argv[2].ToUInt16(); // We won't use this, Win32 might, though...
-            // TODO: debugC(kDebugLevelFile, "kFileIO(findFirst): %s, 0x%x", mask.c_str(), attr);
+            DebugC(DebugLevels.File, "kFileIO(findFirst): {0}, 0x{1}", mask, attr);
 
             // We remove ".*". mask will get prefixed, so we will return all additional files for that gameid
             if (mask == "*.*")
@@ -1091,7 +1089,7 @@ namespace NScumm.Sci.Engine
 
         private static Register kFileIOFindNext(EngineState s, int argc, StackPtr argv)
         {
-            // TODO: debugC(kDebugLevelFile, "kFileIO(findNext)");
+            DebugC(DebugLevels.File, "kFileIO(findNext)");
             return s._dirseeker.NextFile(s._segMan);
         }
 
@@ -1125,17 +1123,17 @@ namespace NScumm.Sci.Engine
             }
 
             // SCI2+ debug mode
-            // TODO: if (DebugMan.isDebugChannelEnabled(kDebugLevelDebugMode))
-            //{
-            //    if (!exists && name == "1.scr")     // PQ4
-            //        exists = true;
-            //    if (!exists && name == "18.scr")    // QFG4
-            //        exists = true;
-            //    if (!exists && name == "99.scr")    // GK1, KQ7
-            //        exists = true;
-            //    if (!exists && name == "classes")   // GK2, SQ6, LSL7
-            //        exists = true;
-            //}
+            if (DebugManager.Instance.IsDebugChannelEnabled(DebugLevels.DebugMode))
+            {
+                if (!exists && name == "1.scr")     // PQ4
+                    exists = true;
+                if (!exists && name == "18.scr")    // QFG4
+                    exists = true;
+                if (!exists && name == "99.scr")    // GK1, KQ7
+                    exists = true;
+                if (!exists && name == "classes")   // GK2, SQ6, LSL7
+                    exists = true;
+            }
 
             // Special case for non-English versions of LSL5: The English version of
             // LSL5 calls kFileIO(), case K_FILEIO_OPEN for reading to check if
@@ -1169,7 +1167,7 @@ namespace NScumm.Sci.Engine
                 //TODO: exists = Common::MacResManager::exists(name);
             }
 
-            // TODO: debugC(kDebugLevelFile, "kFileIO(fileExists) %s . %d", name.c_str(), exists);
+            DebugC(DebugLevels.File, "kFileIO(fileExists) {0} . {1}", name, exists);
             return Register.Make(0, exists);
         }
 

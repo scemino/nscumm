@@ -71,9 +71,39 @@ namespace NScumm.Sci.Engine
             return new SciVersionRange { fromVersion = SciVersion.V1_1, toVersion = SciVersion.NONE, forPlatform = platform };
         }
 
-        public static SciVersionRange SIG_SCI21(byte platform)
+        public static SciVersionRange SIG_SCI21EARLY(byte platform)
         {
-            return new SciVersionRange { fromVersion = SciVersion.V2_1, toVersion = SciVersion.V3, forPlatform = platform };
+            return new SciVersionRange { fromVersion = SciVersion.V2_1_EARLY, toVersion = SciVersion.V2_1_EARLY, forPlatform = platform };
+        }
+
+        public static SciVersionRange SIG_UNTIL_SCI21EARLY(byte platform)
+        {
+            return new SciVersionRange { fromVersion = SciVersion.V2, toVersion = SciVersion.V2_1_EARLY, forPlatform = platform };
+        }
+
+        public static SciVersionRange SIG_UNTIL_SCI21MID(byte platform)
+        {
+            return new SciVersionRange { fromVersion = SciVersion.V2, toVersion = SciVersion.V2_1_MIDDLE, forPlatform = platform };
+        }
+
+        public static SciVersionRange SIG_SINCE_SCI21(byte platform)
+        {
+            return new SciVersionRange { fromVersion = SciVersion.V2_1_EARLY, toVersion = SciVersion.V3, forPlatform = platform };
+        }
+
+        public static SciVersionRange SIG_SINCE_SCI21MID(byte platform)
+        {
+            return new SciVersionRange { fromVersion = SciVersion.V2_1_MIDDLE, toVersion = SciVersion.V3, forPlatform = platform };
+        }
+
+        public static SciVersionRange SIG_SINCE_SCI21LATE(byte platform)
+        {
+            return new SciVersionRange { fromVersion = SciVersion.V2_1_LATE, toVersion = SciVersion.V3, forPlatform = platform };
+        }
+
+        public static SciVersionRange SIG_SCI16(byte platform)
+        {
+            return new SciVersionRange { fromVersion = SciVersion.NONE, toVersion = SciVersion.V1_1, forPlatform = platform };
         }
 
         public static SciVersionRange SIG_SCI32(byte platform)
@@ -103,7 +133,7 @@ namespace NScumm.Sci.Engine
 
         public static SciVersionRange SIG_SOUNDSCI21(byte platform)
         {
-            return new SciVersionRange { fromVersion = SciVersion.V2_1, toVersion = SciVersion.V3, forPlatform = platform };
+            return new SciVersionRange { fromVersion = SciVersion.V2_1_EARLY, toVersion = SciVersion.V3, forPlatform = platform };
         }
     }
 
@@ -542,14 +572,14 @@ namespace NScumm.Sci.Engine
         };
 
         static readonly SciKernelMapSubEntry[] kPalVary_subops = {
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI21(0),0,kPalVaryInit,               "ii(i)(i)(i)",            null),
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),0,kPalVaryInit,               "ii(i)(i)",             null),
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),1,kPalVaryReverse,            "(i)(i)(i)",            null),
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),2,kPalVaryGetCurrentStep,     "",                     null),
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),3,kPalVaryDeinit,             "",                     null),
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),4,kPalVaryChangeTarget,       "i",                    null),
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),5,kPalVaryChangeTicks,        "i",                    null),
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),6,kPalVaryPauseResume,        "i",                    null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI16(0),0,kPalVaryInit,               "ii(i)(i)(i)",            null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI16(0),0,kPalVaryInit,               "ii(i)(i)",             null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI16(0),1,kPalVaryReverse,            "(i)(i)(i)",            null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI16(0),2,kPalVaryGetCurrentStep,     "",                     null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI16(0),3,kPalVaryDeinit,             "",                     null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI16(0),4,kPalVaryChangeTarget,       "i",                    null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI16(0),5,kPalVaryChangeTicks,        "i",                    null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI16(0),6,kPalVaryPauseResume,        "i",                    null),
         #if ENABLE_SCI32
 	        { SIG_SCI32,           8, MAP_CALL(PalVaryUnknown),            "i",                    NULL },
             { SIG_SCI32,           9, MAP_CALL(PalVaryUnknown2),           "i",                    NULL },
@@ -695,7 +725,7 @@ namespace NScumm.Sci.Engine
             SciKernelMapEntry.Make(kSaid,SciVersionRange.SIG_EVERYWHERE,"[r0]",null,null),
             SciKernelMapEntry.Make(kSaveGame,SciVersionRange.SIG_EVERYWHERE,"[r0]i[r0](r0)",null,null),
             SciKernelMapEntry.Make(kScriptID,SciVersionRange.SIG_EVERYWHERE,"[io](i)",null,null),
-            SciKernelMapEntry.Make(kSetCursor,SciVersionRange.SIG_SCI21(SIGFOR_ALL),"i(i)([io])(i*)",null,null),
+            SciKernelMapEntry.Make(kSetCursor,SciVersionRange.SIG_SINCE_SCI21(SIGFOR_ALL),"i(i)([io])(i*)",null,null),
 	        // TODO: SCI2.1 may supply an object optionally (mother goose sci21 right on startup) - find out why
 	        SciKernelMapEntry.Make(kSetCursor,SciVersionRange.SIG_SCI11(SIGFOR_ALL),"i(i)(i)(i)(iiiiii)",null,null),
             SciKernelMapEntry.Make(kSetCursor,SciVersionRange.SIG_EVERYWHERE,"i(i)(i)(i)(i)",null,Workarounds.kSetCursor_workarounds),
@@ -1071,6 +1101,7 @@ namespace NScumm.Sci.Engine
         private void MapFunctions()
         {
             int mapped = 0;
+            int ignored = 0;
             int functionCount = _kernelNames.Count;
             byte platformMask = 0;
             SciVersion myVersion = ResourceManager.GetSciVersion();
@@ -1239,8 +1270,8 @@ namespace NScumm.Sci.Engine
                 }
             } // for all functions requesting to be mapped
 
-            // TODO: debugC(kDebugLevelVM, "Handled %d/%d kernel functions, mapping %d and ignoring %d.",
-            //mapped + ignored, _kernelNames.size(), mapped, ignored);
+            DebugC(DebugLevels.VM, "Handled {0}/{1} kernel functions, mapping {2} and ignoring {3}.",
+            mapped + ignored, _kernelNames.Count, mapped, ignored);
 
             return;
         }
@@ -1493,7 +1524,7 @@ namespace NScumm.Sci.Engine
                     return pos;
             }
 
-            // TODO/ debugC(kDebugLevelVM, "Could not map '%s' to any selector", selectorName);
+            DebugC(DebugLevels.VM, "Could not map '{0}' to any selector", selectorName);
 
             return -1;
         }
@@ -1505,7 +1536,7 @@ namespace NScumm.Sci.Engine
 
             // Starting with KQ7, Mac versions have a BE name table. GK1 Mac and earlier (and all
             // other platforms) always use LE.
-            bool isBE = (SciEngine.Instance.Platform == Platform.Macintosh && ResourceManager.GetSciVersion() >= SciVersion.V2_1
+            bool isBE = (SciEngine.Instance.Platform == Platform.Macintosh && ResourceManager.GetSciVersion() >= SciVersion.V2_1_EARLY
                     && SciEngine.Instance.GameId != SciGameId.GK1);
 
             if (r == null)

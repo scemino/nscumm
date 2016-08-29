@@ -30,6 +30,8 @@ namespace NScumm.Core.IO
 
         public int BootParam { get; set; }
 
+        public string Switches { get; set; }
+
         public GameSettings(IGameDescriptor game, IMetaEngine engine)
         {
             Game = game;

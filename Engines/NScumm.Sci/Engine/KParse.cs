@@ -325,7 +325,7 @@ namespace NScumm.Sci.Engine
                 s.r_acc = Register.Make(0, 1);
 
 #if DEBUG_PARSER
-        debugC(kDebugLevelParser, "Parsed to the following blocks:");
+        DebugC(DebugLevels.Parser, "Parsed to the following blocks:");
 
 		for (ResultWordListList::const_iterator i = words.begin(); i != words.end(); ++i) {
 
@@ -350,7 +350,7 @@ namespace NScumm.Sci.Engine
                     SciEngine.InvokeSelector(s, SciEngine.Instance.GameObject, o => o.syntaxFail, argc, argv, 2, new StackPtr(@params, 0));
                     /* Issue warning */
 
-                    // TODO: debugC(kDebugLevelParser, "Tree building failed");
+                    DebugC(DebugLevels.Parser, "Tree building failed");
 
                 }
                 else
@@ -376,7 +376,7 @@ namespace NScumm.Sci.Engine
                 {
                     s._segMan.Strcpy(s._segMan.ParserPtr, error);
 
-                    // TODO: debugC(kDebugLevelParser, "Word unknown: %s", error);
+                    DebugC(DebugLevels.Parser, "Word unknown: {0}", error);
                     /* Issue warning: */
 
                     SciEngine.InvokeSelector(s, SciEngine.Instance.GameObject, o => o.wordFail, argc, argv, 2, new StackPtr(@params, 0));
@@ -476,8 +476,8 @@ namespace NScumm.Sci.Engine
 
                     if (synonyms != null)
                     {
-                        // TODO: debugC(kDebugLevelParser, "Setting %d synonyms for script.%d",
-                        //          numSynonyms, script);
+                        DebugC(DebugLevels.Parser, "Setting {0} synonyms for script.{1}",
+                                  numSynonyms, script);
 
                         if (numSynonyms > 16384)
                         {
@@ -504,7 +504,7 @@ namespace NScumm.Sci.Engine
                 node = s._segMan.LookupNode(node.succ);
             }
 
-            // TODO: debugC(kDebugLevelParser, "A total of %d synonyms are active now.", numSynonyms);
+            DebugC(DebugLevels.Parser, "A total of {0} synonyms are active now.", numSynonyms);
 
             return s.r_acc;
         }

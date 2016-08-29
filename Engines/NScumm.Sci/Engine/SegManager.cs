@@ -286,7 +286,7 @@ namespace NScumm.Sci.Engine
             {
                 // The actual script deletion seems to be done by SCI scripts themselves
                 scr.MarkDeleted();
-                // TODO: debugC(kDebugLevelScripts, "Unloaded script 0x%x.", script_nr);
+                DebugC(DebugLevels.Scripts, "Unloaded script 0x{0:X}.", script_nr);
             }
         }
 

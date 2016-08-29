@@ -445,7 +445,7 @@ namespace NScumm.Sci.Graphics
             {
                 // This happens when loading palette of picture 0 in sq5 - the resource is broken and doesn't contain a full
                 //  palette
-                // TODO: debugC(kDebugLevelResMan, "GfxPalette::createFromData() - not enough bytes in resource (%d), expected palette header", bytesLeft);
+                DebugC(DebugLevels.ResMan, "GfxPalette::createFromData() - not enough bytes in resource ({0}), expected palette header", bytesLeft);
                 return paletteOut;
             }
 

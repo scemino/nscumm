@@ -87,14 +87,14 @@ namespace NScumm.Sci.Engine
         {
             get
             {
-                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+                if (ResourceManager.GetSciVersion() <= SciVersion.V3)
                     return _variables[_offset];
                 else    // SCI3
                     return _speciesSelectorSci3;
             }
             set
             {
-                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+                if (ResourceManager.GetSciVersion() <= SciVersion.V3)
                     _variables[_offset] = value;
                 else    // SCI3
                     _speciesSelectorSci3 = value;
@@ -105,14 +105,14 @@ namespace NScumm.Sci.Engine
         {
             get
             {
-                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+                if (ResourceManager.GetSciVersion() <= SciVersion.V3)
                     return _variables[_offset + 1];
                 else    // SCI3
                     return _superClassPosSci3;
             }
             set
             {
-                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+                if (ResourceManager.GetSciVersion() <= SciVersion.V3)
                     _variables[_offset + 1] = value;
                 else    // SCI3
                     _superClassPosSci3 = value;
@@ -163,14 +163,14 @@ namespace NScumm.Sci.Engine
         {
             get
             {
-                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+                if (ResourceManager.GetSciVersion() <= SciVersion.V3)
                     return _variables[_offset + 2];
                 else    // SCI3
                     return _infoSelectorSci3;
             }
             set
             {
-                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+                if (ResourceManager.GetSciVersion() <= SciVersion.V3)
                     _variables[_offset + 2] = value;
                 else    // SCI3
                     _infoSelectorSci3 = value;
@@ -181,7 +181,7 @@ namespace NScumm.Sci.Engine
         {
             get
             {
-                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+                if (ResourceManager.GetSciVersion() <= SciVersion.V3)
                     return _offset + 3 < (ushort)_variables.Length ? _variables[_offset + 3] : Register.NULL_REG;
                 else    // SCI3
                     return _variables.Length != 0 ? _variables[0] : Register.NULL_REG;
@@ -248,7 +248,7 @@ namespace NScumm.Sci.Engine
             ByteAccess buf = null;
             int varnum = 0;
 
-            if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+            if (ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
             {
                 var obj = GetClass(segMan);
                 varnum = ResourceManager.GetSciVersion() <= SciVersion.V1_LATE ? VarCount : obj.GetVariable(1).ToUInt16();
@@ -283,7 +283,7 @@ namespace NScumm.Sci.Engine
                     _baseMethod.Add(data.Data.ReadSci11EndianUInt16(data.Offset + data.ToUInt16(OffsetFunctionArea) + i * 2));
                 }
             }
-            else if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+            else if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
             {
                 Array.Resize(ref _variables, data.Data.ReadSci11EndianUInt16(data.Offset + 2));
                 _baseVars = new UShortAccess(buf, data.Data.ReadSci11EndianUInt16(data.Offset + 4));
@@ -300,7 +300,7 @@ namespace NScumm.Sci.Engine
 
             if (initVariables)
             {
-                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
                 {
                     for (var i = 0; i < _variables.Length; i++)
                         _variables[i] = Register.Make(0, data.Data.ReadSci11EndianUInt16(data.Offset + (i * 2)));
@@ -499,11 +499,10 @@ namespace NScumm.Sci.Engine
                             name = "<invalid name>";
                     }
 
-                    // TODO: debugC(kDebugLevelVM, "Object %04x:%04x (name %s, script %d) "
-
-                    //"varnum doesn't match baseObj's: obj %d, base %d",
-                    //PRINT_REG(_pos), name, objScript,
-                    //originalVarCount, baseObj.getVarCount());
+                    DebugC(DebugLevels.VM, "Object {0} (name {1}, script {2}) "
+                           +"varnum doesn't match baseObj's: obj {3}, base {4}",
+                            _pos, name, objScript,
+                            originalVarCount, baseObj.VarCount);
 
 #if None
 			// We enumerate the methods selectors which could be hidden here
@@ -574,7 +573,7 @@ namespace NScumm.Sci.Engine
                 throw new InvalidOperationException($"Attempt to relocate odd variable #{idx}.5e (relative to {block_location:X4})");
             }
             block[idx] = Register.SetSegment(block[idx], segment); // Perform relocation
-            if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+            if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
                 block[idx] = Register.IncOffset(block[idx], (short)scriptSize);
 
             return true;

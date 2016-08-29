@@ -149,6 +149,32 @@ namespace NScumm.Sci
             _gameDescription = desc.GameDescription;
             Directory = ServiceLocator.FileStorage.GetDirectoryName(desc.Path);
             _debugState = new DebugState();
+
+            // Set up the engine specific debug levels
+            DebugManager.Instance.AddDebugChannel(DebugLevels.Error, "Error", "Script error debugging");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.Nodes, "Lists", "Lists and nodes debugging");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.Graphics, "Graphics", "Graphics debugging");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.Strings, "Strings", "Strings debugging");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.Memory, "Memory", "Memory debugging");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.FuncCheck, "Func", "Function parameter debugging");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.Bresen, "Bresenham", "Bresenham algorithms debugging");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.Sound, "Sound", "Sound debugging");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.BaseSetter, "Base", "Base Setter debugging");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.Parser, "Parser", "Parser debugging");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.Said, "Said", "Said specs debugging");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.File, "File", "File I/O debugging");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.Time, "Time", "Time debugging");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.Room, "Room", "Room number debugging");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.AvoidPath, "Pathfinding", "Pathfinding debugging");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.DclInflate, "DCL", "DCL inflate debugging");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.VM, "VM", "VM debugging");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.Scripts, "Scripts", "Notifies when scripts are unloaded");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.ScriptPatcher, "ScriptPatcher", "Notifies when scripts are patched");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.Workarounds, "Workarounds", "Notifies when workarounds are triggered");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.GC, "GC", "Garbage Collector debugging");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.ResMan, "ResMan", "Resource manager debugging");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.OnStartup, "OnStartup", "Enter debugger at start of game");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.DebugMode, "DebugMode", "Enable game debug mode at start of game");
         }
 
         public string GetSavegameName(int nr)

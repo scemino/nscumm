@@ -16,9 +16,9 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not; see <http://www.gnu.org/licenses/>.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
 {
@@ -40,7 +40,7 @@ namespace NScumm.Sci.Engine
             if (reg.Segment == 0) // No numbers
                 return;
 
-            // TODO: debugC(kDebugLevelGC, "[GC] Adding %04x:%04x", PRINT_REG(reg));
+            DebugC(DebugLevels.GC, "[GC] Adding {0}", reg);
 
             if (_map.Contains(reg))
                 return; // already dealt with it
@@ -69,7 +69,7 @@ namespace NScumm.Sci.Engine
             SegManager segMan = s._segMan;
 
             // Some debug stuff
-            // TODO: debugC(kDebugLevelGC, "[GC] Running...");
+            DebugC(DebugLevels.GC, "[GC] Running...");
 # if GC_DEBUG_CODE
             const char* segnames[SEG_TYPE_MAX + 1];
             int segcount[SEG_TYPE_MAX + 1];
@@ -103,7 +103,7 @@ namespace NScumm.Sci.Engine
                         {
                             // Not found . we can free it
                             mobj.FreeAtAddress(segMan, addr);
-                            // TODO: debugC(kDebugLevelGC, "[GC] Deallocating %04x:%04x", PRINT_REG(addr));
+                            DebugC(DebugLevels.GC, "[GC] Deallocating {0}", addr);
 # if GC_DEBUG_CODE
                             segcount[type]++;
 #endif
@@ -115,10 +115,10 @@ namespace NScumm.Sci.Engine
 
 # if GC_DEBUG_CODE
             // Output debug summary of garbage collection
-            // TODO: debugC(kDebugLevelGC, "[GC] Summary:");
+            DebugC(DebugLevels.GC, "[GC] Summary:");
             for (int i = 0; i <= SEG_TYPE_MAX; i++)
                 if (segcount[i])
-                    debugC(kDebugLevelGC, "\t%d\t* %s", segcount[i], segnames[i]);
+            DebugC(DebugLevels.GC, "\t{0}\t* {1}", segcount[i], segnames[i]);
 #endif
         }
 
@@ -145,7 +145,7 @@ namespace NScumm.Sci.Engine
             for (var pos = s.stack_base; pos < sp; pos++)
                 wm.Push(pos[0]);
 
-            // TODO: debugC(kDebugLevelGC, "[GC] -- Finished adding value stack");
+            DebugC(DebugLevels.GC, "[GC] -- Finished adding value stack");
 
             // Init: Execution Stack
             foreach (ExecStack es in s._executionStack)
@@ -159,7 +159,7 @@ namespace NScumm.Sci.Engine
                 }
             }
 
-            // TODO: debugC(kDebugLevelGC, "[GC] -- Finished adding execution stack");
+            DebugC(DebugLevels.GC, "[GC] -- Finished adding execution stack");
 
             var heap = s._segMan.Segments;
             int heapSize = heap.Count;
@@ -178,7 +178,7 @@ namespace NScumm.Sci.Engine
                 }
             }
 
-            // TODO: debugC(kDebugLevelGC, "[GC] -- Finished explicitly loaded scripts, done with root set");
+            DebugC(DebugLevels.GC, "[GC] -- Finished explicitly loaded scripts, done with root set");
 
             ProcessWorkList(s._segMan, wm, heap);
 
@@ -214,7 +214,7 @@ namespace NScumm.Sci.Engine
                 wm._worklist.Remove(reg);
                 if (reg.Segment != stackSegment)
                 { // No need to repeat this one
-                    // TODO: debugC(kDebugLevelGC, "[GC] Checking %04x:%04x", PRINT_REG(reg));
+                    DebugC(DebugLevels.GC, "[GC] Checking {0}", reg);
                     if (reg.Segment < heap.Count && heap[reg.Segment] != null)
                     {
                         // Valid heap object? Find its outgoing references!

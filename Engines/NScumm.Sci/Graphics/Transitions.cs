@@ -750,16 +750,15 @@ namespace NScumm.Sci.Graphics
 
         public void Setup(short number, bool blackoutFlag)
         {
-            if (number != -1)
-            {
+            if (number == -1) return;
+
 # if !DISABLE_TRANSITIONS
-                _number = (SciTransition)number;
+            _number = (SciTransition)number;
 #else
                 _number = SCI_TRANSITIONS_NONE;
 #endif
-                _blackoutFlag = blackoutFlag;
-                // TODO: debugC(kDebugLevelGraphics, "Transition %d, blackout %d", number, blackoutFlag);
-            }
+            _blackoutFlag = blackoutFlag;
+            DebugC(DebugLevels.Graphics, "Transition {0}, blackout {1}", number, blackoutFlag);
         }
     }
 }

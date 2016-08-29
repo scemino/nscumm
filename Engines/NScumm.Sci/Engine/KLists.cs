@@ -47,7 +47,7 @@ namespace NScumm.Sci.Engine
             Register listRef;
             var list = s._segMan.AllocateList(out listRef);
             list.first = list.last = Register.NULL_REG;
-            // TODO: debugC(kDebugLevelNodes, "New listRef at %04x:%04x", PRINT_REG(listRef));
+            DebugC(DebugLevels.Nodes, "New listRef at {0}", listRef);
 
             return listRef; // Return list base address
         }
@@ -93,7 +93,7 @@ namespace NScumm.Sci.Engine
             Register nodeKey = (argc == 2) ? argv[1] : argv[0];
             s.r_acc = s._segMan.NewNode(nodeValue, nodeKey);
 
-            // TODO: debugC(kDebugLevelNodes, "New nodeRef at {s.r_acc}");
+            DebugC(DebugLevels.Nodes, $"New nodeRef at {s.r_acc}");
 
             return s.r_acc;
         }
@@ -351,10 +351,10 @@ namespace NScumm.Sci.Engine
             List list = s._segMan.LookupList(listRef);
             Node newNode = s._segMan.LookupNode(nodeRef);
 
-            // TODO: debugC(kDebugLevelNodes, "Adding node %04x:%04x to end of list %04x:%04x", PRINT_REG(nodeRef), PRINT_REG(listRef));
+            DebugC(DebugLevels.Nodes, "Adding node {0} to end of list {1}", nodeRef, listRef);
 
             if (newNode == null)
-                throw new InvalidOperationException("Attempt to add non-node ({nodeRef}) to list at {listRef}");
+                throw new InvalidOperationException($"Attempt to add non-node ({nodeRef}) to list at {listRef}");
 
 # if CHECK_LISTS
             checkListPointer(s._segMan, listRef);
@@ -378,10 +378,10 @@ namespace NScumm.Sci.Engine
             List list = s._segMan.LookupList(listRef);
             Node newNode = s._segMan.LookupNode(nodeRef);
 
-            // TODO: debugC(kDebugLevelNodes, "Adding node %04x:%04x to end of list %04x:%04x", PRINT_REG(nodeRef), PRINT_REG(listRef));
+            DebugC(DebugLevels.Nodes, "Adding node {0} to end of list {1}", nodeRef, listRef);
 
             if (newNode == null)
-                throw new InvalidOperationException("Attempt to add non-node ({nodeRef}) to list at {listRef}");
+                throw new InvalidOperationException($"Attempt to add non-node ({nodeRef}) to list at {listRef}");
 
 # if CHECK_LISTS
             checkListPointer(s._segMan, listRef);

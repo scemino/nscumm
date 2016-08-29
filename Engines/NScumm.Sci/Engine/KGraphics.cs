@@ -506,7 +506,7 @@ namespace NScumm.Sci.Engine
 
             celCount = SciEngine.Instance._gfxCache.KernelViewGetCelCount(viewId, loopNo);
 
-            // TODO: debugC(kDebugLevelGraphics, "NumCels(view.%d, %d) = %d", viewId, loopNo, celCount);
+            DebugC(DebugLevels.Graphics, "NumCels(view.{0}, {1}) = {2}", viewId, loopNo, celCount);
 
             return Register.Make(0, (ushort)celCount);
         }
@@ -519,7 +519,7 @@ namespace NScumm.Sci.Engine
 
             loopCount = SciEngine.Instance._gfxCache.KernelViewGetLoopCount(viewId);
 
-            // TODO: debugC(kDebugLevelGraphics, "NumLoops(view.%d) = %d", viewId, loopCount);
+            DebugC(DebugLevels.Graphics, "NumLoops(view.{0}) = {1}", viewId, loopCount);
 
             return Register.Make(0, (ushort)loopCount);
         }
@@ -1019,7 +1019,7 @@ namespace NScumm.Sci.Engine
 
             if (dest == StackPtr.Null)
             {
-                // TODO: debugC(kDebugLevelStrings, "GetTextSize: Empty destination");
+                DebugC(DebugLevels.Strings, "GetTextSize: Empty destination");
                 return s.r_acc;
             }
 
@@ -1036,7 +1036,7 @@ namespace NScumm.Sci.Engine
             if (string.IsNullOrEmpty(text))
             { // Empty text
                 dest[2] = dest[3] = Register.Make(0, 0);
-                // TODO: debugC(kDebugLevelStrings, "GetTextSize: Empty string");
+                DebugC(DebugLevels.Strings, "GetTextSize: Empty string");
                 return s.r_acc;
             }
 
@@ -1072,7 +1072,7 @@ namespace NScumm.Sci.Engine
                 }
             }
 
-            // TODO: debugC(kDebugLevelStrings, "GetTextSize '%s' . %dx%d", text, textWidth, textHeight);
+            DebugC(DebugLevels.Strings, "GetTextSize '{0}' . {1}x{2}", text, textWidth, textHeight);
             if (ResourceManager.GetSciVersion() <= SciVersion.V1_1)
             {
                 dest[2] = Register.Make(0, (ushort)textHeight);
@@ -1225,13 +1225,13 @@ namespace NScumm.Sci.Engine
             switch (type)
             {
                 case ControlType.BUTTON:
-                    // TODO: debugC(kDebugLevelGraphics, "drawing button %04x:%04x to %d,%d", PRINT_REG(controlObject), x, y);
+                    DebugC(DebugLevels.Graphics, "drawing button {0} to {1},{2}", controlObject, x, y);
                     SciEngine.Instance._gfxControls16.KernelDrawButton(rect, controlObject, splitText, languageSplitter, fontId, (ControlStateFlags)style, hilite);
                     return;
 
                 case ControlType.TEXT:
                     alignment = (short)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.mode);
-                    // TODO: debugC(kDebugLevelGraphics, "drawing text %04x:%04x ('%s') to %d,%d, mode=%d", PRINT_REG(controlObject), text, x, y, alignment);
+                    DebugC(DebugLevels.Graphics, "drawing text {0} ('{1}') to {2},{3}, mode={4}", controlObject, text, x, y, alignment);
                     SciEngine.Instance._gfxControls16.KernelDrawText(rect, controlObject, splitText, languageSplitter, fontId, alignment, (ControlStateFlags)style, hilite);
                     s.r_acc = SciEngine.Instance._gfxText16.AllocAndFillReferenceRectArray();
                     return;
@@ -1246,7 +1246,7 @@ namespace NScumm.Sci.Engine
                         cursorPos = (short)text.Length;
                         SciEngine.WriteSelectorValue(s._segMan, controlObject, o => o.cursor, (ushort)cursorPos);
                     }
-                    // TODO: debugC(kDebugLevelGraphics, "drawing edit control %04x:%04x (text %04x:%04x, '%s') to %d,%d", PRINT_REG(controlObject), PRINT_REG(textReference), text, x, y);
+                    DebugC(DebugLevels.Graphics, "drawing edit control {0} (text {1}, '{2}') to {3},{4}", controlObject, textReference, text, x, y);
                     SciEngine.Instance._gfxControls16.KernelDrawTextEdit(rect, controlObject, splitText, languageSplitter, fontId, mode, (ControlStateFlags)style, cursorPos, maxChars, hilite);
                     return;
 
@@ -1264,7 +1264,7 @@ namespace NScumm.Sci.Engine
                         else
                             priority = -1;
                     }
-                    // TODO: debugC(kDebugLevelGraphics, "drawing icon control %04x:%04x to %d,%d", PRINT_REG(controlObject), x, y - 1);
+                    DebugC(DebugLevels.Graphics, "drawing icon control {0} to {1},{2}", controlObject, x, y - 1);
                     SciEngine.Instance._gfxControls16.KernelDrawIcon(rect, controlObject, viewId, loopNo, celNo, priority, style, hilite);
                     return;
 
@@ -1320,7 +1320,7 @@ namespace NScumm.Sci.Engine
                         }
                     }
 
-                    // TODO: debugC(kDebugLevelGraphics, "drawing list control %04x:%04x to %d,%d, diff %d", PRINT_REG(controlObject), x, y, SCI_MAX_SAVENAME_LENGTH);
+                    DebugC(DebugLevels.Graphics, "drawing list control {0} to {1},{2}, diff {3}", controlObject, x, y, SCI_MAX_SAVENAME_LENGTH);
                     SciEngine.Instance._gfxControls16.KernelDrawList(rect, controlObject, maxChars, listCount, listEntries, fontId, (ControlStateFlags)style, upperPos, cursorPos, isAlias, hilite);
                     return;
 

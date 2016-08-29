@@ -232,7 +232,7 @@ namespace NScumm.Sci.Engine
                 seeker = FindBlockSCI0(ScriptObjectTypes.CLASS);
                 mult = 1;
             }
-            else if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+            else if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
             {
                 seeker = new ByteAccess(_heapStart.Data, _heapStart.Offset + 4 + _heapStart.Data.ReadSci11EndianUInt16(_heapStart.Offset + 2) * 2);
                 mult = 2;
@@ -270,7 +270,7 @@ namespace NScumm.Sci.Engine
                         species = (short)seeker.Data.ReadSci11EndianUInt16(seeker.Offset + 12);
                     classpos += 12;
                 }
-                else if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+                else if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
                 {
                     isClass = (seeker.Data.ReadSci11EndianUInt16(seeker.Offset + 14) & SciObject.InfoFlagClass) != 0;  // -info- selector
                     species = (short)seeker.Data.ReadSci11EndianUInt16(seeker.Offset + 10);
@@ -333,7 +333,7 @@ namespace NScumm.Sci.Engine
         {
             if (ResourceManager.GetSciVersion() <= SciVersion.V1_LATE)
                 InitializeObjectsSci0(segMan, segmentId);
-            else if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+            else if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
                 InitializeObjectsSci11(segMan, segmentId);
             else if (ResourceManager.GetSciVersion() == SciVersion.V3)
                 InitializeObjectsSci3(segMan, segmentId);
@@ -483,7 +483,7 @@ namespace NScumm.Sci.Engine
             ushort heapSize = (ushort)_bufSize;
             ushort heapOffset = 0;
 
-            if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+            if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
             {
                 heap = _heapStart;
                 heapSize = (ushort)_heapSize;
@@ -559,7 +559,7 @@ namespace NScumm.Sci.Engine
                 throw new InvalidOperationException($"Attempt to relocate odd variable #{idx}.5e (relative to {block_location:X4})");
             }
             block[idx] = Register.SetSegment(block[idx], segment); // Perform relocation
-            if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+            if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
                 block[idx] = Register.IncOffset(block[idx], (short)scriptSize);
 
             return true;
@@ -580,7 +580,7 @@ namespace NScumm.Sci.Engine
             {
                 _bufSize += script.data.ToUInt16() * 2;
             }
-            else if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+            else if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
             {
                 // In SCI1.1 - SCI2.1, the heap was in a separate space from the script. We append
                 // it to the end of the script, and adjust addressing accordingly.
@@ -644,7 +644,7 @@ namespace NScumm.Sci.Engine
             // Check scripts for matching signatures and patch those, if found
             scriptPatcher.ProcessScript((ushort)_nr, _buf, script.size);
 
-            if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+            if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
             {
                 var heap = resMan.FindResource(new ResourceId(ResourceType.Heap, (ushort)_nr), false);
 
@@ -674,7 +674,7 @@ namespace NScumm.Sci.Engine
                     _localsCount = (ushort)((_buf.ToUInt16(_localsOffset - 2) - 4) >> 1); // half block size
                 }
             }
-            else if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+            else if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
             {
                 if (_buf.ToUInt16(1 + 5) > 0)
                 {   // does the script have an export table?
@@ -980,9 +980,9 @@ namespace NScumm.Sci.Engine
         public override void FreeAtAddress(SegManager segMan, Register addr)
         {
             /*
-		debugC(kDebugLevelGC, "[GC] Freeing script %04x:%04x", PRINT_REG(addr));
+		DebugC(DebugLevels.GC, "[GC] Freeing script {0}", addr);
 		if (_localsSegment)
-			debugC(kDebugLevelGC, "[GC] Freeing locals %04x:0000", _localsSegment);
+			DebugC(DebugLevels.GC, "[GC] Freeing locals {0}:0000", _localsSegment);
 	*/
 
             if (_markedAsDeleted)

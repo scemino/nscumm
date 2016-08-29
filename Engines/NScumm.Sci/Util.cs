@@ -71,10 +71,9 @@ namespace NScumm.Sci
         // LE in SCI1.1 Mac, but BE in SCI32 Mac
         public static ushort ReadSci32EndianUInt16(this byte[] ptr, int offset = 0)
         {
-            if (SciEngine.Instance.Platform == Platform.Macintosh && ResourceManager.GetSciVersion() >= SciVersion.V2_1)
+            if (SciEngine.Instance.Platform == Platform.Macintosh && ResourceManager.GetSciVersion() >= SciVersion.V2_1_EARLY)
                 return ptr.ToUInt16BigEndian(offset);
-            else
-                return ptr.ToUInt16(offset);
+            return ptr.ToUInt16(offset);
         }
     }
 }

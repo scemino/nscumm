@@ -4247,7 +4247,7 @@ namespace NScumm.Sci.Engine
                             if (foundOffset != -1)
                             {
                                 // found, so apply the patch
-                                // TODO: debugC(kDebugLevelScriptPatcher, "Script-Patcher: '%s' on script %d offset %d", curEntry.description, scriptNr, foundOffset);
+                                DebugC(DebugLevels.ScriptPatcher, "Script-Patcher: '{0}' on script {1} offset {2}", curEntry2.description, scriptNr, foundOffset);
                                 ApplyPatch(curEntry2, scriptData, (uint)scriptSize, foundOffset);
                             }
                             applyCount--;

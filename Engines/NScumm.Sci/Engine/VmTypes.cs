@@ -68,14 +68,7 @@ namespace NScumm.Sci.Engine
         {
             get
             {
-                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
-                {
-                    return _offset;
-                }
-                else {
-                    // Return the lower 16 bits from the offset, and the 17th and 18th bits from the segment
-                    return (uint)(((_segment & 0xC000) << 2) | _offset);
-                }
+                return _offset;
             }
         }
 
@@ -83,14 +76,7 @@ namespace NScumm.Sci.Engine
         {
             get
             {
-                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
-                {
-                    return _segment;
-                }
-                else {
-                    // Return the lower 14 bits of the segment
-                    return (ushort)(_segment & 0x3FFF);
-                }
+                return _segment;
             }
         }
 
@@ -125,16 +111,7 @@ namespace NScumm.Sci.Engine
 
         public static Register SetSegment(Register reg, ushort segment)
         {
-            ushort seg;
-            if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
-            {
-                seg = segment;
-            }
-            else {
-                // Set the lower 14 bits of the segment, and preserve the upper 2 ones for the offset
-                seg = (ushort)((reg._segment & 0xC000) | (segment & 0x3FFF));
-            }
-            return Make(seg, reg._offset);
+            return Make(segment, reg._offset);
         }
 
         public ushort ToUInt16()
@@ -149,19 +126,7 @@ namespace NScumm.Sci.Engine
 
         public static Register SetOffset(Register reg, ushort offset)
         {
-            ushort off;
-            ushort seg;
-            if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
-            {
-                seg = reg.Segment;
-                off = offset;
-            }
-            else {
-                // Store the lower 16 bits in the offset, and the 17th and 18th bits in the segment
-                off = (ushort)(offset & 0xFFFF);
-                seg = (ushort)(((offset & 0x30000) >> 2) | (reg._segment & 0x3FFF));
-            }
-            return Make(seg, off);
+            return Make(reg.Segment, offset);
         }
 
         public static Register Make(ushort segment, ushort offset)

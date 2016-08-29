@@ -87,7 +87,7 @@ namespace NScumm.Sci.Engine
                             return Register.NULL_REG;
                         }
 
-                        // TODO: debugC(kDebugLevelSound, "kDoAudio: play sample %d, module %d", number, module);
+                        DebugC(DebugLevels.Sound, "kDoAudio: play sample {0}, module {1}", number, module);
 
                         // return sample length in ticks
                         if (argv[0].ToUInt16() == (ushort)AudioCommands.WPlay)
@@ -96,29 +96,29 @@ namespace NScumm.Sci.Engine
                             return Register.Make(0, (ushort)SciEngine.Instance._audio.StartAudio(module, number));
                     }
                 case AudioCommands.Stop:
-                    // TODO: debugC(kDebugLevelSound, "kDoAudio: stop");
+                    DebugC(DebugLevels.Sound, "kDoAudio: stop");
                     SciEngine.Instance._audio.StopAudio();
                     break;
                 case AudioCommands.Pause:
-                    // TODO: debugC(kDebugLevelSound, "kDoAudio: pause");
+                    DebugC(DebugLevels.Sound, "kDoAudio: pause");
                     SciEngine.Instance._audio.PauseAudio();
                     break;
                 case AudioCommands.Resume:
-                    // TODO: debugC(kDebugLevelSound, "kDoAudio: resume");
+                    DebugC(DebugLevels.Sound, "kDoAudio: resume");
                     SciEngine.Instance._audio.ResumeAudio();
                     break;
                 case AudioCommands.Position:
-                    //debugC(kDebugLevelSound, "kDoAudio: get position");   // too verbose
+                    DebugC(DebugLevels.Sound, "kDoAudio: get position");   // too verbose
                     return Register.Make(0, (ushort)SciEngine.Instance._audio.GetAudioPosition());
                 case AudioCommands.Rate:
-                    // TODO: debugC(kDebugLevelSound, "kDoAudio: set audio rate to %d", argv[1].toUint16());
+                    DebugC(DebugLevels.Sound, "kDoAudio: set audio rate to {0}", argv[1].ToUInt16());
                     SciEngine.Instance._audio.SetAudioRate(argv[1].ToUInt16());
                     break;
                 case AudioCommands.Volume:
                     {
                         short volume = argv[1].ToInt16();
                         volume = (short)ScummHelper.Clip(volume, 0, AudioPlayer.AUDIO_VOLUME_MAX);
-                        // TODO: debugC(kDebugLevelSound, "kDoAudio: set volume to %d", volume);
+                        DebugC(DebugLevels.Sound, "kDoAudio: set volume to {0}", volume);
                         mixer.SetVolumeForSoundType(SoundType.Speech, volume * 2);
                         break;
                     }
@@ -126,7 +126,7 @@ namespace NScumm.Sci.Engine
                     // In SCI1.1: tests for digital audio support
                     if (ResourceManager.GetSciVersion() == SciVersion.V1_1)
                     {
-                        // TODO: debugC(kDebugLevelSound, "kDoAudio: audio capability test");
+                        DebugC(DebugLevels.Sound, "kDoAudio: audio capability test");
                         return Register.Make(0, 1);
                     }
                     short language = argv[1].ToInt16();
@@ -145,7 +145,7 @@ namespace NScumm.Sci.Engine
                         language = (short)SciEngine.Instance.Language;
                     }
 
-                    //TODO: debugC(kDebugLevelSound, "kDoAudio: set language to %d", language);
+                    DebugC(DebugLevels.Sound, "kDoAudio: set language to {0}", language);
 
                     if (language != -1)
                         SciEngine.Instance.ResMan.SetAudioLanguage(language);
@@ -160,7 +160,7 @@ namespace NScumm.Sci.Engine
                     {
                         if (ResourceManager.GetSciVersion() <= SciVersion.V1_1)
                         {
-                            // TODO: debugC(kDebugLevelSound, "kDoAudio: CD audio subop");
+                            DebugC(DebugLevels.Sound, "kDoAudio: CD audio subop");
                             return kDoCdAudio(s, argc - 1, argv + 1);
                         }
                     }

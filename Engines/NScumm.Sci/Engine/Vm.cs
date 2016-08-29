@@ -443,8 +443,8 @@ namespace NScumm.Sci.Engine
                 }
 
                 // TODO: debug
-                //if (activeBreakpointTypes || DebugMan.isDebugChannelEnabled(kDebugLevelScripts))
-                //    debugSelectorCall(send_obj, selector, argc, argp, varp, funcp, s._segMan, selectorType);
+                //if (activeBreakpointTypes!=0 || DebugManager.Instance.IsDebugChannelEnabled(DebugLevels.Scripts))
+                //    DebugSelectorCall(send_obj, selector, argc, argp, varp, funcp, s._segMan, selectorType);
 
                 ExecStack xstack = new ExecStack(work_obj, send_obj, curSP, argc, argp,
                                     0xFFFF, curFP, selector, -1, -1,
@@ -1555,7 +1555,7 @@ namespace NScumm.Sci.Engine
                         case VAR_PARAM:
                             // Out-of-bounds read for a parameter that goes onto stack and hits an uninitialized temp
                             //  We return 0 currently in that case
-                            // TODO: debugC(kDebugLevelVM, "[VM] Read for a parameter goes out-of-bounds, onto the stack and gets uninitialized temp");
+                            DebugC(DebugLevels.VM, "[VM] Read for a parameter goes out-of-bounds, onto the stack and gets uninitialized temp");
                             return Register.NULL_REG;
                     }
                 }
@@ -1653,8 +1653,8 @@ namespace NScumm.Sci.Engine
                     }
                     else
                     {
-                        // TODO: debugC(kDebugLevelVM, "%s", txt.c_str());
-                        // TODO: debugC(kDebugLevelVM, "[VM] Access within stack boundaries; access granted.");
+                        DebugC(DebugLevels.VM, "{0}", txt);
+                        DebugC(DebugLevels.VM, "[VM] Access within stack boundaries; access granted.");
                         return true;
                     }
                 }
@@ -1766,8 +1766,8 @@ namespace NScumm.Sci.Engine
             {
                 // This is same way sierra does it and there are some games, that contain such scripts like
                 //  iceman script 998 (fred::canBeHere, executed right at the start)
-                // TODO: debugC(kDebugLevelVM, "[VM] Invalid property #%d (out of [0..%d]) requested from object %04x:%04x (%s)",
-                //        index, obj.getVarCount(), PRINT_REG(obj.getPos()), s._segMan.getObjectName(obj.getPos()));
+                DebugC(DebugLevels.VM, "[VM] Invalid property #{0} (out of [0..{1}]) requested from object {2} ({3})",
+                        index, obj.VarCount, obj.Pos, s._segMan.GetObjectName(obj.Pos));
                 return new StackPtr(dummyReg, 0);
             }
 

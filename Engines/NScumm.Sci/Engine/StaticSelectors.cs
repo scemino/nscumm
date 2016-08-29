@@ -41,15 +41,15 @@ namespace NScumm.Sci.Engine
             new SelectorRemap { minVersion =          SciVersion.V1_1,maxVersion =         SciVersion.V1_1, name = "cantBeHere",slot =   54 },
 	        // The following are not really needed. They've only been defined to
 	        // ease game debugging.
-	        new SelectorRemap { minVersion =          SciVersion.V1_1, maxVersion =        SciVersion.V2_1,name =    "-objID-",slot = 4096 },
-            new SelectorRemap { minVersion =          SciVersion.V1_1, maxVersion =        SciVersion.V2_1,name =     "-size-",slot = 4097 },
-            new SelectorRemap { minVersion =          SciVersion.V1_1, maxVersion =        SciVersion.V2_1,name = "-propDict-",slot = 4098 },
-            new SelectorRemap { minVersion =          SciVersion.V1_1, maxVersion =        SciVersion.V2_1,name = "-methDict-",slot = 4099 },
-            new SelectorRemap { minVersion =          SciVersion.V1_1, maxVersion =        SciVersion.V2_1,name = "-classScript-", slot = 4100 },
-            new SelectorRemap { minVersion =          SciVersion.V1_1, maxVersion =        SciVersion.V2_1,name =   "-script-", slot = 4101 },
-            new SelectorRemap { minVersion =          SciVersion.V1_1, maxVersion =        SciVersion.V2_1,name =    "-super-", slot = 4102 },
+            new SelectorRemap { minVersion =          SciVersion.V1_1, maxVersion =        SciVersion.V2_1_LATE,name =    "-objID-",slot = 4096 },
+            new SelectorRemap { minVersion =          SciVersion.V1_1, maxVersion =        SciVersion.V2_1_LATE,name =     "-size-",slot = 4097 },
+            new SelectorRemap { minVersion =          SciVersion.V1_1, maxVersion =        SciVersion.V2_1_LATE,name = "-propDict-",slot = 4098 },
+            new SelectorRemap { minVersion =          SciVersion.V1_1, maxVersion =        SciVersion.V2_1_LATE,name = "-methDict-",slot = 4099 },
+            new SelectorRemap { minVersion =          SciVersion.V1_1, maxVersion =        SciVersion.V2_1_LATE,name = "-classScript-", slot = 4100 },
+            new SelectorRemap { minVersion =          SciVersion.V1_1, maxVersion =        SciVersion.V2_1_LATE,name =   "-script-", slot = 4101 },
+            new SelectorRemap { minVersion =          SciVersion.V1_1, maxVersion =        SciVersion.V2_1_LATE,name =    "-super-", slot = 4102 },
 	        //
-	        new SelectorRemap {minVersion =           SciVersion.V1_1, maxVersion =        SciVersion.V2_1, name =     "-info-", slot = 4103 },
+	        new SelectorRemap {minVersion =           SciVersion.V1_1, maxVersion =        SciVersion.V2_1_LATE, name =     "-info-", slot = 4103 },
             new SelectorRemap {minVersion =    SciVersion.NONE,       maxVersion =       SciVersion.NONE, name =           null, slot = 0 }
         };
     }

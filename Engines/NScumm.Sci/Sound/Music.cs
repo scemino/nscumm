@@ -65,10 +65,18 @@ namespace NScumm.Sci.Sound
             int t2;
             bool t3;
 
-            t1 = _map[i]; _map[i] = _map[j]; _map[j] = t1;
-            t2 = _prio[i]; _prio[i] = _prio[j]; _prio[j] = t2;
-            t2 = _voices[i]; _voices[i] = _voices[j]; _voices[j] = t2;
-            t3 = _dontRemap[i]; _dontRemap[i] = _dontRemap[j]; _dontRemap[j] = t3;
+            t1 = _map[i];
+            _map[i] = _map[j];
+            _map[j] = t1;
+            t2 = _prio[i];
+            _prio[i] = _prio[j];
+            _prio[j] = t2;
+            t2 = _voices[i];
+            _voices[i] = _voices[j];
+            _voices[j] = t2;
+            t3 = _dontRemap[i];
+            _dontRemap[i] = _dontRemap[j];
+            _dontRemap[j] = t3;
         }
 
         public void Evict(int i)
@@ -226,7 +234,8 @@ namespace NScumm.Sci.Sound
                     pMidiParser.SetVolume((byte)volume);
                 }
 
-                fadeSetVolume = true; // set flag so that SoundCommandParser::cmdUpdateCues will set the volume of the stream
+                fadeSetVolume = true;
+                // set flag so that SoundCommandParser::cmdUpdateCues will set the volume of the stream
             }
         }
 
@@ -286,15 +295,11 @@ namespace NScumm.Sci.Sound
 
         public bool SoundOn
         {
-            get
-            {
-                return _soundOn;
-            }
+            get { return _soundOn; }
             set
             {
                 lock (_mutex)
                 {
-
                     _soundOn = value;
                     _pMidiDrv.PlaySwitch(value);
                 }
@@ -319,7 +324,10 @@ namespace NScumm.Sci.Sound
             }
         }
 
-        public IList<MusicEntry> PlayList { get { return _playList; } }
+        public IList<MusicEntry> PlayList
+        {
+            get { return _playList; }
+        }
 
         public sbyte GlobalReverb
         {
@@ -338,8 +346,8 @@ namespace NScumm.Sci.Sound
                         {
                             if (item.status == SoundStatus.Playing)
                             {
-                                if (item.reverb == 127)            // Active song has no reverb
-                                    _pMidiDrv.Reverb = value;   // Set the global reverb
+                                if (item.reverb == 127) // Active song has no reverb
+                                    _pMidiDrv.Reverb = value; // Set the global reverb
                                 break;
                             }
                         }
@@ -360,7 +368,10 @@ namespace NScumm.Sci.Sound
             }
         }
 
-        public uint SoundGetTempo { get { return _dwTempo; } }
+        public uint SoundGetTempo
+        {
+            get { return _dwTempo; }
+        }
 
         public MusicEntry ActiveSci0MusicSlot
         {
@@ -418,7 +429,8 @@ namespace NScumm.Sci.Sound
             _dwTempo = 0;
 
             Core.IO.Platform platform = SciEngine.Instance.Platform;
-            MusicDriverTypes deviceFlags = MusicDriverTypes.PCSpeaker | MusicDriverTypes.PCjr | MusicDriverTypes.AdLib | MusicDriverTypes.Midi;
+            MusicDriverTypes deviceFlags = MusicDriverTypes.PCSpeaker | MusicDriverTypes.PCjr | MusicDriverTypes.AdLib |
+                                           MusicDriverTypes.Midi;
 
             // Default to MIDI in SCI2.1+ games, as many don't have AdLib support.
             // Also, default to MIDI for Windows versions of SCI1.1 games, as their
@@ -427,7 +439,8 @@ namespace NScumm.Sci.Sound
             //deviceFlags |= MDT_PREFER_GM;
 
             // Currently our CMS implementation only supports SCI1(.1)
-            if (ResourceManager.GetSciVersion() >= SciVersion.V1_EGA_ONLY && ResourceManager.GetSciVersion() <= SciVersion.V1_1)
+            if (ResourceManager.GetSciVersion() >= SciVersion.V1_EGA_ONLY &&
+                ResourceManager.GetSciVersion() <= SciVersion.V1_1)
                 deviceFlags |= MusicDriverTypes.CMS;
 
             if (SciEngine.Instance.Platform == Core.IO.Platform.FMTowns)
@@ -443,7 +456,8 @@ namespace NScumm.Sci.Sound
 
             if (SciEngine.Instance.Features.UseAltWinGMSound && _musicType != MusicType.GeneralMidi)
             {
-                Warning("A Windows CD version with an alternate MIDI soundtrack has been chosen, but no MIDI music device has been selected. Reverting to the DOS soundtrack");
+                Warning(
+                    "A Windows CD version with an alternate MIDI soundtrack has been chosen, but no MIDI music device has been selected. Reverting to the DOS soundtrack");
                 SciEngine.Instance.Features.ForceDOSTracks();
             }
 
@@ -451,11 +465,10 @@ namespace NScumm.Sci.Sound
             {
                 case MusicType.AdLib:
                     // FIXME: There's no Amiga sound option, so we hook it up to AdLib
-                    // TODO:
-                    //if (SciEngine.Instance.Platform == Core.IO.Platform.Amiga || platform == Core.IO.Platform.Macintosh)
-                    //    _pMidiDrv = MidiPlayer_AmigaMac_create(_soundVersion);
-                    //else
-                    _pMidiDrv = MidiPlayer_AdLib_create(_soundVersion);
+                    if (SciEngine.Instance.Platform == Core.IO.Platform.Amiga || platform == Core.IO.Platform.Macintosh)
+                        _pMidiDrv = new MidiPlayer_AmigaMac(_soundVersion);
+                    else
+                        _pMidiDrv = MidiPlayer_AdLib_create(_soundVersion);
                     break;
                 case MusicType.PCjr:
                     _pMidiDrv = new MidiPlayer_PCJr(_soundVersion);
@@ -466,15 +479,15 @@ namespace NScumm.Sci.Sound
                 case MusicType.CMS:
                     _pMidiDrv = new MidiPlayer_CMS(_soundVersion);
                     break;
-                //    case MusicType.FMTowns:
-                //        _pMidiDrv = MidiPlayer_FMTowns_create(_soundVersion);
-                //        break;
+                case MusicType.FMTowns:
+                    _pMidiDrv = new MidiPlayer_FMTowns(_soundVersion);
+                    break;
                 default:
-                    //if (ConfigManager.Instance.Get<bool>("native_fb01"))
-                    //{
-                        //_pMidiDrv = MidiPlayer_Fb01_create(_soundVersion);
-                    //}
-                    //else
+                    if (ConfigManager.Instance.Get<bool>("native_fb01"))
+                    {
+                        _pMidiDrv = new MidiPlayer_Fb01(_soundVersion);
+                    }
+                    else
                     {
                         _pMidiDrv = new MidiPlayer_Midi(_soundVersion);
                     }
@@ -575,7 +588,6 @@ namespace NScumm.Sci.Sound
                     pSnd.pMidiParser.MainThreadEnd();
                     pSnd.pMidiParser = null;
                 }
-
             }
 
             if (pSnd.pStreamAud != null)
@@ -645,14 +657,15 @@ namespace NScumm.Sci.Sound
                     alreadyPlaying = _playList[i];
             }
             if (playListNo == playListCount)
-            { // not found
+            {
+                // not found
                 _playList.Add(pSnd);
             }
 
             pSnd.time = ++_timeCounter;
             SortPlayList();
 
-            Monitor.Exit(_mutex);    // unlock to perform mixer-related calls
+            Monitor.Exit(_mutex); // unlock to perform mixer-related calls
 
             if (pSnd.pMidiParser != null)
             {
@@ -682,7 +695,8 @@ namespace NScumm.Sci.Sound
             {
                 if (!_mixer.IsSoundHandleActive(pSnd.hCurrentAud))
                 {
-                    if ((_currentlyPlayingSample != null) && (_mixer.IsSoundHandleActive(_currentlyPlayingSample.hCurrentAud)))
+                    if ((_currentlyPlayingSample != null) &&
+                        (_mixer.IsSoundHandleActive(_currentlyPlayingSample.hCurrentAud)))
                     {
                         // Another sample is already playing, we have to stop that one
                         // SSCI is only able to play 1 sample at a time
@@ -692,7 +706,8 @@ namespace NScumm.Sci.Sound
                         // TODO: SSCI actually calls kDoAudio(play) internally, which stops other samples from being played
                         //        but such a change isn't trivial, because we also handle Sound resources in here, that contain samples
                         _mixer.StopHandle(_currentlyPlayingSample.hCurrentAud);
-                        Warning("kDoSound: sample already playing, old resource {0}, new resource {1}", _currentlyPlayingSample.resourceId, pSnd.resourceId);
+                        Warning("kDoSound: sample already playing, old resource {0}, new resource {1}",
+                            _currentlyPlayingSample.resourceId, pSnd.resourceId);
                     }
                     // Sierra SCI ignores volume set when playing samples via kDoSound
                     //  At least freddy pharkas/CD has a script bug that sets volume to 0
@@ -701,8 +716,8 @@ namespace NScumm.Sci.Sound
                     {
                         pSnd.pLoopStream = new LoopingAudioStream(pSnd.pStreamAud, pSnd.loop, false);
                         pSnd.hCurrentAud = _mixer.PlayStream(pSnd.soundType,
-                                                pSnd.pLoopStream, -1, Mixer.MaxChannelVolume, 0,
-                                                false);
+                            pSnd.pLoopStream, -1, Mixer.MaxChannelVolume, 0,
+                            false);
                     }
                     else
                     {
@@ -710,8 +725,8 @@ namespace NScumm.Sci.Sound
                         // (non-looped) like in pharkas right at the start
                         pSnd.pStreamAud.Rewind();
                         pSnd.hCurrentAud = _mixer.PlayStream(pSnd.soundType,
-                                                pSnd.pStreamAud, -1, Mixer.MaxChannelVolume, 0,
-                                                false);
+                            pSnd.pStreamAud, -1, Mixer.MaxChannelVolume, 0,
+                            false);
                     }
                     // Remember the sample, that is now playing
                     _currentlyPlayingSample = pSnd;
@@ -825,7 +840,6 @@ namespace NScumm.Sci.Sound
 
             lock (_mutex)
             {
-
                 foreach (var item in PlayList)
                 {
                     if (item.pMidiParser != null)
@@ -951,7 +965,6 @@ namespace NScumm.Sci.Sound
             // First, set up any dontRemap channels
             for (int i = 0; i < 16; ++i)
             {
-
                 if (map._map[i]._song == null || map._map[i]._song.pMidiParser == null || !map._dontRemap[i])
                     continue;
 
@@ -976,14 +989,12 @@ namespace NScumm.Sci.Sound
                     _channelMap[i]._song.pMidiParser.RemapChannel(_channelMap[i]._channel, i);
                     if (mainThread) _channelMap[i]._song.pMidiParser.MainThreadEnd();
                 }
-
             }
 
             // Next, we look for channels which were already playing.
             // We keep those on the same device channel as before.
             for (int i = 0; i < 16; ++i)
             {
-
                 if (map._map[i]._song == null)
                     continue;
 
@@ -1040,7 +1051,6 @@ namespace NScumm.Sci.Sound
                         break;
                     }
                 }
-
             }
 
             // And finally, stop any empty channels
@@ -1405,7 +1415,8 @@ namespace NScumm.Sci.Sound
                         flags = 0;
                     int endPart = track.digitalSampleEnd > 0 ? (track.digitalSampleSize - track.digitalSampleEnd) : 0;
                     pSnd.pStreamAud = new RawStream(flags, track.digitalSampleRate, false,
-                        new MemoryStream(channelData.Data, channelData.Offset + track.digitalSampleStart, track.digitalSampleSize - track.digitalSampleStart - endPart));
+                        new MemoryStream(channelData.Data, channelData.Offset + track.digitalSampleStart,
+                            track.digitalSampleSize - track.digitalSampleStart - endPart));
                     pSnd.pLoopStream.DisposeIfNotNull();
                     pSnd.pLoopStream = null;
                     pSnd.soundType = SoundType.SFX;
@@ -1430,7 +1441,8 @@ namespace NScumm.Sci.Sound
                         pSnd.pauseCounter = 0;
 
                         // Find out what channels to filter for SCI0
-                        channelFilterMask = pSnd.soundRes.GetChannelFilterMask(_pMidiDrv.PlayId, _pMidiDrv.HasRhythmChannel);
+                        channelFilterMask = pSnd.soundRes.GetChannelFilterMask(_pMidiDrv.PlayId,
+                            _pMidiDrv.HasRhythmChannel);
 
                         for (int i = 0; i < 16; ++i)
                             pSnd._usedChannels[i] = 0xFF;

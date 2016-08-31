@@ -1434,7 +1434,7 @@ namespace NScumm.Sci.Engine
                     LogKernelCall(kernelCall, null, s, argc, argv, s.r_acc);
                 if (kernelCall.debugBreakpoint)
                 {
-                    // TODO: debugN("Break on k%s\n", kernelCall.name);
+                    DebugN("Break on k{0}\n", kernelCall.name);
                     SciEngine.Instance._debugState.debugging = true;
                     SciEngine.Instance._debugState.breakpointWasHit = true;
                 }
@@ -1491,7 +1491,7 @@ namespace NScumm.Sci.Engine
                     LogKernelCall(kernelCall, kernelSubCall, s, argc, argv, s.r_acc);
                 if (kernelSubCall.debugBreakpoint)
                 {
-                    // TODO: debugN("Break on k%s\n", kernelSubCall.name);
+                    DebugN("Break on k{0}\n", kernelSubCall.name);
                     SciEngine.Instance._debugState.debugging = true;
                     SciEngine.Instance._debugState.breakpointWasHit = true;
                 }

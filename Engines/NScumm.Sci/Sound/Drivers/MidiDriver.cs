@@ -22,7 +22,10 @@ namespace NScumm.Sci.Sound.Drivers
 {
     abstract class MidiPlayer : MidiDriverBase
     {
+        public const int MIDI_CHANNELS = 16;
         public const int MIDI_PROP_MASTER_VOLUME = 0;
+
+        public const int SCI_MIDI_SET_POLYPHONY = 0x4B;
         public const int SCI_MIDI_CHANNEL_SOUND_OFF = 0x78; /* all-sound-off for Bn */
         public const int SCI_MIDI_CHANNEL_NOTES_OFF = 0x7B; /* all-notes-off for Bn */
 
@@ -93,7 +96,7 @@ namespace NScumm.Sci.Sound.Drivers
             if (!play)
             {
                 // Send "All Sound Off" on all channels
-                for (int i = 0; i < MidiDriver_AdLib.MIDI_CHANNELS; ++i)
+                for (int i = 0; i < MIDI_CHANNELS; ++i)
                     _driver.Send((byte)(0xb0 + i), SCI_MIDI_CHANNEL_NOTES_OFF, 0);
             }
         }

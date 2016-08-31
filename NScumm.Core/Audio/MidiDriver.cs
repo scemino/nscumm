@@ -144,7 +144,8 @@ namespace NScumm.Core.Audio
         CannotConnect = 1,
         //      MERR_STREAMING_NOT_AVAILABLE = 2,
         DeviceNotAvailable = 3,
-        AlreadyOpen = 4
+        AlreadyOpen = 4,
+        UnknownError               ///< Catch-all error, used if no other error code matches
     }
 
     public abstract class MidiDriver : MidiDriverBase, IDisposable

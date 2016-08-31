@@ -86,7 +86,7 @@ namespace NScumm.Core
 
         public override int GetHashCode()
         {
-            return Data == null ? 0 : Data.GetHashCode() ^ Offset ;
+            return Data == null ? 0 : Data.GetHashCode() ^ Offset;
         }
     }
 

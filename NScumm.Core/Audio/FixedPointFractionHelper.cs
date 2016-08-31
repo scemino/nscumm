@@ -21,7 +21,7 @@
 
 namespace NScumm.Core.Audio
 {
-    static class FixedPointFractionHelper
+    public static class FixedPointFractionHelper
     {
         public const int FRAC_BITS = 16;
         public const long FRAC_LO_MASK = ((1L << FRAC_BITS) - 1);

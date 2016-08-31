@@ -210,6 +210,11 @@ namespace NScumm.Core
             return SwapBytes(reader.ReadUInt32());
         }
 
+        public static int ReadInt32BigEndian(this BinaryReader reader)
+        {
+            return (int)reader.ReadUInt32BigEndian();
+        }
+
         public static int[] ReadInt32s(this BinaryReader reader, int count)
         {
             int[] values = new int[count];

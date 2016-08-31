@@ -924,7 +924,7 @@ namespace NScumm.Sci.Engine
             int i;
             Point point;
 
-            // TODO: debugN(-1, "%i:", type);
+            DebugN(-1, "{0}:", type);
 
             SegmentRef pointList = segMan.Dereference(points);
             if (!pointList.IsValid || pointList.skipByte)
@@ -936,7 +936,7 @@ namespace NScumm.Sci.Engine
             for (i = 0; i < size; i++)
             {
                 point = ReadPoint(pointList, i);
-                // TODO: debugN(-1, " (%i, %i)", point.x, point.y);
+                DebugN(-1, " ({0}, {1})", point.X, point.Y);
             }
 
             point = ReadPoint(pointList, 0);

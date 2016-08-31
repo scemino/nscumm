@@ -410,7 +410,7 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             }
             if (IsPCM)
             {
-                useLA32Pair.InitPCM(pairType, new Ptr<short>(synth.pcmROMData,pcmWave.addr), pcmWave.len, pcmWave.loop);
+                useLA32Pair.InitPCM(pairType, new Ptr<short>(synth.pcmROMData,pcmWave.addr*2), pcmWave.len, pcmWave.loop);
             }
             else {
                 useLA32Pair.InitSynth(pairType, (patchCache.waveform & 1) != 0, (byte)pulseWidthVal, (byte)(patchCache.srcPartial.tvf.resonance + 1));

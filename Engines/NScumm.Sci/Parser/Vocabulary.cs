@@ -50,7 +50,7 @@ namespace NScumm.Sci.Parser
         /// <summary>
         /// Word group
         /// </summary>
-        public int _group;
+        public uint _group;
     }
 
     internal class ResultWordList : List<ResultWord>
@@ -231,7 +231,7 @@ namespace NScumm.Sci.Parser
     internal class ParseTreeBranch
     {
         public int id;
-        public int[] data = new int[10];
+        public uint[] data = new uint[10];
     }
 
     internal class AltInput
@@ -610,14 +610,14 @@ namespace NScumm.Sci.Parser
             var rule = new ParseRule(turkey);
             rule._numSpecials += stuffing._numSpecials - 1;
             rule._firstSpecial = firstnt + stuffing._firstSpecial;
-            var tmp = new int[turkey._data.Count - 1 + stuffing._data.Count];
+            var tmp = new uint[turkey._data.Count - 1 + stuffing._data.Count];
 
             // Replace rule._data[firstnt] by all of stuffing._data
-            Array.Copy(stuffing._data.ToArray(), 0, tmp, (int)firstnt, stuffing._data.Count);
+            Array.Copy(stuffing._data.ToArray(), 0, tmp, firstnt, stuffing._data.Count);
 
             if (firstnt < turkey._data.Count - 1)
             {
-                Array.Copy(turkey._data.ToArray(), (int)(firstnt + 1), tmp, (int)(firstnt + stuffing._data.Count), (int)(turkey._data.Count - (firstnt + 1)));
+                Array.Copy(turkey._data.ToArray(), firstnt + 1, tmp, firstnt + stuffing._data.Count, turkey._data.Count - (firstnt + 1));
             }
 
             rule._data = tmp.ToList();
@@ -706,7 +706,7 @@ namespace NScumm.Sci.Parser
 
             while (tokenpos < 10 && branch.data[tokenpos] != 0)
             {
-                int type = branch.data[tokenpos];
+                uint type = branch.data[tokenpos];
                 tokenpos += 2;
 
                 if ((type == VOCAB_TREE_NODE_COMPARE_TYPE) || (type == VOCAB_TREE_NODE_COMPARE_GROUP) || (type == VOCAB_TREE_NODE_FORCE_STORAGE))
@@ -722,14 +722,14 @@ namespace NScumm.Sci.Parser
             ++ParseRule._allocd_rules;
             rule._id = branch.id;
             rule._numSpecials = (uint)tokenpos >> 1;
-            rule._data = new int[tokens].ToList();
+            rule._data = new uint[tokens].ToList();
             rule._firstSpecial = 0;
 
             tokens = 0;
             for (i = 0; i < tokenpos; i += 2)
             {
-                int type = branch.data[i];
-                int value = branch.data[i + 1];
+                uint type = branch.data[i];
+                uint value = branch.data[i + 1];
 
                 if (type == VOCAB_TREE_NODE_COMPARE_TYPE)
                     rule._data[tokens++] = value | ParseRuleList.TOKEN_TERMINAL_CLASS;
@@ -740,7 +740,7 @@ namespace NScumm.Sci.Parser
                 else { // normal inductive rule
                     unchecked
                     {
-                        rule._data[tokens++] = (int)(ParseRuleList.TOKEN_OPAREN);
+                        rule._data[tokens++] = ParseRuleList.TOKEN_OPAREN;
                     }
                     rule._data[tokens++] = type | ParseRuleList.TOKEN_STUFFING_LEAF;
                     rule._data[tokens++] = value | ParseRuleList.TOKEN_STUFFING_LEAF;
@@ -751,7 +751,7 @@ namespace NScumm.Sci.Parser
                     rule._data[tokens++] = value; // The non-terminal
                     unchecked
                     {
-                        rule._data[tokens++] = (int)ParseRuleList.TOKEN_CPAREN;
+                        rule._data[tokens++] = ParseRuleList.TOKEN_CPAREN;
                     }
                 }
             }
@@ -923,7 +923,7 @@ namespace NScumm.Sci.Parser
                 var newWord = new ResultWord
                 {
                     _class = ((resource.data[seeker]) << 4) | ((c & 0xf0) >> 4),
-                    _group = (resource.data[seeker + 2]) | ((c & 0x0f) << 8)
+                    _group = (uint)((resource.data[seeker + 2]) | ((c & 0x0f) << 8))
                 };
 
                 // SCI01 was the first version to support multiple class/group pairs
@@ -1158,7 +1158,7 @@ namespace NScumm.Sci.Parser
                     {
                         if (seeker.rule._numSpecials != 0)
                         {
-                            int my_id = seeker.rule._data[seeker.rule._firstSpecial];
+                            uint my_id = seeker.rule._data[seeker.rule._firstSpecial];
 
                             subseeker = _parserRules;
                             while (subseeker != null)

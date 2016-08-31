@@ -99,14 +99,14 @@ namespace NScumm.Sci.Parser
 
         private static void vocab_dump_parse_tree(string tree_name, ParseTreeNode[] nodes)
         {
-            // TODO: debugN("(setq %s \n'(", tree_name);
+            DebugN("(setq {0} \n'(", tree_name);
             _vocab_recursive_ptree_dump(nodes[0], 1);
-            // TODO: debugN("))\n");
+            DebugN("))\n");
         }
 
         private static void _vocab_recursive_ptree_dump(ParseTreeNode tree, int blanks)
         {
-            //assert(tree);
+            System.Diagnostics.Debug.Assert(tree!=null);
 
             ParseTreeNode lbranch = tree.left;
             ParseTreeNode rbranch = tree.right;
@@ -114,7 +114,7 @@ namespace NScumm.Sci.Parser
 
             if (tree.type == ParseTypes.LeafNode)
             {
-                // TODO: debugN("vocab_dump_parse_tree: Error: consp is nil\n");
+                DebugN("vocab_dump_parse_tree: Error: consp is nil\n");
                 return;
             }
 
@@ -122,18 +122,18 @@ namespace NScumm.Sci.Parser
             {
                 if (lbranch.type == ParseTypes.BranchNode)
                 {
-                    //debugN("\n");
-                    //for (i = 0; i < blanks; i++)
-                    //    debugN("    ");
-                    //debugN("(");
+                    DebugN("\n");
+                    for (i = 0; i < blanks; i++)
+                        DebugN("    ");
+                    DebugN("(");
                     _vocab_recursive_ptree_dump(lbranch, blanks + 1);
-                    //debugN(")\n");
-                    //for (i = 0; i < blanks; i++)
-                    //    debugN("    ");
+                    DebugN(")\n");
+                    for (i = 0; i < blanks; i++)
+                        DebugN("    ");
                 }
-                //else
-                //    debugN("%x", lbranch.value);
-                //debugN(" ");
+                else
+                    DebugN("{0:X}", lbranch.value);
+                DebugN(" ");
             }/* else debugN ("nil");*/
 
             if (rbranch != null)
@@ -142,11 +142,11 @@ namespace NScumm.Sci.Parser
                     _vocab_recursive_ptree_dump(rbranch, blanks);
                 else
                 {
-                    //debugN("%x", rbranch.value);
+                    DebugN("{0:X}", rbranch.value);
                     while (rbranch.right != null)
                     {
                         rbranch = rbranch.right;
-                        //debugN("/%x", rbranch.value);
+                        DebugN("/{0}", rbranch.value);
                     }
                 }
             }/* else debugN("nil");*/

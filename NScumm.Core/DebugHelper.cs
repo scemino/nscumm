@@ -46,7 +46,9 @@ namespace NScumm.Core
 
     public class DebugManager
     {
-        private readonly Dictionary<string, DebugChannel> gDebugChannels = new Dictionary<string, DebugChannel>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, DebugChannel> gDebugChannels =
+            new Dictionary<string, DebugChannel>(StringComparer.OrdinalIgnoreCase);
+
         private int gDebugChannelsEnabled;
 
         public static readonly DebugManager Instance = new DebugManager();
@@ -155,6 +157,19 @@ namespace NScumm.Core
         public static void Debug(string format, params object[] args)
         {
             ServiceLocator.Platform.LogMessage(LogMessageType.Debug, format, args);
+        }
+
+        public static void DebugN(string format, params object[] args)
+        {
+            ServiceLocator.Platform.LogMessage(LogMessageType.Debug, format + Environment.NewLine, args);
+        }
+
+        public static void DebugN(int level, string format, params object[] args)
+        {
+            if (level > DebugLevel)
+                return;
+            
+            ServiceLocator.Platform.LogMessage(LogMessageType.Debug, format + Environment.NewLine, args);
         }
 
         public static void Warning(string format, params object[] args)

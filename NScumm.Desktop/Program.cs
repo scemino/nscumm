@@ -84,7 +84,7 @@ namespace NScumm
                 AudioDevice = options.MusicDriver,
                 CopyProtection = options.CopyProtection,
                 BootParam = options.BootParam,
-                Switches = options.Switches
+                Switches = options.Switches ?? string.Empty
             };
 
             // Set default values for all of the custom engine options

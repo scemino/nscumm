@@ -41,7 +41,7 @@ namespace NScumm.Sci.Parser
         /// <summary>
         /// actual data
         /// </summary>
-        public List<int> _data;
+        public List<uint> _data;
 
         public ParseRule()
         {
@@ -52,7 +52,7 @@ namespace NScumm.Sci.Parser
             _id = rule._id;
             _firstSpecial = rule._firstSpecial;
             _numSpecials = rule._numSpecials;
-            _data = new List<int>(rule._data);
+            _data = new List<uint>(rule._data);
         }
 
         ~ParseRule()
@@ -99,7 +99,7 @@ namespace NScumm.Sci.Parser
             return !(r1 == r2);
         }
 
-        public static ParseRuleList _vocab_clone_rule_list_by_id(ParseRuleList list, int id)
+        public static ParseRuleList _vocab_clone_rule_list_by_id(ParseRuleList list, uint id)
         {
             ParseRuleList result = null;
             ParseRuleList seeker = list;
@@ -124,9 +124,9 @@ namespace NScumm.Sci.Parser
             var dep = rule._data[rule._firstSpecial];
 
             int count = 0;
-            int match = 0;
+            uint match = 0;
             // TODO: Inserting an array in the middle of another array is slow
-            var matches = new List<int>();
+            var matches = new List<uint>();
 
             // We store the first match in 'match', and any subsequent matches in
             // 'matches'. 'match' replaces the special in the rule, and 'matches' gets
@@ -156,7 +156,7 @@ namespace NScumm.Sci.Parser
                 { // find first special, if it exists
                     for (var i = rule._firstSpecial; i < retval._data.Count; ++i)
                     {
-                        int tmp = retval._data[i];
+                        var tmp = retval._data[i];
                         if ((tmp & ParseRuleList.TOKEN_NON_NT) == 0 || (tmp & ParseRuleList.TOKEN_TERMINAL) != 0)
                         {
                             retval._firstSpecial = i;
@@ -215,15 +215,76 @@ namespace NScumm.Sci.Parser
                         writepos = _vbpt_append_word(nodes, ref pos, writepos, (int)(token & 0xffff));
                 }
                 else {
-                    // TODO: warning("\nError in parser (grammar.cpp, _vbpt_write_subexpression()): Rule data broken in rule ");
-                    // TODO: vocab_print_rule(rule);
-                    // TODO: debugN(", at token position %d\n", *pos);
+                    Warning("\nError in parser (grammar.cpp, _vbpt_write_subexpression()): Rule data broken in rule ");
+                    vocab_print_rule(rule);
+                    DebugN(", at token position {0}\n", pos);
                     return rulepos;
                 }
             }
 
             return rulepos;
         }
+
+        private static void vocab_print_rule(ParseRule rule)
+        {
+            int wspace = 0;
+
+            if (rule==null)
+            {
+                Warning("NULL rule");
+                return;
+            }
+
+            DebugN("[%03x] . ", rule._id);
+
+            if (rule._data.Count==0)
+                DebugN("e");
+
+            for (var i = 0; i < rule._data.Count; i++)
+            {
+                var token = rule._data[i];
+
+                if (token == ParseRuleList.TOKEN_OPAREN)
+                {
+                    if (i == rule._firstSpecial)
+                        DebugN("_");
+
+                    DebugN("(");
+                    wspace = 0;
+                }
+                else if (token == ParseRuleList.TOKEN_CPAREN)
+                {
+                    if (i == rule._firstSpecial)
+                        DebugN("_");
+
+                    DebugN(")");
+                    wspace = 0;
+                }
+                else {
+                    if (wspace!=0)
+                        DebugN(" ");
+
+                    if (i == rule._firstSpecial)
+                        DebugN("_");
+                    if ((token & ParseRuleList.TOKEN_TERMINAL_CLASS)!=0)
+                        DebugN("C(%04x)", token & 0xffff);
+                    else if ((token & ParseRuleList.TOKEN_TERMINAL_GROUP)!= 0)
+                        DebugN("G(%04x)", token & 0xffff);
+                    else if ((token & ParseRuleList.TOKEN_STUFFING_LEAF)!= 0)
+                        DebugN("%03x", token & 0xffff);
+                    else if ((token & ParseRuleList.TOKEN_STUFFING_WORD)!= 0)
+                        DebugN("{%03x}", token & 0xffff);
+                    else
+                        DebugN("[%03x]", token); /* non-terminal */
+                    wspace = 1;
+                }
+
+                if (i == rule._firstSpecial)
+                    DebugN("_");
+            }
+            DebugN(" [%d specials]", rule._numSpecials);
+        }
+
 
         private static int _vbpt_terminate(ParseTreeNode[] nodes, ref int pos, int @base, int value)
         {
@@ -295,7 +356,7 @@ namespace NScumm.Sci.Parser
 
             if (list != null)
             {
-                int term = new_elem.terminal;
+                var term = new_elem.terminal;
                 /*		if (term < list.terminal) {
                             new_elem.next = list;
                             return new_elem;
@@ -340,14 +401,14 @@ namespace NScumm.Sci.Parser
         /// <summary>
         /// Terminal character this rule matches against or 0 for a non-terminal rule
         /// </summary>
-        public int terminal;
+        public uint terminal;
         public ParseRule rule;
         public ParseRuleList next;
 
         public ParseRuleList(ParseRule r)
         {
             rule = r;
-            int term = rule._data[rule._firstSpecial];
+            var term = rule._data[rule._firstSpecial];
             terminal = ((term & TOKEN_TERMINAL) != 0 ? term : 0);
         }
 

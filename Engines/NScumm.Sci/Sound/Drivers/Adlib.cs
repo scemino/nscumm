@@ -34,7 +34,6 @@ namespace NScumm.Sci.Sound.Drivers
     internal class MidiDriver_AdLib : EmulatedMidiDriver
     {
         private const bool STEREO = true;
-        public const int MIDI_CHANNELS = 16;
 
         private const int LeftChannel = 1;
         private const int RightChannel = 2;
@@ -308,7 +307,7 @@ namespace NScumm.Sci.Sound.Drivers
             _rhythmKeyMap = null;
             _opl = null;
             _patches = new List<AdLibPatch>();
-            _channels = new Channel[MIDI_CHANNELS];
+            _channels = new Channel[MidiPlayer.MIDI_CHANNELS];
             for (int i = 0; i < _channels.Length; i++)
             {
                 _channels[i] = new Channel();
@@ -717,7 +716,7 @@ namespace NScumm.Sci.Sound.Drivers
             if (freeVoices == 0)
                 return;
 
-            for (int i = 0; i < MIDI_CHANNELS; i++)
+            for (int i = 0; i < MidiPlayer.MIDI_CHANNELS; i++)
             {
                 if (_channels[i].extraVoices >= freeVoices)
                 {

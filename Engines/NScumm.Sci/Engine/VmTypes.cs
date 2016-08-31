@@ -17,6 +17,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
 {
@@ -247,9 +248,8 @@ namespace NScumm.Sci.Engine
                 // would indicate either a script bug, or a modulo on an unsigned
                 // integer larger than 32767. In any case, such a case should be
                 // investigated, instead of being silently accepted.
-                // TODO:
-                //if (getSciVersion() <= SCI_VERSION_0_LATE && (toSint16() < 0 || right.toSint16() < 0))
-                //    warning("Modulo of a negative number has been requested for SCI0. This *could* lead to issues");
+                if (ResourceManager.GetSciVersion() <= SciVersion.V0_LATE && (left.ToInt16() < 0 || right.ToInt16() < 0))
+                    Warning("Modulo of a negative number has been requested for SCI0. This *could* lead to issues");
                 short value = left.ToInt16();
                 short modulo = Math.Abs(right.ToInt16());
                 short result = (short)(value % modulo);

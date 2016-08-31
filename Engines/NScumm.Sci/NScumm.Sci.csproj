@@ -55,8 +55,12 @@
     <Compile Include="SciEngine.cs" />
     <Compile Include="SciMetaEngine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Sound\Drivers\MidiDriver_AmigaMac.cs" />
     <Compile Include="Sound\Drivers\MidiDriver_CMS.cs" />
+    <Compile Include="Sound\Drivers\MidiDriver_FMTowns.cs" />
     <Compile Include="Sound\Drivers\MidiDriver_PCJr.cs" />
+    <Compile Include="Sound\Drivers\MidiPlayer_Fb01.cs" />
+    <Compile Include="Sound\Drivers\MidiPlayer_FMTowns.cs" />
     <Compile Include="Sound\Drivers\MidiPlayer_Midi.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="Sound\MidiParserSci.cs" />
@@ -119,9 +123,6 @@
     <Compile Include="Engine\Script.cs" />
     <Compile Include="Engine\ScriptPatcher.cs" />
     <Compile Include="Graphics\Screen.cs" />
-    <Compile Include="Sound\Drivers\MidiDriver_CMS.cs" />
-    <Compile Include="Sound\Drivers\MidiDriver_PCJr.cs" />
-    <Compile Include="Sound\Drivers\MidiPlayer_Midi.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

@@ -1,4 +1,4 @@
-//
+﻿//
 //  ScummEngine.cs
 //
 //  Author:

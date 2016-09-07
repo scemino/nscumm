@@ -400,11 +400,58 @@ namespace NScumm.Sci
                     AddSource(new VolumeResourceSource("resource.alt", addExternalMap("alt.map", 10), 10));
 #endif
             }
-            else
+            else if (MacResManager.Exists("Data1"))
             {
-                throw new NotImplementedException("AddAppropriateSources");
-            }
+                // Mac SCI1.1+ file naming scheme
+                var files = MacResManager.ListFiles("Data?");
 
+                foreach (var x in files)
+                {
+                    AddSource(new MacResourceForkResourceSource(x, int.Parse(x.Substring(4))));
+                }
+
+#if ENABLE_SCI32
+                // There can also be a "Patches" resource fork with patches
+                if (Common::MacResManager::exists("Patches"))
+                    addSource(new MacResourceForkResourceSource("Patches", 100));
+            }
+else {
+        // SCI2.1-SCI3 file naming scheme
+        Common::ArchiveMemberList mapFiles, files;
+        SearchMan.listMatchingMembers(mapFiles, "resmap.0??");
+        SearchMan.listMatchingMembers(files, "ressci.0??");
+
+        // We need to have the same number of maps as resource archives
+        if (mapFiles.empty() || files.empty() || mapFiles.size() != files.size())
+            return 0;
+
+        for (Common::ArchiveMemberList::const_iterator mapIterator = mapFiles.begin(); mapIterator != mapFiles.end(); ++mapIterator) {
+            Common::String mapName = (*mapIterator)->getName();
+            int mapNumber = atoi(strrchr(mapName.c_str(), '.') + 1);
+
+            for (Common::ArchiveMemberList::const_iterator fileIterator = files.begin(); fileIterator != files.end(); ++fileIterator) {
+                Common::String resName = (*fileIterator)->getName();
+                int resNumber = atoi(strrchr(resName.c_str(), '.') + 1);
+
+                if (mapNumber == resNumber) {
+                    addSource(new VolumeResourceSource(resName, addExternalMap(mapName, mapNumber), mapNumber));
+                    break;
+                }
+            }
+        }
+
+        // SCI2.1 resource patches
+        if (Common::File::exists("resmap.pat") && Common::File::exists("ressci.pat")) {
+            // We add this resource with a map which surely won't exist
+            addSource(new VolumeResourceSource("ressci.pat", addExternalMap("resmap.pat", 100), 100));
+        }
+    }
+#else
+            }
+            else
+                return 0;
+#endif
+            
             AddPatchDir(".");
 
             path = ScummHelper.LocatePath(_directory, "message.map");
@@ -677,7 +724,7 @@ namespace NScumm.Sci
                 {
                     retval._status = ResourceStatus.Locked;
                     retval._lockers = 0;
-                    _memoryLocked += (int)retval.size;
+                    _memoryLocked += retval.size;
                 }
                 retval._lockers++;
             }
@@ -830,7 +877,8 @@ namespace NScumm.Sci
             // this function tries to read patch file with any supported naming scheme,
             // regardless of s_sciVersion value
 
-            List<string> files = new List<string>();
+            var files = new List<string>();
+            ushort resourceNr = 0;
 
             for (var i = (int)ResourceType.View; i < (int)ResourceType.Invalid; ++i)
             {
@@ -876,30 +924,33 @@ namespace NScumm.Sci
                     bool bAdd = false;
                     var name = ServiceLocator.FileStorage.GetFileName(x);
 
-                    throw new NotImplementedException("ReadResourcePatches");
-                    //// SCI1 scheme
-                    //if (char.IsDigit(name[0]))
-                    //{
-                    //    char* end = 0;
-                    //    resourceNr = strtol(name.c_str(), &end, 10);
-                    //    bAdd = (*end == '.'); // Ensure the next character is the period
-                    //}
-                    //else {
-                    //    // SCI0 scheme
-                    //    int resname_len = strlen(szResType);
-                    //    if (scumm_strnicmp(name.c_str(), szResType, resname_len) == 0
-                    //        && !Common::isAlpha(name[resname_len + 1]))
-                    //    {
-                    //        resourceNr = atoi(name.c_str() + resname_len + 1);
-                    //        bAdd = true;
-                    //    }
-                    //}
+                    // SCI1 scheme
+                    if (name.Length>0 && char.IsDigit(name[0]))
+                    {
+                        var end = name.IndexOf('.');
+                        if (end != -1)
+                        {
+                            // Ensure the next character is the perio
+                            resourceNr = ushort.Parse(name.Substring(0, end));
+                            bAdd = true;
+                        }
+                    }
+                    else {
+                        // SCI0 scheme
+                        int resname_len = szResType.Length;
+                        if (string.Compare(name, 0, szResType,0, resname_len, StringComparison.OrdinalIgnoreCase) == 0
+                            && !char.IsLetter(name[resname_len + 1]))
+                        {
+                            resourceNr = ushort.Parse(name.Substring(resname_len+1));
+                            bAdd = true;
+                        }
+                    }
 
-                    //if (bAdd)
-                    //{
-                    //    var psrcPatch = new PatchResourceSource(name);
-                    //    ProcessPatch(psrcPatch, (ResourceType)i, resourceNr);
-                    //}
+                    if (bAdd)
+                    {
+                        var psrcPatch = new PatchResourceSource(name);
+                        ProcessPatch(psrcPatch, (ResourceType)i, resourceNr);
+                    }
                 }
             }
         }
@@ -928,13 +979,11 @@ namespace NScumm.Sci
 
         private void ProcessWavePatch(ResourceId resourceId, string name)
         {
-            throw new NotImplementedException();
-            //ResourceSource resSrc = new WaveResourceSource(name);
-            //Common::File file;
-            //file.open(name);
+            ResourceSource resSrc = new WaveResourceSource(name);
+            var file = Core.Engine.OpenFileRead(name);
 
-            //updateResource(resourceId, resSrc, file.size());
-            //_sources.push_back(resSrc);
+            UpdateResource(resourceId, resSrc, (int)file.Length);
+            _sources.Add(resSrc);
 
             DebugC(1, DebugLevels.ResMan, "Patching {0} - OK", name);
         }
@@ -1132,7 +1181,7 @@ namespace NScumm.Sci
             DebugC(1, DebugLevels.ResMan, "Patching {0} - OK", source.LocationName);
         }
 
-        private ResourceSource.Resource UpdateResource(ResourceId resId, ResourceSource src, int size)
+        public ResourceSource.Resource UpdateResource(ResourceId resId, ResourceSource src, int size)
         {
             // Update a patched resource, whether it exists or not
             ResourceSource.Resource res = null;
@@ -1370,7 +1419,7 @@ namespace NScumm.Sci
             } while (type != 0x1F); // the last entry is FF
 
             // reading each type's offsets
-            uint fileOffset = 0;
+            int fileOffset = 0;
             for (type = 0; type < 32; type++)
             {
                 if (resMap[type].wOffset == 0) // this resource does not exist in map
@@ -1384,16 +1433,16 @@ namespace NScumm.Sci
                     {
                         // offset stored in 3 bytes
                         fileOffset = br.ReadUInt16();
-                        fileOffset = (uint)(fileOffset | br.ReadByte() << 16);
+                        fileOffset = (fileOffset | br.ReadByte() << 16);
                         fileOffset <<= 1;
                     }
                     else
                     {
                         // offset/volume stored in 4 bytes
-                        fileOffset = br.ReadUInt32();
+                        fileOffset = br.ReadInt32();
                         if (_mapVersion < ResVersion.Sci11)
                         {
-                            volume_nr = (int)(fileOffset >> 28); // most significant 4 bits
+                            volume_nr = (fileOffset >> 28); // most significant 4 bits
                             fileOffset &= 0x0FFFFFFF; // least significant 28 bits
                         }
                         else
@@ -1414,7 +1463,7 @@ namespace NScumm.Sci
                     ResourceSource.Resource resource;
                     if (!_resMap.TryGetValue(resId, out resource))
                     {
-                        AddResource(resId, source, fileOffset);
+                        AddResource(resId, source, (uint)fileOffset);
                     }
                     else
                     {
@@ -1429,7 +1478,7 @@ namespace NScumm.Sci
                         if (resource._source.SourceType == ResSourceType.Volume)
                         {
                             resource._source = source;
-                            resource._fileOffset = (int)fileOffset;
+                            resource._fileOffset = fileOffset;
                             resource.size = 0;
                         }
                     }
@@ -1540,7 +1589,7 @@ namespace NScumm.Sci
         /// <summary>
         /// Converts a map resource type to our type
         /// </summary>
-        /// <param name="v">The type from the map/patch</param>
+        /// <param name="type">The type from the map/patch</param>
         /// <returns>The ResourceType</returns>
         public ResourceType ConvertResType(int type)
         {
@@ -2074,7 +2123,7 @@ namespace NScumm.Sci
                 return;
             }
             _LRU.Insert(0, res);
-            _memoryLRU += (int)res.size;
+            _memoryLRU += res.size;
 #if SCI_VERBOSE_RESMAN
 	debug("Adding %s.%03d (%d bytes) to lru control: %d bytes total",
 	      getResourceTypeName(res.type), res.number, res.size,
@@ -2110,7 +2159,7 @@ namespace NScumm.Sci
                 return;
             }
             _LRU.Remove(res);
-            _memoryLRU -= (int)res.size;
+            _memoryLRU -= res.size;
             res._status = ResourceStatus.Allocated;
         }
 

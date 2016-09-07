@@ -46,6 +46,15 @@ namespace NScumm.Sci.Sound
         private bool _useDigitalSFX;
         private SciMusic _music;
 
+        public MusicType MusicType
+        {
+            get
+            {
+                System.Diagnostics.Debug.Assert(_music != null);
+                return _music.SoundMusicType;
+            }
+        }
+
         public SoundCommandParser(ResourceManager resMan, SegManager segMan, AudioPlayer audio, SciVersion soundVersion)
         {
             _resMan = resMan;

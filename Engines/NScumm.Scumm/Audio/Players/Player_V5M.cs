@@ -22,7 +22,7 @@
 using System.Diagnostics;
 using NScumm.Core;
 using NScumm.Core.Audio;
-using NScumm.Scumm.IO;
+using MacResManager = NScumm.Scumm.IO.MacResManager;
 
 namespace NScumm.Scumm.Audio.Players
 {

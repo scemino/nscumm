@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using NScumm.Core;
 using static NScumm.Core.DebugHelper;
 
@@ -318,7 +319,7 @@ namespace NScumm.Sci
                     return LoadPatch(stream);
                 }
 
-                private bool LoadFromWaveFile(Stream stream)
+                public bool LoadFromWaveFile(Stream stream)
                 {
                     data = new byte[size];
 
@@ -511,61 +512,58 @@ namespace NScumm.Sci
 
         public void SetAudioLanguage(short language)
         {
-            throw new NotImplementedException();
-            //if (_audioMapSCI1 != null)
-            //{
-            //    if (_audioMapSCI1._volumeNumber == language)
-            //    {
-            //        // This language is already loaded
-            //        return;
-            //    }
+            if (_audioMapSCI1 != null)
+            {
+                if (_audioMapSCI1._volumeNumber == language)
+                {
+                    // This language is already loaded
+                    return;
+                }
 
-            //    // We already have a map loaded, so we unload it first
-            //    ReadAudioMapSCI1(_audioMapSCI1, true);
+                // We already have a map loaded, so we unload it first
+                ReadAudioMapSCI1(_audioMapSCI1, true);
 
-            //    // Remove all volumes that use this map from the source list
-            //    foreach (var it in _sources.ToList())
-            //    {
-            //        ResourceSource src = it;
-            //        if (src.FindVolume(_audioMapSCI1, src._volumeNumber) != null)
-            //        {
-            //            _sources.Remove(it);
-            //        }
-            //    }
+                // Remove all volumes that use this map from the source list
+                foreach (var it in _sources.ToList())
+                {
+                    ResourceSource src = it;
+                    if (src.FindVolume(_audioMapSCI1, src._volumeNumber) != null)
+                    {
+                        _sources.Remove(it);
+                    }
+                }
 
-            //    // Remove the map itself from the source list
-            //    _sources.Remove(_audioMapSCI1);
+                // Remove the map itself from the source list
+                _sources.Remove(_audioMapSCI1);
 
-            //    _audioMapSCI1 = null;
-            //}
+                _audioMapSCI1 = null;
+            }
 
-            //string filename = $"AUDIO{language:D3}";
+            string filename = $"AUDIO{language:D3}";
 
-            //string fullname = filename + ".MAP";
-            //var f = Core.Engine.OpenFileRead(fullname);
-            //if (f == null)
-            //{
-            //    Warning("No audio map found for language {0}", language);
-            //    return;
-            //}
+            string fullname = filename + ".MAP";
+            var f = Core.Engine.OpenFileRead(fullname);
+            if (f == null)
+            {
+                Warning("No audio map found for language {0}", language);
+                return;
+            }
 
-            //_audioMapSCI1 = AddSource(new ExtAudioMapResourceSource(fullname, language));
+            _audioMapSCI1 = AddSource(new ExtAudioMapResourceSource(fullname, language));
 
-            //// Search for audio volumes for this language and add them to the source list
-            //Common::ArchiveMemberList files;
-            //SearchMan.listMatchingMembers(files, filename + ".0??");
-            //foreach (var name in files)
-            //{
-            //    const char* dot = strrchr(name.c_str(), '.');
-            //    int number = atoi(dot + 1);
+            // Search for audio volumes for this language and add them to the source list
+            var files = ServiceLocator.FileStorage.EnumerateFiles(SciEngine.Instance.Directory, filename + ".0??");
+            foreach (var name in files)
+            {
+                int number =int.Parse(name.Substring(name.Length - 3, 3));
 
-            //    AddSource(new AudioVolumeResourceSource(this, name, _audioMapSCI1, number));
-            //}
+                AddSource(new AudioVolumeResourceSource(this, name, _audioMapSCI1, number));
+            }
 
-            //ScanNewSources();
+            ScanNewSources();
         }
 
-        private ResourceErrorCodes ReadAudioMapSCI1(ResourceSource map, bool unload)
+        public ResourceErrorCodes ReadAudioMapSCI1(ResourceSource map, bool unload= false)
         {
             Stream file = Core.Engine.OpenFileRead(map.LocationName);
 

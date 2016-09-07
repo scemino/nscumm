@@ -22,7 +22,6 @@ using System;
 using System.IO;
 using static NScumm.Core.DebugHelper;
 using System.Linq;
-using System.Text;
 
 namespace NScumm.Sci.Engine
 {
@@ -275,7 +274,7 @@ namespace NScumm.Sci.Engine
             return Register.Make(0, (ushort)totalSaves);
         }
 
-        private static Register kRestoreGame(EngineState s, int argc, StackPtr argv)
+        public static Register kRestoreGame(EngineState s, int argc, StackPtr argv)
         {
             string game_id = !argv[0].IsNull ? s._segMan.GetString(argv[0]) : "";
             short savegameId = argv[1].ToInt16();
@@ -1163,8 +1162,7 @@ namespace NScumm.Sci.Engine
             if (!exists && SciEngine.Instance.GameId == SciGameId.KQ6 && SciEngine.Instance.Platform == Core.IO.Platform.Macintosh &&
                 (name == "HalfDome" || name == "Kq6Movie"))
             {
-                throw new NotImplementedException("kFileIOExists (mac)");
-                //TODO: exists = Common::MacResManager::exists(name);
+                exists = MacResManager.Exists(name);
             }
 
             DebugC(DebugLevels.File, "kFileIO(fileExists) {0} . {1}", name, exists);

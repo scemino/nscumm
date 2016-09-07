@@ -215,6 +215,7 @@
     <Compile Include="Audio\MidiChannel_MPU401.cs" />
     <Compile Include="Audio\SoftSynth\Mt32\LA32WaveGenerator.cs" />
     <Compile Include="Audio\SoftSynth\Mt32\MT32EmuMath.cs" />
+    <Compile Include="Common\MacResManager.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

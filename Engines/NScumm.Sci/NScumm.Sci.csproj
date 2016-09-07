@@ -123,6 +123,8 @@
     <Compile Include="Engine\Script.cs" />
     <Compile Include="Engine\ScriptPatcher.cs" />
     <Compile Include="Graphics\Screen.cs" />
+    <Compile Include="..\..\NScumm.Desktop\bin\Debug\plugins\WaveResourceSource.cs" />
+    <Compile Include="..\..\NScumm.Desktop\bin\Debug\plugins\ExtAudioMapResourceSource.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

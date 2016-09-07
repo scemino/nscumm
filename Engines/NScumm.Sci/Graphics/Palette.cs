@@ -550,41 +550,39 @@ namespace NScumm.Sci.Graphics
             if (!SciEngine.Instance.HasMacIconBar)
                 return;
 
-            throw new NotImplementedException("LoadMacIconBarPalette");
-            //var clutStream = SciEngine.Instance.MacExecutable.GetResource(ScummHelper.MakeTag('c', 'l', 'u', 't'), 150);
+            var clutStream = SciEngine.Instance.MacExecutable.GetResource(ScummHelper.MakeTag('c', 'l', 'u', 't'), 150);
 
-            //if (!clutStream)
-            //    error("Could not find clut 150 for the Mac icon bar");
+            if (clutStream==null)
+                Error("Could not find clut 150 for the Mac icon bar");
 
-            //clutStream.readUint32BE(); // seed
-            //clutStream.readUint16BE(); // flags
-            //uint16 colorCount = clutStream.readUint16BE() + 1;
-            //assert(colorCount == 256);
+            var br = new BinaryReader(clutStream);
+            br.ReadUInt32BigEndian(); // seed
+            br.ReadUInt16BigEndian(); // flags
+            ushort colorCount = (ushort)(br.ReadUInt16BigEndian() + 1);
+            System.Diagnostics.Debug.Assert(colorCount == 256);
 
-            //_macClut = new byte[256 * 3];
+            _macClut = new byte[256 * 3];
 
-            //for (uint16 i = 0; i < colorCount; i++)
-            //{
-            //    clutStream.readUint16BE();
-            //    _macClut[i * 3] = clutStream.readUint16BE() >> 8;
-            //    _macClut[i * 3 + 1] = clutStream.readUint16BE() >> 8;
-            //    _macClut[i * 3 + 2] = clutStream.readUint16BE() >> 8;
-            //}
+            for (var i = 0; i < colorCount; i++)
+            {
+                br.ReadUInt16BigEndian();
+                _macClut[i * 3] = (byte)(br.ReadUInt16BigEndian() >> 8);
+                _macClut[i * 3 + 1] = (byte)(br.ReadUInt16BigEndian() >> 8);
+                _macClut[i * 3 + 2] = (byte)(br.ReadUInt16BigEndian() >> 8);
+            }
 
-            //// Adjust bounds on the KQ6 palette
-            //// We don't use all of it for the icon bar
-            //if (g_sci.getGameId() == SciGameId.KQ6)
-            //    memset(_macClut + 32 * 3, 0, (256 - 32) * 3);
+            // Adjust bounds on the KQ6 palette
+            // We don't use all of it for the icon bar
+            if (SciEngine.Instance.GameId == SciGameId.KQ6)
+                Array.Clear(_macClut,32 * 3, (256 - 32) * 3);
 
-            //// Force black/white
-            //_macClut[0x00 * 3] = 0;
-            //_macClut[0x00 * 3 + 1] = 0;
-            //_macClut[0x00 * 3 + 2] = 0;
-            //_macClut[0xff * 3] = 0xff;
-            //_macClut[0xff * 3 + 1] = 0xff;
-            //_macClut[0xff * 3 + 2] = 0xff;
-
-            //delete clutStream;
+            // Force black/white
+            _macClut[0x00 * 3] = 0;
+            _macClut[0x00 * 3 + 1] = 0;
+            _macClut[0x00 * 3 + 2] = 0;
+            _macClut[0xff * 3] = 0xff;
+            _macClut[0xff * 3 + 1] = 0xff;
+            _macClut[0xff * 3 + 2] = 0xff;
         }
 
         // meant to get called only once during init of engine

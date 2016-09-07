@@ -168,6 +168,15 @@ namespace NScumm.Sci
         private const GuiOptions GAMEOPTION_HIGH_RESOLUTION_GRAPHICS = GuiOptions.GAMEOPTIONS8;
         private const GuiOptions GAMEOPTION_ENABLE_BLACK_LINED_VIDEO = GuiOptions.GAMEOPTIONS9;
 
+        private const GuiOptions GUIO_GK2_DEMO =
+            GuiOptions.NOASPECT | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI;
+
+        private const GuiOptions GUIO_GK2 =
+            GAMEOPTION_ENABLE_BLACK_LINED_VIDEO | GuiOptions.NOASPECT | GAMEOPTION_PREFER_DIGITAL_SFX |
+            GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI;
+
+        private const GuiOptions GUIO_GK2_MAC = GUIO_GK2;
+
 #if ENABLE_SCI32
         const GuiOptions GUIO_GK1_FLOPPY =
             GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI;
@@ -348,6 +357,7 @@ namespace NScumm.Sci
             {"torin", SciGameId.TORIN}
         };
 
+        // Gabriel Knight 2 - English DOS (GOG version) - ressci.* merged in ressci.000
         private static readonly ADGameDescription[] SciGameDescriptions =
         {
             // Astro Chicken - English DOS
@@ -1269,7 +1279,229 @@ namespace NScumm.Sci
                 new ADGameFileDescription("Data3", 0, "f25068b408b09275d8b698866462f578", 3677599),
                 new ADGameFileDescription("Data4", 0, "1cceebbe411b26c860a74f91c337fdf3", 3230086),
             }, Core.Language.EN_ANY, Platform.Macintosh, ADGameFlags.MACRESFORK | ADGameFlags.UNSTABLE, GUIO_GK1_CD),
+
+            // Gabriel Knight 2 - English Windows Non-Interactive Demo
+            // Executable scanning reports "2.100.002"
+            new ADGameDescription("gk2", "Demo", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "e0effce11c4908f4b91838741716c83d", 1351),
+                    new ADGameFileDescription("resource.000", 0, "d04cfc7f04b6f74d13025378be49ec2b", 4640330),
+                }, Core.Language.EN_ANY, Platform.Windows, ADGameFlags.DEMO | ADGameFlags.UNSTABLE, GUIO_GK2_DEMO),
+
+        // using Enrico Rolfi's HD/DVD installer: http://gkpatches.vogons.zetafleet.com/
+            new ADGameDescription("gk2", "", new[]
+                {
+                    new ADGameFileDescription("resmap.000", 0, "b996fa1e57389a1e179a00a0049de1f4", 8110),
+                    new ADGameFileDescription("ressci.000", 0, "a19fc3604c6e5407abcf03d59ee87217", 168522221),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.UNSTABLE, GUIO_GK2),
+
+            // Gabriel Knight 2 - English DOS (from jvprat)
+            // Executable scanning reports "2.100.002", VERSION file reports "1.1"
+            new ADGameDescription("gk2", "", new[]
+                {
+                    new ADGameFileDescription("resmap.001", 0, "1b8bf6a23b37ed67358eb825fc687260", 2776),
+                    new ADGameFileDescription("ressci.001", 0, "24463ae235b1afbbc4ff5e2ed1b8e3b2", 50496082),
+                    new ADGameFileDescription("resmap.002", 0, "2028230674bb54cd24370e0745e7a9f4", 1975),
+                    new ADGameFileDescription("ressci.002", 0, "f0edc1dcd704bd99e598c5a742dc7150", 42015676),
+                    new ADGameFileDescription("resmap.003", 0, "51f3372a2133c406719dafad86369be3", 1687),
+                    new ADGameFileDescription("ressci.003", 0, "86cb3f3d176994e7f8a9ad663a4b907e", 35313750),
+                    new ADGameFileDescription("resmap.004", 0, "0f6e48f3e84e867f7d4a5215fcff8d5c", 2719),
+                    new ADGameFileDescription("ressci.004", 0, "4f30aa6e6f895132402c8652f9e1d741", 58317316),
+                    new ADGameFileDescription("resmap.005", 0, "2dac0e232262b4a51271fd28559b3e70", 2065),
+                    new ADGameFileDescription("ressci.005", 0, "14b62d4a3bddee57a03cb1495a798a0f", 38075705),
+                    new ADGameFileDescription("resmap.006", 0, "ce9359037277b7d7976da185c2fa0aad", 2977),
+                    new ADGameFileDescription("ressci.006", 0, "8e44e03890205a7be12f45aaba9644b4", 60659424),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.UNSTABLE, GUIO_GK2),
+
+            // Gabriel Knight 2 - French DOS (6-CDs Sierra Originals reedition)
+            // Executable scanning reports "2.100.002", VERSION file reports "1.0"
+            new ADGameDescription("gk2", "", new[]
+                {
+                    new ADGameFileDescription("resmap.001", 0, "5752eb78e0dffd6ad1d6ada75fe1222e", 2800),
+                    new ADGameFileDescription("ressci.001", 0, "37d2df0e1ec0603b605d0c87f1c09ce5", 50810410),
+                    new ADGameFileDescription("resmap.002", 0, "1ca433e4bc26383ff134a817386b723e", 1987),
+                    new ADGameFileDescription("ressci.002", 0, "5d07e6b51afaa3a5850b17a3dbd800a0", 41367424),
+                    new ADGameFileDescription("resmap.003", 0, "27b15dea1f9c73e1f5b57467c2d98b80", 1699),
+                    new ADGameFileDescription("ressci.003", 0, "93c561e5d49a804deed4ea4c2eda7386", 35200452),
+                    new ADGameFileDescription("resmap.004", 0, "9e5aaa053785d1ea61b1448df930db1a", 2743),
+                    new ADGameFileDescription("ressci.004", 0, "5d07e6b51afaa3a5850b17a3dbd800a0", 58988750),
+                    new ADGameFileDescription("resmap.005", 0, "6b1f4b59a7af58e1aff21259cc457851", 2077),
+                    new ADGameFileDescription("ressci.005", 0, "1eb5a72744799f5a5518543f5b4c3c79", 37882126),
+                    new ADGameFileDescription("resmap.006", 0, "11b2e722170b8c93fdaa5428e2c7676f", 3001),
+                    new ADGameFileDescription("ressci.006", 0, "4037d941aec39d2e654e20960429aefc", 60568486),
+                }, Core.Language.FR_FRA, Platform.DOS, ADGameFlags.UNSTABLE, GUIO_GK2),
+
+            // Gabriel Knight 2 - English Macintosh
+            // NOTE: This only contains disc 1 files (as well as the persistent file:
+            // Data1. Other discs have conflicting names :(
+            new ADGameDescription("gk2", "", new[]
+                {
+                    new ADGameFileDescription("Data1", 0, "81cb3b4461af845efc59450a74b49fe6", 693041),
+                    new ADGameFileDescription("Data2", 0, "69a05445a7c8c2da06d8f5a70200974d", 16774575),
+                    new ADGameFileDescription("Data3", 0, "256309284f6447aaa5028103753e7e78", 15451830),
+                    new ADGameFileDescription("Data4", 0, "8b843c62eb53136a855d6e0087e3cb0d", 5889553),
+                    new ADGameFileDescription("Data5", 0, "f9fcf9ab2eb13b2125c33a1cda03a093", 14349984),
+                }, Core.Language.EN_ANY, Platform.Macintosh, ADGameFlags.MACRESFORK|ADGameFlags.UNSTABLE, GUIO_GK2_MAC),
 #endif // ENABLE_SCI32
+
+            // Hoyle 1 - English DOS (supplied by ssburnout in bug report #3049193)
+            // 1.000.104 3x5.25" (label:INT.0.000.519)
+            new ADGameDescription("hoyle1", "", new[]
+            {
+                new ADGameFileDescription("resource.map", 0, "d6c37503a8f282636e1b08f7a6cf4afd", 7818),
+                new ADGameFileDescription("resource.001", 0, "e0dd44069a62a463fd124974b915f10d", 162805),
+                new ADGameFileDescription("resource.002", 0, "e0dd44069a62a463fd124974b915f10d", 342149),
+                new ADGameFileDescription("resource.003", 0, "e0dd44069a62a463fd124974b915f10d", 328925),
+            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER |
+                                                                         GAMEOPTION_PREFER_DIGITAL_SFX |
+                                                                         GAMEOPTION_ORIGINAL_SAVELOAD |
+                                                                         GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 1 - English DOS (supplied by wibble92 in bug report #2644547)
+            // SCI interpreter version 0.000.530
+            new ADGameDescription("hoyle1", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "9de9aa6d23569b3c8bf798503cf1216a", 7818),
+                    new ADGameFileDescription("resource.001", 0, "e0dd44069a62a463fd124974b915f10d", 162783),
+                    new ADGameFileDescription("resource.002", 0, "e0dd44069a62a463fd124974b915f10d", 342309),
+                    new ADGameFileDescription("resource.003", 0, "e0dd44069a62a463fd124974b915f10d", 328912),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 1 - English DOS (supplied by merkur in bug report #2719227)
+            // SCI interpreter version 0.000.530
+            new ADGameDescription("hoyle1", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "1034a218943d12f1f36e753fa10c95b8", 4386),
+                    new ADGameFileDescription("resource.001", 0, "e0dd44069a62a463fd124974b915f10d", 518308),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 1 3.5' - English DOS (supplied by eddydrama in bug report #3052366 and dinnerx in bug report #3090841)
+            new ADGameDescription("hoyle1", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "0af9a3dcd72a091960de070432e1f524", 4386),
+                    new ADGameFileDescription("resource.001", 0, "e0dd44069a62a463fd124974b915f10d", 518127),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 1 - English DOS v1.000.115 (supplied by misterhands in bug report #6597)
+            // Executable scanning reports "0.000.668"
+            new ADGameDescription("hoyle1", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "3ddf55fdbe14eb0e89a27a2cfc1338bd", 4386),
+                    new ADGameFileDescription("resource.001", 0, "e0dd44069a62a463fd124974b915f10d", 519525),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 1 - English Amiga (from www.back2roots.org - verified by waltervn in bug report #6870)
+            // Game version 1.000.139, SCI interpreter version x.yyy.zzz
+            new ADGameDescription("hoyle1", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "2a72b1aba65fa6e339370eb86d8601d1", 5166),
+                    new ADGameFileDescription("resource.001", 0, "e0dd44069a62a463fd124974b915f10d", 218755),
+                    new ADGameFileDescription("resource.002", 0, "e0dd44069a62a463fd124974b915f10d", 439502),
+                }, Core.Language.EN_ANY, Platform.Amiga, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 1 - English Atari ST
+            // Game version 1.000.104, SCI interpreter version 1.002.024
+            new ADGameDescription("hoyle1", "", new[]
+                {
+                    new ADGameFileDescription("resource.001", 0, "e0dd44069a62a463fd124974b915f10d", 518127),
+                    new ADGameFileDescription("resource.map", 0, "0af9a3dcd72a091960de070432e1f524", 4386),
+                }, Core.Language.EN_ANY, Platform.AtariST, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 1 - English Atari ST
+            // Game version 1.000.108, SCI interpreter version 1.002.026
+            new ADGameDescription("hoyle1", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "ed8355f84752e49ffa1f0cf9eca4b28e", 4140),
+                    new ADGameFileDescription("resource.001", 0, "e0dd44069a62a463fd124974b915f10d", 517454),
+                }, Core.Language.EN_ANY, Platform.AtariST, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 2 - English DOS
+            // SCI interpreter version 0.000.572
+            new ADGameDescription("hoyle2", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "4f894d203f64aa23d9ff64d30ae36926", 2100),
+                    new ADGameFileDescription("resource.001", 0, "8f2dd70abe01112eca464cda818b5eb6", 98138),
+                    new ADGameFileDescription("resource.002", 0, "8f2dd70abe01112eca464cda818b5eb6", 196631),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 2 - English DOS (supplied by ssburnout in bug report #3049193)
+            // 1.000.011 1x3.5" (label:Int#6.21.90)
+            new ADGameDescription("hoyle2", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "db0ba08b953e9904a4960ad99cd29c20", 1356),
+                    new ADGameFileDescription("resource.001", 0, "8f2dd70abe01112eca464cda818b5eb6", 216315),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 2 - English DOS (supplied by m_kiewitz)
+            // SCI interpreter version 0.000.668, Ver 1.000.014, 2x5.25"
+            new ADGameDescription("hoyle2", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "8cef06c93d17d96f44aacd5902d84b30", 2100),
+                    new ADGameFileDescription("resource.001", 0, "8f2dd70abe01112eca464cda818b5eb6", 98289),
+                    new ADGameFileDescription("resource.002", 0, "8f2dd70abe01112eca464cda818b5eb6", 197326),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 2 - English DOS (supplied by misterhands in bug report #6598)
+            // Game v1.000.016, interpreter 0.000.668, INT #12.5.90
+            new ADGameDescription("hoyle2", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "d8758a4eb6f34f6b3130bf25a496d123", 1356),
+                    new ADGameFileDescription("resource.001", 0, "8f2dd70abe01112eca464cda818b5eb6", 217880),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 2 - English Amiga (from www.back2roots.org)
+            // Executable scanning reports "1.002.032"
+            // SCI interpreter version 0.000.685
+            new ADGameDescription("hoyle2", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "62ed48d20c580e5a98f102f7cd93706a", 1356),
+                    new ADGameFileDescription("resource.001", 0, "8f2dd70abe01112eca464cda818b5eb6", 222704),
+                }, Core.Language.EN_ANY, Platform.Amiga, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 2 - English Atari ST
+            // Game version 1.001.017
+            // Executable scanning reports "1.002.034"
+            new ADGameDescription("hoyle2", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "13c8cc977598b6ad61d24c6296a090fd", 1356),
+                    new ADGameFileDescription("resource.001", 0, "8f2dd70abe01112eca464cda818b5eb6", 216280),
+                }, Core.Language.EN_ANY, Platform.AtariST, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 2 - English Macintosh
+            // Executable scanning reports "x.yyy.zzz"
+            new ADGameDescription("hoyle2", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "1af1d3aa3cf564f93477c9f87e53f495", 1728),
+                    new ADGameFileDescription("resource.001", 0, "b73b8131669d69d41a326415e4519138", 482882),
+                }, Core.Language.EN_ANY, Platform.Macintosh, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
 
             // King's Quest 1 SCI Remake - English DOS (from the King's Quest Collection)
             // Executable scanning reports "S.old.010", VERSION file reports "1.000.051"
@@ -1280,8 +1512,259 @@ namespace NScumm.Sci
                 new ADGameFileDescription("resource.001", 0, "fed9e0072ffd511d248674e60dee2099", 555439),
                 new ADGameFileDescription("resource.002", 0, "fed9e0072ffd511d248674e60dee2099", 714062),
                 new ADGameFileDescription("resource.003", 0, "fed9e0072ffd511d248674e60dee2099", 717478),
-            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH| GAMEOPTION_EGA_UNDITHER|
-                GAMEOPTION_PREFER_DIGITAL_SFX| GAMEOPTION_ORIGINAL_SAVELOAD| GAMEOPTION_FB01_MIDI),
+            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER |
+                                                                         GAMEOPTION_PREFER_DIGITAL_SFX |
+                                                                         GAMEOPTION_ORIGINAL_SAVELOAD |
+                                                                         GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 5 - English DOS Floppy
+            // SCI interpreter version 1.000.060
+            new ADGameDescription("kq5", "", new[]
+            {
+                new ADGameFileDescription("resource.map", 0, "d6172c27b453350e158815fbae23f41e", 8004),
+                new ADGameFileDescription("resource.000", 0, "a591bd4b879fc832b8095c0b3befe9e2", 276351),
+                new ADGameFileDescription("resource.001", 0, "3f28c72dc7531aaccf8e972c7ee50d14", 1022087),
+                new ADGameFileDescription("resource.002", 0, "3e56ba5bf5e8637c619b57f6b6cacbb4", 1307211),
+                new ADGameFileDescription("resource.003", 0, "5d5d498f33ca7cde0d5b058630b36ad3", 1347875),
+                new ADGameFileDescription("resource.004", 0, "944a996f9cc90dabde9f51ed7dd52366", 1239689),
+                new ADGameFileDescription("resource.005", 0, "b6c43441cb78a9b484efc8e614aac092", 1287999),
+                new ADGameFileDescription("resource.006", 0, "672ede1136e9e401658538e51bd5dc22", 1172619),
+                new ADGameFileDescription("resource.007", 0, "2f48faf27666b58c276dda20f91f4a93", 1240456),
+            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH |
+                                                                         GAMEOPTION_PREFER_DIGITAL_SFX |
+                                                                         GAMEOPTION_ORIGINAL_SAVELOAD |
+                                                                         GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 5 - English DOS Floppy
+            // VERSION file reports "0.000.051"
+            // Supplied by misterhands in bug report #3536863.
+            // This is the original English version, which has been externally patched to
+            // Polish in the Polish release below.
+            new ADGameDescription("kq5", "", new[]
+            {
+                new ADGameFileDescription("resource.map", 0, "70010c20138541f89013bb5e1b30f16a", 7998),
+                new ADGameFileDescription("resource.000", 0, "a591bd4b879fc832b8095c0b3befe9e2", 276398),
+                new ADGameFileDescription("resource.001", 0, "c0f48d4a7ebeaa6aa074fc98d77423e9", 1018560),
+                new ADGameFileDescription("resource.002", 0, "7f188a95acdb60bbe32a8379ba299393", 1307048),
+                new ADGameFileDescription("resource.003", 0, "0860785af59518b94d54718dddcd6907", 1348500),
+                new ADGameFileDescription("resource.004", 0, "c4745dd1e261c22daa6477961d08bf6c", 1239887),
+                new ADGameFileDescription("resource.005", 0, "6556ff8e7c4d1acf6a78aea154daa76c", 1287869),
+                new ADGameFileDescription("resource.006", 0, "da82e4beb744731d0a151f1d4922fafa", 1170456),
+                new ADGameFileDescription("resource.007", 0, "431def14ca29cdb5e6a5e84d3f38f679", 1240176),
+            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH |
+                                                                         GAMEOPTION_PREFER_DIGITAL_SFX |
+                                                                         GAMEOPTION_ORIGINAL_SAVELOAD |
+                                                                         GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 5 - English DOS Floppy (supplied by omer_mor in bug report #3036996)
+            // VERSION file reports "0.000.051"
+            new ADGameDescription("kq5", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "8b2158083302568b73b16fa3655360fe", 8184),
+                    new ADGameFileDescription("resource.000", 0, "a591bd4b879fc832b8095c0b3befe9e2", 276398),
+                    new ADGameFileDescription("resource.001", 0, "c0f48d4a7ebeaa6aa074fc98d77423e9", 1099506),
+                    new ADGameFileDescription("resource.002", 0, "e0c40d0e85340357d2404f9b5ae1921c", 1061243),
+                    new ADGameFileDescription("resource.003", 0, "89c00d788d022c13a9b250fa96290ab0", 1110169),
+                    new ADGameFileDescription("resource.004", 0, "d68f0d8a52ac990aa5641b7087476253", 1153751),
+                    new ADGameFileDescription("resource.005", 0, "ef4f1166bc37b6cfab70234ea60ddc3d", 1032675),
+                    new ADGameFileDescription("resource.006", 0, "06cb3f689836086ebe08b1efc0126592", 921113),
+                    new ADGameFileDescription("resource.007", 0, "252249753c6e850eacceb8af634986d3", 1133608),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD |
+                GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 5 EGA (supplied by markcoolio in bug report #2829470)
+            // SCI interpreter version 1.000.060
+            // VERSION file reports "0.000.055"
+            new ADGameDescription("kq5", "EGA", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "baf888a4e4797ce0de0b19d4e183583c", 7662),
+                    new ADGameFileDescription("resource.000", 0, "a591bd4b879fc832b8095c0b3befe9e2", 394242),
+                    new ADGameFileDescription("resource.001", 0, "c1eef048fa9fe76298c2d4705ef9549f", 558362),
+                    new ADGameFileDescription("resource.002", 0, "076aa0bf1d8d2c147d64aeffbe2928e5", 597593),
+                    new ADGameFileDescription("resource.003", 0, "ecb47cd04d06b2ab2f9f883667db6e81", 487608),
+                    new ADGameFileDescription("resource.004", 0, "4d74e8094ff57cea6ee92faf63dbd0af", 621513),
+                    new ADGameFileDescription("resource.005", 0, "3cca5b2dae8afe94532edfdc98d7edbe", 669919),
+                    new ADGameFileDescription("resource.006", 0, "698c698570cde9015e4d51eb8d2e9db1", 666527),
+                    new ADGameFileDescription("resource.007", 0, "703d8df30e89541af337d7706540d5c4", 541743),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD |
+                GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 5 EGA 1.2M disk version (from LordHoto)
+            // VERSION file reports "0.000.055"
+            new ADGameDescription("kq5", "EGA", new[]
+                {
+                    new ADGameFileDescription("resource.002", 0, "4d74e8094ff57cea6ee92faf63dbd0af", 1195538),
+                    new ADGameFileDescription("resource.003", 0, "3cca5b2dae8afe94532edfdc98d7edbe", 1092132),
+                    new ADGameFileDescription("resource.000", 0, "a591bd4b879fc832b8095c0b3befe9e2", 413818),
+                    new ADGameFileDescription("resource.001", 0, "c1eef048fa9fe76298c2d4705ef9549f", 1162752),
+                    new ADGameFileDescription("resource.map", 0, "53206afb4fd73871a484e83acab80f31", 7608),
+                    new ADGameFileDescription("resource.004", 0, "83568edf7fde18b3eed988bc5d22ceb1", 1188053),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD |
+                GAMEOPTION_FB01_MIDI)
+            ,
+
+            // King's Quest 5 EGA (supplied by omer_mor in bug report #3035421)
+            // VERSION file reports "0.000.062"
+            new ADGameDescription("kq5", "EGA", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "e17cfb38175382b9188da75c53bbab64", 7656),
+                    new ADGameFileDescription("resource.000", 0, "a591bd4b879fc832b8095c0b3befe9e2", 394072),
+                    new ADGameFileDescription("resource.001", 0, "c1eef048fa9fe76298c2d4705ef9549f", 561444),
+                    new ADGameFileDescription("resource.002", 0, "076aa0bf1d8d2c147d64aeffbe2928e5", 597580),
+                    new ADGameFileDescription("resource.003", 0, "ecb47cd04d06b2ab2f9f883667db6e81", 487633),
+                    new ADGameFileDescription("resource.004", 0, "4d74e8094ff57cea6ee92faf63dbd0af", 620749),
+                    new ADGameFileDescription("resource.005", 0, "3cca5b2dae8afe94532edfdc98d7edbe", 669961),
+                    new ADGameFileDescription("resource.006", 0, "698c698570cde9015e4d51eb8d2e9db1", 666541),
+                    new ADGameFileDescription("resource.007", 0, "703d8df30e89541af337d7706540d5c4", 541762),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD |
+                GAMEOPTION_FB01_MIDI),
+
+            // King's Quest V DOS 0.000.062 EGA (5 x 5.25" disks)
+            // Supplied by ssburnout in bug report #3046780
+            new ADGameDescription("kq5", "EGA", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "ef4fdc72ca7aef62054e8b075d7960d8", 7596),
+                    new ADGameFileDescription("resource.000", 0, "a591bd4b879fc832b8095c0b3befe9e2", 413648),
+                    new ADGameFileDescription("resource.001", 0, "c1eef048fa9fe76298c2d4705ef9549f", 1162806),
+                    new ADGameFileDescription("resource.002", 0, "4d74e8094ff57cea6ee92faf63dbd0af", 1194799),
+                    new ADGameFileDescription("resource.003", 0, "3cca5b2dae8afe94532edfdc98d7edbe", 1092325),
+                    new ADGameFileDescription("resource.004", 0, "8e5c1bc4d738cf7316ff506f59d265e2", 1187803),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD |
+                GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 5 DOS Spanish Floppy 0.000.062 VGA (5 x 3.5" disks)
+            // Supplied by dianiu in bug report #3555646
+            new ADGameDescription("kq5", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "c09896a2a30c9b002c5cbbc62f5a5c3a", 8169),
+                    new ADGameFileDescription("resource.000", 0, "1f1d03aead44da46362ff40c0074a3ec", 335871),
+                    new ADGameFileDescription("resource.001", 0, "d1803ad904127ae091edb274ee8c047f", 1180637),
+                    new ADGameFileDescription("resource.002", 0, "d9cd5972016f650cc31fb7c2a2b0953a", 1102207),
+                    new ADGameFileDescription("resource.003", 0, "829c8caeff793f3cfcea2cb01aaa4150", 965586),
+                    new ADGameFileDescription("resource.004", 0, "0bd9e570ee04b025e43d3075998fae5b", 1117965),
+                    new ADGameFileDescription("resource.005", 0, "4aaa2e9a69089b9afbaaccbbf2c4e647", 1202936),
+                    new ADGameFileDescription("resource.006", 0, "65b520e60c4217e6a6572d9edf77193b", 1141985),
+                    new ADGameFileDescription("resource.007", 0, "f42b0100f0a1c30806814f8648b6bc28", 1145583),
+                }, Core.Language.ES_ESP, Platform.DOS, ADGameFlags.ADDENGLISH,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD |
+                GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 5 - German DOS Floppy (supplied by markcoolio in bug report #2727101, also includes english language)
+            // SCI interpreter version 1.000.060
+            new ADGameDescription("kq5", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "bff44f0c326a71b1757c793a02b502d6", 8283),
+                    new ADGameFileDescription("resource.000", 0, "d7ed18ec4a5de02a9a57830aa65a600d", 336826),
+                    new ADGameFileDescription("resource.001", 0, "b1e5ec6a17be7e75ddb955f6f73191e4", 1136919),
+                    new ADGameFileDescription("resource.002", 0, "04a88122db44610a4af019a579ec5ff6", 1340813),
+                    new ADGameFileDescription("resource.003", 0, "215bb35acefae75fc80757c717166d7e", 1323916),
+                    new ADGameFileDescription("resource.004", 0, "fecdec847e3bd8e3b0f9827900aa95fd", 1331811),
+                    new ADGameFileDescription("resource.005", 0, "9c429782d102739f6bbb81e8b953b0cb", 1267525),
+                    new ADGameFileDescription("resource.006", 0, "d1a75fdc01840664d00366cff6919366", 1208972),
+                    new ADGameFileDescription("resource.007", 0, "c07494f0cce7c05210893938786a955b", 1337361),
+                }, Core.Language.DE_DEU, Platform.DOS, ADGameFlags.ADDENGLISH,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD |
+                GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 5 - French DOS Floppy (from the King's Quest Collector's Edition 1994, also includes english language)
+            // Supplied by aroenai in bug report #2812611
+            // VERSION file reports "1.000", SCI interpreter version 1.000.784
+            new ADGameDescription("kq5", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "eb7853832f3bb10900b13b421a0bbe7f", 8283),
+                    new ADGameFileDescription("resource.000", 0, "f063775b279208c14a83eda47073be90", 332806),
+                    new ADGameFileDescription("resource.001", 0, "3e6add38564250fd1a5bb10593007530", 1136827),
+                    new ADGameFileDescription("resource.002", 0, "d9a97a9cf6c79bbe8f19378f6dea45d5", 1343738),
+                    new ADGameFileDescription("resource.003", 0, "bef90d755076c110e67ee3e635503f82", 1324811),
+                    new ADGameFileDescription("resource.004", 0, "c14dbafcfbe00855ac6b2f2701058047", 1332216),
+                    new ADGameFileDescription("resource.005", 0, "f4b31cafc5defac75125c5f7b7f9a31a", 1268334),
+                    new ADGameFileDescription("resource.006", 0, "f7dc85307632ef657ceb1651204f6f51", 1210081),
+                    new ADGameFileDescription("resource.007", 0, "7db4d0a1d8d547c0019cb7d2a6acbdd4", 1338473),
+                }, Core.Language.FR_FRA, Platform.DOS, ADGameFlags.ADDENGLISH,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD |
+                GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 5 - Italian DOS Floppy (from glorifindel, includes english language)
+            // SCI interpreter version 1.000.060
+            new ADGameDescription("kq5", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "d55c9e83894a0885e37cd79bacf86384", 8283),
+                    new ADGameFileDescription("resource.000", 0, "c99bbb11ace4aaacdc98b588a2ecea06", 332246),
+                    new ADGameFileDescription("resource.001", 0, "42b98457b1a7282daa27afd89eef53f4", 1136389),
+                    new ADGameFileDescription("resource.002", 0, "8cdc160f9dfc84aed7caa6c66fa31000", 1340730),
+                    new ADGameFileDescription("resource.003", 0, "d0cb52dc41488c018359aa79a6527f51", 1323676),
+                    new ADGameFileDescription("resource.004", 0, "e5c57060adf2b5c6fc24142acba023da", 1331097),
+                    new ADGameFileDescription("resource.005", 0, "f4e441f284560eaa8022102315656a7d", 1267757),
+                    new ADGameFileDescription("resource.006", 0, "8eeabd92af71e766e323db2100879102", 1209325),
+                    new ADGameFileDescription("resource.007", 0, "dc10c107e0923b902326a040b9c166b9", 1337859),
+                }, Core.Language.IT_ITA, Platform.DOS, ADGameFlags.ADDENGLISH,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD |
+                GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 5 - Polish DOS Floppy (supplied by jacek909 in bug report #2725722)
+            // SCI interpreter version 1.000.060
+            // VERSION file reports "0.000.051".
+            // This is actually an English version with external text resource patches (bug #3536863).
+            new ADGameDescription("kq5", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "70010c20138541f89013bb5e1b30f16a", 7998),
+                    new ADGameFileDescription("resource.000", 0, "a591bd4b879fc832b8095c0b3befe9e2", 276398),
+                    new ADGameFileDescription("resource.001", 0, "c0f48d4a7ebeaa6aa074fc98d77423e9", 1018560),
+                    new ADGameFileDescription("resource.002", 0, "7f188a95acdb60bbe32a8379ba299393", 1307048),
+                    new ADGameFileDescription("resource.003", 0, "0860785af59518b94d54718dddcd6907", 1348500),
+                    new ADGameFileDescription("resource.004", 0, "c4745dd1e261c22daa6477961d08bf6c", 1239887),
+                    new ADGameFileDescription("resource.005", 0, "6556ff8e7c4d1acf6a78aea154daa76c", 1287869),
+                    new ADGameFileDescription("resource.006", 0, "da82e4beb744731d0a151f1d4922fafa", 1170456),
+                    new ADGameFileDescription("resource.007", 0, "431def14ca29cdb5e6a5e84d3f38f679", 1240176),
+                    new ADGameFileDescription("text.000", 0, "601aa35a3ddeb558e1280e0963e955a2", 1517),
+                }, Core.Language.PL_POL, Platform.DOS, ADGameFlags.ADDENGLISH,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD |
+                GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 5 - English Macintosh
+            // VERSION file reports "1.000.055"
+            new ADGameDescription("kq5", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "4d4bd26ac9f3014f5dae6b21cdcde747", 8598),
+                    new ADGameFileDescription("resource.000", 0, "e8965601526ce840887b8af3a8593156", 328291),
+                    new ADGameFileDescription("resource.001", 0, "aa2fae60f67edf2aacd43b92b59c2b3d", 1071492),
+                    new ADGameFileDescription("resource.002", 0, "14311ed6d0f4ae0af7561470953cc466", 1373044),
+                    new ADGameFileDescription("resource.003", 0, "aa606e541901b1dd150b49014ace6d11", 1401126),
+                    new ADGameFileDescription("resource.004", 0, "bb81f49927cdb0ac4d902e64f2bc40ec", 1377139),
+                    new ADGameFileDescription("resource.005", 0, "432e2a58e4d496d730697db072437337", 1366732),
+                    new ADGameFileDescription("resource.006", 0, "3d22904a374c192f51e5665b74364133", 1264079),
+                    new ADGameFileDescription("resource.007", 0, "ffe17e23d5833a79f3695addfc149a56", 1361965),
+                }, Core.Language.EN_ANY, Platform.Macintosh, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD |
+                GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 5 - FM-Towns (supplied by abevi in bug report #3038720)
+            new ADGameDescription("kq5", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "20c7cd248ff1a349ed354568eebd972b", 12733),
+                    new ADGameFileDescription("resource.000", 0, "71afd220d46bde1109c58e6acc0f3a01", 469094),
+                    new ADGameFileDescription("resource.001", 0, "72a569f46f1abf2d9d2b1526ad3799c3", 12808839),
+                }, Core.Language.JA_JPN, Platform.FMTowns, ADGameFlags.ADDENGLISH,
+                GuiOptions.NOASPECT | GAMEOPTION_ORIGINAL_SAVELOAD | GuiOptions.MIDITOWNS),
+
+            // King's Quest 5 - Japanese PC-98 Floppy 0.000.015 (supplied by omer_mor in bug report #3073583)
+            new ADGameDescription("kq5", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "3bca188108ec5b6ad91612483a6cbc27", 7875),
+                    new ADGameFileDescription("resource.000", 0, "70d6a2ec17fd49a63217992fc4347cd9", 493681),
+                    new ADGameFileDescription("resource.001", 0, "a504e91327a4d51ee4818eb72026dbe9", 950364),
+                    new ADGameFileDescription("resource.002", 0, "0750a84ece1d89d3a952e2a2b90b525c", 911833),
+                    new ADGameFileDescription("resource.003", 0, "6f8d552b60ec82a165619a99e19c509d", 1078032),
+                    new ADGameFileDescription("resource.004", 0, "e114ce8f884601c43308fb5cbbea4874", 1174129),
+                    new ADGameFileDescription("resource.005", 0, "349ad9438172265d00680075c5a988d0", 1019669),
+                }, Core.Language.JA_JPN, Platform.PC98, ADGameFlags.ADDENGLISH,
+                GuiOptions.NOSPEECH | GuiOptions.NOASPECT | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD
+                | GAMEOPTION_FB01_MIDI),
 
             // Laura Bow - English DOS (from FRG)
             // SCI interpreter version 0.000.631
@@ -1295,20 +1778,23 @@ namespace NScumm.Sci
                 new ADGameFileDescription("resource.005", 0, "e45c888d9c7c04aec0a20e9f820b79ff", 327465),
                 new ADGameFileDescription("resource.006", 0, "e45c888d9c7c04aec0a20e9f820b79ff", 328390),
                 new ADGameFileDescription("resource.007", 0, "e45c888d9c7c04aec0a20e9f820b79ff", 317687),
-            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH| GAMEOPTION_EGA_UNDITHER|
-                GAMEOPTION_PREFER_DIGITAL_SFX| GAMEOPTION_ORIGINAL_SAVELOAD| GAMEOPTION_FB01_MIDI),
+            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER |
+                                                                         GAMEOPTION_PREFER_DIGITAL_SFX |
+                                                                         GAMEOPTION_ORIGINAL_SAVELOAD |
+                                                                         GAMEOPTION_FB01_MIDI),
 
             // Larry 1 EGA Remake - English DOS (from spookypeanut)
             // SCI interpreter version 0.000.510 (or 0.000.577?)
             new ADGameDescription("lsl1sci", "SCI/EGA", new[]
-            {
-                new ADGameFileDescription("resource.map", 0, "abc0dc50c55de5b9723bb6de193f8756", 3282),
-                new ADGameFileDescription("resource.000", 0, "d3bceaebef3f7be941c2038b3565161e", 451366),
-                new ADGameFileDescription("resource.001", 0, "38936d3c68b6f79d3ffb13955713fed7", 591352),
-                new ADGameFileDescription("resource.002", 0, "24c958bc922b07f91e25e8c93aa01fcf", 491230),
-                new ADGameFileDescription("resource.003", 0, "685cd6c1e05a695ab1e0db826337ee2a", 553279),
-            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH| GAMEOPTION_PREFER_DIGITAL_SFX|
-                GAMEOPTION_ORIGINAL_SAVELOAD| GAMEOPTION_FB01_MIDI),
+                {
+                    new ADGameFileDescription("resource.map", 0, "abc0dc50c55de5b9723bb6de193f8756", 3282),
+                    new ADGameFileDescription("resource.000", 0, "d3bceaebef3f7be941c2038b3565161e", 451366),
+                    new ADGameFileDescription("resource.001", 0, "38936d3c68b6f79d3ffb13955713fed7", 591352),
+                    new ADGameFileDescription("resource.002", 0, "24c958bc922b07f91e25e8c93aa01fcf", 491230),
+                    new ADGameFileDescription("resource.003", 0, "685cd6c1e05a695ab1e0db826337ee2a", 553279),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
 
             // Larry 1 Remake - English Amiga
             // Executable scanning reports "1.004.024"
@@ -1317,36 +1803,39 @@ namespace NScumm.Sci
             // www.back2roots.org version (it contains a large chunk of zeroes and
             // several broken resources, e.g. pic 250 and views 250 and 251).
             new ADGameDescription("lsl1sci", "SCI", new[]
-            {
-                new ADGameFileDescription("resource.map", 0, "7d115a9e27dc8ac71e8d5ef33d589bd5", 3366),
-                new ADGameFileDescription("resource.000", 0, "e67fd129d5810fc7ad8ea509d891cc00", 363073),
-                new ADGameFileDescription("resource.001", 0, "24ed6dc01b1e7fbc66c3d63a5994549a", 750465),
-                new ADGameFileDescription("resource.002", 0, "5790ac0505f7ca98d4567132b875eb1e", 681041),
-                new ADGameFileDescription("resource.003", 0, "4a34c3367c2fe7eb380d741374da1989", 572251),
-            }, Core.Language.EN_ANY, Platform.Amiga, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH| GAMEOPTION_PREFER_DIGITAL_SFX|
-                GAMEOPTION_ORIGINAL_SAVELOAD| GAMEOPTION_FB01_MIDI),
+                {
+                    new ADGameFileDescription("resource.map", 0, "7d115a9e27dc8ac71e8d5ef33d589bd5", 3366),
+                    new ADGameFileDescription("resource.000", 0, "e67fd129d5810fc7ad8ea509d891cc00", 363073),
+                    new ADGameFileDescription("resource.001", 0, "24ed6dc01b1e7fbc66c3d63a5994549a", 750465),
+                    new ADGameFileDescription("resource.002", 0, "5790ac0505f7ca98d4567132b875eb1e", 681041),
+                    new ADGameFileDescription("resource.003", 0, "4a34c3367c2fe7eb380d741374da1989", 572251),
+                }, Core.Language.EN_ANY, Platform.Amiga, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
 
             // Larry 1 VGA Remake - English DOS (from spookypeanut)
             // Executable scanning reports "1.000.577", VERSION file reports "2.1"
             new ADGameDescription("lsl1sci", "SCI", new[]
-            {
-                new ADGameFileDescription("resource.map", 0, "6d04d26466337a1a64b8c6c0eb65c9a9", 3222),
-                new ADGameFileDescription("resource.000", 0, "d3bceaebef3f7be941c2038b3565161e", 922406),
-                new ADGameFileDescription("resource.001", 0, "ec20246209d7b19f38989261e5c8f5b8", 1111226),
-                new ADGameFileDescription("resource.002", 0, "85d6935ef77e6b0e16bc307640a0d913", 1088312),
-            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH| GAMEOPTION_PREFER_DIGITAL_SFX|
-                GAMEOPTION_ORIGINAL_SAVELOAD| GAMEOPTION_FB01_MIDI),
+                {
+                    new ADGameFileDescription("resource.map", 0, "6d04d26466337a1a64b8c6c0eb65c9a9", 3222),
+                    new ADGameFileDescription("resource.000", 0, "d3bceaebef3f7be941c2038b3565161e", 922406),
+                    new ADGameFileDescription("resource.001", 0, "ec20246209d7b19f38989261e5c8f5b8", 1111226),
+                    new ADGameFileDescription("resource.002", 0, "85d6935ef77e6b0e16bc307640a0d913", 1088312),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
 
             // Larry 1 VGA Remake - English DOS (from FRG)
             // SCI interpreter version 1.000.510
             new ADGameDescription("lsl1sci", "SCI", new[]
-            {
-                new ADGameFileDescription("resource.map", 0, "8606b083b011a0cc4a1fbfc2198a0a77", 3198),
-                new ADGameFileDescription("resource.000", 0, "d3bceaebef3f7be941c2038b3565161e", 918242),
-                new ADGameFileDescription("resource.001", 0, "d34cadb11e1aefbb497cf91bc1d3baa7", 1114688),
-                new ADGameFileDescription("resource.002", 0, "85b030bb66d5342b0a068f1208c431a8", 1078443),
-            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH| GAMEOPTION_PREFER_DIGITAL_SFX|
-                GAMEOPTION_ORIGINAL_SAVELOAD| GAMEOPTION_FB01_MIDI),
+                {
+                    new ADGameFileDescription("resource.map", 0, "8606b083b011a0cc4a1fbfc2198a0a77", 3198),
+                    new ADGameFileDescription("resource.000", 0, "d3bceaebef3f7be941c2038b3565161e", 918242),
+                    new ADGameFileDescription("resource.001", 0, "d34cadb11e1aefbb497cf91bc1d3baa7", 1114688),
+                    new ADGameFileDescription("resource.002", 0, "85b030bb66d5342b0a068f1208c431a8", 1078443),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
 
             // Larry 1 VGA Remake - English Macintosh (from omer_mor, bug report #3328262)
             new ADGameDescription("lsl1sci", "SCI", new[]
@@ -1355,52 +1844,58 @@ namespace NScumm.Sci
                 new ADGameFileDescription("resource.000", 0, "5933df4ea688584d6f59fdea5a9404f8", 989066),
                 new ADGameFileDescription("resource.001", 0, "aa6f153f70f1e32d1bde465fff08eecf", 1137418),
                 new ADGameFileDescription("resource.002", 0, "b22c616aa789ebef990290c7ffd86548", 1097477),
-            }, Core.Language.EN_ANY, Platform.Macintosh, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH|
-                GAMEOPTION_PREFER_DIGITAL_SFX| GAMEOPTION_ORIGINAL_SAVELOAD| GAMEOPTION_FB01_MIDI),
+            }, Core.Language.EN_ANY, Platform.Macintosh, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH |
+                                                                               GAMEOPTION_PREFER_DIGITAL_SFX |
+                                                                               GAMEOPTION_ORIGINAL_SAVELOAD |
+                                                                               GAMEOPTION_FB01_MIDI),
 
             // Larry 1 VGA Remake - English DOS Non-Interactive Demo
             // SCI interpreter version 1.000.084
             new ADGameDescription("lsl1sci", "SCI/Demo", new[]
-            {
-                new ADGameFileDescription("resource.map", 0, "434e1f6c39d71647b34f0ee57b2bbd68", 444),
-                new ADGameFileDescription("resource.001", 0, "0c0768215c562d9dace4a5ca53696cf3", 359913),
-            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.DEMO, GuiOptions.NOSPEECH| GAMEOPTION_PREFER_DIGITAL_SFX|
-                GAMEOPTION_ORIGINAL_SAVELOAD| GAMEOPTION_FB01_MIDI),
+                {
+                    new ADGameFileDescription("resource.map", 0, "434e1f6c39d71647b34f0ee57b2bbd68", 444),
+                    new ADGameFileDescription("resource.001", 0, "0c0768215c562d9dace4a5ca53696cf3", 359913),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.DEMO,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
 
             // Larry 1 VGA Remake - Spanish DOS (from the Leisure Suit Larry Collection, also includes english language)
             // Executable scanning reports "1.SQ4.057", VERSION file reports "1.000"
             // This version is known to be corrupted
             // SCI interpreter version 1.000.510
             new ADGameDescription("lsl1sci", "SCI", new[]
-            {
-                new ADGameFileDescription("resource.map", 0, "4fbe5c25878d51d7b2a68b710de4491b", 3327),
-                new ADGameFileDescription("resource.000", 0, "5e501a9bf8c753bf4c96158042422f00", 839172),
-                new ADGameFileDescription("resource.001", 0, "112648995dbc194037f1e4ed2e195910", 1063341),
-                new ADGameFileDescription("resource.002", 0, "3fe2a3aec0ed53c7d6db1845a67e3aa2", 1095908),
-                new ADGameFileDescription("resource.003", 0, "ac175df0ea9a2cba57f0248651856d27", 376556),
-            }, Core.Language.ES_ESP, Platform.DOS, ADGameFlags.ADDENGLISH, GuiOptions.NOSPEECH| GAMEOPTION_PREFER_DIGITAL_SFX|
-                GAMEOPTION_ORIGINAL_SAVELOAD| GAMEOPTION_FB01_MIDI),
+                {
+                    new ADGameFileDescription("resource.map", 0, "4fbe5c25878d51d7b2a68b710de4491b", 3327),
+                    new ADGameFileDescription("resource.000", 0, "5e501a9bf8c753bf4c96158042422f00", 839172),
+                    new ADGameFileDescription("resource.001", 0, "112648995dbc194037f1e4ed2e195910", 1063341),
+                    new ADGameFileDescription("resource.002", 0, "3fe2a3aec0ed53c7d6db1845a67e3aa2", 1095908),
+                    new ADGameFileDescription("resource.003", 0, "ac175df0ea9a2cba57f0248651856d27", 376556),
+                }, Core.Language.ES_ESP, Platform.DOS, ADGameFlags.ADDENGLISH,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
 
             // Larry 1 VGA Remake - Russian DOS (also includes english language?!)
             // Executable scanning reports "1.000.510", VERSION file reports "2.0"
             // SCI interpreter version 1.000.510
             new ADGameDescription("lsl1sci", "SCI", new[]
-            {
-                new ADGameFileDescription("resource.map", 0, "b54413d35e206d21ae2b2bdb092bd13a", 3198),
-                new ADGameFileDescription("resource.000", 0, "0d7b2afa666bd36d9535a15d3a837a66", 928566),
-                new ADGameFileDescription("resource.001", 0, "bc8ca10c807515d959cbd91f9ba47735", 1123759),
-                new ADGameFileDescription("resource.002", 0, "b7409ab32bc3bee2d6cce887cd33f2b6", 1092160),
-            }, Core.Language.RU_RUS, Platform.DOS, ADGameFlags.ADDENGLISH, GuiOptions.NOSPEECH| GAMEOPTION_PREFER_DIGITAL_SFX|
-                GAMEOPTION_ORIGINAL_SAVELOAD| GAMEOPTION_FB01_MIDI),
+                {
+                    new ADGameFileDescription("resource.map", 0, "b54413d35e206d21ae2b2bdb092bd13a", 3198),
+                    new ADGameFileDescription("resource.000", 0, "0d7b2afa666bd36d9535a15d3a837a66", 928566),
+                    new ADGameFileDescription("resource.001", 0, "bc8ca10c807515d959cbd91f9ba47735", 1123759),
+                    new ADGameFileDescription("resource.002", 0, "b7409ab32bc3bee2d6cce887cd33f2b6", 1092160),
+                }, Core.Language.RU_RUS, Platform.DOS, ADGameFlags.ADDENGLISH,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
 
             // Larry 1 VGA Remake - Polish DOS (from Polish Leisure Suit Larry Collection, official release)
             // SCI interpreter version 1.000.577, VERSION file reports "2.1" (this release does NOT include english text)
             new ADGameDescription("lsl1sci", "SCI", new[]
-            {
-                new ADGameFileDescription("resource.map", 0, "58330a85767e42a2487129913283ab5b", 3228),
-                new ADGameFileDescription("resource.000", 0, "b6097ff35cdc8469f02150fe2f824198", 4781210),
-            }, Core.Language.PL_POL, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH| GAMEOPTION_PREFER_DIGITAL_SFX|
-                GAMEOPTION_ORIGINAL_SAVELOAD| GAMEOPTION_FB01_MIDI),
+                {
+                    new ADGameFileDescription("resource.map", 0, "58330a85767e42a2487129913283ab5b", 3228),
+                    new ADGameFileDescription("resource.000", 0, "b6097ff35cdc8469f02150fe2f824198", 4781210),
+                }, Core.Language.PL_POL, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
 
             // Larry 2 - English DOS
             // SCI interpreter version 0.000.409
@@ -1413,8 +1908,10 @@ namespace NScumm.Sci
                 new ADGameFileDescription("resource.004", 0, "4a24443a25e2b1492462a52809605dc2", 204861),
                 new ADGameFileDescription("resource.005", 0, "4a24443a25e2b1492462a52809605dc2", 277732),
                 new ADGameFileDescription("resource.006", 0, "4a24443a25e2b1492462a52809605dc2", 345683),
-            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH| GAMEOPTION_EGA_UNDITHER|
-                GAMEOPTION_PREFER_DIGITAL_SFX| GAMEOPTION_ORIGINAL_SAVELOAD| GAMEOPTION_FB01_MIDI),
+            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER |
+                                                                         GAMEOPTION_PREFER_DIGITAL_SFX |
+                                                                         GAMEOPTION_ORIGINAL_SAVELOAD |
+                                                                         GAMEOPTION_FB01_MIDI),
 
             // Larry 5 - English Amiga
             // Executable scanning reports "1.004.023"

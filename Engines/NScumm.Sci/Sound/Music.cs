@@ -406,6 +406,8 @@ namespace NScumm.Sci.Sound
             }
         }
 
+        public MusicType SoundMusicType { get { return _musicType; } }
+
         public SciMusic(SciVersion soundVersion, bool useDigitalSFX)
         {
             _masterVolume = 15;

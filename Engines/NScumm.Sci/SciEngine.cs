@@ -28,6 +28,24 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci
 {
+    class FanMadePatchInfo
+    {
+        public SciGameId gameID;
+        public ushort targetScript;
+        public ushort targetSize;
+        public ushort patchedByteOffset;
+        public byte patchedByte;
+
+        public FanMadePatchInfo(SciGameId gameID, ushort targetScript, ushort targetSize, ushort patchedByteOffset, byte patchedByte)
+        {
+            this.gameID = gameID;
+            this.targetScript = targetScript;
+            this.targetSize = targetSize;
+            this.patchedByteOffset = patchedByteOffset;
+            this.patchedByte = patchedByte;
+        }
+    }
+
     /// <summary>
     /// Supported languages
     /// </summary>
@@ -70,6 +88,7 @@ namespace NScumm.Sci
         public GfxMacIconBar _gfxMacIconBar; // Mac Icon Bar manager
 
         public DebugState _debugState;
+        MacResManager _macExecutable = new MacResManager();
 
         // Maps half-width single-byte SJIS to full-width double-byte SJIS
         // Note: SSCI maps 0x5C (the Yen symbol) to 0x005C, which terminates
@@ -137,7 +156,40 @@ namespace NScumm.Sci
             0x48, // ret
         };
 
-        public uint TickCount => (uint) (TotalPlayTime * 60 / 1000);
+        private readonly FanMadePatchInfo[] patchInfo = {
+        // game        script    size  offset   byte
+        // ** NRS Patches **************************
+            new FanMadePatchInfo( SciGameId.HOYLE3,     994,   2580,    656,  0x78 ),
+            new FanMadePatchInfo( SciGameId.KQ1,         85,   5156,    631,  0x02 ),
+            new FanMadePatchInfo( SciGameId.LAURABOW2,  994,   4382,      0,  0x00 ),
+            new FanMadePatchInfo( SciGameId.LONGBOW,    994,   4950,   1455,  0x78 ), // English
+            new FanMadePatchInfo( SciGameId.LONGBOW,    994,   5020,   1469,  0x78 ), // German
+            new FanMadePatchInfo( SciGameId.LSL1,       803,    592,    342,  0x01 ),
+            new FanMadePatchInfo( SciGameId.LSL3,       380,   6148,    195,  0x35 ),
+            new FanMadePatchInfo( SciGameId.LSL5,       994,   4810,   1342,  0x78 ), // English
+            new FanMadePatchInfo( SciGameId.LSL5,       994,   4942,   1392,  0x76 ), // German
+            new FanMadePatchInfo( SciGameId.PQ1,        994,   4332,   1473,  0x78 ),
+            new FanMadePatchInfo( SciGameId.PQ2,        200,  10614,      0,  0x00 ),
+            new FanMadePatchInfo( SciGameId.PQ3,        994,   4686,   1291,  0x78 ), // English
+            new FanMadePatchInfo( SciGameId.PQ3,        994,   4734,   1283,  0x78 ), // German
+            new FanMadePatchInfo( SciGameId.QFG1VGA,    994,   4388,      0,  0x00 ),
+            new FanMadePatchInfo( SciGameId.QFG3,       994,   4714,      2,  0x48 ),
+            // TODO: Disabled, as it fixes a whole lot of bugs which can't be tested till SCI2.1 support is finished
+            //new FanMadePatchInfo( SciGameId.QFG4,       710,  11477,      0,  0x00 ),
+            new FanMadePatchInfo( SciGameId.SQ1,        994,   4740,      0,  0x00 ),
+            new FanMadePatchInfo( SciGameId.SQ5,        994,   4142,   1496,  0x78 ), // English/German/French
+            // TODO: Disabled, till we can test the Italian version
+            //new FanMadePatchInfo( SciGameId.SQ5,        994,   4148,      0,  0x00 ),   // Italian - patched file is the same size as the original
+            // TODO: The bugs in SQ6 can't be tested till SCI2.1 support is finished
+            //new FanMadePatchInfo( SciGameId.SQ6,        380,  16308,  15042,  0x0C ),   // English
+            //new FanMadePatchInfo( SciGameId.SQ6,        380,  11652,      0,  0x00 ),   // German - patched file is the same size as the original
+            // ** End marker ***************************
+            new FanMadePatchInfo( SciGameId.FANMADE,      0,      0,      0,  0x00 )
+        };
+
+        public uint TickCount => (uint)(TotalPlayTime * 60 / 1000);
+
+        public MacResManager MacExecutable => _macExecutable;
 
         public SciEngine(ISystem system, GameSettings settings, SciGameDescriptor desc, SciGameId id)
             : base(system, settings)
@@ -208,7 +260,7 @@ namespace NScumm.Sci
 
             if (Selector(s => s.subtitleLang) != -1)
                 subtitleLanguage =
-                    (Language) ReadSelectorValue(EngineState._segMan, GameObject, s => s.subtitleLang);
+                    (Language)ReadSelectorValue(EngineState._segMan, GameObject, s => s.subtitleLang);
 
             Language foundLanguage;
             string retval = GetSciLanguageString(str, activeLanguage, out foundLanguage, out languageSplitter);
@@ -259,7 +311,7 @@ namespace NScumm.Sci
                     if (foundLanguage != Sci.Language.NONE)
                     {
                         // Return language splitter
-                        languageSplitter = (ushort) (curChar | (curChar2 << 8));
+                        languageSplitter = (ushort)(curChar | (curChar2 << 8));
                         // Return the secondary language found in the string
                         secondaryLanguage = foundLanguage;
                         break;
@@ -457,13 +509,13 @@ namespace NScumm.Sci
 
         public Language GetSciLanguage()
         {
-            Language lang = (Language) ResMan.GetAudioLanguage();
+            Language lang = (Language)ResMan.GetAudioLanguage();
             if (lang != Sci.Language.NONE)
                 return lang;
 
             if (Selector(o => o.printLang) == -1) return Sci.Language.ENGLISH;
 
-            lang = (Language) ReadSelectorValue(EngineState._segMan, GameObject, o => o.printLang);
+            lang = (Language)ReadSelectorValue(EngineState._segMan, GameObject, o => o.printLang);
 
             if ((ResourceManager.GetSciVersion() < SciVersion.V1_1) && (lang != Sci.Language.NONE)) return lang;
 
@@ -506,7 +558,7 @@ namespace NScumm.Sci
         public void SetSciLanguage(Language lang)
         {
             if (Selector(o => o.printLang) != -1)
-                WriteSelectorValue(EngineState._segMan, GameObject, o => o.printLang, (ushort) lang);
+                WriteSelectorValue(EngineState._segMan, GameObject, o => o.printLang, (ushort)lang);
         }
 
         public string WrapFilename(string name)
@@ -542,7 +594,7 @@ namespace NScumm.Sci
             // Initialize the game screen
             _gfxScreen = new GfxScreen(ResMan);
             _gfxScreen.IsUnditheringEnabled = false;
-            // TODO: _gfxScreen.EnableUndithering(ConfMan.getBool("disable_dithering"));
+            _gfxScreen.IsUnditheringEnabled = ConfigManager.Instance.Get<bool>("disable_dithering");
 
             Kernel = new Kernel(ResMan, segMan);
             Kernel.Init();
@@ -603,30 +655,30 @@ namespace NScumm.Sci
             PatchGameSaveRestore();
             SetLauncherLanguage();
 
-            // TODO: Check whether loading a savestate was requested
-            //int directSaveSlotLoading = ConfMan.getInt("save_slot");
-            //if (directSaveSlotLoading >= 0)
-            //{
-            //    // call GameObject::play (like normally)
-            //    initStackBaseWithSelector(SELECTOR(play));
-            //    // We set this, so that the game automatically quit right after init
-            //    _gamestate.variables[VAR_GLOBAL][4] = TRUE_REG;
+            // Check whether loading a savestate was requested
+            int directSaveSlotLoading = ConfigManager.Instance.Get<int>("save_slot");
+            if (directSaveSlotLoading >= 0)
+            {
+                // call GameObject::play (like normally)
+                InitStackBaseWithSelector(Selector(o => o.play));
+                // We set this, so that the game automatically quit right after init
+                EngineState.variables[Vm.VAR_GLOBAL][4] = Register.TRUE_REG;
 
-            //    // Jones only initializes its menus when restarting/restoring, thus set
-            //    // the gameIsRestarting flag here before initializing. Fixes bug #6536.
-            //    if (g_sci.getGameId() == SciGameId.JONES)
-            //        _gamestate.gameIsRestarting = GAMEISRESTARTING_RESTORE;
+                // Jones only initializes its menus when restarting/restoring, thus set
+                // the gameIsRestarting flag here before initializing. Fixes bug #6536.
+                if (Instance.GameId == SciGameId.JONES)
+                    EngineState.gameIsRestarting = GameIsRestarting.RESTORE;
 
-            //    _gamestate._executionStackPosChanged = false;
-            //    run_vm(_gamestate);
+                EngineState._executionStackPosChanged = false;
+                Run();
 
-            //    // As soon as we get control again, actually restore the game
-            //    reg_t restoreArgv[2] = { NULL_REG, make_reg(0, directSaveSlotLoading) };    // special call (argv[0] is NULL)
-            //    kRestoreGame(_gamestate, 2, restoreArgv);
+                // As soon as we get control again, actually restore the game
+                Register[] restoreArgv = { Register.NULL_REG, Register.Make(0, (ushort)directSaveSlotLoading) };    // special call (argv[0] is NULL)
+                Kernel.kRestoreGame(EngineState, 2, new StackPtr(restoreArgv, 0));
 
-            //    // this indirectly calls GameObject::init, which will setup menu, text font/color codes etc.
-            //    //  without this games would be pretty badly broken
-            //}
+                // this indirectly calls GameObject::init, which will setup menu, text font/color codes etc.
+                //  without this games would be pretty badly broken
+            }
 
             // Show any special warnings for buggy scripts with severe game bugs,
             // which have been patched by Sierra
@@ -642,64 +694,92 @@ namespace NScumm.Sci
 
                 if (buggyScript != null && (buggyScript.size == 12354 || buggyScript.size == 12362))
                 {
-                    throw new NotImplementedException();
-                    // TODO: showScummVMDialog("A known buggy game script has been detected, which could "
-                    //"prevent you from progressing later on in the game, during "
-                    //"the sequence with the Green Man's riddles. Please, apply "
-                    //"the latest patch for this game by Sierra to avoid possible "
-                    //"problems");
+                    ShowScummVMDialog("A known buggy game script has been detected, which could " +
+                    "prevent you from progressing later on in the game, during " +
+                    "the sequence with the Green Man's riddles. Please, apply " +
+                    "the latest patch for this game by Sierra to avoid possible " +
+                    "problems");
                 }
             }
 
-            // TODO:
             // Show a warning if the user has selected a General MIDI device, no GM patch exists
             // (i.e. patch 4) and the game is one of the known 8 SCI1 games that Sierra has provided
             // after market patches for in their "General MIDI Utility".
-            //if (_soundCmd.getMusicType() == MT_GM && !ConfMan.getBool("native_mt32"))
-            //{
-            //    if (!_resMan.findResource(ResourceId(kResourceTypePatch, 4), 0))
-            //    {
-            //        switch (getGameId())
-            //        {
-            //            case SciGameId.ECOQUEST:
-            //            case SciGameId.HOYLE3:
-            //            case SciGameId.LSL1:
-            //            case SciGameId.LSL5:
-            //            case SciGameId.LONGBOW:
-            //            case SciGameId.SQ1:
-            //            case SciGameId.SQ4:
-            //            case SciGameId.FAIRYTALES:
-            //                showScummVMDialog("You have selected General MIDI as a sound device. Sierra "
-            //                                  "has provided after-market support for General MIDI for this "
-            //                                  "game in their \"General MIDI Utility\". Please, apply this "
-            //                                  "patch in order to enjoy MIDI music with this game. Once you "
-            //                                  "have obtained it, you can unpack all of the included *.PAT "
-            //                                  "files in your ScummVM extras folder and ScummVM will add the "
-            //                                  "appropriate patch automatically. Alternatively, you can follow "
-            //                                  "the instructions in the READ.ME file included in the patch and "
-            //                                  "rename the associated *.PAT file to 4.PAT and place it in the "
-            //                                  "game folder. Without this patch, General MIDI music for this "
-            //                                  "game will sound badly distorted.");
-            //                break;
-            //            default:
-            //                break;
-            //        }
-            //    }
-            //}
+            if (_soundCmd.MusicType == Core.Audio.MusicType.GeneralMidi && !ConfigManager.Instance.Get<bool>("native_mt32"))
+            {
+                if (ResMan.FindResource(new ResourceId(ResourceType.Patch, 4), false) == null)
+                {
+                    switch (GameId)
+                    {
+                        case SciGameId.ECOQUEST:
+                        case SciGameId.HOYLE3:
+                        case SciGameId.LSL1:
+                        case SciGameId.LSL5:
+                        case SciGameId.LONGBOW:
+                        case SciGameId.SQ1:
+                        case SciGameId.SQ4:
+                        case SciGameId.FAIRYTALES:
+                            ShowScummVMDialog("You have selected General MIDI as a sound device. Sierra " +
+                                              "has provided after-market support for General MIDI for this " +
+                                              "game in their \"General MIDI Utility\". Please, apply this " +
+                                              "patch in order to enjoy MIDI music with this game. Once you " +
+                                              "have obtained it, you can unpack all of the included *.PAT " +
+                                              "files in your ScummVM extras folder and ScummVM will add the " +
+                                              "appropriate patch automatically. Alternatively, you can follow " +
+                                              "the instructions in the READ.ME file included in the patch and " +
+                                              "rename the associated *.PAT file to 4.PAT and place it in the " +
+                                              "game folder. Without this patch, General MIDI music for this " +
+                                              "game will sound badly distorted.");
+                            break;
+                    }
+                }
+            }
 
-            // TODO:
-            //if (gameHasFanMadePatch())
-            //{
-            //    showScummVMDialog("Your game is patched with a fan made script patch. Such patches have "
-            //                      "been reported to cause issues, as they modify game scripts extensively. "
-            //                      "The issues that these patches fix do not occur in ScummVM, so you are "
-            //                      "advised to remove this patch from your game folder in order to avoid "
-            //                      "having unexpected errors and/or issues later on.");
-            //}
+            if (GameHasFanMadePatch())
+            {
+                ShowScummVMDialog("Your game is patched with a fan made script patch. Such patches have " +
+                                  "been reported to cause issues, as they modify game scripts extensively. " +
+                                  "The issues that these patches fix do not occur in ScummVM, so you are " +
+                                  "advised to remove this patch from your game folder in order to avoid " +
+                                  "having unexpected errors and/or issues later on.");
+            }
 
             RunGame();
 
             // TODO: ConfMan.flushToDisk();
+        }
+
+        private bool GameHasFanMadePatch()
+        {
+            int curEntry = 0;
+
+            while (true)
+            {
+                if (patchInfo[curEntry].targetSize == 0)
+                    break;
+
+                if (patchInfo[curEntry].gameID == GameId)
+                {
+                    var targetScript = ResMan.FindResource(new ResourceId(ResourceType.Script, patchInfo[curEntry].targetScript), false);
+
+                    if (targetScript != null && targetScript.size + 2 == patchInfo[curEntry].targetSize)
+                    {
+                        if (patchInfo[curEntry].patchedByteOffset == 0)
+                            return true;
+                        if (targetScript.data[patchInfo[curEntry].patchedByteOffset - 2] == patchInfo[curEntry].patchedByte)
+                            return true;
+                    }
+                }
+
+                curEntry++;
+            }
+
+            return false;
+        }
+
+        private void ShowScummVMDialog(string message)
+        {
+            throw new NotImplementedException();
         }
 
         private void PatchGameSaveRestore()
@@ -725,26 +805,26 @@ namespace NScumm.Sci
                     return;
             }
 
-            //TODO: if (ConfigManager.Instance.Get<bool>("originalsaveload"))
-            //    return;
+            if (ConfigManager.Instance.Get<bool>("originalsaveload"))
+                return;
 
-            ushort kernelNamesSize = (ushort) Kernel.KernelNamesSize;
+            ushort kernelNamesSize = (ushort)Kernel.KernelNamesSize;
             for (ushort kernelNr = 0; kernelNr < kernelNamesSize; kernelNr++)
             {
                 string kernelName = Kernel.GetKernelName(kernelNr);
                 if (kernelName == "RestoreGame")
-                    kernelIdRestore = (byte) kernelNr;
+                    kernelIdRestore = (byte)kernelNr;
                 if (kernelName == "SaveGame")
-                    kernelIdSave = (byte) kernelNr;
+                    kernelIdSave = (byte)kernelNr;
                 if (kernelName == "Save")
-                    kernelIdSave = kernelIdRestore = (byte) kernelNr;
+                    kernelIdSave = kernelIdRestore = (byte)kernelNr;
             }
 
             // Search for gameobject superclass ::restore
-            ushort gameSuperObjectMethodCount = (ushort) gameSuperObject.MethodCount;
+            ushort gameSuperObjectMethodCount = (ushort)gameSuperObject.MethodCount;
             for (ushort methodNr = 0; methodNr < gameSuperObjectMethodCount; methodNr++)
             {
-                ushort selectorId = (ushort) gameSuperObject.GetFuncSelector(methodNr);
+                ushort selectorId = (ushort)gameSuperObject.GetFuncSelector(methodNr);
                 string methodName = Kernel.GetSelectorName(selectorId);
                 if (methodName == "restore")
                 {
@@ -769,10 +849,10 @@ namespace NScumm.Sci
             }
 
             // Search for gameobject ::save, if there is one patch that one too
-            ushort gameObjectMethodCount = (ushort) gameObject.MethodCount;
+            ushort gameObjectMethodCount = (ushort)gameObject.MethodCount;
             for (ushort methodNr = 0; methodNr < gameObjectMethodCount; methodNr++)
             {
-                ushort selectorId = (ushort) gameObject.GetFuncSelector(methodNr);
+                ushort selectorId = (ushort)gameObject.GetFuncSelector(methodNr);
                 string methodName = Kernel.GetSelectorName(selectorId);
                 if (methodName == "save")
                 {
@@ -792,7 +872,7 @@ namespace NScumm.Sci
         private static void PatchGameSaveRestoreCode(SegManager segMan, Register methodAddress, byte id)
         {
             Script script = segMan.GetScript(methodAddress.Segment);
-            var patchPtr = script.GetBuf((int) methodAddress.Offset);
+            var patchPtr = script.GetBuf((int)methodAddress.Offset);
 
             if (ResourceManager.GetSciVersion() <= SciVersion.V1_1)
             {
@@ -818,7 +898,7 @@ namespace NScumm.Sci
             bool doRestore)
         {
             Script script = segMan.GetScript(methodAddress.Segment);
-            var patchPtr = script.GetBuf((int) methodAddress.Offset);
+            var patchPtr = script.GetBuf((int)methodAddress.Offset);
             Array.Copy(PatchGameRestoreSaveSci21, 0, patchPtr.Data, patchPtr.Offset, PatchGameRestoreSaveSci21.Length);
 
             if (doRestore)
@@ -855,7 +935,7 @@ namespace NScumm.Sci
 
             if (Selector(s => s.subtitleLang) != -1)
                 subtitleLanguage =
-                    (Language) ReadSelectorValue(EngineState._segMan, GameObject, s => s.subtitleLang);
+                    (Language)ReadSelectorValue(EngineState._segMan, GameObject, s => s.subtitleLang);
 
             Language foundLanguage;
             string retval = GetSciLanguageString(str, activeLanguage, out foundLanguage, out languageSplitter);
@@ -949,7 +1029,7 @@ namespace NScumm.Sci
 
         private void InitStackBaseWithSelector(int selector)
         {
-            EngineState.stack_base[0] = Register.Make(0, (ushort) selector);
+            EngineState.stack_base[0] = Register.Make(0, (ushort)selector);
             EngineState.stack_base[1] = Register.NULL_REG;
 
             // Register the first element on the execution stack
@@ -972,10 +1052,10 @@ namespace NScumm.Sci
             // If game is multilingual and English was selected as language
             if (Selector(o => o.printLang) != -1) // set text language to English
                 WriteSelectorValue(EngineState._segMan, GameObject, o => o.printLang,
-                    (ushort) Sci.Language.ENGLISH);
+                    (ushort)Sci.Language.ENGLISH);
             if (Selector(o => o.parseLang) != -1) // and set parser language to English as well
                 WriteSelectorValue(EngineState._segMan, GameObject, o => o.parseLang,
-                    (ushort) Sci.Language.ENGLISH);
+                    (ushort)Sci.Language.ENGLISH);
         }
 
         private void InitGraphics()
@@ -1243,7 +1323,7 @@ namespace NScumm.Sci
             // Update ScummVM's speech/subtitles settings for SCI1.1 CD games,
             // depending on the in-game settings
             if (!IsCD || ResourceManager.GetSciVersion() != SciVersion.V1_1) return;
-            ushort ingameSetting = (ushort) EngineState.variables[Vm.VAR_GLOBAL][90].Offset;
+            ushort ingameSetting = (ushort)EngineState.variables[Vm.VAR_GLOBAL][90].Offset;
 
             switch (ingameSetting)
             {
@@ -1363,8 +1443,8 @@ namespace NScumm.Sci
             int framesize = 2 + 1 * argc;
             StackPtr stackframe = kArgp.Value + kArgc;
 
-            stackframe[0] = Register.Make(0, (ushort) selectorId); // The selector we want to call
-            stackframe[1] = Register.Make(0, (ushort) argc); // Argument count
+            stackframe[0] = Register.Make(0, (ushort)selectorId); // The selector we want to call
+            stackframe[1] = Register.Make(0, (ushort)argc); // Argument count
 
             Register tmp;
             var slcType = LookupSelector(s._segMan, @object, selectorId, null, out tmp);
@@ -1430,7 +1510,7 @@ namespace NScumm.Sci
         {
             ushort parserLanguage = 1;
             if (Selector(o => o.parseLang) != -1)
-                parserLanguage = (ushort) ReadSelectorValue(EngineState._segMan, GameObject, o => o.parseLang);
+                parserLanguage = (ushort)ReadSelectorValue(EngineState._segMan, GameObject, o => o.parseLang);
 
             if (parserLanguage == _vocabularyLanguage) return;
 

@@ -16,6 +16,8 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System.Text;
+
 namespace NScumm.Sci
 {
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
@@ -64,7 +66,7 @@ namespace NScumm.Sci
 
         public override int GetHashCode()
         {
-            return _type.GetHashCode() ^_number.GetHashCode() ^ _tuple.GetHashCode();
+            return _type.GetHashCode() ^ _number.GetHashCode() ^ _tuple.GetHashCode();
         }
 
         public override bool Equals(object obj)
@@ -76,6 +78,38 @@ namespace NScumm.Sci
             if (ReferenceEquals(other, null)) return false;
 
             return (_type == other._type) && (_number == other._number) && (_tuple == other._tuple);
+        }
+
+        // Convert from a resource ID to a base36 patch name
+        public string ToPatchNameBase36()
+        {
+            var output = new StringBuilder();
+
+            output.Append(Type == ResourceType.Audio36 ? '@' : '#'); // Identifier
+            output.Append(IntToBase36(Number, 3));                     // Map
+            output.Append(IntToBase36((int)(Tuple >> 24), 2));                // Noun
+            output.Append(IntToBase36((int)((Tuple >> 16) & 0xff), 2));       // Verb
+            output.Append('.');                                                   // Separator
+            output.Append(IntToBase36((int)((Tuple >> 8) & 0xff), 2));        // Cond
+            output.Append(IntToBase36((int)(Tuple & 0xff), 1));               // Seq
+
+            System.Diagnostics.Debug.Assert(output.Length == 12); // We should always get 12 characters in the end
+            return output.ToString();
+        }
+
+        private static string IntToBase36(int number, int minChar)
+        {
+            // Convert from an integer to a base36 string
+            string @string = string.Empty;
+
+            while ((minChar--)!=0)
+            {
+                int character = number % 36;
+                @string = ((character < 10) ? (character + '0') : (character + 'A' - 10)) + @string;
+                number /= 36;
+            }
+
+            return @string;
         }
 
         public static bool operator ==(ResourceId id1, ResourceId id2)

@@ -183,3 +183,7 @@ FakesAssemblies/
 
 # MonoDevelop
 *.userprefs
+.DS_Store
+
+# Rider
+.idea/*

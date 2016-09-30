@@ -188,21 +188,20 @@ namespace NScumm.Sci.Engine
             return NormalizeAddresses(s._segMan, wm._map);
         }
 
-        private static AddrSet NormalizeAddresses(SegManager segMan, AddrSet nonnormal_map)
+        private static AddrSet NormalizeAddresses(SegManager segMan, AddrSet nonnormalMap)
         {
-            AddrSet normal_map = new AddrSet();
+            AddrSet normalMap = new AddrSet();
 
-            foreach (var reg in nonnormal_map)
+            foreach (var reg in nonnormalMap)
             {
                 SegmentObj mobj = segMan.GetSegmentObj(reg.Segment);
-                if (mobj != null)
-                {
-                    var reg2 = mobj.FindCanonicAddress(segMan, reg);
-                    normal_map.Add(reg2);
-                }
+                if (mobj == null) continue;
+
+                var reg2 = mobj.FindCanonicAddress(segMan, reg);
+                normalMap.Add(reg2);
             }
 
-            return normal_map;
+            return normalMap;
         }
 
         private static void ProcessWorkList(SegManager segMan, WorklistManager wm, List<SegmentObj> heap)

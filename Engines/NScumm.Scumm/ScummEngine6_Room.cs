@@ -89,7 +89,7 @@ namespace NScumm.Scumm
                     _saveTemporaryState = true;
                     _saveLoadSlot = Pop();
                     _saveLoadFlag = Pop();
-                    if (Game.GameId == Scumm.IO.GameId.Tentacle)
+                    if (Game.GameId == IO.GameId.Tentacle)
                         _saveSound = (_saveLoadSlot != 0);
                     break;
                 case 181:               // SO_ROOM_FADE
@@ -163,14 +163,14 @@ namespace NScumm.Scumm
                         // this way, we avoid some graphics glitches that the original
                         // interpreter had.
 
-                        if (Game.GameId == Scumm.IO.GameId.SamNMax && Slots[CurrentScript].Number == 64)
+                        if (Game.GameId == IO.GameId.SamNMax && Slots[CurrentScript].Number == 64)
                             SetDirtyColors(0, 255);
                         else
                             SetCurrentPalette(a);
                     }
                     break;
                 default:
-                    throw new NotSupportedException(string.Format("RoomOps: default case {0}", subOp));
+                    throw new NotSupportedException($"RoomOps: default case {subOp}");
             }
 
         }
@@ -205,7 +205,7 @@ namespace NScumm.Scumm
 
             if (x != -1 && x != 0x7FFFFFFF)
             {
-                a.StartWalk(new NScumm.Core.Graphics.Point(x, y), -1);
+                a.StartWalk(new Core.Graphics.Point((short) x, (short) y), -1);
             }
         }
 

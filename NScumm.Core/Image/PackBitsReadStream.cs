@@ -20,17 +20,13 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using NScumm.Core.Graphics;
-using D = NScumm.Core.DebugHelper;
 
-namespace NScumm.Core
+namespace NScumm.Core.Image
 {
-    class PackBitsReadStream : Stream
+    internal class PackBitsReadStream : Stream
     {
-        Stream _input;
+        readonly Stream _input;
 
         public override bool CanRead => _input.CanRead;
 

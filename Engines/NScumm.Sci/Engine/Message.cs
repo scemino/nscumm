@@ -168,6 +168,41 @@ namespace NScumm.Sci.Engine
         }
     }
 
+#if ENABLE_SCI32
+// SCI32 Mac decided to add an extra byte (currently unknown in meaning) between
+// the talker and the string...
+    internal class MessageReaderV4_MacSCI32 : MessageReader
+    {
+        public MessageReaderV4_MacSCI32(byte[] data, int size) : base(data, size, 10, 12)
+        {
+        }
+
+        public override bool FindRecord(MessageTuple tuple, out MessageRecord record)
+        {
+            var recordPtr = new BytePtr(_data, _headerSize);
+
+            for (var i = 0; i < _messageCount; i++)
+            {
+                if ((recordPtr[0] == tuple.noun) && (recordPtr[1] == tuple.verb)
+                    && (recordPtr[2] == tuple.cond) && (recordPtr[3] == tuple.seq))
+                {
+                    record = new MessageRecord
+                    {
+                        tuple = tuple,
+                        refTuple = new MessageTuple(recordPtr[8], recordPtr[9], recordPtr[10]),
+                        talker = recordPtr[4],
+                        @string = new BytePtr(_data, recordPtr.ToUInt16BigEndian(6)).GetRawText()
+                    };
+                    return true;
+                }
+                recordPtr.Offset += _recordSize;
+            }
+            record = null;
+            return false;
+        }
+    }
+#endif
+
     internal class CursorStack : Stack<MessageTuple>
     {
         public void Init(int module, MessageTuple t)
@@ -212,25 +247,25 @@ namespace NScumm.Sci.Engine
         private void OutputString(Register buf, string str)
         {
 #if ENABLE_SCI32
-            if (getSciVersion() >= SCI_VERSION_2)
+            if (ResourceManager.GetSciVersion() >= SciVersion.V2)
             {
-                if (_segMan.getSegmentType(buf.getSegment()) == SEG_TYPE_STRING)
+                if (_segMan.GetSegmentType(buf.Segment) == SegmentType.STRING)
                 {
-                    SciString* sciString = _segMan.lookupString(buf);
-                    sciString.setSize(str.size() + 1);
-                    for (uint32 i = 0; i < str.size(); i++)
-                        sciString.setValue(i, str.c_str()[i]);
-                    sciString.setValue(str.size(), 0);
+                    var sciString = _segMan.LookupString(buf);
+                    sciString.SetSize(str.Length + 1);
+                    for (var i = 0; i < str.Length; i++)
+                        sciString.SetValue((ushort) i, (byte) str[i]);
+                    sciString.SetValue((ushort) str.Length, 0);
                 }
-                else if (_segMan.getSegmentType(buf.getSegment()) == SEG_TYPE_ARRAY)
+                else if (_segMan.GetSegmentType(buf.Segment) == SegmentType.ARRAY)
                 {
                     // Happens in the intro of LSL6, we are asked to write the string
                     // into an array
-                    SciArray<reg_t>* sciString = _segMan.lookupArray(buf);
-                    sciString.setSize(str.size() + 1);
-                    for (uint32 i = 0; i < str.size(); i++)
-                        sciString.setValue(i, make_reg(0, str.c_str()[i]));
-                    sciString.setValue(str.size(), NULL_REG);
+                    var sciString = _segMan.LookupArray(buf);
+                    sciString.SetSize(str.Length + 1);
+                    for (var i = 0; i < str.Length; i++)
+                        sciString.SetValue((ushort) i, Register.Make(0, str[i]));
+                    sciString.SetValue((ushort) str.Length, Register.NULL_REG);
                 }
             }
             else
@@ -402,7 +437,8 @@ namespace NScumm.Sci.Engine
 #if ENABLE_SCI32
                 case 5: // v5 seems to be compatible with v4
                         // SCI32 Mac is different than SCI32 DOS/Win here
-                    if (g_sci.getPlatform() == Common::kPlatformMacintosh && getSciVersion() >= SCI_VERSION_2_1)
+                    if (SciEngine.Instance.Platform == Core.IO.Platform.Macintosh && 
+                        ResourceManager.GetSciVersion() >= SciVersion.V2_1_EARLY)
                         reader = new MessageReaderV4_MacSCI32(res.data, res.size);
                     else
 #endif

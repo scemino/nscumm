@@ -31,74 +31,73 @@ using NScumm.Core;
 
 namespace NScumm.Sci.Sound
 {
-    class ChannelRemapping
+    internal class ChannelRemapping
     {
-        public DeviceChannelUsage[] _map = new DeviceChannelUsage[16];
-        public int[] _prio = new int[16];
-        public int[] _voices = new int[16];
-        public bool[] _dontRemap = new bool[16];
-        public int _freeVoices;
+        public readonly DeviceChannelUsage[] Map = new DeviceChannelUsage[16];
+        public readonly int[] Prio = new int[16];
+        public int[] Voices = new int[16];
+        public bool[] DontRemap = new bool[16];
+        public int FreeVoices;
 
         public ChannelRemapping()
         {
-            for (int i = 0; i < 16; ++i)
+            for (var i = 0; i < 16; ++i)
             {
-                _map[i] = new DeviceChannelUsage();
+                Map[i] = new DeviceChannelUsage();
             }
         }
 
         public void Clear()
         {
-            for (int i = 0; i < 16; ++i)
+            for (var i = 0; i < 16; ++i)
             {
-                _map[i]._song = null;
-                _map[i]._channel = -1;
-                _prio[i] = 0;
-                _voices[i] = 0;
-                _dontRemap[i] = false;
+                Map[i].Song = null;
+                Map[i].Channel = -1;
+                Prio[i] = 0;
+                Voices[i] = 0;
+                DontRemap[i] = false;
             }
         }
 
         public void Swap(int i, int j)
         {
-            DeviceChannelUsage t1;
             int t2;
             bool t3;
 
-            t1 = _map[i];
-            _map[i] = _map[j];
-            _map[j] = t1;
-            t2 = _prio[i];
-            _prio[i] = _prio[j];
-            _prio[j] = t2;
-            t2 = _voices[i];
-            _voices[i] = _voices[j];
-            _voices[j] = t2;
-            t3 = _dontRemap[i];
-            _dontRemap[i] = _dontRemap[j];
-            _dontRemap[j] = t3;
+            var t1 = Map[i];
+            Map[i] = Map[j];
+            Map[j] = t1;
+            t2 = Prio[i];
+            Prio[i] = Prio[j];
+            Prio[j] = t2;
+            t2 = Voices[i];
+            Voices[i] = Voices[j];
+            Voices[j] = t2;
+            t3 = DontRemap[i];
+            DontRemap[i] = DontRemap[j];
+            DontRemap[j] = t3;
         }
 
         public void Evict(int i)
         {
-            _freeVoices += _voices[i];
+            FreeVoices += Voices[i];
 
-            _map[i]._song = null;
-            _map[i]._channel = -1;
-            _prio[i] = 0;
-            _voices[i] = 0;
-            _dontRemap[i] = false;
+            Map[i].Song = null;
+            Map[i].Channel = -1;
+            Prio[i] = 0;
+            Voices[i] = 0;
+            DontRemap[i] = false;
         }
 
         public int LowestPrio()
         {
-            int max = 0;
-            int channel = -1;
-            for (int i = 0; i < 16; ++i)
+            var max = 0;
+            var channel = -1;
+            for (var i = 0; i < 16; ++i)
             {
-                if (_prio[i] > max)
+                if (Prio[i] > max)
                 {
-                    max = _prio[i];
+                    max = Prio[i];
                     channel = i;
                 }
             }
@@ -106,19 +105,19 @@ namespace NScumm.Sci.Sound
         }
     }
 
-    class MusicEntryChannel
+    internal class MusicEntryChannel
     {
         // Channel info
-        public sbyte _prio; // 0 = essential; lower is higher priority
-        public sbyte _voices;
-        public bool _dontRemap;
-        public bool _dontMap;
-        public bool _mute;
+        public sbyte Prio; // 0 = essential; lower is higher priority
+        public sbyte Voices;
+        public bool DontRemap;
+        public bool DontMap;
+        public bool Mute;
     }
 
     internal class MusicEntry
     {
-        private const int MUSIC_VOLUME_DEFAULT = 127;
+        private const int MusicVolumeDefault = 127;
 
         // Do not get these directly for the sound objects!
         // It's a bad idea, as the sound code (i.e. the SciMusic
@@ -163,7 +162,7 @@ namespace NScumm.Sci.Sound
         public MusicEntry()
         {
             soundObj = Register.NULL_REG;
-            volume = MUSIC_VOLUME_DEFAULT;
+            volume = MusicVolumeDefault;
             hold = -1;
             reverb = -1;
             status = SoundStatus.Stopped;
@@ -171,18 +170,18 @@ namespace NScumm.Sci.Sound
 
             signalQueue = new List<ushort>();
             _chan = new MusicEntryChannel[16];
-            for (int i = 0; i < _chan.Length; i++)
+            for (var i = 0; i < _chan.Length; i++)
             {
                 _chan[i] = new MusicEntryChannel();
             }
 
-            for (int i = 0; i < 16; ++i)
+            for (var i = 0; i < 16; ++i)
             {
                 _usedChannels[i] = 0xFF;
-                _chan[i]._prio = 127;
-                _chan[i]._voices = 0;
-                _chan[i]._dontRemap = false;
-                _chan[i]._mute = false;
+                _chan[i].Prio = 127;
+                _chan[i].Voices = 0;
+                _chan[i].DontRemap = false;
+                _chan[i].Mute = false;
             }
         }
 
@@ -266,10 +265,10 @@ namespace NScumm.Sci.Sound
         }
     }
 
-    struct DeviceChannelUsage
+    internal struct DeviceChannelUsage
     {
-        public MusicEntry _song;
-        public int _channel;
+        public MusicEntry Song;
+        public int Channel;
     }
 
     internal class SciMusic
@@ -277,11 +276,11 @@ namespace NScumm.Sci.Sound
         private uint _dwTempo;
         private IMixer _mixer;
         private MusicType _musicType;
-        private SciVersion _soundVersion;
-        private bool _useDigitalSFX;
-        private object _mutex = new object();
-        private List<MusicEntry> _playList;
-        private DeviceChannelUsage[] _channelMap;
+        private readonly SciVersion _soundVersion;
+        private readonly bool _useDigitalSfx;
+        private readonly object _mutex = new object();
+        private readonly List<MusicEntry> _playList;
+        private readonly DeviceChannelUsage[] _channelMap;
         private MidiPlayer _pMidiDrv;
         private int _timeCounter; // Used to keep track of the order in which MusicEntries
         private bool _needsRemap;
@@ -289,7 +288,7 @@ namespace NScumm.Sci.Sound
         private int _driverLastChannel;
         private sbyte _globalReverb;
         private MusicEntry _currentlyPlayingSample;
-        private List<int> _queuedCommands;
+        private readonly List<int> _queuedCommands;
         private byte _masterVolume;
         private bool _soundOn;
 
@@ -324,10 +323,7 @@ namespace NScumm.Sci.Sound
             }
         }
 
-        public IList<MusicEntry> PlayList
-        {
-            get { return _playList; }
-        }
+        public IEnumerable<MusicEntry> PlayList => _playList;
 
         public sbyte GlobalReverb
         {
@@ -344,12 +340,11 @@ namespace NScumm.Sci.Sound
                         // Check the reverb of the active song...
                         foreach (var item in _playList)
                         {
-                            if (item.status == SoundStatus.Playing)
-                            {
-                                if (item.reverb == 127) // Active song has no reverb
-                                    _pMidiDrv.Reverb = value; // Set the global reverb
-                                break;
-                            }
+                            if (item.status != SoundStatus.Playing) continue;
+
+                            if (item.reverb == 127) // Active song has no reverb
+                                _pMidiDrv.Reverb = value; // Set the global reverb
+                            break;
                         }
                     }
                     else
@@ -357,21 +352,17 @@ namespace NScumm.Sci.Sound
                         // Set reverb of the active song
                         foreach (var item in _playList)
                         {
-                            if (item.status == SoundStatus.Playing)
-                            {
-                                _pMidiDrv.Reverb = item.reverb; // Set the song's reverb
-                                break;
-                            }
+                            if (item.status != SoundStatus.Playing) continue;
+
+                            _pMidiDrv.Reverb = item.reverb; // Set the song's reverb
+                            break;
                         }
                     }
                 }
             }
         }
 
-        public uint SoundGetTempo
-        {
-            get { return _dwTempo; }
-        }
+        public uint SoundGetTempo => _dwTempo;
 
         public MusicEntry ActiveSci0MusicSlot
         {
@@ -380,15 +371,14 @@ namespace NScumm.Sci.Sound
                 MusicEntry highestPrioritySlot = null;
                 foreach (var playSlot in _playList)
                 {
-                    if (playSlot.pMidiParser != null)
+                    if (playSlot.pMidiParser == null) continue;
+
+                    if (playSlot.status == SoundStatus.Playing)
+                        return playSlot;
+                    if (playSlot.status == SoundStatus.Paused)
                     {
-                        if (playSlot.status == SoundStatus.Playing)
-                            return playSlot;
-                        if (playSlot.status == SoundStatus.Paused)
-                        {
-                            if ((highestPrioritySlot == null) || (highestPrioritySlot.priority < playSlot.priority))
-                                highestPrioritySlot = playSlot;
-                        }
+                        if ((highestPrioritySlot == null) || (highestPrioritySlot.priority < playSlot.priority))
+                            highestPrioritySlot = playSlot;
                     }
                 }
                 return highestPrioritySlot;
@@ -406,17 +396,17 @@ namespace NScumm.Sci.Sound
             }
         }
 
-        public MusicType SoundMusicType { get { return _musicType; } }
+        public MusicType SoundMusicType => _musicType;
 
-        public SciMusic(SciVersion soundVersion, bool useDigitalSFX)
+        public SciMusic(SciVersion soundVersion, bool useDigitalSfx)
         {
             _masterVolume = 15;
             _soundVersion = soundVersion;
-            _useDigitalSFX = useDigitalSFX;
+            _useDigitalSfx = useDigitalSfx;
             _soundOn = true;
             _playList = new List<MusicEntry>();
             _channelMap = new DeviceChannelUsage[16];
-            for (int i = 0; i < _channelMap.Length; i++)
+            for (var i = 0; i < _channelMap.Length; i++)
             {
                 _channelMap[i] = new DeviceChannelUsage();
             }
@@ -430,8 +420,8 @@ namespace NScumm.Sci.Sound
             // SCI sound init
             _dwTempo = 0;
 
-            Core.IO.Platform platform = SciEngine.Instance.Platform;
-            MusicDriverTypes deviceFlags = MusicDriverTypes.PCSpeaker | MusicDriverTypes.PCjr | MusicDriverTypes.AdLib |
+            var platform = SciEngine.Instance.Platform;
+            var deviceFlags = MusicDriverTypes.PCSpeaker | MusicDriverTypes.PCjr | MusicDriverTypes.AdLib |
                                            MusicDriverTypes.Midi;
 
             // Default to MIDI in SCI2.1+ games, as many don't have AdLib support.
@@ -547,7 +537,7 @@ namespace NScumm.Sci.Sound
 
         public void SoundStop(MusicEntry pSnd)
         {
-            SoundStatus previousStatus = pSnd.status;
+            var previousStatus = pSnd.status;
             pSnd.status = SoundStatus.Stopped;
             if (_soundVersion <= SciVersion.V0_LATE)
                 pSnd.isQueued = false;
@@ -637,7 +627,7 @@ namespace NScumm.Sci.Sound
                     if (_playList[i] != pSnd && _playList[i].playBed)
                     {
                         DebugC(2, DebugLevels.Sound, "Automatically stopping old playBed song from soundPlay");
-                        MusicEntry old = _playList[i];
+                        var old = _playList[i];
                         Monitor.Exit(_mutex);
                         SoundStop(old);
                         Monitor.Enter(_mutex);
@@ -647,7 +637,7 @@ namespace NScumm.Sci.Sound
             }
 
             playListCount = _playList.Count;
-            int playListNo = playListCount;
+            var playListNo = playListCount;
             MusicEntry alreadyPlaying = null;
 
             // searching if sound is already in _playList
@@ -751,8 +741,8 @@ namespace NScumm.Sci.Sound
                         // This is needed when loading saved games, or when a game
                         // stops the same sound twice (e.g. LSL3 Amiga, going left from
                         // room 210 to talk with Kalalau). Fixes bugs #3083151 and #3106107.
-                        ushort prevLoop = pSnd.loop;
-                        short prevHold = pSnd.hold;
+                        var prevLoop = pSnd.loop;
+                        var prevHold = pSnd.hold;
                         pSnd.loop = 0;
                         pSnd.hold = -1;
 
@@ -844,8 +834,7 @@ namespace NScumm.Sci.Sound
             {
                 foreach (var item in PlayList)
                 {
-                    if (item.pMidiParser != null)
-                        item.pMidiParser.SetMasterVolume((byte)vol);
+                    item.pMidiParser?.SetMasterVolume((byte)vol);
                 }
             }
         }
@@ -870,7 +859,7 @@ namespace NScumm.Sci.Sound
 
         private void MiditimerCallback(object p)
         {
-            SciMusic sciMusic = (SciMusic)p;
+            var sciMusic = (SciMusic)p;
 
             lock (sciMusic._mutex)
             {
@@ -903,41 +892,41 @@ namespace NScumm.Sci.Sound
             // Make sure to set the mainThread argument correctly.
 
 
-            ChannelRemapping map = DetermineChannelMap();
+            var map = DetermineChannelMap();
 
-            DeviceChannelUsage[] currentMap = new DeviceChannelUsage[16];
+            var currentMap = new DeviceChannelUsage[16];
 
 #if DEBUG_REMAP
             debug("Remap results:");
 #endif
 
             // Save current map, and then start from an empty map
-            for (int i = 0; i < 16; ++i)
+            for (var i = 0; i < 16; ++i)
             {
                 currentMap[i] = _channelMap[i];
-                _channelMap[i]._song = null;
-                _channelMap[i]._channel = -1;
+                _channelMap[i].Song = null;
+                _channelMap[i].Channel = -1;
             }
 
             // Inform MidiParsers of any unmapped channels
-            int songIndex = -1;
+            var songIndex = -1;
             foreach (var song in _playList)
             {
                 songIndex++;
 
-                if (song == null || song.pMidiParser == null)
+                if (song?.pMidiParser == null)
                     continue;
 
-                bool[] channelMapped = new bool[16];
+                var channelMapped = new bool[16];
 #if DEBUG_REMAP
                 bool channelUsed[16];
 #endif
 
-                for (int j = 0; j < 16; ++j)
+                for (var j = 0; j < 16; ++j)
                 {
-                    if (map._map[j]._song == song)
+                    if (map.Map[j].Song == song)
                     {
-                        int channel = map._map[j]._channel;
+                        var channel = map.Map[j].Channel;
                         System.Diagnostics.Debug.Assert(channel >= 0 && channel <= 0x0F);
                         channelMapped[channel] = true;
                     }
@@ -947,7 +936,7 @@ namespace NScumm.Sci.Sound
 #endif
                 }
 
-                for (int j = 0; j < 16; ++j)
+                for (var j = 0; j < 16; ++j)
                 {
                     if (!channelMapped[j])
                     {
@@ -965,21 +954,21 @@ namespace NScumm.Sci.Sound
             // Now reshuffle the channels on the device.
 
             // First, set up any dontRemap channels
-            for (int i = 0; i < 16; ++i)
+            for (var i = 0; i < 16; ++i)
             {
-                if (map._map[i]._song == null || map._map[i]._song.pMidiParser == null || !map._dontRemap[i])
+                if (map.Map[i].Song == null || map.Map[i].Song.pMidiParser == null || !map.DontRemap[i])
                     continue;
 
                 songIndex = -1;
                 foreach (var song in _playList)
                 {
                     songIndex++;
-                    if (map._map[i]._song == song)
+                    if (map.Map[i].Song == song)
                         break;
                 }
 
-                _channelMap[i] = map._map[i];
-                map._map[i]._song = null; // mark as done
+                _channelMap[i] = map.Map[i];
+                map.Map[i].Song = null; // mark as done
 
                 // If this channel was not yet mapped to the device, reset it
                 if (!Equals(currentMap[i], _channelMap[i]))
@@ -987,35 +976,35 @@ namespace NScumm.Sci.Sound
 #if DEBUG_REMAP
                     debug(" Mapping (dontRemap) song %d, channel %d to device channel %d", songIndex, _channelMap[i]._channel, i);
 #endif
-                    if (mainThread) _channelMap[i]._song.pMidiParser.MainThreadBegin();
-                    _channelMap[i]._song.pMidiParser.RemapChannel(_channelMap[i]._channel, i);
-                    if (mainThread) _channelMap[i]._song.pMidiParser.MainThreadEnd();
+                    if (mainThread) _channelMap[i].Song.pMidiParser.MainThreadBegin();
+                    _channelMap[i].Song.pMidiParser.RemapChannel(_channelMap[i].Channel, i);
+                    if (mainThread) _channelMap[i].Song.pMidiParser.MainThreadEnd();
                 }
             }
 
             // Next, we look for channels which were already playing.
             // We keep those on the same device channel as before.
-            for (int i = 0; i < 16; ++i)
+            for (var i = 0; i < 16; ++i)
             {
-                if (map._map[i]._song == null)
+                if (map.Map[i].Song == null)
                     continue;
 
                 songIndex = -1;
                 foreach (var song in _playList)
                 {
                     songIndex++;
-                    if (map._map[i]._song == song)
+                    if (map.Map[i].Song == song)
                         break;
                 }
 
 
-                for (int j = 0; j < 16; ++j)
+                for (var j = 0; j < 16; ++j)
                 {
-                    if (Equals(map._map[i], currentMap[j]))
+                    if (Equals(map.Map[i], currentMap[j]))
                     {
                         // found it
-                        _channelMap[j] = map._map[i];
-                        map._map[i]._song = null; // mark as done
+                        _channelMap[j] = map.Map[i];
+                        map.Map[i].Song = null; // mark as done
 #if DEBUG_REMAP
                         debug(" Keeping song %d, channel %d on device channel %d", songIndex, _channelMap[j]._channel, j);
 #endif
@@ -1025,40 +1014,40 @@ namespace NScumm.Sci.Sound
             }
 
             // Then, remap the rest.
-            for (int i = 0; i < 16; ++i)
+            for (var i = 0; i < 16; ++i)
             {
-                if (map._map[i]._song == null || map._map[i]._song.pMidiParser == null)
+                if (map.Map[i].Song == null || map.Map[i].Song.pMidiParser == null)
                     continue;
 
                 songIndex = -1;
                 foreach (var song in _playList)
                 {
                     songIndex++;
-                    if (map._map[i]._song == song)
+                    if (map.Map[i].Song == song)
                         break;
                 }
 
-                for (int j = _driverLastChannel; j >= _driverFirstChannel; --j)
+                for (var j = _driverLastChannel; j >= _driverFirstChannel; --j)
                 {
-                    if (_channelMap[j]._song == null)
+                    if (_channelMap[j].Song == null)
                     {
-                        _channelMap[j] = map._map[i];
-                        map._map[i]._song = null;
+                        _channelMap[j] = map.Map[i];
+                        map.Map[i].Song = null;
 #if DEBUG_REMAP
                         debug(" Mapping song %d, channel %d to device channel %d", songIndex, _channelMap[j]._channel, j);
 #endif
-                        if (mainThread) _channelMap[j]._song.pMidiParser.MainThreadBegin();
-                        _channelMap[j]._song.pMidiParser.RemapChannel(_channelMap[j]._channel, j);
-                        if (mainThread) _channelMap[j]._song.pMidiParser.MainThreadEnd();
+                        if (mainThread) _channelMap[j].Song.pMidiParser.MainThreadBegin();
+                        _channelMap[j].Song.pMidiParser.RemapChannel(_channelMap[j].Channel, j);
+                        if (mainThread) _channelMap[j].Song.pMidiParser.MainThreadEnd();
                         break;
                     }
                 }
             }
 
             // And finally, stop any empty channels
-            for (int i = _driverLastChannel; i >= _driverFirstChannel; --i)
+            for (var i = _driverLastChannel; i >= _driverFirstChannel; --i)
             {
-                if (_channelMap[i]._song == null && currentMap[i]._song != null)
+                if (_channelMap[i].Song == null && currentMap[i].Song != null)
                     ResetDeviceChannel(i, mainThread);
             }
         }
@@ -1087,17 +1076,16 @@ namespace NScumm.Sci.Sound
             debug("Remap: avail chans: %d-%d", _driverFirstChannel, _driverLastChannel);
 #endif
 
-            ChannelRemapping map = new ChannelRemapping();
-            ChannelRemapping backupMap;
+            var map = new ChannelRemapping();
             map.Clear();
-            map._freeVoices = _pMidiDrv.Polyphony;
+            map.FreeVoices = _pMidiDrv.Polyphony;
 
             if (_playList.Count == 0)
                 return map;
 
             // TODO: set reverb, either from first song, or from global???
 
-            int songIndex = -1;
+            var songIndex = -1;
             foreach (var song in _playList)
             {
                 songIndex++;
@@ -1121,24 +1109,24 @@ namespace NScumm.Sci.Sound
 #endif
 
                 // Store backup. If we fail to map this song, we will revert to this.
-                backupMap = map;
+                var backupMap = map;
 
-                bool songMapped = true;
+                var songMapped = true;
 
-                for (int i = 0; i < 16; ++i)
+                for (var i = 0; i < 16; ++i)
                 {
-                    int c = song._usedChannels[i];
+                    var c = song._usedChannels[i];
                     if (c == 0xFF || c == 0xFE || c == 0x0F)
                         continue;
-                    MusicEntryChannel channel = song._chan[c];
-                    if (channel._dontMap)
+                    var channel = song._chan[c];
+                    if (channel.DontMap)
                     {
 # if DEBUG_REMAP
                         debug("  Channel %d dontMap, skipping", c);
 #endif
                         continue;
                     }
-                    if (channel._mute)
+                    if (channel.Mute)
                     {
 # if DEBUG_REMAP
                         debug("  Channel %d muted, skipping", c);
@@ -1146,18 +1134,18 @@ namespace NScumm.Sci.Sound
                         continue;
                     }
 
-                    bool dontRemap = channel._dontRemap || song.playBed;
+                    var dontRemap = channel.DontRemap || song.playBed;
 
 # if DEBUG_REMAP
                     debug("  Channel %d: prio %d, %d voice%s%s", c, channel._prio, channel._voices, channel._voices == 1 ? "" : "s", dontRemap ? ", dontRemap" : "");
 #endif
 
-                    DeviceChannelUsage dc = new DeviceChannelUsage { _song = song, _channel = c };
+                    var dc = new DeviceChannelUsage { Song = song, Channel = c };
 
                     // our target
-                    int devChannel = -1;
+                    var devChannel = -1;
 
-                    if (dontRemap && map._map[c]._song == null)
+                    if (dontRemap && map.Map[c].Song == null)
                     {
                         // unremappable channel, with channel still free
                         devChannel = c;
@@ -1166,15 +1154,15 @@ namespace NScumm.Sci.Sound
                     // try to find a free channel
                     if (devChannel == -1)
                     {
-                        for (int j = 0; j < 16; ++j)
+                        for (var j = 0; j < 16; ++j)
                         {
-                            if (Equals(map._map[j], dc))
+                            if (Equals(map.Map[j], dc))
                             {
                                 // already mapped?! (Can this happen?)
                                 devChannel = j;
                                 break;
                             }
-                            if (map._map[j]._song != null)
+                            if (map.Map[j].Song != null)
                                 continue;
 
                             if (j >= _driverFirstChannel && j <= _driverLastChannel)
@@ -1182,7 +1170,7 @@ namespace NScumm.Sci.Sound
                         }
                     }
 
-                    int prio = channel._prio;
+                    int prio = channel.Prio;
                     if (prio > 0)
                     {
                         // prio > 0 means non-essential
@@ -1217,15 +1205,15 @@ namespace NScumm.Sci.Sound
                         break;
                     }
 
-                    if (Equals(map._map[devChannel], dc))
+                    if (Equals(map.Map[devChannel], dc))
                     {
                         // already mapped?! (Can this happen?)
                         continue;
                     }
 
-                    int neededVoices = channel._voices;
+                    int neededVoices = channel.Voices;
                     // do we have enough free voices?
-                    if (map._freeVoices < neededVoices)
+                    if (map.FreeVoices < neededVoices)
                     {
                         // We only care for essential channels.
                         // Note: In early SCI1 interpreters, a song started by 'playBed'
@@ -1241,7 +1229,7 @@ namespace NScumm.Sci.Sound
                         }
                         do
                         {
-                            int j = map.LowestPrio();
+                            var j = map.LowestPrio();
                             if (j == -1)
                             {
 # if DEBUG_REMAP
@@ -1255,7 +1243,7 @@ namespace NScumm.Sci.Sound
                             debug("   creating room for voices; evict %d", j);
 #endif
                             map.Evict(j);
-                        } while (map._freeVoices < neededVoices);
+                        } while (map.FreeVoices < neededVoices);
 
                         if (!songMapped)
                         {
@@ -1269,11 +1257,11 @@ namespace NScumm.Sci.Sound
                     debug("   trying to map to %d", devChannel);
 #endif
 
-                    map._map[devChannel] = dc;
-                    map._voices[devChannel] = neededVoices;
-                    map._prio[devChannel] = prio;
-                    map._dontRemap[devChannel] = dontRemap;
-                    map._freeVoices -= neededVoices;
+                    map.Map[devChannel] = dc;
+                    map.Voices[devChannel] = neededVoices;
+                    map.Prio[devChannel] = prio;
+                    map.DontRemap[devChannel] = dontRemap;
+                    map.FreeVoices -= neededVoices;
 
                     if (!dontRemap || devChannel == c)
                     {
@@ -1286,7 +1274,7 @@ namespace NScumm.Sci.Sound
 
                     // If this channel can't be remapped, we need to move it or fail.
 
-                    if (!map._dontRemap[c])
+                    if (!map.DontRemap[c])
                     {
                         // Target channel can be remapped, so just swap
                         map.Swap(devChannel, c);
@@ -1305,7 +1293,7 @@ namespace NScumm.Sci.Sound
                         continue;
                     }
 
-                    if (map._prio[c] > 0)
+                    if (map.Prio[c] > 0)
                     {
                         // Channel collision, but the other channel is non-essential,
                         // so we take its place.
@@ -1340,8 +1328,8 @@ namespace NScumm.Sci.Sound
         // during piano scene in lsl5).
         private void SendMidiCommandsFromQueue()
         {
-            int curCommand = 0;
-            int commandCount = _queuedCommands.Count;
+            var curCommand = 0;
+            var commandCount = _queuedCommands.Count;
 
             while (curCommand < commandCount)
             {
@@ -1376,25 +1364,24 @@ namespace NScumm.Sci.Sound
         {
             // Remove all currently mapped channels of this MusicEntry first,
             // since they will no longer be valid.
-            for (int i = 0; i < 16; ++i)
+            for (var i = 0; i < 16; ++i)
             {
-                if (_channelMap[i]._song == pSnd)
+                if (_channelMap[i].Song == pSnd)
                 {
-                    _channelMap[i]._song = null;
-                    _channelMap[i]._channel = -1;
+                    _channelMap[i].Song = null;
+                    _channelMap[i].Channel = -1;
                 }
             }
 
-            int channelFilterMask = 0;
-            SoundResource.Track track = pSnd.soundRes.GetTrackByType(_pMidiDrv.PlayId);
+            var track = pSnd.soundRes.GetTrackByType(_pMidiDrv.PlayId);
 
             // If MIDI device is selected but there is no digital track in sound
             // resource try to use Adlib's digital sample if possible. Also, if the
             // track couldn't be found, load the digital track, as some games depend on
             // this (e.g. the Longbow demo).
-            if (track == null || (_useDigitalSFX && track.digitalChannelNr == -1))
+            if (track == null || (_useDigitalSfx && track.digitalChannelNr == -1))
             {
-                SoundResource.Track digital = pSnd.soundRes.DigitalTrack;
+                var digital = pSnd.soundRes.DigitalTrack;
                 if (digital != null)
                     track = digital;
             }
@@ -1407,15 +1394,12 @@ namespace NScumm.Sci.Sound
                 if (track.digitalChannelNr != -1)
                 {
                     var channelData = track.channels[track.digitalChannelNr].data;
-                    if (pSnd.pStreamAud != null)
-                    {
-                        pSnd.pStreamAud.DisposeIfNotNull();
-                    }
+                    pSnd.pStreamAud.DisposeIfNotNull();
                     var flags = AudioFlags.Unsigned;
                     // Amiga SCI1 games had signed sound data
                     if (_soundVersion >= SciVersion.V1_EARLY && SciEngine.Instance.Platform == Core.IO.Platform.Amiga)
                         flags = 0;
-                    int endPart = track.digitalSampleEnd > 0 ? (track.digitalSampleSize - track.digitalSampleEnd) : 0;
+                    var endPart = track.digitalSampleEnd > 0 ? track.digitalSampleSize - track.digitalSampleEnd : 0;
                     pSnd.pStreamAud = new RawStream(flags, track.digitalSampleRate, false,
                         new MemoryStream(channelData.Data, channelData.Offset + track.digitalSampleStart,
                             track.digitalSampleSize - track.digitalSampleStart - endPart));
@@ -1434,31 +1418,33 @@ namespace NScumm.Sci.Sound
                         pSnd.soundType = SoundType.Music;
                         if (pSnd.pMidiParser == null)
                         {
-                            pSnd.pMidiParser = new MidiParser_SCI(_soundVersion, this);
-                            pSnd.pMidiParser.MidiDriver = _pMidiDrv;
-                            pSnd.pMidiParser.TimerRate = _dwTempo;
+                            pSnd.pMidiParser = new MidiParser_SCI(_soundVersion, this)
+                            {
+                                MidiDriver = _pMidiDrv,
+                                TimerRate = _dwTempo
+                            };
                             pSnd.pMidiParser.SetMasterVolume(_masterVolume);
                         }
 
                         pSnd.pauseCounter = 0;
 
                         // Find out what channels to filter for SCI0
-                        channelFilterMask = pSnd.soundRes.GetChannelFilterMask(_pMidiDrv.PlayId,
+                        var channelFilterMask = pSnd.soundRes.GetChannelFilterMask(_pMidiDrv.PlayId,
                             _pMidiDrv.HasRhythmChannel);
 
-                        for (int i = 0; i < 16; ++i)
+                        for (var i = 0; i < 16; ++i)
                             pSnd._usedChannels[i] = 0xFF;
-                        for (int i = 0; i < track.channelCount; ++i)
+                        for (var i = 0; i < track.channelCount; ++i)
                         {
-                            SoundResource.Channel chan = track.channels[i];
+                            var chan = track.channels[i];
 
                             pSnd._usedChannels[i] = chan.number;
-                            pSnd._chan[chan.number]._dontRemap = (chan.flags & 2) != 0;
-                            pSnd._chan[chan.number]._prio = (sbyte)chan.prio;
-                            pSnd._chan[chan.number]._voices = (sbyte)chan.poly;
+                            pSnd._chan[chan.number].DontRemap = (chan.flags & 2) != 0;
+                            pSnd._chan[chan.number].Prio = (sbyte)chan.prio;
+                            pSnd._chan[chan.number].Voices = (sbyte)chan.poly;
 
                             // CHECKME: Some SCI versions use chan.flags & 1 for this:
-                            pSnd._chan[chan.number]._dontMap = false;
+                            pSnd._chan[chan.number].DontMap = false;
 
                             // FIXME: Most MIDI tracks use the first 10 bytes for
                             // fixed MIDI commands. SSCI skips those the first iteration,
@@ -1473,8 +1459,8 @@ namespace NScumm.Sci.Sound
                         // Disable sound looping and hold before jumpToTick is called,
                         // otherwise the song may keep looping forever when it ends in
                         // jumpToTick (e.g. LSL3, when going left from room 210).
-                        ushort prevLoop = pSnd.loop;
-                        short prevHold = pSnd.hold;
+                        var prevLoop = pSnd.loop;
+                        var prevHold = pSnd.hold;
                         pSnd.loop = 0;
                         pSnd.hold = -1;
                         pSnd.playBed = false;
@@ -1500,11 +1486,6 @@ namespace NScumm.Sci.Sound
         public void PutMidiCommandInQueue(int midi)
         {
             _queuedCommands.Add(midi);
-        }
-
-        private void PutMidiCommandInQueue(byte status, byte firstOp, byte secondOp)
-        {
-            PutMidiCommandInQueue(status | (firstOp << 8) | (secondOp << 16));
         }
 
         public void SoundResume(MusicEntry pSnd)

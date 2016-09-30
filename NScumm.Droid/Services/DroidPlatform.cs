@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System;
 using System.Threading;
 using NScumm.Core;
 
@@ -47,6 +48,11 @@ namespace NScumm.Droid.Services
                     break;
             }
 
+        }
+
+        public int GetMilliseconds()
+        {
+            return Environment.TickCount;
         }
 
         public void Sleep(int timeInMs)

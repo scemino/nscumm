@@ -26,7 +26,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Sound
 {
-    enum AudioSyncCommands
+    internal enum AudioSyncCommands
     {
         Start = 0,
         Next = 1,
@@ -34,7 +34,7 @@ namespace NScumm.Sci.Sound
     }
 
     [Flags]
-    enum SolFlags
+    internal enum SolFlags
     {
         Compressed = 1 << 0,
         Unknown = 1 << 1,
@@ -44,11 +44,11 @@ namespace NScumm.Sci.Sound
 
     internal class AudioPlayer
     {
-        public const int AUDIO_VOLUME_MAX = 127;
+        public const int AudioVolumeMax = 127;
 
         private int _audioRate;
-        private IMixer _mixer;
-        private ResourceManager _resMan;
+        private readonly IMixer _mixer;
+        private readonly ResourceManager _resMan;
         private bool _wPlayFlag;
         /// <summary>
         /// Used by kDoSync for speech syncing in CD talkie games
@@ -98,7 +98,6 @@ namespace NScumm.Sci.Sound
                 }
             }
 
-            SolFlags audioFlags;
             uint audioCompressionType = audioRes.AudioCompressionType;
 
             if (audioCompressionType != 0)
@@ -138,11 +137,12 @@ namespace NScumm.Sci.Sound
                     // SCI1.1
                     using (var headerStream = new MemoryStream(audioRes._header, 0, audioRes._headerSize))
                     {
-                        if (ReadSOLHeader(headerStream, audioRes._headerSize, ref size, ref _audioRate, out audioFlags, audioRes.size))
+                        SolFlags audioFlags;
+                        if (ReadSolHeader(headerStream, audioRes._headerSize, ref size, ref _audioRate, out audioFlags, audioRes.size))
                         {
                             using (var dataStream = new MemoryStream(audioRes.data, 0, audioRes.size))
                             {
-                                data = ReadSOLAudio(dataStream, ref size, audioFlags, ref flags);
+                                data = ReadSolAudio(dataStream, ref size, audioFlags, ref flags);
                             }
                         }
                     }
@@ -153,8 +153,8 @@ namespace NScumm.Sci.Sound
                     var waveStream = new MemoryStream(audioRes.data, 0, audioRes.size);
 
                     // Calculate samplelen from WAVE header
-                    int waveSize = 0, waveRate = 0;
-                    AudioFlags waveFlags = 0;
+                    int waveSize, waveRate;
+                    AudioFlags waveFlags;
                     bool ret = Wave.LoadWAVFromStream(waveStream, out waveSize, out waveRate, out waveFlags);
                     if (!ret)
                         Error("Failed to load WAV from stream");
@@ -211,14 +211,14 @@ namespace NScumm.Sci.Sound
             // We have to make sure that we don't depend on resource manager pointers
             // after this point, because the actual audio resource may get unloaded by
             // resource manager at any time.
-            if (audioStream != null)
-                return audioStream;
-
-            return null;
+            return audioStream;
         }
 
-        private static byte[] ReadSOLAudio(Stream audioStream, ref int size, SolFlags audioFlags, ref AudioFlags flags)
+        private static byte[] ReadSolAudio(Stream audioStream, ref int size, SolFlags audioFlags, ref AudioFlags flags)
         {
+            if (!Enum.IsDefined(typeof(AudioFlags), flags))
+                throw new ArgumentOutOfRangeException(nameof(flags), "Value should be defined in the AudioFlags enum.");
+
             byte[] buffer;
 
             // Convert the SOL stream flags to our own format
@@ -234,9 +234,9 @@ namespace NScumm.Sci.Sound
                 buffer = new byte[size * 2];
 
                 if (audioFlags.HasFlag(SolFlags.Is16Bit))
-                    DeDPCM16(buffer, audioStream, size);
+                    DeDpcm16(buffer, audioStream, size);
                 else {
-                    DeDPCM8(buffer, audioStream, size);
+                    DeDpcm8(buffer, audioStream, size);
                 }
 
                 size *= 2;
@@ -252,7 +252,7 @@ namespace NScumm.Sci.Sound
 
         // Sierra SOL audio file reader
         // Check here for more info: http://wiki.multimedia.cx/index.php?title=Sierra_Audio
-        private static bool ReadSOLHeader(Stream audioStream, int headerSize, ref int size, ref int audioRate, out SolFlags audioFlags, int resSize)
+        private static bool ReadSolHeader(Stream audioStream, int headerSize, ref int size, ref int audioRate, out SolFlags audioFlags, int resSize)
         {
             if (headerSize != 7 && headerSize != 11 && headerSize != 12)
             {
@@ -284,7 +284,7 @@ namespace NScumm.Sci.Sound
             return true;
         }
 
-        private static void DeDPCM8(byte[] soundBuf, Stream audioStream, int n)
+        private static void DeDpcm8(byte[] soundBuf, Stream audioStream, int n)
         {
             int s = 0x80;
             var buf = new BytePtr(soundBuf);
@@ -292,33 +292,33 @@ namespace NScumm.Sci.Sound
             {
                 byte b = (byte)audioStream.ReadByte();
 
-                DeDPCM8Nibble(buf, ref s, (byte)(b >> 4)); buf.Offset++;
-                DeDPCM8Nibble(buf, ref s, (byte)(b & 0xf)); buf.Offset++;
+                DeDpcm8Nibble(buf, ref s, (byte)(b >> 4)); buf.Offset++;
+                DeDpcm8Nibble(buf, ref s, (byte)(b & 0xf)); buf.Offset++;
             }
         }
 
-        private static void DeDPCM8Nibble(BytePtr soundBuf, ref int s, byte b)
+        private static void DeDpcm8Nibble(BytePtr soundBuf, ref int s, byte b)
         {
             if ((b & 8)!=0)
             {
-                s -= tableDPCM8[7 - (b & 7)];
+                s -= TableDpcm8[7 - (b & 7)];
             }
             else
-                s += tableDPCM8[b & 7];
+                s += TableDpcm8[b & 7];
             s = ScummHelper.Clip(s, 0, 255);
             soundBuf.Value = (byte)s;
         }
 
-        private static void DeDPCM16(byte[] soundBuf, Stream audioStream, int n)
+        private static void DeDpcm16(byte[] soundBuf, Stream audioStream, int n)
         {
             int s = 0;
             for (int i = 0; i < n; i++)
             {
                 byte b = (byte)audioStream.ReadByte();
                 if ((b & 0x80)!=0)
-                    s -= tableDPCM16[b & 0x7f];
+                    s -= TableDpcm16[b & 0x7f];
                 else
-                    s += tableDPCM16[b];
+                    s += TableDpcm16[b];
 
                 s = ScummHelper.Clip(s, -32768, 32767);
                 soundBuf.WriteInt16(i * 2, (short)s);
@@ -417,7 +417,7 @@ namespace NScumm.Sci.Sound
             // just get the sample length and return that. wPlayAudio should *not*
             // actually start the sample.
 
-            int sampleLen = 0;
+            int sampleLen;
             using (var audioStream = GetAudioStream((ushort)tuple, module, out sampleLen))
             {
                 if (audioStream == null)
@@ -456,11 +456,11 @@ namespace NScumm.Sci.Sound
             throw new NotImplementedException("HandleFanmadeSciAudio");
         }
 
-        static readonly byte[] tableDPCM8 = { 0, 1, 2, 3, 6, 10, 15, 21 };
+        private static readonly byte[] TableDpcm8 = { 0, 1, 2, 3, 6, 10, 15, 21 };
 
         // FIXME: Move this to sound/adpcm.cpp?
         // Note that the 16-bit version is also used in coktelvideo.cpp
-        static readonly ushort[] tableDPCM16 = {
+        private static readonly ushort[] TableDpcm16 = {
             0x0000, 0x0008, 0x0010, 0x0020, 0x0030, 0x0040, 0x0050, 0x0060, 0x0070, 0x0080,
             0x0090, 0x00A0, 0x00B0, 0x00C0, 0x00D0, 0x00E0, 0x00F0, 0x0100, 0x0110, 0x0120,
             0x0130, 0x0140, 0x0150, 0x0160, 0x0170, 0x0180, 0x0190, 0x01A0, 0x01B0, 0x01C0,

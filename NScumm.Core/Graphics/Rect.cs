@@ -23,54 +23,30 @@ namespace NScumm.Core.Graphics
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
     public struct Rect
     {
-        public int Top, Left;
-        public int Bottom, Right;
+        public short Top, Left;
+        public short Bottom, Right;
 
-        public int Height
+        public short Height
         {
-            get { return Bottom - Top; }
-            set { Bottom = Top + value; }
+            get { return (short) (Bottom - Top); }
+            set { Bottom = (short) (Top + value); }
         }
 
-        public int Width
+        public short Width
         {
-            get { return Right - Left; }
-            set { Right = Left + value; }
+            get { return (short) (Right - Left); }
+            set { Right = (short) (Left + value); }
         }
 
-        internal string DebuggerDisplay
-        {
-            get
-            {
-                return string.Format("[{0},{1},{2},{3}]", Left, Top, Right, Bottom);
-            }
-        }
+        internal string DebuggerDisplay => $"[{Left},{Top},{Right},{Bottom}]";
 
-        public bool IsValid
-        {
-            get
-            {
-                return (Left <= Right && Top <= Bottom);
-            }
-        }
+        public bool IsValid => Left <= Right && Top <= Bottom;
 
-        public bool IsEmpty
-        {
-            get
-            {
-                return (Left >= Right || Top >= Bottom);
-            }
-        }
+        public bool IsEmpty => Left >= Right || Top >= Bottom;
 
-        public bool IsValidRect
-        {
-            get
-            {
-                return (Left <= Right && Top <= Bottom);
-            }
-        }
+        public bool IsValidRect => Left <= Right && Top <= Bottom;
 
-        public Rect(int w, int h)
+        public Rect(short w, short h)
         {
             Top = 0;
             Left = 0;
@@ -78,7 +54,7 @@ namespace NScumm.Core.Graphics
             Right = w;
         }
 
-        public Rect(int x1, int y1, int x2, int y2)
+        public Rect(short x1, short y1, short x2, short y2)
         {
             Top = y1;
             Left = x1;
@@ -94,7 +70,7 @@ namespace NScumm.Core.Graphics
             Bottom = Math.Max(Bottom, r.Bottom);
         }
 
-        public void Clip(int maxw, int maxh)
+        public void Clip(short maxw, short maxh)
         {
             Clip(new Rect(0, 0, maxw, maxh));
         }
@@ -143,10 +119,10 @@ namespace NScumm.Core.Graphics
             return DebuggerDisplay;
         }
 
-        public void MoveTo(int x, int y)
+        public void MoveTo(short x, short y)
         {
-            Bottom += y - Top;
-            Right += x - Left;
+            Bottom = (short) (Bottom + y - Top);
+            Right = (short) (Right + x - Left);
             Top = y;
             Left = x;
         }
@@ -155,7 +131,7 @@ namespace NScumm.Core.Graphics
         /// Extend this rectangle in all four directions by the given number of pixels
         /// </summary>
         /// <param name="offset">the size to grow by</param>
-        public void Grow(int offset)
+        public void Grow(short offset)
         {
             Top -= offset;
             Left -= offset;
@@ -163,7 +139,7 @@ namespace NScumm.Core.Graphics
             Right += offset;
         }
 
-        public void Translate(int dx, int dy)
+        public void Translate(short dx, short dy)
         {
             Left += dx; Right += dx;
             Top += dy; Bottom += dy;

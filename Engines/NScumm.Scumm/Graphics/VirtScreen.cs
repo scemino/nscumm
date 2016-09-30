@@ -50,20 +50,11 @@ namespace NScumm.Scumm.Graphics
 
         #region Properties
 
-        public ReadOnlyCollection<Surface> Surfaces
-        {
-            get { return _roSurfaces; }
-        }
+        public ReadOnlyCollection<Surface> Surfaces => _roSurfaces;
 
-        public int[] TDirty
-        {
-            get { return tdirty; }
-        }
+        public int[] TDirty => tdirty;
 
-        public int[] BDirty
-        {
-            get { return bdirty; }
-        }
+        public int[] BDirty => bdirty;
 
         public ushort XStart { get; set; }
 
@@ -81,13 +72,13 @@ namespace NScumm.Scumm.Graphics
             internal set { Surfaces[0].Pitch = value; }
         }
 
-        public PixelFormat PixelFormat { get { return Surfaces[0].PixelFormat; } }
+        public PixelFormat PixelFormat => Surfaces[0].PixelFormat;
 
-        public int BytesPerPixel { get { return Surfaces[0].BytesPerPixel; } }
+        public int BytesPerPixel => Surfaces[0].BytesPerPixel;
 
-        public int Width { get { return Surfaces[0].Width; } }
+        public int Width => Surfaces[0].Width;
 
-        public int Height { get { return Surfaces[0].Height; } }
+        public int Height => Surfaces[0].Height;
 
         #endregion
 
@@ -96,7 +87,7 @@ namespace NScumm.Scumm.Graphics
         public VirtScreen(int top, int width, int height, PixelFormat format, int numBuffers, bool trick = false)
         {
             if (numBuffers <= 0)
-                throw new ArgumentOutOfRangeException("numBuffers", "The number of buffers should be positive.");
+                throw new ArgumentOutOfRangeException(nameof(numBuffers), "The number of buffers should be positive.");
 
             var numStrips = Math.Max(width / 8, 80);
             tdirty = new int[numStrips + 1];
@@ -106,7 +97,7 @@ namespace NScumm.Scumm.Graphics
             _roSurfaces = new ReadOnlyCollection<Surface>(_surfaces);
             for (int i = 0; i < numBuffers; i++)
             {
-                _surfaces[i] = new Surface(width, height, format, trick);
+                _surfaces[i] = new Surface((ushort) width, (ushort) height, format, trick);
             }
 
             SetDirtyRange(0, height);

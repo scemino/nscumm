@@ -22,7 +22,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
 {
-    enum MessageFunction
+    internal enum MessageFunction
     {
         GET,
         NEXT,
@@ -35,7 +35,7 @@ namespace NScumm.Sci.Engine
         LASTMESSAGE
     }
 
-    partial class Kernel
+    internal partial class Kernel
     {
         private const int ALIGN_NONE = 0;
         private const int ALIGN_RIGHT = 1;
@@ -152,8 +152,8 @@ namespace NScumm.Sci.Engine
 
 # if ENABLE_SCI32
                                 // If the string is a string object, get to the actual string in the data selector
-                                if (s._segMan.isObject(reg))
-                                    reg = readSelector(s._segMan, reg, SELECTOR(data));
+                                if (s._segMan.IsObject(reg))
+                                    reg = SciEngine.ReadSelector(s._segMan, reg, o => o.data);
 #endif
 
                                 string tempsource = SciEngine.Instance.Kernel.LookupText(reg, arguments[paramindex + 1]);
@@ -302,10 +302,10 @@ namespace NScumm.Sci.Engine
 
 # if ENABLE_SCI32
             // Resize SCI32 strings if necessary
-            if (getSciVersion() >= SCI_VERSION_2)
+            if (ResourceManager.GetSciVersion() >= SciVersion.V2)
             {
-                SciString * string = s._segMan.lookupString(dest);
-                string.setSize(strlen(targetbuf) + 1);
+                var @string = s._segMan.LookupString(dest);
+                @string.SetSize(targetbuf.Length + 1);
             }
 #endif
 
@@ -365,11 +365,11 @@ namespace NScumm.Sci.Engine
             ushort module = (ushort)((argc >= 2) ? argv[1].ToUInt16() : 0);
 
 # if ENABLE_SCI32
-            if (getSciVersion() >= SCI_VERSION_2)
+            if (ResourceManager.GetSciVersion() >= SciVersion.V2)
             {
                 // In complete weirdness, SCI32 bumps up subops 3-8 to 4-9 and stubs off subop 3.
                 if (func == 3)
-                    error("SCI32 kMessage(3)");
+                    Error("SCI32 kMessage(3)");
                 else if (func > 3)
                     func--;
             }
@@ -609,7 +609,7 @@ namespace NScumm.Sci.Engine
                 var tmp = new StackPtr(dest_r.reg.Value, offset / 2);
 
                 bool oddOffset = (offset & 1) != 0;
-                if (SciEngine.Instance.IsBE)
+                if (SciEngine.Instance.IsBe)
                     oddOffset = !oddOffset;
 
                 if (!oddOffset)
@@ -620,8 +620,7 @@ namespace NScumm.Sci.Engine
                         ushort tmpOffset = tmp[0].ToUInt16();
                         tmpOffset &= 0xff00;
                         tmpOffset |= newvalue;
-                        tmp[0] = Register.SetOffset(tmp[0], tmpOffset);
-                        tmp[0] = Register.SetSegment(tmp[0], 0);
+                        tmp[0] = Register.Make(0,tmpOffset);
                     }
                 }
                 else
@@ -632,8 +631,7 @@ namespace NScumm.Sci.Engine
                         ushort tmpOffset = tmp[0].ToUInt16();
                         tmpOffset &= 0x00ff;
                         tmpOffset |= (ushort)(newvalue << 8);
-                        tmp[0] = Register.SetOffset(tmp[0], tmpOffset);
-                        tmp[0] = Register.SetSegment(tmp[0], 0);
+                        tmp[0] = Register.Make(0,tmpOffset);
                     }
                 }
             }

@@ -32,29 +32,30 @@ namespace NScumm.Scumm
     partial class ScummEngine
     {
         protected VirtScreen _mainVirtScreen;
-        VirtScreen _textVirtScreen;
-        VirtScreen _verbVirtScreen;
-        VirtScreen _unkVirtScreen;
-        Surface _textSurface;
-        Surface _composite;
+        private VirtScreen _textVirtScreen;
+        private VirtScreen _verbVirtScreen;
+        private VirtScreen _unkVirtScreen;
+        private Surface _textSurface;
+        private Surface _composite;
         protected bool _bgNeedsRedraw;
         protected internal bool _fullRedraw;
         internal Gdi Gdi;
-        bool _completeScreenRedraw;
+        private bool _completeScreenRedraw;
         protected internal IGraphicsManager _gfxManager;
-        int _palDirtyMin, _palDirtyMax;
-        int _textSurfaceMultiplier = 1;
+        private int _palDirtyMin;
+        private int _palDirtyMax;
+        private int _textSurfaceMultiplier = 1;
         protected int _screenStartStrip;
         protected int _screenEndStrip;
 
-        const int Scrolltime = 500;
+        private const int Scrolltime = 500;
         // ms scrolling is supposed to take
-        const int PictureDelay = 20;
-        const int FadeDelay = 4;
+        private const int PictureDelay = 20;
+        private const int FadeDelay = 4;
         // 1/4th of a jiffie
 
-        Rect[] _cyclRects = new Rect[16];
-        int _numCyclRects;
+        private Rect[] _cyclRects = new Rect[16];
+        private int _numCyclRects;
 
         public VirtScreen TextVirtScreen { get { return _textVirtScreen; } }
 
@@ -87,10 +88,10 @@ namespace NScumm.Scumm
                 return;
 
             // Convert 'rect' to local (virtual screen) coordinates
-            rect.Top -= vs.TopLine;
-            rect.Bottom -= vs.TopLine;
+            rect.Top = (short) (rect.Top-vs.TopLine);
+            rect.Bottom = (short) (rect.Bottom - vs.TopLine);
 
-            rect.Clip(vs.Width, vs.Height);
+            rect.Clip((short) vs.Width, (short) vs.Height);
 
             int height = rect.Height;
             int width = rect.Width;
@@ -170,8 +171,8 @@ namespace NScumm.Scumm
                 }
             }
 
-            vst.CurRect.Right = vst.CurRect.Left + vst.ImageWidth;
-            vst.CurRect.Bottom = vst.CurRect.Top + vst.ImageHeight;
+            vst.CurRect.Right = (short) (vst.CurRect.Left + vst.ImageWidth);
+            vst.CurRect.Bottom = (short) (vst.CurRect.Top + vst.ImageHeight);
             vst.OldRect = vst.CurRect;
 
             Gdi.IsZBufferEnabled = true;
@@ -238,10 +239,10 @@ namespace NScumm.Scumm
                 }
                 else
                 {
-                    _charset.Str.Left = _charset.Left;
-                    _charset.Str.Top = _charset.Top;
-                    _charset.Str.Right = _charset.Left;
-                    _charset.Str.Bottom = _charset.Top;
+                    _charset.Str.Left = (short) _charset.Left;
+                    _charset.Str.Top = (short) _charset.Top;
+                    _charset.Str.Right = (short) _charset.Left;
+                    _charset.Str.Bottom = (short) _charset.Top;
                 }
             }
 
@@ -427,16 +428,16 @@ namespace NScumm.Scumm
             }
         }
 
-        void TownsSetupPalCycleField(int x1, int y1, int x2, int y2)
+        private void TownsSetupPalCycleField(int x1, int y1, int x2, int y2)
         {
             if (_numCyclRects >= 10)
                 return;
-            _cyclRects[_numCyclRects] = new Rect(x1, y1, x2, y2);
+            _cyclRects[_numCyclRects] = new Rect((short) x1, (short) y1, (short) x2, (short) y2);
             _numCyclRects++;
             TownsPaletteFlags |= 1;
         }
 
-        void UpdatePalette()
+        private void UpdatePalette()
         {
             if (_palDirtyMax == -1)
                 return;
@@ -496,7 +497,7 @@ namespace NScumm.Scumm
             }
         }
 
-        void ClearTextSurface()
+        private void ClearTextSurface()
         {
             if (_townsScreen != null)
                 _townsScreen.FillLayerRect(1, new Point(), _textSurface.Width, _textSurface.Height, 0);
@@ -593,7 +594,7 @@ namespace NScumm.Scumm
             _bgNeedsRedraw = false;
         }
 
-        void RedrawBGStrip(int start, int num)
+        private void RedrawBGStrip(int start, int num)
         {
             var s = _screenStartStrip + start;
 
@@ -604,7 +605,7 @@ namespace NScumm.Scumm
                 roomData.Header.Width, _mainVirtScreen.Height, s, num, roomData.Header.Width, 0);
         }
 
-        void HandleShaking()
+        private void HandleShaking()
         {
             if (_shakeEnabled)
             {
@@ -642,7 +643,7 @@ namespace NScumm.Scumm
             HandleShaking();
         }
 
-        void UpdateDirtyScreen(VirtScreen vs)
+        private void UpdateDirtyScreen(VirtScreen vs)
         {
             // Do nothing for unused virtual screens
             if (vs.Height == 0)
@@ -686,7 +687,7 @@ namespace NScumm.Scumm
         /// <param name="width"></param>
         /// <param name="top"></param>
         /// <param name="bottom"></param>
-        void DrawStripToScreen(VirtScreen vs, int x, int width, int top, int bottom)
+        private void DrawStripToScreen(VirtScreen vs, int x, int width, int top, int bottom)
         {
             // Short-circuit if nothing has to be drawn
             if (bottom <= top || top >= vs.Height)
@@ -707,7 +708,7 @@ namespace NScumm.Scumm
             if (width <= 0 || height <= 0)
                 return;
 
-            byte[] src;
+            BytePtr src;
             if (Game.Version < 7)
             {
                 if (Game.Platform == Platform.FMTowns)
@@ -974,12 +975,12 @@ namespace NScumm.Scumm
             return null;
         }
 
-        static bool VirtScreenContains(VirtScreen vs, int y)
+        private static bool VirtScreenContains(VirtScreen vs, int y)
         {
             return (y >= vs.TopLine && y < vs.TopLine + vs.Height);
         }
 
-        int GetNumZBuffers()
+        private int GetNumZBuffers()
         {
             int numZBuffer;
             if (Game.Version <= 3)
@@ -1001,7 +1002,7 @@ namespace NScumm.Scumm
             return numZBuffer;
         }
 
-        static readonly byte[] _townsLayer2Mask =
+        private static readonly byte[] _townsLayer2Mask =
             {
                 0xFF, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0,
                 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

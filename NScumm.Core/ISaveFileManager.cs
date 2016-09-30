@@ -52,7 +52,7 @@ namespace NScumm.Core
         /// Removes the given savefile from the system.
         /// </summary>
         /// <param name="name">Name the name of the savefile to be removed..</param>
-        void RemoveSavefile(string name);
+        bool RemoveSavefile(string name);
 
         bool RenameSavefile(string oldName, string newName);
     }

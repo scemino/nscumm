@@ -24,7 +24,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
 {
-    partial class Kernel
+    internal partial class Kernel
     {
         // Loads arbitrary resources of type 'restype' with resource numbers 'resnrs'
         // This implementation ignores all resource numbers except the first one.
@@ -119,7 +119,7 @@ namespace NScumm.Sci.Engine
             //  At least kq4early relies on this behavior. The scripts clone "Sound", then set bit 1 manually
             //  and call kDisposeClone later. In that case we may not free it, otherwise we will run into issues
             //  later, because kIsObject would then return false and Sound object wouldn't get checked.
-            ushort infoSelector = (ushort)@object.InfoSelector.Offset;
+            ushort infoSelector = (ushort)@object.InfoSelector[0].Offset;
             if ((infoSelector & 3) == SciObject.InfoFlagClone)
                 @object.MarkAsFreed();
 
@@ -173,7 +173,7 @@ namespace NScumm.Sci.Engine
 
             DebugC(DebugLevels.Memory, "Attempting to clone from {0}", parentAddr);
 
-            ushort infoSelector = (ushort)parentObj.InfoSelector.Offset;
+            ushort infoSelector = (ushort)parentObj.InfoSelector[0].Offset;
             var cloneObj = s._segMan.AllocateClone(out cloneAddr);
 
             if (cloneObj.Item == null)
@@ -200,7 +200,8 @@ namespace NScumm.Sci.Engine
             {
                 infoSelector &= (ushort)(~SciObject.InfoFlagClass); // remove class bit
             }
-            cloneObj.Item.InfoSelector = Register.Make(0, (ushort)(infoSelector | SciObject.InfoFlagClone));
+            var info = cloneObj.Item.InfoSelector;
+            info[0] = Register.Make(0, (ushort)(infoSelector | SciObject.InfoFlagClone));
 
             cloneObj.Item.SpeciesSelector = cloneObj.Item.Pos;
             if (parentObj.IsClass)

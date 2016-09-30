@@ -1,7 +1,7 @@
 //  Author:
 //       scemino <scemino74@gmail.com>
 //
-//  Copyright (c) 2015 
+//  Copyright (c) 2015
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -25,24 +25,25 @@ using NScumm.Sci.Graphics;
 using NScumm.Sci.Parser;
 using NScumm.Core.Common;
 using static NScumm.Core.DebugHelper;
+using NScumm.Sci.Video;
 
 namespace NScumm.Sci
 {
-    class FanMadePatchInfo
+    internal class FanMadePatchInfo
     {
-        public SciGameId gameID;
-        public ushort targetScript;
-        public ushort targetSize;
-        public ushort patchedByteOffset;
-        public byte patchedByte;
+        public readonly SciGameId GameId;
+        public readonly ushort TargetScript;
+        public readonly ushort TargetSize;
+        public readonly ushort PatchedByteOffset;
+        public readonly byte PatchedByte;
 
-        public FanMadePatchInfo(SciGameId gameID, ushort targetScript, ushort targetSize, ushort patchedByteOffset, byte patchedByte)
+        public FanMadePatchInfo(SciGameId gameId, ushort targetScript, ushort targetSize, ushort patchedByteOffset, byte patchedByte)
         {
-            this.gameID = gameID;
-            this.targetScript = targetScript;
-            this.targetSize = targetSize;
-            this.patchedByteOffset = patchedByteOffset;
-            this.patchedByte = patchedByte;
+            GameId = gameId;
+            TargetScript = targetScript;
+            TargetSize = targetSize;
+            PatchedByteOffset = patchedByteOffset;
+            PatchedByte = patchedByte;
         }
     }
 
@@ -51,14 +52,14 @@ namespace NScumm.Sci
     /// </summary>
     internal enum Language
     {
-        NONE = 0,
-        ENGLISH = 1,
-        FRENCH = 33,
-        SPANISH = 34,
-        ITALIAN = 39,
-        GERMAN = 49,
-        JAPANESE = 81,
-        PORTUGUESE = 351
+        None = 0,
+        English = 1,
+        French = 33,
+        Spanish = 34,
+        Italian = 39,
+        German = 49,
+        Japanese = 81,
+        Portuguese = 351
     }
 
     internal class SciEngine : Core.Engine
@@ -76,8 +77,6 @@ namespace NScumm.Sci
         public GfxCoordAdjuster _gfxCoordAdjuster;
         public GfxCursor _gfxCursor;
         public GfxMenu _gfxMenu; // Menu for 16-bit gfx
-        public GfxPalette _gfxPalette;
-        public GfxPaint _gfxPaint;
         public GfxPaint16 _gfxPaint16; // Painting in 16-bit gfx
         public GfxPaint32 _gfxPaint32; // Painting in 32-bit gfx
         public GfxPorts _gfxPorts; // Port managment for 16-bit gfx
@@ -87,8 +86,15 @@ namespace NScumm.Sci
         private GfxTransitions _gfxTransitions; // transitions between screens for 16-bit gfx
         public GfxMacIconBar _gfxMacIconBar; // Mac Icon Bar manager
 
-        public DebugState _debugState;
-        MacResManager _macExecutable = new MacResManager();
+#if ENABLE_SCI32
+        private Audio32 _audio32;
+        private Video32 _video32;
+        private RobotDecoder _robotDecoder;
+        public GfxFrameout _gfxFrameout; // kFrameout and the like for 32-bit gfx
+#endif
+
+        public readonly DebugState _debugState;
+        private readonly MacResManager _macExecutable = new MacResManager();
 
         // Maps half-width single-byte SJIS to full-width double-byte SJIS
         // Note: SSCI maps 0x5C (the Yen symbol) to 0x005C, which terminates
@@ -156,7 +162,7 @@ namespace NScumm.Sci
             0x48, // ret
         };
 
-        private readonly FanMadePatchInfo[] patchInfo = {
+        private readonly FanMadePatchInfo[] _patchInfo = {
         // game        script    size  offset   byte
         // ** NRS Patches **************************
             new FanMadePatchInfo( SciGameId.HOYLE3,     994,   2580,    656,  0x78 ),
@@ -256,7 +262,7 @@ namespace NScumm.Sci
         public string StrSplitLanguage(string str, ushort languageSplitter, string sep = "\r----------\r")
         {
             Language activeLanguage = GetSciLanguage();
-            Language subtitleLanguage = Sci.Language.NONE;
+            Language subtitleLanguage = Sci.Language.None;
 
             if (Selector(s => s.subtitleLang) != -1)
                 subtitleLanguage =
@@ -267,11 +273,11 @@ namespace NScumm.Sci
 
             // Don't add subtitle when separator is not set, subtitle language is not set, or
             // string contains only one language
-            if ((sep == null) || (subtitleLanguage == Sci.Language.NONE) || (foundLanguage == Sci.Language.NONE))
+            if ((sep == null) || (subtitleLanguage == Sci.Language.None) || (foundLanguage == Sci.Language.None))
                 return retval;
 
             // Add subtitle, unless the subtitle language doesn't match the languages in the string
-            if ((subtitleLanguage == Sci.Language.ENGLISH) || (subtitleLanguage == foundLanguage))
+            if ((subtitleLanguage == Sci.Language.English) || (subtitleLanguage == foundLanguage))
             {
                 retval += sep;
                 retval += GetSciLanguageString(str, subtitleLanguage);
@@ -291,11 +297,11 @@ namespace NScumm.Sci
             out Language secondaryLanguage,
             out ushort languageSplitter)
         {
-            secondaryLanguage = Sci.Language.NONE;
+            secondaryLanguage = Sci.Language.None;
             languageSplitter = 0;
 
             var textPtr = 0;
-            Language foundLanguage = Sci.Language.NONE;
+            Language foundLanguage = Sci.Language.None;
             char curChar = '\0';
             char curChar2 = '\0';
             int i;
@@ -308,7 +314,7 @@ namespace NScumm.Sci
                     curChar2 = str[i + 1];
                     foundLanguage = CharToLanguage(curChar2);
 
-                    if (foundLanguage != Sci.Language.NONE)
+                    if (foundLanguage != Sci.Language.None)
                     {
                         // Return language splitter
                         languageSplitter = (ushort)(curChar | (curChar2 << 8));
@@ -420,20 +426,20 @@ namespace NScumm.Sci
             switch (c)
             {
                 case 'F':
-                    return Sci.Language.FRENCH;
+                    return Sci.Language.French;
                 case 'S':
-                    return Sci.Language.SPANISH;
+                    return Sci.Language.Spanish;
                 case 'I':
-                    return Sci.Language.ITALIAN;
+                    return Sci.Language.Italian;
                 case 'G':
-                    return Sci.Language.GERMAN;
+                    return Sci.Language.German;
                 case 'J':
                 case 'j':
-                    return Sci.Language.JAPANESE;
+                    return Sci.Language.Japanese;
                 case 'P':
-                    return Sci.Language.PORTUGUESE;
+                    return Sci.Language.Portuguese;
                 default:
-                    return Sci.Language.NONE;
+                    return Sci.Language.None;
             }
         }
 
@@ -480,9 +486,9 @@ namespace NScumm.Sci
 
         public bool IsDemo => _gameDescription.flags.HasFlag(ADGameFlags.DEMO);
 
-        public bool IsCD => _gameDescription.flags.HasFlag(ADGameFlags.CD);
+        public bool IsCd => _gameDescription.flags.HasFlag(ADGameFlags.CD);
 
-        public bool IsBE
+        public bool IsBe
             => _gameDescription.platform == Platform.Amiga || _gameDescription.platform == Platform.Macintosh;
 
         public RandomSource Rng { get; }
@@ -510,14 +516,14 @@ namespace NScumm.Sci
         public Language GetSciLanguage()
         {
             Language lang = (Language)ResMan.GetAudioLanguage();
-            if (lang != Sci.Language.NONE)
+            if (lang != Sci.Language.None)
                 return lang;
 
-            if (Selector(o => o.printLang) == -1) return Sci.Language.ENGLISH;
+            if (Selector(o => o.printLang) == -1) return Sci.Language.English;
 
             lang = (Language)ReadSelectorValue(EngineState._segMan, GameObject, o => o.printLang);
 
-            if ((ResourceManager.GetSciVersion() < SciVersion.V1_1) && (lang != Sci.Language.NONE)) return lang;
+            if ((ResourceManager.GetSciVersion() < SciVersion.V1_1) && (lang != Sci.Language.None)) return lang;
 
             // If language is set to none, we use the language from the game detector.
             // SSCI reads this from resource.cfg (early games do not have a language
@@ -530,25 +536,25 @@ namespace NScumm.Sci
             switch (Language)
             {
                 case Core.Language.FR_FRA:
-                    lang = Sci.Language.FRENCH;
+                    lang = Sci.Language.French;
                     break;
                 case Core.Language.ES_ESP:
-                    lang = Sci.Language.SPANISH;
+                    lang = Sci.Language.Spanish;
                     break;
                 case Core.Language.IT_ITA:
-                    lang = Sci.Language.ITALIAN;
+                    lang = Sci.Language.Italian;
                     break;
                 case Core.Language.DE_DEU:
-                    lang = Sci.Language.GERMAN;
+                    lang = Sci.Language.German;
                     break;
                 case Core.Language.JA_JPN:
-                    lang = Sci.Language.JAPANESE;
+                    lang = Sci.Language.Japanese;
                     break;
                 case Core.Language.PT_BRA:
-                    lang = Sci.Language.PORTUGUESE;
+                    lang = Sci.Language.Portuguese;
                     break;
                 default:
-                    lang = Sci.Language.ENGLISH;
+                    lang = Sci.Language.English;
                     break;
             }
 
@@ -593,7 +599,6 @@ namespace NScumm.Sci
 
             // Initialize the game screen
             _gfxScreen = new GfxScreen(ResMan);
-            _gfxScreen.IsUnditheringEnabled = false;
             _gfxScreen.IsUnditheringEnabled = ConfigManager.Instance.Get<bool>("disable_dithering");
 
             Kernel = new Kernel(ResMan, segMan);
@@ -755,18 +760,18 @@ namespace NScumm.Sci
 
             while (true)
             {
-                if (patchInfo[curEntry].targetSize == 0)
+                if (_patchInfo[curEntry].TargetSize == 0)
                     break;
 
-                if (patchInfo[curEntry].gameID == GameId)
+                if (_patchInfo[curEntry].GameId == GameId)
                 {
-                    var targetScript = ResMan.FindResource(new ResourceId(ResourceType.Script, patchInfo[curEntry].targetScript), false);
+                    var targetScript = ResMan.FindResource(new ResourceId(ResourceType.Script, _patchInfo[curEntry].TargetScript), false);
 
-                    if (targetScript != null && targetScript.size + 2 == patchInfo[curEntry].targetSize)
+                    if (targetScript != null && targetScript.size + 2 == _patchInfo[curEntry].TargetSize)
                     {
-                        if (patchInfo[curEntry].patchedByteOffset == 0)
+                        if (_patchInfo[curEntry].PatchedByteOffset == 0)
                             return true;
-                        if (targetScript.data[patchInfo[curEntry].patchedByteOffset - 2] == patchInfo[curEntry].patchedByte)
+                        if (targetScript.data[_patchInfo[curEntry].PatchedByteOffset - 2] == _patchInfo[curEntry].PatchedByte)
                             return true;
                     }
                 }
@@ -883,7 +888,7 @@ namespace NScumm.Sci
                 // SCI2+
                 Array.Copy(PatchGameRestoreSaveSci2, 0, patchPtr.Data, patchPtr.Offset, PatchGameRestoreSaveSci2.Length);
 
-                if (Instance.IsBE)
+                if (Instance.IsBe)
                 {
                     // LE . BE
                     patchPtr[9] = 0x00;
@@ -904,7 +909,7 @@ namespace NScumm.Sci
             if (doRestore)
                 patchPtr[2] = 0x78; // push1
 
-            if (Instance.IsBE)
+            if (Instance.IsBe)
             {
                 // LE . BE
                 patchPtr[10] = 0x00;
@@ -931,7 +936,7 @@ namespace NScumm.Sci
         private string StrSplitLanguage(string str, out ushort languageSplitter, string sep = "\r----------\r")
         {
             Language activeLanguage = GetSciLanguage();
-            Language subtitleLanguage = Sci.Language.NONE;
+            Language subtitleLanguage = Sci.Language.None;
 
             if (Selector(s => s.subtitleLang) != -1)
                 subtitleLanguage =
@@ -942,11 +947,11 @@ namespace NScumm.Sci
 
             // Don't add subtitle when separator is not set, subtitle language is not set, or
             // string contains only one language
-            if ((sep == null) || (subtitleLanguage == Sci.Language.NONE) || (foundLanguage == Sci.Language.NONE))
+            if ((sep == null) || (subtitleLanguage == Sci.Language.None) || (foundLanguage == Sci.Language.None))
                 return retval;
 
             // Add subtitle, unless the subtitle language doesn't match the languages in the string
-            if ((subtitleLanguage == Sci.Language.ENGLISH) || (subtitleLanguage == foundLanguage))
+            if ((subtitleLanguage == Sci.Language.English) || (subtitleLanguage == foundLanguage))
             {
                 retval += sep;
                 retval += GetSciLanguageString(str, subtitleLanguage);
@@ -1052,10 +1057,10 @@ namespace NScumm.Sci
             // If game is multilingual and English was selected as language
             if (Selector(o => o.printLang) != -1) // set text language to English
                 WriteSelectorValue(EngineState._segMan, GameObject, o => o.printLang,
-                    (ushort)Sci.Language.ENGLISH);
+                    (ushort)Sci.Language.English);
             if (Selector(o => o.parseLang) != -1) // and set parser language to English as well
                 WriteSelectorValue(EngineState._segMan, GameObject, o => o.parseLang,
-                    (ushort)Sci.Language.ENGLISH);
+                    (ushort)Sci.Language.English);
         }
 
         private void InitGraphics()
@@ -1069,9 +1074,7 @@ namespace NScumm.Sci
             _gfxCursor = null;
             _gfxMacIconBar = null;
             _gfxMenu = null;
-            _gfxPaint = null;
             _gfxPaint16 = null;
-            _gfxPalette = null;
             _gfxPorts = null;
             _gfxText16 = null;
             _gfxTransitions = null;
@@ -1081,27 +1084,44 @@ namespace NScumm.Sci
             _robotDecoder = null;
             _gfxFrameout = null;
             _gfxPaint32 = null;
+            _gfxPalette32 = null;
+            _gfxRemap32 = null;
 #endif
             if (HasMacIconBar)
                 _gfxMacIconBar = new GfxMacIconBar();
 
-            _gfxPalette = new GfxPalette(ResMan, _gfxScreen);
-            _gfxCache = new GfxCache(ResMan, _gfxScreen, _gfxPalette);
-            _gfxCursor = new GfxCursor(ResMan, _gfxPalette, _gfxScreen);
+#if ENABLE_SCI32
+            if (ResourceManager.GetSciVersion() >= SciVersion.V2)
+            {
+                _gfxPalette32 = new GfxPalette32(ResMan);
+                _gfxRemap32 = new GfxRemap32();
+            }
+            else
+            {
+#endif
+                _gfxPalette16 = new GfxPalette(ResMan, _gfxScreen);
+                if (GameId == SciGameId.QFG4DEMO)
+                    _gfxRemap16 = new GfxRemap(_gfxPalette16);
+#if ENABLE_SCI32
+            }
+#endif
+
+            _gfxCache = new GfxCache(ResMan, _gfxScreen, _gfxPalette16);
+            _gfxCursor = new GfxCursor(ResMan, _gfxPalette16, _gfxScreen);
 
 #if ENABLE_SCI32
-            if (getSciVersion() >= SCI_VERSION_2)
+            if (ResourceManager.GetSciVersion() >= SciVersion.V2)
             {
                 // SCI32 graphic objects creation
-                _gfxCoordAdjuster = new GfxCoordAdjuster32(_gamestate._segMan);
-                _gfxCursor.init(_gfxCoordAdjuster, _eventMan);
-                _gfxCompare = new GfxCompare(_gamestate._segMan, _gfxCache, _gfxScreen, _gfxCoordAdjuster);
-                _gfxPaint32 = new GfxPaint32(_resMan, _gfxCoordAdjuster, _gfxScreen, _gfxPalette);
-                _gfxPaint = _gfxPaint32;
-                _gfxText32 = new GfxText32(_gamestate._segMan, _gfxCache, _gfxScreen);
-                _gfxControls32 = new GfxControls32(_gamestate._segMan, _gfxCache, _gfxText32);
-                _robotDecoder = new RobotDecoder(getPlatform() == Common::kPlatformMacintosh);
-                _gfxFrameout = new GfxFrameout(_gamestate._segMan, _resMan, _gfxCoordAdjuster, _gfxCache, _gfxScreen, _gfxPalette, _gfxPaint32);
+                _gfxCoordAdjuster = new GfxCoordAdjuster32(EngineState._segMan);
+                _gfxCursor.Init(_gfxCoordAdjuster, EventManager);
+                _gfxCompare = new GfxCompare(EngineState._segMan, _gfxCache, _gfxScreen, _gfxCoordAdjuster);
+                _gfxPaint32 = new GfxPaint32(EngineState._segMan);
+                _robotDecoder = new RobotDecoder(Platform == Platform.Macintosh);
+                _gfxFrameout = new GfxFrameout(EngineState._segMan, ResMan, _gfxCoordAdjuster, _gfxScreen,_gfxPalette32);
+                _gfxText32 = new GfxText32(EngineState._segMan, _gfxCache);
+                _gfxControls32 = new GfxControls32(EngineState._segMan, _gfxCache, _gfxText32);
+                _gfxFrameout.Run();
             }
             else {
 #endif
@@ -1110,11 +1130,10 @@ namespace NScumm.Sci
             _gfxCoordAdjuster = new GfxCoordAdjuster16(_gfxPorts);
             _gfxCursor.Init(_gfxCoordAdjuster, EventManager);
             _gfxCompare = new GfxCompare(EngineState._segMan, _gfxCache, _gfxScreen, _gfxCoordAdjuster);
-            _gfxTransitions = new GfxTransitions(_gfxScreen, _gfxPalette);
+            _gfxTransitions = new GfxTransitions(_gfxScreen, _gfxPalette16);
             _gfxPaint16 = new GfxPaint16(ResMan, EngineState._segMan, _gfxCache, _gfxPorts, _gfxCoordAdjuster,
-                _gfxScreen, _gfxPalette, _gfxTransitions, _audio);
-            _gfxPaint = _gfxPaint16;
-            _gfxAnimate = new GfxAnimate(EngineState, _gfxCache, _gfxPorts, _gfxPaint16, _gfxScreen, _gfxPalette,
+                _gfxScreen, _gfxPalette16, _gfxTransitions, _audio);
+            _gfxAnimate = new GfxAnimate(EngineState, _gfxCache, _gfxPorts, _gfxPaint16, _gfxScreen, _gfxPalette16,
                 _gfxCursor, _gfxTransitions);
             _gfxText16 = new GfxText16(_gfxCache, _gfxPorts, _gfxPaint16, _gfxScreen);
             _gfxControls16 = new GfxControls16(EngineState._segMan, _gfxPorts, _gfxPaint16, _gfxText16, _gfxScreen);
@@ -1131,7 +1150,7 @@ namespace NScumm.Sci
 #endif
 
             // Set default (EGA, amiga or resource 999) palette
-            _gfxPalette.SetDefault();
+            _gfxPalette16.SetDefault();
         }
 
         private void script_adjust_opcode_formats()
@@ -1152,23 +1171,23 @@ namespace NScumm.Sci
 
 # if ENABLE_SCI32
 // In SCI32, some arguments are now words instead of bytes
-            if (getSciVersion() >= SCI_VERSION_2)
+            if (ResourceManager.GetSciVersion() >= SciVersion.V2)
             {
-                Instance._opcode_formats[op_calle][2] = Script_Word;
-                Instance._opcode_formats[op_callk][1] = Script_Word;
-                Instance._opcode_formats[op_super][1] = Script_Word;
-                Instance._opcode_formats[op_send][0] = Script_Word;
-                Instance._opcode_formats[op_self][0] = Script_Word;
-                Instance._opcode_formats[op_call][1] = Script_Word;
-                Instance._opcode_formats[op_callb][1] = Script_Word;
+                Instance._opcode_formats[Vm.op_calle][2] = opcode_format.Script_Word;
+                Instance._opcode_formats[Vm.op_callk][1] = opcode_format.Script_Word;
+                Instance._opcode_formats[Vm.op_super][1] = opcode_format.Script_Word;
+                Instance._opcode_formats[Vm.op_send][0] = opcode_format.Script_Word;
+                Instance._opcode_formats[Vm.op_self][0] = opcode_format.Script_Word;
+                Instance._opcode_formats[Vm.op_call][1] = opcode_format.Script_Word;
+                Instance._opcode_formats[Vm.op_callb][1] = opcode_format.Script_Word;
             }
 
-            if (getSciVersion() >= SCI_VERSION_3)
+            if (ResourceManager.GetSciVersion() >= SciVersion.V3)
             {
                 // TODO: There are also opcodes in
                 // here to get the superclass, and possibly the species too.
-                Instance._opcode_formats[0x4d / 2][0] = Script_None;
-                Instance._opcode_formats[0x4e / 2][0] = Script_None;
+                Instance._opcode_formats[0x4d / 2][0] = opcode_format.Script_None;
+                Instance._opcode_formats[0x4e / 2][0] = opcode_format.Script_None;
             }
 #endif
         }
@@ -1177,8 +1196,8 @@ namespace NScumm.Sci
         {
             // Script 0 needs to be allocated here before anything else!
             int script0Segment = EngineState._segMan.GetScriptSegment(0, ScriptLoadType.LOCK);
-            ushort segid = 0;
-            DataStack stack = EngineState._segMan.AllocateStack(Vm.STACK_SIZE, ref segid);
+            ushort segid;
+            DataStack stack = EngineState._segMan.AllocateStack(Vm.STACK_SIZE, out segid);
 
             EngineState._msgState = new MessageState(EngineState._segMan);
             EngineState.gcCountDown = Vm.GC_INTERVAL - 1;
@@ -1212,8 +1231,7 @@ namespace NScumm.Sci
             }
 
             // Reset parser
-            if (Vocabulary != null)
-                Vocabulary.Reset();
+            Vocabulary?.Reset();
 
             EngineState.lastWaitTime = EngineState._screenUpdateTime = ServiceLocator.Platform.GetMilliseconds();
 
@@ -1233,7 +1251,7 @@ namespace NScumm.Sci
             bool useGlobal90 = false;
 
             // Sync the in-game speech/subtitles settings for SCI1.1 CD games
-            if (IsCD)
+            if (IsCd)
             {
                 switch (ResourceManager.GetSciVersion())
                 {
@@ -1247,17 +1265,17 @@ namespace NScumm.Sci
                     case SciVersion.V2_1_MIDDLE:
                     case SciVersion.V2_1_LATE:
                         // Only use global 90 for some specific games, not all SCI32 games used this method
-                        switch (_gameId)
+                        switch (GameId)
                         {
-                            case GID_KQ7: // SCI2.1
-                            case GID_GK1: // SCI2
-                            case GID_GK2: // SCI2.1
-                            case GID_SQ6: // SCI2.1
-                            case GID_TORIN: // SCI2.1
-                            case GID_QFG4: // SCI2.1
+                            case SciGameId.KQ7: // SCI2.1
+                            case SciGameId.GK1: // SCI2
+                            case SciGameId.GK2: // SCI2.1
+                            case SciGameId.SQ6: // SCI2.1
+                            case SciGameId.TORIN: // SCI2.1
+                            case SciGameId.QFG4: // SCI2.1
                                 useGlobal90 = true;
                                 break;
-                            case GID_LSL6: // SCI2.1
+                            case SciGameId.LSL6: // SCI2.1
                                 // TODO: Uses gameFlags array
                                 break;
                             // TODO: Unknown at the moment:
@@ -1318,11 +1336,11 @@ namespace NScumm.Sci
             }
         }
 
-        public void UpdateScummVMAudioOptions()
+        public void UpdateScummVmAudioOptions()
         {
             // Update ScummVM's speech/subtitles settings for SCI1.1 CD games,
             // depending on the in-game settings
-            if (!IsCD || ResourceManager.GetSciVersion() != SciVersion.V1_1) return;
+            if (!IsCd || ResourceManager.GetSciVersion() != SciVersion.V1_1) return;
             ushort ingameSetting = (ushort)EngineState.variables[Vm.VAR_GLOBAL][90].Offset;
 
             switch (ingameSetting)
@@ -1367,6 +1385,13 @@ namespace NScumm.Sci
             if (LookupSelector(segMan, obj, selectorId, address, out fptr) != SelectorType.Variable)
                 return Register.NULL_REG;
             return address.GetPointer(segMan)[0];
+        }
+
+        public static SelectorType LookupSelector(SegManager segMan, Register objLocation,
+            Func<SelectorCache, int> func, ObjVarRef varp)
+        {
+            Register fptr;
+            return LookupSelector(segMan, objLocation, Selector(func), varp, out fptr);
         }
 
         public static SelectorType LookupSelector(SegManager segMan, Register objLocation,
@@ -1632,5 +1657,9 @@ namespace NScumm.Sci
 
         public AudioPlayer _audio;
         private ushort _vocabularyLanguage;
+        public GfxPalette32 _gfxPalette32;
+        public GfxRemap32 _gfxRemap32;
+        public GfxPalette _gfxPalette16;
+        public GfxRemap _gfxRemap16;
     }
 }

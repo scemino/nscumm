@@ -22,30 +22,20 @@ namespace NScumm.Sword1
 {
     class ByteAccess
     {
-        private readonly byte[] _data;
-        private int _offset;
-
         public byte Value
         {
-            get { return _data[_offset]; }
-            set { _data[_offset] = value; }
+            get { return Data[Offset]; }
+            set { Data[Offset] = value; }
         }
 
-        public byte[] Data
-        {
-            get { return _data; }
-        }
+        public byte[] Data { get; }
 
-        public int Offset
-        {
-            get { return _offset; }
-            set { _offset = value; }
-        }
+        public int Offset { get; set; }
 
         public byte this[int index]
         {
-            get { return _data[_offset + index]; }
-            set { _data[_offset + index] = value; }
+            get { return Data[Offset + index]; }
+            set { Data[Offset + index] = value; }
         }
 
         public ByteAccess(ByteAccess data)
@@ -55,77 +45,54 @@ namespace NScumm.Sword1
 
         public ByteAccess(byte[] data, int offset = 0)
         {
-            _data = data;
-            _offset = offset;
+            Data = data;
+            Offset = offset;
         }
     }
 
     class UShortAccess
     {
-        private readonly byte[] _data;
-        private int _offset;
-
-        public byte[] Data
-        {
-            get { return _data; }
-        }
+        public BytePtr Data;
 
         public ushort Value
         {
-            get { return _data.ToUInt16(Offset); }
-            set { _data.WriteUInt16(Offset, value); }
-        }
-
-        public int Offset
-        {
-            get { return _offset; }
-            set { _offset = value; }
+            get { return Data.ToUInt16(); }
+            set { Data.WriteUInt16(0, value); }
         }
 
         public ushort this[int index]
         {
-            get { return _data.ToUInt16(Offset + index * 2); }
-            set { _data.WriteUInt16(Offset + index * 2, value); }
+            get { return Data.ToUInt16(index * 2); }
+            set { Data.WriteUInt16(index * 2, value); }
         }
 
-        public UShortAccess(byte[] data, int offset = 0)
+        public UShortAccess(BytePtr data, int offset = 0)
         {
-            _data = data;
-            Offset = offset;
+            Data = new BytePtr(data,offset);
         }
     }
 
     class UIntAccess
     {
-        private readonly byte[] _data;
-        private int _offset;
-
-        public byte[] Data
-        {
-            get { return _data; }
-        }
+        public readonly BytePtr Data;
 
         public uint Value
         {
-            get { return _data.ToUInt32(Offset); }
-            set { _data.WriteUInt32(Offset, value); }
+            get { return Data.ToUInt32(Offset); }
+            set { Data.WriteUInt32(Offset, value); }
         }
 
-        public int Offset
-        {
-            get { return _offset; }
-            set { _offset = value; }
-        }
+        public int Offset { get; set; }
 
         public uint this[int index]
         {
-            get { return _data.ToUInt32(Offset + index * 4); }
-            set { _data.WriteUInt32(Offset + index * 4, value); }
+            get { return Data.ToUInt32(Offset + index * 4); }
+            set { Data.WriteUInt32(Offset + index * 4, value); }
         }
 
-        public UIntAccess(byte[] data, int offset = 0)
+        public UIntAccess(BytePtr data, int offset = 0)
         {
-            _data = data;
+            Data = data;
             Offset = offset;
         }
     }

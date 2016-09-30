@@ -48,7 +48,7 @@ namespace NScumm
 
 		public bool IsCursorVisible { get; set; }
 
-		public Rect Bounds { get { return new Rect (_rect.Left, _rect.Top, _rect.Right, _rect.Bottom); } }
+		public Rect Bounds { get { return new Rect ((short)_rect.Left, (short)_rect.Top, (short)_rect.Right, (short)_rect.Bottom); } }
 
 		public XnaGraphicsManager (int width, int height, Core.Graphics.PixelFormat format, GraphicsDevice device)
 		{
@@ -74,25 +74,25 @@ namespace NScumm
 			}
 		}
 
-		public void CopyRectToScreen (byte[] buffer, int startOffset, int sourceStride, int x, int y, int width, int height)
+		public void CopyRectToScreen (BytePtr buffer, int startOffset, int sourceStride, int x, int y, int width, int height)
 		{
 			_colorGraphicsManager.CopyRectToScreen (buffer, startOffset, sourceStride, x, y, width, height);
 		}
 
-		public void CopyRectToScreen (byte[] buffer, int sourceStride, int x, int y, int width, int height)
+		public void CopyRectToScreen (BytePtr buffer, int sourceStride, int x, int y, int width, int height)
 		{
 			_colorGraphicsManager.CopyRectToScreen (buffer, sourceStride, x, y, width, height);
 		}
 
-		public void CopyRectToScreen (byte[] buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height)
+		public void CopyRectToScreen (BytePtr buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height)
 		{
 			_colorGraphicsManager.CopyRectToScreen (buffer, sourceStride, x, y, dstX, dstY, width, height);
 		}
 
 		public Core.Graphics.Surface Capture ()
 		{
-			var surface = new Core.Graphics.Surface (_width, _height, Core.Graphics.PixelFormat.Indexed8, false);
-			Array.Copy (_pixels, surface.Pixels, _pixels.Length);
+			var surface = new Core.Graphics.Surface ((ushort)_width, (ushort)_height, Core.Graphics.PixelFormat.Indexed8, false);
+			Array.Copy (_pixels, 0, surface.Pixels.Data, surface.Pixels.Offset, _pixels.Length);
 			return surface;
 		}
 
@@ -129,12 +129,12 @@ namespace NScumm
 
 		public Vector2 Hotspot { get; private set; }
 
-		public void SetCursor (byte[] pixels, int width, int height, Point hotspot)
+		public void SetCursor (BytePtr pixels, int width, int height, Point hotspot)
 		{
 			_colorGraphicsManager.SetCursor (pixels, width, height, hotspot);
 		}
 
-		public void SetCursor (byte[] pixels, int offset, int width, int height, Point hotspot, int keyColor)
+		public void SetCursor (BytePtr pixels, int offset, int width, int height, Point hotspot, int keyColor)
 		{
 			_colorGraphicsManager.SetCursor (pixels, offset, width, height, hotspot, keyColor);
 		}
@@ -209,15 +209,15 @@ namespace NScumm
 		{
 			void UpdateScreen ();
 
-			void CopyRectToScreen (byte[] buffer, int startOffset, int sourceStride, int x, int y, int width, int height);
+			void CopyRectToScreen (BytePtr buffer, int startOffset, int sourceStride, int x, int y, int width, int height);
 
-			void CopyRectToScreen (byte[] buffer, int sourceStride, int x, int y, int width, int height);
+			void CopyRectToScreen (BytePtr buffer, int sourceStride, int x, int y, int width, int height);
 
-			void CopyRectToScreen (byte[] buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height);
+			void CopyRectToScreen (BytePtr buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height);
 
-			void SetCursor (byte[] pixels, int width, int height, Point hotspot);
+			void SetCursor (BytePtr pixels, int width, int height, Point hotspot);
 
-			void SetCursor (byte[] pixels, int offset, int width, int height, Point hotspot, int keyColor);
+			void SetCursor (BytePtr pixels, int offset, int width, int height, Point hotspot, int keyColor);
 
 			void FillScreen (int color);
 		}
@@ -243,7 +243,7 @@ namespace NScumm
 				}
 			}
 
-			public void CopyRectToScreen (byte[] buffer, int startOffset, int sourceStride, int x, int y, int width, int height)
+			public void CopyRectToScreen (BytePtr buffer, int startOffset, int sourceStride, int x, int y, int width, int height)
 			{
 				for (int h = 0; h < height; h++) {
 					for (int w = 0; w < width; w++) {
@@ -252,7 +252,7 @@ namespace NScumm
 				}
 			}
 
-			public void CopyRectToScreen (byte[] buffer, int sourceStride, int x, int y, int width, int height)
+			public void CopyRectToScreen (BytePtr buffer, int sourceStride, int x, int y, int width, int height)
 			{
 				for (int h = 0; h < height; h++) {
 					for (int w = 0; w < width; w++) {
@@ -261,7 +261,7 @@ namespace NScumm
 				}
 			}
 
-			public void CopyRectToScreen (byte[] buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height)
+			public void CopyRectToScreen (BytePtr buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height)
 			{
 				for (int h = 0; h < height; h++) {
 					for (int w = 0; w < width; w++) {
@@ -270,12 +270,12 @@ namespace NScumm
 				}
 			}
 
-			public void SetCursor (byte[] pixels, int width, int height, Point hotspot)
+			public void SetCursor (BytePtr pixels, int width, int height, Point hotspot)
 			{
 				SetCursor (pixels, 0, width, height, hotspot, 0xFF);
 			}
 
-			public void SetCursor (byte[] pixels, int offset, int width, int height, Point hotspot, int keyColor)
+			public void SetCursor (BytePtr pixels, int offset, int width, int height, Point hotspot, int keyColor)
 			{
 				if (_gfxManager._textureCursor.Width != width || _gfxManager._textureCursor.Height != height) {
 					_gfxManager._textureCursor.Dispose ();
@@ -325,33 +325,33 @@ namespace NScumm
 				}
 			}
 
-			public void CopyRectToScreen (byte[] buffer, int startOffset, int sourceStride, int x, int y, int width, int height)
+			public void CopyRectToScreen (BytePtr buffer, int startOffset, int sourceStride, int x, int y, int width, int height)
 			{
 				for (int h = 0; h < height; h++) {
-					Array.Copy (buffer, startOffset + h * sourceStride, _gfxManager._pixels, x + (y + h) * _gfxManager._width, width);
+					Array.Copy (buffer.Data, buffer.Offset + startOffset + h * sourceStride, _gfxManager._pixels, x + (y + h) * _gfxManager._width, width);
 				}
 			}
 
-			public void CopyRectToScreen (byte[] buffer, int sourceStride, int x, int y, int width, int height)
+			public void CopyRectToScreen (BytePtr buffer, int sourceStride, int x, int y, int width, int height)
 			{
 				for (int h = 0; h < height; h++) {
-					Array.Copy (buffer, h * sourceStride, _gfxManager._pixels, x + (y + h) * _gfxManager._width, width);
+					Array.Copy (buffer.Data, buffer.Offset + h * sourceStride, _gfxManager._pixels, x + (y + h) * _gfxManager._width, width);
 				}
 			}
 
-			public void CopyRectToScreen (byte[] buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height)
+			public void CopyRectToScreen (BytePtr buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height)
 			{
 				for (int h = 0; h < height; h++) {
-					Array.Copy (buffer, x + (h + y) * sourceStride, _gfxManager._pixels, dstX + (dstY + h) * _gfxManager._width, width);
+					Array.Copy (buffer.Data, buffer.Offset + x + (h + y) * sourceStride, _gfxManager._pixels, dstX + (dstY + h) * _gfxManager._width, width);
 				}
 			}
 
-			public void SetCursor (byte[] pixels, int width, int height, Point hotspot)
+			public void SetCursor (BytePtr pixels, int width, int height, Point hotspot)
 			{
 				SetCursor (pixels, 0, width, height, hotspot, 0xFF);
 			}
 
-			public void SetCursor (byte[] pixels, int offset, int width, int height, Point hotspot, int keyColor)
+			public void SetCursor (BytePtr pixels, int offset, int width, int height, Point hotspot, int keyColor)
 			{
 				if (_gfxManager._textureCursor.Width != width || _gfxManager._textureCursor.Height != height) {
 					_gfxManager._textureCursor.Dispose ();

@@ -163,7 +163,7 @@ namespace NScumm.Core.Video
                     if (_header.audioInfo[i].compression == AudioCompression.Rdft || _header.audioInfo[i].compression == AudioCompression.Dct)
                         throw new InvalidOperationException("Unhandled Smacker v2 audio compression");
 
-                    AddTrack(new SmackerAudioTrack(_mixer, _header.audioInfo[i], _soundType));
+                    AddTrack(new SmackerAudioTrack(_header.audioInfo[i], _soundType));
                 }
             }
 

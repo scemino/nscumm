@@ -21,6 +21,7 @@
 
 using System;
 using System.Linq;
+using NScumm.Core;
 using NScumm.Core.Graphics;
 using NScumm.Scumm.Graphics;
 
@@ -133,7 +134,8 @@ namespace NScumm.Scumm
         byte[] GrabPixels(ImageData im, int w, int h)
         {
             // Backup the screen content
-            var backup = (byte[])MainVirtScreen.Surfaces[0].Pixels.Clone();
+            var backup =new BytePtr((byte[])MainVirtScreen.Surfaces[0].Pixels.Data.Clone(),
+                MainVirtScreen.Surfaces[0].Pixels.Offset);
 
             // Do some drawing
             DrawBox(0, 0, w - 1, h - 1, 0xFF);
@@ -148,7 +150,7 @@ namespace NScumm.Scumm
             var pixels = Capture(MainVirtScreen, MainVirtScreen.XStart, 0, w, h);
 
             // Restore the screen content
-            Array.Copy(backup, MainVirtScreen.Surfaces[0].Pixels, backup.Length);
+            Array.Copy(backup.Data,backup.Offset, MainVirtScreen.Surfaces[0].Pixels.Data, MainVirtScreen.Surfaces[0].Pixels.Offset, backup.Data.Length-backup.Offset);
 
             return pixels;
         }

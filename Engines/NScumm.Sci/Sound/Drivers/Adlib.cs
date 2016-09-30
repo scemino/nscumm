@@ -54,7 +54,7 @@ namespace NScumm.Sci.Sound.Drivers
 
         private const int SCI_MIDI_SET_SIGNAL_LOOP = 0x7F;
 
-        class AdLibOperator
+        private class AdLibOperator
         {
             public bool amplitudeMod;
             public bool vibrato;
@@ -70,13 +70,13 @@ namespace NScumm.Sci.Sound.Drivers
             public byte waveForm;          // (0-3)
         }
 
-        class AdLibModulator
+        private class AdLibModulator
         {
             public byte feedback;          // (0-7)
             public bool algorithm;
         }
 
-        class AdLibPatch
+        private class AdLibPatch
         {
             public AdLibOperator[] op;
             public AdLibModulator mod;
@@ -92,7 +92,7 @@ namespace NScumm.Sci.Sound.Drivers
             }
         }
 
-        class Channel
+        private class Channel
         {
             public byte patch;            // Patch setting
             public byte volume;           // Channel volume (0-63)
@@ -111,7 +111,7 @@ namespace NScumm.Sci.Sound.Drivers
             }
         }
 
-        class AdLibVoice
+        private class AdLibVoice
         {
             public sbyte channel;           // MIDI channel that this voice is assigned to or -1
             public sbyte note;              // Currently playing MIDI note or -1
@@ -141,11 +141,11 @@ namespace NScumm.Sci.Sound.Drivers
         private byte[] _rhythmKeyMap;
         private List<AdLibPatch> _patches;
 
-        static readonly byte[] registerOffset = {
+        private static readonly byte[] registerOffset = {
             0x00, 0x01, 0x02, 0x08, 0x09, 0x0A, 0x10, 0x11, 0x12
         };
 
-        static readonly byte[] velocityMap1 = {
+        private static readonly byte[] velocityMap1 = {
             0x00, 0x0c, 0x0d, 0x0e, 0x0f, 0x11, 0x12, 0x13,
             0x14, 0x16, 0x17, 0x18, 0x1a, 0x1b, 0x1c, 0x1d,
             0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26,
@@ -156,7 +156,7 @@ namespace NScumm.Sci.Sound.Drivers
             0x3d, 0x3e, 0x3e, 0x3e, 0x3e, 0x3f, 0x3f, 0x3f
         };
 
-        static readonly byte[] velocityMap2 = {
+        private static readonly byte[] velocityMap2 = {
             0x00, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a,
             0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x21,
             0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29,
@@ -167,7 +167,7 @@ namespace NScumm.Sci.Sound.Drivers
             0x3d, 0x3e, 0x3e, 0x3e, 0x3e, 0x3f, 0x3f, 0x3f
         };
 
-        static readonly int[] ym3812_note = {
+        private static readonly int[] ym3812_note = {
             0x157, 0x16b, 0x181, 0x198, 0x1b0, 0x1ca,
             0x1e5, 0x202, 0x220, 0x241, 0x263, 0x287,
             0x2ae

@@ -20,7 +20,7 @@ using NScumm.Core.Audio;
 
 namespace NScumm.Sci.Sound.Drivers
 {
-    abstract class MidiPlayer : MidiDriverBase
+    internal abstract class MidiPlayer : MidiDriverBase
     {
         public const int MIDI_CHANNELS = 16;
         public const int MIDI_PROP_MASTER_VOLUME = 0;

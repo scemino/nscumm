@@ -20,28 +20,15 @@ using System.Text;
 
 namespace NScumm.Sci
 {
-    [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
     internal class ResourceId
     {
         private readonly ResourceType _type;
         private readonly ushort _number;
         private readonly uint _tuple; // Only used for audio36 and sync36
 
-        public ResourceType Type { get { return _type; } }
-        public ushort Number { get { return _number; } }
-        public uint Tuple { get { return _tuple; } }
-        internal string DebuggerDisplay
-        {
-            get
-            {
-                return $"({Type}, {Number}, {Tuple})";
-            }
-        }
-
-        public ResourceId()
-        {
-            _type = ResourceType.Invalid;
-        }
+        public ResourceType Type => _type;
+        public ushort Number => _number;
+        public uint Tuple => _tuple;
 
         public ResourceId(ResourceType type, ushort number, uint tuple = 0)
         {
@@ -102,7 +89,7 @@ namespace NScumm.Sci
             // Convert from an integer to a base36 string
             string @string = string.Empty;
 
-            while ((minChar--)!=0)
+            while (minChar--!=0)
             {
                 int character = number % 36;
                 @string = ((character < 10) ? (character + '0') : (character + 'A' - 10)) + @string;
@@ -117,7 +104,7 @@ namespace NScumm.Sci
             if (ReferenceEquals(id1, null) && ReferenceEquals(id2, null))
                 return true;
 
-            if (ReferenceEquals(id1, null) && !ReferenceEquals(id2, null))
+            if (ReferenceEquals(id1, null))
                 return false;
 
             return id1.Equals(id2);
@@ -126,6 +113,11 @@ namespace NScumm.Sci
         public static bool operator !=(ResourceId id1, ResourceId id2)
         {
             return !(id1 == id2);
+        }
+
+        public override string ToString()
+        {
+            return "({Type}, {Number}, {Tuple})";
         }
     }
 }

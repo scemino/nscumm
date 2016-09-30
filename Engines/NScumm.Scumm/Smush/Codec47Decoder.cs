@@ -44,7 +44,7 @@ namespace NScumm.Scumm.Smush
             _curBuf = _frameSize * 2;
         }
 
-        public bool Decode(byte[] dst, byte[] src)
+        public bool Decode(BytePtr dst, byte[] src)
         {
             if ((_tableBig == null) || (_tableSmall == null) || (_deltaBuf == null))
                 return false;
@@ -94,7 +94,7 @@ namespace NScumm.Scumm.Smush
                     break;
             }
 
-            Array.Copy(_deltaBuf, _curBuf, dst, 0, _frameSize);
+            Array.Copy(_deltaBuf, _curBuf, dst.Data, dst.Offset, _frameSize);
 
             if (seq_nb == _prevSeqNb + 1)
             {

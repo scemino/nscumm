@@ -59,7 +59,7 @@ namespace NScumm.Scumm.Graphics
             _layers[1].onBottom = !_layers[0].enabled;
 
             _dirtyRects.Clear();
-            _dirtyRects.Add(new Rect(_width - 1, _height - 1));
+            _dirtyRects.Add(new Rect((short) (_width - 1), (short) (_height - 1)));
             _numDirtyRects = FULL_REDRAW;
 
             Array.Clear(_outBuffer, 0, _pitch * _height);
@@ -210,7 +210,7 @@ namespace NScumm.Scumm.Graphics
                 return;
 
             Array.Clear(l.pixels, 0, l.pitch * l.height);
-            _dirtyRects.Add(new Rect(_width - 1, _height - 1));
+            _dirtyRects.Add(new Rect((short) (_width - 1), (short) (_height - 1)));
             _numDirtyRects = FULL_REDRAW;
         }
 
@@ -223,7 +223,7 @@ namespace NScumm.Scumm.Graphics
             {
                 // full redraw
                 _dirtyRects.Clear();
-                _dirtyRects.Add(new Rect(_width - 1, _height - 1));
+                _dirtyRects.Add(new Rect((short) (_width - 1), (short) (_height - 1)));
                 _numDirtyRects++;
                 return;
             }
@@ -269,14 +269,14 @@ namespace NScumm.Scumm.Graphics
 
                 if (skip)
                 {
-                    _dirtyRects[i] = new Rect(x, y, x2, y2);
+                    _dirtyRects[i] = new Rect((short) x, (short) y, (short) x2, (short) y2);
                     break;
                 }
             }
 
             if (!skip)
             {
-                _dirtyRects.Add(new Rect(x, y, x2, y2));
+                _dirtyRects.Add(new Rect((short) x, (short) y, (short) x2, (short) y2));
                 _numDirtyRects++;
             }
         }

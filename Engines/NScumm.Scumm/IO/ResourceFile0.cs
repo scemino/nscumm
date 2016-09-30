@@ -305,12 +305,12 @@ namespace NScumm.Scumm.IO
             var height = tmpActor & 0xF8;
             var obj = new ObjectData(id)
             {
-                Position = new Point(x, y),
+                Position = new Point((short) x, (short) y),
                 ParentState = (byte)parentState,
                 Width = (ushort)width,
                 Height = (ushort)height,
                 Parent = parent,
-                Walk = new Point(walkX, walkY),
+                Walk = new Point((short) walkX, (short) walkY),
                 ActorDir = actor,
                 Preposition = preposition
             };

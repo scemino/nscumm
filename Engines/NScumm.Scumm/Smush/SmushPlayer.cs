@@ -32,15 +32,9 @@ namespace NScumm.Scumm.Smush
 {
     class SmushPlayer
     {
-        public int Width
-        {
-            get { return _width; }
-        }
+        public int Width => _width;
 
-        public int Height
-        {
-            get { return _height; }
-        }
+        public int Height => _height;
 
         public SmushPlayer(ScummEngine7 scumm)
         {
@@ -222,7 +216,7 @@ namespace NScumm.Scumm.Smush
             {
                 if (!(_vm.Game.Features.HasFlag(GameFeatures.Demo) /*&& (_vm._game.platform == Common::kPlatformDOS)*/))
                 {
-                    var ft_fonts = new[]
+                    var ftFonts = new[]
                     {
                         "scummfnt.nut",
                         "techfnt.nut",
@@ -230,9 +224,9 @@ namespace NScumm.Scumm.Smush
                         "specfnt.nut"
                     };
 
-                    Debug.Assert(font >= 0 && font < ft_fonts.Length);
+                    Debug.Assert(font >= 0 && font < ftFonts.Length);
 
-                    _sf[font] = new SmushFont(_vm, ft_fonts[font], true, false);
+                    _sf[font] = new SmushFont(_vm, ftFonts[font], true, false);
                 }
             }
             else if (_vm.Game.GameId == GameId.Dig)
@@ -241,8 +235,8 @@ namespace NScumm.Scumm.Smush
                 {
                     Debug.Assert(font >= 0 && font < 4);
 
-                    var file_font = string.Format("font{0}.nut", font);
-                    _sf[font] = new SmushFont(_vm, file_font, font != 0, false);
+                    var fileFont = $"font{font}.nut";
+                    _sf[font] = new SmushFont(_vm, fileFont, font != 0, false);
                 }
             }
             else if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland)
@@ -250,8 +244,8 @@ namespace NScumm.Scumm.Smush
                 int numFonts = _vm.Game.Features.HasFlag(GameFeatures.Demo) ? 4 : 5;
                 Debug.Assert(font >= 0 && font < numFonts);
 
-                var file_font = string.Format("font{0}.nut", font);
-                _sf[font] = new SmushFont(_vm, file_font, false, true);
+                var fileFont = $"font{font}.nut";
+                _sf[font] = new SmushFont(_vm, fileFont, false, true);
             }
             else
             {
@@ -361,7 +355,7 @@ namespace NScumm.Scumm.Smush
                     HandleFrame(subSize, _base);
                     break;
                 default:
-                    throw new InvalidOperationException(string.Format("Unknown Chunk found at {0:X}: {1}, {2}", subOffset, subType, subSize));
+                    throw new InvalidOperationException($"Unknown Chunk found at {subOffset:X}: {subType}, {subSize}");
             }
 
             _base.BaseStream.Seek(subOffset + subSize, SeekOrigin.Begin);
@@ -426,7 +420,7 @@ namespace NScumm.Scumm.Smush
                         HandleTextResource(subType, subSize, b);
                         break;
                     default:
-                        throw new InvalidOperationException(string.Format("Unknown frame subChunk found : {0}, {1}", subType, subSize));
+                        throw new InvalidOperationException($"Unknown frame subChunk found : {subType}, {subSize}");
                 }
 
                 frameSize -= subSize + 8;
@@ -466,7 +460,7 @@ namespace NScumm.Scumm.Smush
 
             if (_frameBuffer != null)
             {
-                Array.Copy(_frameBuffer, _dst, _width * _height);
+                Array.Copy(_frameBuffer,0, _dst.Data, _dst.Offset, _width * _height);
             }
         }
 
@@ -517,11 +511,11 @@ namespace NScumm.Scumm.Smush
             int code = b.ReadUInt16();
             int flags = b.ReadUInt16();
             int unknown = b.ReadInt16();
-            int track_flags = b.ReadUInt16();
+            int trackFlags = b.ReadUInt16();
 
             if ((code != 8) && (flags != 46))
             {
-                _vm.Insane.ProcIACT(_dst, 0, 0, 0, b, 0, 0, code, flags, unknown, track_flags);
+                _vm.Insane.ProcIACT(_dst, 0, 0, 0, b, 0, 0, code, flags, unknown, trackFlags);
                 return;
             }
 
@@ -540,27 +534,27 @@ namespace NScumm.Scumm.Smush
             if (_vm.Game.GameId != GameId.CurseOfMonkeyIsland)
             {
                 int track = track_id;
-                if (track_flags == 1)
+                if (trackFlags == 1)
                 {
                     track = track_id + 100;
                 }
-                else if (track_flags == 2)
+                else if (trackFlags == 2)
                 {
                     track = track_id + 200;
                 }
-                else if (track_flags == 3)
+                else if (trackFlags == 3)
                 {
                     track = track_id + 300;
                 }
-                else if ((track_flags >= 100) && (track_flags <= 163))
+                else if ((trackFlags >= 100) && (trackFlags <= 163))
                 {
                     track = track_id + 400;
                 }
-                else if ((track_flags >= 200) && (track_flags <= 263))
+                else if ((trackFlags >= 200) && (trackFlags <= 263))
                 {
                     track = track_id + 500;
                 }
-                else if ((track_flags >= 300) && (track_flags <= 363))
+                else if ((trackFlags >= 300) && (trackFlags <= 363))
                 {
                     track = track_id + 600;
                 }
@@ -577,9 +571,9 @@ namespace NScumm.Scumm.Smush
                     _smixer.AddChannel(c);
                 }
                 if (index == 0)
-                    c.SetParameters(nbframes, size, track_flags, unknown, 0);
+                    c.SetParameters(nbframes, size, trackFlags, unknown, 0);
                 else
-                    c.CheckParameters(index, nbframes, size, track_flags, unknown);
+                    c.CheckParameters(index, nbframes, size, trackFlags, unknown);
                 c.AppendData(b, bsize);
             }
             else
@@ -593,7 +587,7 @@ namespace NScumm.Scumm.Smush
                 {
                     if (_IACTpos >= 2)
                     {
-                        int len = ScummHelper.ToUInt16BigEndian(_IACToutput, 0) + 2;
+                        int len = _IACToutput.ToUInt16BigEndian(0) + 2;
                         len -= _IACTpos;
                         if (len > bsize)
                         {
@@ -695,10 +689,10 @@ namespace NScumm.Scumm.Smush
             }
             else
             {
-                int string_id = b.ReadUInt16();
+                int stringId = b.ReadUInt16();
                 if (_strings == null)
                     return;
-                str = _strings[string_id];
+                str = _strings[stringId];
             }
 
             // if subtitles disabled and bit 3 is set, then do not draw
@@ -824,7 +818,7 @@ namespace NScumm.Scumm.Smush
                     sf.DrawStringWrap(str, _dst, _width, _height, pos_x, Math.Max(pos_y, top), left, Math.Min(left + right, _width), true);
                     break;
                 default:
-                    throw new InvalidOperationException(string.Format("SmushPlayer::handleTextResource. Not handled flags: {0}", flags));
+                    throw new InvalidOperationException($"SmushPlayer::handleTextResource. Not handled flags: {flags}");
             }
         }
 
@@ -904,9 +898,9 @@ namespace NScumm.Scumm.Smush
             b.ReadUInt16();
             b.ReadUInt16();
 
-            int chunk_size = (int)(subSize - 14);
-            var chunk_buffer = b.ReadBytes(chunk_size);
-            DecodeFrameObject(codec, chunk_buffer, left, top, width, height);
+            int chunkSize = (int)(subSize - 14);
+            var chunkBuffer = b.ReadBytes(chunkSize);
+            DecodeFrameObject(codec, chunkBuffer, left, top, width, height);
         }
 
         void DecodeFrameObject(int codec, byte[] src, int left, int top, int width, int height)
@@ -953,7 +947,7 @@ namespace NScumm.Scumm.Smush
                     _codec47.Decode(_dst, src);
                     break;
                 default:
-                    throw new InvalidOperationException(string.Format("Invalid codec for frame object : {0}", codec));
+                    throw new InvalidOperationException($"Invalid codec for frame object : {codec}");
             }
 
             if (_storeFrame)
@@ -962,12 +956,12 @@ namespace NScumm.Scumm.Smush
                 {
                     _frameBuffer = new byte[_width * _height];
                 }
-                Array.Copy(_dst, _frameBuffer, width * height);
+                Array.Copy(_dst.Data,_dst.Offset, _frameBuffer,0, width * height);
                 _storeFrame = false;
             }
         }
 
-        internal static void SmushDecodeCodec1(byte[] dst, int dstPos, byte[] src, int srcfOffset, int left, int top, int width, int height, int pitch)
+        internal static void SmushDecodeCodec1(BytePtr dst, int dstPos, byte[] src, int srcfOffset, int left, int top, int width, int height, int pitch)
         {
             byte val, code;
             int length;
@@ -1163,7 +1157,7 @@ namespace NScumm.Scumm.Smush
         int _speed;
         bool _endOfFile;
 
-        byte[] _dst;
+        BytePtr _dst;
         bool _updateNeeded;
         bool _warpNeeded;
         int _palDirtyMin, _palDirtyMax;

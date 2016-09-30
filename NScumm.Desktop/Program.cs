@@ -21,15 +21,15 @@
 
 
 using System;
-using NScumm.Core;
 using System.IO;
 using System.Linq;
+using NScumm.Core;
 using NScumm.Core.IO;
-using NScumm.Services;
-using NScumm.Sci;
 using NScumm.Queen;
+using NScumm.Sci;
+using NScumm.Services;
 
-namespace NScumm
+namespace NScumm.Desktop
 {
     /// <summary>
     /// The main class.

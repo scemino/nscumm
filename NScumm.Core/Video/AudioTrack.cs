@@ -21,7 +21,10 @@ using NScumm.Core.Audio;
 
 namespace NScumm.Core.Video
 {
-    internal abstract class AudioTrack : Track
+    /// <summary>
+    /// An abstract representation of an audio track.
+    /// </summary>
+    public abstract class AudioTrack : Track
     {
         private byte _volume;
         private SoundHandle _handle;
@@ -30,7 +33,7 @@ namespace NScumm.Core.Video
 
         public AudioTrack()
         {
-            _volume = Audio.Mixer.MaxChannelVolume;
+            _volume = Mixer.MaxChannelVolume;
         }
 
         public override TrackType TrackType
@@ -42,13 +45,11 @@ namespace NScumm.Core.Video
             get
             {
                 IAudioStream stream = AudioStream;
-                return stream == null || !Mixer.IsSoundHandleActive(_handle) || stream.IsEndOfData;
+                return stream == null || !Engine.Instance.Mixer.IsSoundHandleActive(_handle) || stream.IsEndOfData;
             }
         }
 
         public abstract IAudioStream AudioStream { get; }
-
-        public abstract IMixer Mixer { get; }
 
         public byte Volume
         {
@@ -57,8 +58,8 @@ namespace NScumm.Core.Video
             {
                 _volume = value;
 
-                if (Mixer.IsSoundHandleActive(_handle))
-                    Mixer.SetChannelVolume(_handle, _muted ? 0 : _volume);
+                if (Engine.Instance.Mixer.IsSoundHandleActive(_handle))
+                    Engine.Instance.Mixer.SetChannelVolume(_handle, _muted ? 0 : _volume);
             }
         }
 
@@ -69,8 +70,8 @@ namespace NScumm.Core.Video
             {
                 _balance = value;
 
-                if (Mixer.IsSoundHandleActive(_handle))
-                    Mixer.SetChannelBalance(_handle, _balance);
+                if (Engine.Instance.Mixer.IsSoundHandleActive(_handle))
+                    Engine.Instance.Mixer.SetChannelBalance(_handle, _balance);
             }
         }
 
@@ -83,8 +84,8 @@ namespace NScumm.Core.Video
         {
             get
             {
-                if (Mixer.IsSoundHandleActive(_handle))
-                    return (uint)Mixer.GetSoundElapsedTime(_handle);
+                if (Engine.Instance.Mixer.IsSoundHandleActive(_handle))
+                    return (uint) Engine.Instance.Mixer.GetSoundElapsedTime(_handle);
                 return 0;
             }
         }
@@ -99,8 +100,8 @@ namespace NScumm.Core.Video
                 {
                     _muted = value;
 
-                    if (Mixer.IsSoundHandleActive(_handle))
-                        Mixer.SetChannelVolume(_handle, value ? 0 : _volume);
+                    if (Engine.Instance.Mixer.IsSoundHandleActive(_handle))
+                        Engine.Instance.Mixer.SetChannelVolume(_handle, value ? 0 : _volume);
                 }
             }
         }
@@ -112,11 +113,11 @@ namespace NScumm.Core.Video
             var stream = AudioStream;
             if (stream == null) throw new InvalidOperationException("stream should not be null");
 
-            _handle = Mixer.PlayStream(SoundType, stream, -1, _muted ? 0 : Volume, Balance, false);
+            _handle = Engine.Instance.Mixer.PlayStream(SoundType, stream, -1, _muted ? 0 : Volume, Balance, false);
 
             // Pause the audio again if we're still paused
             if (IsPaused)
-                Mixer.PauseHandle(_handle, true);
+                Engine.Instance.Mixer.PauseHandle(_handle, true);
         }
 
         // TODO:
@@ -129,16 +130,24 @@ namespace NScumm.Core.Video
 
             //    stream = new LimitingAudioStream(stream, limit, false);
 
-            _handle = Mixer.PlayStream(SoundType, stream, -1, _muted ? 0 : Volume, Balance, true);
+            _handle = Engine.Instance.Mixer.PlayStream(SoundType, stream, -1, _muted ? 0 : Volume, Balance, true);
 
             // Pause the audio again if we're still paused
             if (IsPaused)
-                Mixer.PauseHandle(_handle, true);
+                Engine.Instance.Mixer.PauseHandle(_handle, true);
         }
 
         public void Stop()
         {
-            Mixer.StopHandle(_handle);
+            Engine.Instance.Mixer.StopHandle(_handle);
+        }
+
+        public void SetVolume(byte volume)
+        {
+            _volume = volume;
+
+            if (Engine.Instance.Mixer.IsSoundHandleActive(_handle))
+                Engine.Instance.Mixer.SetChannelVolume(_handle, _muted ? 0 : _volume);
         }
     }
 }

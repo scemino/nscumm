@@ -553,11 +553,11 @@ namespace NScumm.Scumm
                             SetTmpFromActor();
                             if (_walkDirX == 0)
                             {
-                                RealPosition = new Point(RealPosition.X - 1, RealPosition.Y);
+                                RealPosition = new Point((short) (RealPosition.X - 1), RealPosition.Y);
                             }
                             else
                             {
-                                RealPosition = new Point(RealPosition.X + 1, RealPosition.Y);
+                                RealPosition = new Point((short) (RealPosition.X + 1), RealPosition.Y);
                             }
 
                             // 2C51
@@ -578,11 +578,11 @@ namespace NScumm.Scumm
 
                             if (_walkDirY == 0)
                             {
-                                _tmp_Dest = new Point(_tmp_Dest.X, _tmp_Dest.Y - 1);
+                                _tmp_Dest = new Point(_tmp_Dest.X, (short) (_tmp_Dest.Y - 1));
                             }
                             else
                             {
-                                _tmp_Dest = new Point(_tmp_Dest.X, _tmp_Dest.Y + 1);
+                                _tmp_Dest = new Point(_tmp_Dest.X, (short) (_tmp_Dest.Y + 1));
                             }
 
                             SetTmpFromActor();
@@ -608,11 +608,11 @@ namespace NScumm.Scumm
                         SetTmpFromActor();
                         if (_walkDirY == 0)
                         {
-                            RealPosition = new Point(RealPosition.X, RealPosition.Y - 1);
+                            RealPosition = new Point(RealPosition.X, (short) (RealPosition.Y - 1));
                         }
                         else
                         {
-                            RealPosition = new Point(RealPosition.X, RealPosition.Y + 1);
+                            RealPosition = new Point(RealPosition.X, (short) (RealPosition.Y + 1));
                         }
 
                         if (UpdateWalkbox() == InvalidBox)
@@ -627,11 +627,11 @@ namespace NScumm.Scumm
 
                             if (_walkDirX == 0)
                             {
-                                _tmp_Dest = new Point(_tmp_Dest.X - 1, _tmp_Dest.Y);
+                                _tmp_Dest = new Point((short) (_tmp_Dest.X - 1), _tmp_Dest.Y);
                             }
                             else
                             {
-                                _tmp_Dest = new Point(_tmp_Dest.X + 1, _tmp_Dest.Y);
+                                _tmp_Dest = new Point((short) (_tmp_Dest.X + 1), _tmp_Dest.Y);
                             }
                             SetTmpFromActor();
 
@@ -661,11 +661,11 @@ namespace NScumm.Scumm
             {
                 if (_walkDirX == 0)
                 {
-                    _tmp_Dest = new Point(_tmp_Dest.X - 1, _tmp_Dest.Y);
+                    _tmp_Dest = new Point((short) (_tmp_Dest.X - 1), _tmp_Dest.Y);
                 }
                 else
                 {
-                    _tmp_Dest = new Point(_tmp_Dest.X + 1, _tmp_Dest.Y);
+                    _tmp_Dest = new Point((short) (_tmp_Dest.X + 1), _tmp_Dest.Y);
                 }
 
                 A -= _walkCountModulo;
@@ -695,11 +695,11 @@ namespace NScumm.Scumm
             {
                 if (_walkDirY == 0)
                 {
-                    _tmp_Dest = new Point(_tmp_Dest.X, _tmp_Dest.Y - 1);
+                    _tmp_Dest = new Point(_tmp_Dest.X, (short) (_tmp_Dest.Y - 1));
                 }
                 else
                 {
-                    _tmp_Dest = new Point(_tmp_Dest.X, _tmp_Dest.Y + 1);
+                    _tmp_Dest = new Point(_tmp_Dest.X, (short) (_tmp_Dest.Y + 1));
                 }
 
                 A -= _walkCountModulo;

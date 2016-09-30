@@ -26,6 +26,7 @@ using NScumm.Core.IO;
 using System.Collections.Generic;
 using D = NScumm.Core.DebugHelper;
 using System.Linq;
+using NScumm.Core.Common;
 
 namespace NScumm.Queen
 {
@@ -218,7 +219,7 @@ namespace NScumm.Queen
             D.Debug(7, $"Resource::loadTextFile('{filename}')");
             ResourceEntry re = ResourceEntry(filename);
             SeekResourceFile(re.bundle, re.offset);
-            var stream = new SeekableSubReadStream(_resourceFile.BaseStream, re.offset, re.offset + re.size);
+            var stream = new SeekableSubReadStream(_resourceFile.BaseStream, re.offset, re.offset + re.size, false);
 
             while (true)
             {

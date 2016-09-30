@@ -26,7 +26,7 @@ using System.Linq;
 
 namespace NScumm.Sci.Engine
 {
-    enum kMemoryInfoFunc
+    internal enum kMemoryInfoFunc
     {
         LARGEST_HEAP_BLOCK = 0, // Largest heap block available
         FREE_HEAP = 1, // Total free heap memory
@@ -35,7 +35,7 @@ namespace NScumm.Sci.Engine
         TOTAL_HUNK = 4 // Total amount of hunk memory (SCI01)
     }
 
-    enum GetTimeMode
+    internal enum GetTimeMode
     {
         TICKS = 0,
         TIME_12HOUR = 1,
@@ -43,7 +43,7 @@ namespace NScumm.Sci.Engine
         DATE = 3
     }
 
-    enum MemoryFunction
+    internal enum MemoryFunction
     {
         ALLOCATE_CRITICAL = 1,
         ALLOCATE_NONCRITICAL = 2,
@@ -53,13 +53,13 @@ namespace NScumm.Sci.Engine
         POKE = 6
     }
 
-    enum MemorySegmentFunction
+    internal enum MemorySegmentFunction
     {
         SAVE_DATA = 0,
         RESTORE_DATA = 1
     }
 
-    enum PlatformOps
+    internal enum PlatformOps
     {
         Unk0 = 0,
         CDSpeed = 1,
@@ -71,7 +71,7 @@ namespace NScumm.Sci.Engine
         IsItWindows = 7
     }
 
-    partial class Kernel
+    internal partial class Kernel
     {
         private const int SciPlatformDOS = 1;
         private const int SciPlatformWindows = 2;
@@ -896,12 +896,11 @@ namespace NScumm.Sci.Engine
             Register addr;
 
 # if ENABLE_SCI32
-            if (getSciVersion() >= SCI_VERSION_2)
+            if (ResourceManager.GetSciVersion() >= SciVersion.V2)
             {
-                SciArray<reg_t>* array = segMan.allocateArray(&addr);
-                assert(array);
-                array.setType(0);
-                array.setSize(size * 2);
+                var array = segMan.AllocateArray(out addr);
+                array.SetType(0);
+                array.SetSize(size * 2);
                 return addr;
             }
 #endif
@@ -915,8 +914,8 @@ namespace NScumm.Sci.Engine
             Register points = SciEngine.ReadSelector(segMan, polygon, o => o.points);
 
 # if ENABLE_SCI32
-            if (segMan.isHeapObject(points))
-                points = readSelector(segMan, points, SELECTOR(data));
+            if (segMan.IsHeapObject(points))
+                points = SciEngine.ReadSelector(segMan, points, o=>o.data);
 #endif
 
             int size = (int)SciEngine.ReadSelectorValue(segMan, polygon, o => o.size);

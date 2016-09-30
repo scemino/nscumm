@@ -275,11 +275,11 @@ namespace NScumm.Scumm
             // interval, it's a trivial matter to finally determine it.
             if (p.X < xmin)
             {
-                dest.X = xmin;
+                dest.X = (short) xmin;
             }
             else if (p.X > xmax)
             {
-                dest.X = xmax;
+                dest.X = (short) xmax;
             }
             else
             {

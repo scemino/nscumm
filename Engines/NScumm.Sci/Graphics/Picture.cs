@@ -25,14 +25,14 @@ using System.Collections.Generic;
 
 namespace NScumm.Sci.Graphics
 {
-    enum PictureType
+    internal enum PictureType
     {
         REGULAR = 0,
         SCI11 = 1,
         SCI32 = 2
     }
 
-    enum PictureOperation
+    internal enum PictureOperation
     {
         SET_COLOR = 0xf0,
         DISABLE_VISUAL = 0xf1,
@@ -52,7 +52,7 @@ namespace NScumm.Sci.Graphics
         TERMINATE = 0xff
     }
 
-    enum PictureOperationEx
+    internal enum PictureOperationEx
     {
         EGA_SET_PALETTE_ENTRIES = 0,
         EGA_SET_PALETTE = 1,
@@ -107,7 +107,7 @@ namespace NScumm.Sci.Graphics
         // If true, we will show the whole EGA drawing process...
         private bool _EGAdrawingVisualize;
 
-        static readonly byte[] vector_defaultEGApalette = {
+        private static readonly byte[] vector_defaultEGApalette = {
             0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
             0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0x88,
             0x88, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x88,
@@ -115,7 +115,7 @@ namespace NScumm.Sci.Graphics
             0x08, 0x91, 0x2a, 0x3b, 0x4c, 0x5d, 0x6e, 0x88
         };
 
-        static readonly byte[] vector_defaultEGApriority = {
+        private static readonly byte[] vector_defaultEGApriority = {
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
             0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -125,7 +125,7 @@ namespace NScumm.Sci.Graphics
 
         // This table is bitwise upwards (from bit0 to bit7), sierras original table went down the bits (bit7 to bit0)
         //  this was done to simplify things, so we can just run through the table w/o worrying too much about clipping
-        static readonly bool[] vectorPatternTextures = {
+        private static readonly bool[] vectorPatternTextures = {
             false, false,  true, false, false, false, false, false, // 0x04
 	         true, false, false,  true, false,  true, false, false, // 0x29
 	        false, false, false, false, false, false,  true, false, // 0x40
@@ -194,7 +194,7 @@ namespace NScumm.Sci.Graphics
         };
 
         // Bit offsets into pattern_textures
-        static readonly byte[] vectorPatternTextureOffset = {
+        private static readonly byte[] vectorPatternTextureOffset = {
             0x00, 0x18, 0x30, 0xc4, 0xdc, 0x65, 0xeb, 0x48,
             0x60, 0xbd, 0x89, 0x05, 0x0a, 0xf4, 0x7d, 0x7d,
             0x85, 0xb0, 0x8e, 0x95, 0x1f, 0x22, 0x0d, 0xdf,
@@ -213,7 +213,7 @@ namespace NScumm.Sci.Graphics
         };
 
         // Bitmap for drawing sierra circles
-        static readonly byte[][] vectorPatternCircles = {
+        private static readonly byte[][] vectorPatternCircles = {
             new byte[]{ 0x01 },
             new byte[]{ 0x72, 0x02 },
             new byte[]{ 0xCE, 0xF7, 0x7D, 0x0E },
@@ -284,8 +284,8 @@ namespace NScumm.Sci.Graphics
                     break;
 # if ENABLE_SCI32
                 case 0x0e: // SCI32 VGA picture
-                    _resourceType = SCI_PICTURE_TYPE_SCI32;
-                    drawSci32Vga(0, 0, 0, 0, 0, false);
+                    _resourceType = PictureType.SCI32;
+                    DrawSci32Vga(0, 0, 0, 0, 0, false);
                     break;
 #endif
                 default:
@@ -295,7 +295,57 @@ namespace NScumm.Sci.Graphics
                     break;
             }
         }
+     
+# if ENABLE_SCI32
+        private void DrawSci32Vga(short celNo, short drawX, short drawY, short pictureX, short pictureY, bool mirrored)
+        {
+            var inbuffer = _resource.data;
+            int size = _resource.size;
+            int header_size = inbuffer.ReadSci11EndianUInt16();
+            int palette_data_ptr = (int) inbuffer.ReadSci11EndianUInt32(6);
+//	int celCount = inbuffer[2];
+            int cel_headerPos = header_size;
+            int cel_RlePos, cel_LiteralPos;
+            Palette palette;
 
+            // HACK
+            _mirroredFlag = mirrored;
+            _addToFlag = false;
+            _resourceType = PictureType.SCI32;
+
+            if (celNo == 0)
+            {
+                // Create palette and set it
+                palette = _palette.CreateFromData(new ByteAccess(inbuffer, palette_data_ptr), size - palette_data_ptr);
+                _palette.Set(palette, true);
+            }
+
+            // Header
+            // 0[headerSize:WORD] 2[celCount:BYTE] 3[Unknown:BYTE] 4[celHeaderSize:WORD] 6[paletteOffset:DWORD] 10[Unknown:WORD] 12[Unknown:WORD]
+            // cel-header follow afterwards, each is 42 bytes
+            // Cel-Header
+            // 0[width:WORD] 2[height:WORD] 4[displaceX:WORD] 6[displaceY:WORD] 8[clearColor:BYTE] 9[compressed:BYTE]
+            //  offset 10-23 is unknown
+            // 24[rleOffset:DWORD] 28[literalOffset:DWORD] 32[Unknown:WORD] 34[Unknown:WORD] 36[priority:WORD] 38[relativeXpos:WORD] 40[relativeYpos:WORD]
+
+            cel_headerPos += 42 * celNo;
+
+            if (mirrored)
+            {
+                // switch around relativeXpos
+                Rect displayArea = _coordAdjuster.PictureGetDisplayArea();
+                drawX = (short) (displayArea.Width - drawX - inbuffer.ReadSci11EndianUInt16(cel_headerPos));
+            }
+
+            cel_RlePos = (int) inbuffer.ReadSci11EndianUInt32(cel_headerPos + 24);
+            cel_LiteralPos = (int) inbuffer.ReadSci11EndianUInt32(cel_headerPos + 28);
+
+            DrawCelData(inbuffer, size, cel_headerPos, cel_RlePos, cel_LiteralPos, drawX, drawY, pictureX, pictureY,
+                false);
+            cel_headerPos += 42;
+        }
+#endif
+        
         private void DrawSci11Vga()
         {
             ByteAccess inbuffer = new ByteAccess(_resource.data);
@@ -365,7 +415,7 @@ namespace NScumm.Sci.Graphics
                 priority = 0;
 
 #if ENABLE_SCI32
-            if (_resourceType != SCI_PICTURE_TYPE_SCI32)
+            if (_resourceType != PictureType.SCI32)
             {
 #endif
             // Width/height here are always LE, even in Mac versions
@@ -382,8 +432,8 @@ namespace NScumm.Sci.Graphics
             }
             else
             {
-                width = READ_SCI11ENDIAN_UINT16(headerPtr + 0);
-                height = READ_SCI11ENDIAN_UINT16(headerPtr + 2);
+                width = headerPtr.Data.ReadSci11EndianUInt16(headerPtr.Offset);
+                height = headerPtr.Data.ReadSci11EndianUInt16(headerPtr.Offset + 2);
                 //displaceX = READ_SCI11ENDIAN_UINT16(headerPtr + 4); // probably signed?!?
                 //displaceY = READ_SCI11ENDIAN_UINT16(headerPtr + 6); // probably signed?!?
                 clearColor = headerPtr[8];
@@ -979,9 +1029,9 @@ namespace NScumm.Sci.Graphics
 
             var rect = new Rect();
             rect.Top = y; rect.Left = x;
-            rect.Height = (size * 2) + 1; rect.Width = (size * 2) + 2;
+            rect.Height = (short) ((size * 2) + 1); rect.Width = (short) ((size * 2) + 2);
             _ports.OffsetRect(ref rect);
-            rect.Clip(_screen.ScriptWidth, _screen.ScriptHeight);
+            rect.Clip((short) _screen.ScriptWidth, (short) _screen.ScriptHeight);
 
             _screen.VectorAdjustCoordinate(ref rect.Left, ref rect.Top);
             _screen.VectorAdjustCoordinate(ref rect.Right, ref rect.Bottom);
@@ -1129,8 +1179,8 @@ namespace NScumm.Sci.Graphics
 
             bool isEGA = (_resMan.ViewType == ViewType.Ega);
 
-            p.X = x + curPort.left;
-            p.Y = y + curPort.top;
+            p.X = (short) (x + curPort.left);
+            p.Y = (short) (y + curPort.top);
 
             _screen.VectorAdjustCoordinate(ref p.X, ref p.Y);
 
@@ -1235,7 +1285,7 @@ namespace NScumm.Sci.Graphics
                         if (a_set == 0)
                         {
                             p1.X = curToLeft;
-                            p1.Y = p.Y - 1;
+                            p1.Y = (short) (p.Y - 1);
                             stack.Push(p1);
                             a_set = 1;
                         }
@@ -1248,7 +1298,7 @@ namespace NScumm.Sci.Graphics
                         if (b_set == 0)
                         {
                             p1.X = curToLeft;
-                            p1.Y = p.Y + 1;
+                            p1.Y = (short) (p.Y + 1);
                             stack.Push(p1);
                             b_set = 1;
                         }

@@ -18,6 +18,7 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -25,7 +26,7 @@ using System.IO;
 using NScumm.Core.Graphics;
 using D = NScumm.Core.DebugHelper;
 
-namespace NScumm.Core
+namespace NScumm.Core.Image
 {
     public class IFFDecoder
     {
@@ -229,7 +230,7 @@ namespace NScumm.Core
             {
                 uint scanlinePitch = (uint)(((_header.width + 15) >> 4) << 1);
                 byte[] scanlines = new byte[scanlinePitch * _header.numPlanes];
-                byte[] data = Surface.Pixels;
+                var data = Surface.Pixels;
                 int d = 0;
 
                 for (ushort i = 0; i < _header.height; ++i)
@@ -253,23 +254,23 @@ namespace NScumm.Core
                         s += outSize;
                     }
 
-                    PackPixels(scanlines, data, d, (ushort)scanlinePitch, outPitch);
+                    PackPixels(scanlines, data.Data, data.Offset+ d, (ushort)scanlinePitch, outPitch);
                     d += outPitch;
                 }
             }
             else if (_type == Type.PBM)
             {
-                byte[] data = Surface.Pixels;
+                var data = Surface.Pixels;
                 uint outSize = (uint)(_header.width * _header.height);
 
                 if (_header.compression != 0)
                 {
                     var packStream = new PackBitsReadStream(stream);
-                    packStream.Read(data, 0, (int)outSize);
+                    packStream.Read(data.Data, data.Offset, (int)outSize);
                 }
                 else
                 {
-                    stream.Read(data, 0, (int)outSize);
+                    stream.Read(data.Data, data.Offset, (int)outSize);
                 }
             }
         }

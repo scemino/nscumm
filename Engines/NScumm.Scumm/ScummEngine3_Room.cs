@@ -30,7 +30,7 @@ namespace NScumm.Scumm
 {
     partial class ScummEngine3
     {
-        void LoadRoomWithEgo()
+        private void LoadRoomWithEgo()
         {
             int obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             int room = GetVarOrDirectByte(OpCodeParameter.Param2);
@@ -74,11 +74,11 @@ namespace NScumm.Scumm
 
             if (x != -1)
             {
-                a.StartWalk(new Point(x, y), -1);
+                a.StartWalk(new Point((short) x, (short) y), -1);
             }
         }
 
-        void RoomOps()
+        private void RoomOps()
         {
             bool paramsBeforeOpcode = (Game.Version == 3);
             int a = 0;
@@ -245,8 +245,8 @@ namespace NScumm.Scumm
                                         return;
                                     case 18: // clear kMainVirtScreen layer 2 buffer
                                         Gdi.Fill(TextSurface,
-                                            new Rect(0, MainVirtScreen.TopLine * TextSurfaceMultiplier, 
-                                                TextSurface.Pitch, (MainVirtScreen.TopLine + MainVirtScreen.Height) * TextSurfaceMultiplier), 0);
+                                            new Rect(0, (short) (MainVirtScreen.TopLine * TextSurfaceMultiplier),
+                                                (short) TextSurface.Pitch, (short) ((MainVirtScreen.TopLine + MainVirtScreen.Height) * TextSurfaceMultiplier)), 0);
                                         TownsPaletteFlags |= 1;
                                         return;
                                     case 19: // enable palette operations (palManipulate(), cyclePalette() etc.)
@@ -364,7 +364,7 @@ namespace NScumm.Scumm
             }
         }
 
-        void OldRoomEffect()
+        private void OldRoomEffect()
         {
             _opCode = ReadByte();
             if ((_opCode & 0x1F) == 3)
@@ -375,9 +375,9 @@ namespace NScumm.Scumm
                 {
                     if (a == 4)
                     {
-                        Gdi.Fill(TextSurface, new Rect(0, 0, TextSurface.Width * TextSurfaceMultiplier, TextSurface.Height * TextSurfaceMultiplier), 0);
-                        if (_townsScreen != null)
-                            _townsScreen.ClearLayer(1);
+                        Gdi.Fill(TextSurface, new Rect(0, 0, (short) (TextSurface.Width * TextSurfaceMultiplier),
+                            (short) (TextSurface.Height * TextSurfaceMultiplier)), 0);
+                        _townsScreen?.ClearLayer(1);
                         return;
                     }
                 }

@@ -16,25 +16,21 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 
 namespace NScumm.Core
 {
     /// <summary>
     /// A simple rational class that holds fractions.
     /// </summary>
-    class Rational
+    public class Rational
     {
         private int _numerator;
         private int _denominator;
 
         public int Numerator => _numerator;
-
         public int Denominator => _denominator;
+        public bool IsOne => _numerator == _denominator;
 
         public Rational(Rational rational)
             : this(rational.Numerator, rational.Denominator)
@@ -47,14 +43,14 @@ namespace NScumm.Core
             _denominator = denom;
         }
 
-        public static implicit operator int (Rational rational)
+        public static implicit operator int(Rational rational)
         {
             return rational.Numerator / rational.Denominator;
         }
 
-        public static implicit operator double (Rational rational)
+        public static implicit operator double(Rational rational)
         {
-            return (double)rational.Numerator / rational.Denominator;
+            return (double) rational.Numerator / rational.Denominator;
         }
 
         public Rational Inverse()

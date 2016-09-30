@@ -20,7 +20,11 @@ using NScumm.Core.Audio;
 
 namespace NScumm.Core.Video
 {
-    internal abstract class FixedRateVideoTrack : VideoTrack
+    /// <summary>
+    /// A VideoTrack that is played at a constant rate.
+    /// If the frame count is unknown, you must override endOfTrack().
+    /// </summary>
+    public abstract class FixedRateVideoTrack : VideoTrack
     {
         protected abstract Rational FrameRate { get; }
 

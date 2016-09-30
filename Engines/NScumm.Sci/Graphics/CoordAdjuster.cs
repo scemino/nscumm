@@ -50,12 +50,25 @@ namespace NScumm.Sci.Graphics
         {
         }
 
-        public virtual Rect PictureGetDisplayArea() { return new Rect(0, 0); }
+        public virtual void FromScriptToDisplay(ref short y, ref short x)
+        {
+
+        }
+
+        public virtual void FromDisplayToScript(ref short y, ref short x)
+        {
+
+        }
+
+        public virtual Rect PictureGetDisplayArea()
+        {
+            return new Rect(0, 0);
+        }
     }
 
     internal class GfxCoordAdjuster16 : GfxCoordAdjuster
     {
-        private GfxPorts _ports;
+        private readonly GfxPorts _ports;
 
         public GfxCoordAdjuster16(GfxPorts ports)
         {
@@ -64,22 +77,22 @@ namespace NScumm.Sci.Graphics
 
         public override void KernelLocalToGlobal(ref short x, ref short y, Register? planeObject = null)
         {
-            Port curPort = _ports.Port;
+            var curPort = _ports.Port;
             x += curPort.left;
             y += curPort.top;
         }
 
         public override void KernelGlobalToLocal(ref short x, ref short y, Register? planeObject = null)
         {
-            Port curPort = _ports.Port;
+            var curPort = _ports.Port;
             x -= curPort.left;
             y -= curPort.top;
         }
 
         public override Rect OnControl(Rect rect)
         {
-            Port oldPort = _ports.SetPort(_ports._picWind);
-            Rect adjustedRect = new Rect(rect.Left, rect.Top, rect.Right, rect.Bottom);
+            var oldPort = _ports.SetPort(_ports._picWind);
+            var adjustedRect = new Rect(rect.Left, rect.Top, rect.Right, rect.Bottom);
 
             adjustedRect.Clip(_ports.Port.rect);
             _ports.OffsetRect(ref adjustedRect);
@@ -98,8 +111,8 @@ namespace NScumm.Sci.Graphics
             pos.Y += _ports._picWind.rect.Top;
             pos.X += _ports._picWind.rect.Left;
 
-            pos.Y = ScummHelper.Clip(pos.Y, _ports._picWind.rect.Top, _ports._picWind.rect.Bottom - 1);
-            pos.X = ScummHelper.Clip(pos.X, _ports._picWind.rect.Left, _ports._picWind.rect.Right - 1);
+            pos.Y = (short) ScummHelper.Clip(pos.Y, _ports._picWind.rect.Top, _ports._picWind.rect.Bottom - 1);
+            pos.X = (short) ScummHelper.Clip(pos.X, _ports._picWind.rect.Left, _ports._picWind.rect.Right - 1);
         }
 
         public override Rect PictureGetDisplayArea()
@@ -109,4 +122,66 @@ namespace NScumm.Sci.Graphics
             return displayArea;
         }
     }
+
+#if ENABLE_SCI32
+    internal class GfxCoordAdjuster32 : GfxCoordAdjuster
+    {
+        private readonly SegManager _segMan;
+        private Rect _pictureDisplayArea;
+
+        private ushort _scriptsRunningWidth;
+        private ushort _scriptsRunningHeight;
+
+        public GfxCoordAdjuster32(SegManager segMan)
+        {
+            _segMan = segMan;
+        }
+
+        public override void KernelGlobalToLocal(ref short x, ref short y, Register? planeObject = null)
+        {
+            var planeTop = (ushort) SciEngine.ReadSelectorValue(_segMan, planeObject.Value, o => o.top);
+            var planeLeft = (ushort) SciEngine.ReadSelectorValue(_segMan, planeObject.Value, o => o.left);
+
+            y = (short) (y - planeTop);
+            x = (short) (x - planeLeft);
+        }
+
+        public override void KernelLocalToGlobal(ref short x, ref short y, Register? planeObject = null)
+        {
+            var planeTop = (ushort) SciEngine.ReadSelectorValue(_segMan, planeObject.Value, o => o.top);
+            var planeLeft = (ushort) SciEngine.ReadSelectorValue(_segMan, planeObject.Value, o => o.left);
+
+            x = (short) (x + planeLeft);
+            y = (short) (y + planeTop);
+        }
+
+        public void SetScriptsResolution(ushort width, ushort height)
+        {
+            _scriptsRunningWidth = width;
+            _scriptsRunningHeight = height;
+        }
+
+        public override void FromDisplayToScript(ref short y, ref short x)
+        {
+            y = (short) (y * _scriptsRunningHeight / SciEngine.Instance._gfxScreen.Height);
+            x = (short) (x * _scriptsRunningWidth / SciEngine.Instance._gfxScreen.Width);
+        }
+
+        public override void FromScriptToDisplay(ref short y, ref short x)
+        {
+            y = (short) (y * SciEngine.Instance._gfxScreen.Height / _scriptsRunningHeight);
+            x = (short) (x * SciEngine.Instance._gfxScreen.Width / _scriptsRunningWidth);
+        }
+
+        public void PictureSetDisplayArea(Rect displayArea)
+        {
+            _pictureDisplayArea = displayArea;
+        }
+
+        public override Rect PictureGetDisplayArea()
+        {
+            return _pictureDisplayArea;
+        }
+    }
+#endif
 }

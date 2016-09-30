@@ -30,13 +30,13 @@ namespace NScumm.Scumm
     {
         internal VerbSlot[] Verbs { get; private set; }
 
-        readonly Sentence[] _sentence = InitSentences();
-        int _verbMouseOver;
+        private readonly Sentence[] _sentence = InitSentences();
+        private int _verbMouseOver;
         protected UserStates _userState;
 
         protected int SentenceNum { get; set; }
 
-        internal Sentence[] Sentence { get { return _sentence; } }
+        internal Sentence[] Sentence => _sentence;
 
         protected void SetVerbObject(byte room, int obj, int verb)
         {
@@ -68,7 +68,7 @@ namespace NScumm.Scumm
         protected void VerbMouseOver(int verb)
         {
             // Don't do anything unless verbs are active
-            if (Game.Version <= 2 && !(_userState.HasFlag(UserStates.IFaceVerbs)))
+            if (Game.Version <= 2 && !_userState.HasFlag(UserStates.IFaceVerbs))
                 return;
 
             if (Game.GameId == GameId.FullThrottle)
@@ -99,7 +99,7 @@ namespace NScumm.Scumm
 
             if ((Game.Version != 0 || OBJECT_V0_TYPE(obj) == 0) && GetOwnerCore(obj) != OwnerRoom)
             {
-                for (int i = 0; i < _resManager.NumInventory; i++)
+                for (var i = 0; i < _resManager.NumInventory; i++)
                 {
                     if (_inventory[i] == obj)
                         result = _invData[i];
@@ -110,10 +110,10 @@ namespace NScumm.Scumm
                 result = _objs.FirstOrDefault(o => o.Number == obj);
             }
 
-            var FallbackEntry = Game.Version == 8 ? 0xFFFFFFFF : 0xFF;
+            var fallbackEntry = Game.Version == 8 ? 0xFFFFFFFF : 0xFF;
             foreach (var key in result.ScriptOffsets.Keys)
             {
-                if (key == entry || key == FallbackEntry)
+                if (key == entry || key == fallbackEntry)
                     return result.ScriptOffsets[key];
             }
 
@@ -192,7 +192,7 @@ namespace NScumm.Scumm
 
         protected int FindVerbAtPos(Point p)
         {
-            for (int i = Verbs.Length - 1; i >= 0; i--)
+            for (var i = Verbs.Length - 1; i >= 0; i--)
             {
                 var vs = Verbs[i];
                 if (vs.CurMode != 1 || vs.VerbId == 0 || vs.SaveId != 0 || p.Y < vs.CurRect.Top || p.Y >= vs.CurRect.Bottom)
@@ -216,7 +216,7 @@ namespace NScumm.Scumm
 
         protected int GetVerbSlot(int id, int mode)
         {
-            for (int i = 1; i < Verbs.Length; i++)
+            for (var i = 1; i < Verbs.Length; i++)
             {
                 if (Verbs[i].VerbId == id && Verbs[i].SaveId == mode)
                 {
@@ -251,10 +251,10 @@ namespace NScumm.Scumm
 
         protected void RedrawVerbs()
         {
-            if (Game.Version <= 2 && !(_userState.HasFlag(UserStates.IFaceVerbs))) // Don't draw verbs unless active
+            if (Game.Version <= 2 && !_userState.HasFlag(UserStates.IFaceVerbs)) // Don't draw verbs unless active
                 return;
 
-            int verb = 0;
+            var verb = 0;
             if (_cursor.State > 0)
                 verb = FindVerbAtPos(_mousePos);
 
@@ -273,27 +273,29 @@ namespace NScumm.Scumm
             _verbMouseOver = verb;
         }
 
-        void InitializeVerbs()
+        private void InitializeVerbs()
         {
             Verbs = new VerbSlot[_resManager.NumVerbs];
-            for (int i = 0; i < Verbs.Length; i++)
+            for (var i = 0; i < Verbs.Length; i++)
             {
-                Verbs[i] = new VerbSlot();
-                Verbs[i].CurRect.Right = ScreenWidth - 1;
-                Verbs[i].OldRect.Left = -1;
-                Verbs[i].Color = 2;
-                Verbs[i].CharsetNr = 1;
+                Verbs[i] = new VerbSlot
+                {
+                    CurRect = {Right = (short) (ScreenWidth - 1)},
+                    OldRect = {Left = -1},
+                    Color = 2,
+                    CharsetNr = 1
+                };
             }
         }
 
-        void RestoreVerbBG(int verb)
+        private void RestoreVerbBG(int verb)
         {
             var vs = Verbs[verb];
 
             var col =
-                ((Game.Platform == Platform.FMTowns) &&
-                    (Game.GameId == GameId.Monkey2 || Game.GameId == GameId.Indy4) &&
-                    (vs.BkColor == TownsOverrideShadowColor)) ? 0 : vs.BkColor;
+                (Game.Platform == Platform.FMTowns) &&
+                (Game.GameId == GameId.Monkey2 || Game.GameId == GameId.Indy4) &&
+                (vs.BkColor == TownsOverrideShadowColor) ? 0 : vs.BkColor;
             if (vs.OldRect.Left != -1)
             {
                 RestoreBackground(vs.OldRect, (byte)col);
@@ -301,10 +303,10 @@ namespace NScumm.Scumm
             }
         }
 
-        static Sentence[] InitSentences()
+        private static Sentence[] InitSentences()
         {
             var sentences = new Sentence[6];
-            for (int i = 0; i < sentences.Length; i++)
+            for (var i = 0; i < sentences.Length; i++)
             {
                 sentences[i] = new Sentence();
             }

@@ -26,7 +26,7 @@ namespace NScumm.Sci.Graphics
     /// <summary>
     /// Paint16 class, handles painting/drawing for SCI16 (SCI0-SCI1.1) games
     /// </summary>
-    internal class GfxPaint16 : GfxPaint
+    internal class GfxPaint16
     {
         private const int SCI_DISPLAY_MOVEPEN = 100;
         private const int SCI_DISPLAY_SETALIGNMENT = 101;
@@ -279,10 +279,10 @@ namespace NScumm.Sci.Graphics
                     }
                 }
 
-                celRect.Left = leftPos;
-                celRect.Top = topPos;
-                celRect.Right = celRect.Left + view.GetWidth(loopNo, celNo);
-                celRect.Bottom = celRect.Top + view.GetHeight(loopNo, celNo);
+                celRect.Left = (short) leftPos;
+                celRect.Top = (short) topPos;
+                celRect.Right = (short) (celRect.Left + view.GetWidth(loopNo, celNo));
+                celRect.Bottom = (short) (celRect.Top + view.GetHeight(loopNo, celNo));
                 // adjust curPort to upscaled hires
                 clipRect = celRect;
                 curPortRect = _ports._curPort.rect;
@@ -319,10 +319,10 @@ namespace NScumm.Sci.Graphics
 
             if (view != null)
             {
-                celRect.Left = leftPos;
-                celRect.Top = topPos;
-                celRect.Right = celRect.Left + view.GetWidth(loopNo, celNo);
-                celRect.Bottom = celRect.Top + view.GetHeight(loopNo, celNo);
+                celRect.Left = (short) leftPos;
+                celRect.Top = (short) topPos;
+                celRect.Right = (short) (celRect.Left + view.GetWidth(loopNo, celNo));
+                celRect.Bottom = (short) (celRect.Top + view.GetHeight(loopNo, celNo));
 
                 DrawCel(view, loopNo, celNo, celRect, (byte)priority, paletteNo, scaleX, scaleY);
 
@@ -362,7 +362,7 @@ namespace NScumm.Sci.Graphics
             {
                 displayArg = argv[0];
                 if (displayArg.Segment != 0)
-                    displayArg= Register.SetOffset(displayArg, 0xFFFF);
+                    displayArg= Register.Make(displayArg.Segment, 0xFFFF);
                 argc--; argv++;
                 switch (displayArg.Offset)
                 {
@@ -400,7 +400,7 @@ namespace NScumm.Sci.Graphics
                         break;
                     case SCI_DISPLAY_RESTOREUNDER:
                         rect = BitsGetRect(argv[0]);
-                        rect.Translate(-_ports.Port.left, -_ports.Port.top);
+                        rect.Translate((short) -_ports.Port.left, (short) -_ports.Port.top);
                         BitsRestore(argv[0]);
                         KernelGraphRedrawBox(rect);
                         // finishing loop
@@ -417,7 +417,7 @@ namespace NScumm.Sci.Graphics
                     case SCI_DISPLAY_DUMMY3:    // QFG1 EGA demo (room 11) and PQ2 (room 23)
                         if (!(SciEngine.Instance.GameId == SciGameId.LONGBOW && SciEngine.Instance.IsDemo) &&
                             !(SciEngine.Instance.GameId == SciGameId.QFG1 && SciEngine.Instance.IsDemo) &&
-                            !(SciEngine.Instance.GameId == SciGameId.PQ2))
+                            SciEngine.Instance.GameId != SciGameId.PQ2)
                             throw new InvalidOperationException($"Unknown kDisplay argument {displayArg.Offset}");
 
                         if (displayArg.Offset == SCI_DISPLAY_DUMMY2)
@@ -511,19 +511,19 @@ namespace NScumm.Sci.Graphics
         {
             Rect r = rect;
             // left
-            r.Right = rect.Left + 1;
+            r.Right = (short) (rect.Left + 1);
             PaintRect(r);
             // right
             r.Right = rect.Right;
-            r.Left = rect.Right - 1;
+            r.Left = (short) (rect.Right - 1);
             PaintRect(r);
             //top
             r.Left = rect.Left;
-            r.Bottom = rect.Top + 1;
+            r.Bottom = (short) (rect.Top + 1);
             PaintRect(r);
             //bottom
             r.Bottom = rect.Bottom;
-            r.Top = rect.Bottom - 1;
+            r.Top = (short) (rect.Bottom - 1);
             PaintRect(r);
         }
 
@@ -542,8 +542,8 @@ namespace NScumm.Sci.Graphics
             _ports.OffsetRect(ref workerRect);
 
             // We adjust the left/right coordinates to even coordinates
-            workerRect.Left &= 0xFFFE; // round down
-            workerRect.Right = (workerRect.Right + 1) & 0xFFFE; // round up
+            workerRect.Left = (short) (workerRect.Left& 0xFFFE); // round down
+            workerRect.Right = (short) ((workerRect.Right + 1) & 0xFFFE); // round up
 
             _screen.CopyRectToScreen(workerRect);
         }

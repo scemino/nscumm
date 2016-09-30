@@ -30,17 +30,17 @@ namespace NScumm.Core.Graphics
         byte[] Pixels { get; }
 
         Surface Capture();
-        void CopyRectToScreen(byte[] buffer, int startOffset, int sourceStride, int x, int y, int width, int height);
-        void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int width, int height);
-        void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height);
+        void CopyRectToScreen(BytePtr buffer, int startOffset, int sourceStride, int x, int y, int width, int height);
+        void CopyRectToScreen(BytePtr buffer, int sourceStride, int x, int y, int width, int height);
+        void CopyRectToScreen(BytePtr buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height);
         void UpdateScreen();
 
         void SetPalette(Color[] color);
         Color[] GetPalette();
         void SetPalette(Color[] color, int first, int num);
 
-        void SetCursor(byte[] pixels, int width, int height, Point hotspot);
-        void SetCursor(byte[] pixels, int offset, int width, int height, Point hotspot, int keyColor);
+        void SetCursor(BytePtr pixels, int width, int height, Point hotspot);
+        void SetCursor(BytePtr pixels, int offset, int width, int height, Point hotspot, int keyColor);
         void FillScreen(int color);
     }
 }

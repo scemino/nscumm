@@ -1199,20 +1199,20 @@ namespace NScumm.Scumm.Insane
             a.PutActor(new Point((short)x, (short)y), room);
         }
 
-        void smlayer_overrideDrawActorAt(byte[] arg_0, byte arg_4, byte arg_8)
+        void smlayer_overrideDrawActorAt(BytePtr arg_0, byte arg_4, byte arg_8)
         {
             // FIXME: doublecheck
 
             // noop in current implementation
         }
 
-        void smlayer_drawSomething(byte[] renderBitmap, int codecparam, int x, int y, int arg_10, NutRenderer nutfile,
+        void smlayer_drawSomething(BytePtr renderBitmap, int codecparam, int x, int y, int arg_10, NutRenderer nutfile,
                                    int c, int arg_1C, int arg_20)
         {
             nutfile.DrawFrame(renderBitmap, c, x, y);
         }
 
-        void smlayer_showStatusMsg(int arg_0, byte[] renderBitmap, int codecparam,
+        void smlayer_showStatusMsg(int arg_0, BytePtr renderBitmap, int codecparam,
                                    int pos_x, int pos_y, int arg_14, int arg_18,
                                    int flags, string formatString, string strng)
         {

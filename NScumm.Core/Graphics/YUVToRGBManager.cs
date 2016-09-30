@@ -139,7 +139,7 @@ namespace NScumm.Core.Graphics
         public static void Convert420(Surface dst, LuminanceScale scale, byte[] ySrc, byte[] uSrc, byte[] vSrc, int yWidth, int yHeight, int yPitch, int uvPitch)
         {
             // Sanity checks
-            Debug.Assert(dst != null && dst.Pixels != null);
+            Debug.Assert(dst != null && dst.Pixels != BytePtr.Null);
             Debug.Assert(dst.BytesPerPixel == 2 || dst.BytesPerPixel == 4);
 
             Debug.Assert(ySrc != null && uSrc != null && vSrc != null);
@@ -165,9 +165,10 @@ namespace NScumm.Core.Graphics
             return _lookup;
         }
 
-        private static void ConvertYUV420ToRGB(byte[] dstPtr, int dstPitch, YUVToRGBLookup lookup, short[] colorTab, byte[] ySrc, byte[] uSrc, byte[] vSrc, int yWidth, int yHeight, int yPitch, int uvPitch, int size)
+        private static void ConvertYUV420ToRGB(BytePtr dstPtr, int dstPitch, YUVToRGBLookup lookup, short[] colorTab,
+            byte[] ySrc, byte[] uSrc, byte[] vSrc, int yWidth, int yHeight, int yPitch, int uvPitch, int size)
         {
-            var putPixel = size == sizeof(uint) ? ScummHelper.WriteUInt32 : new Action<byte[], int, uint>((dst, offset, value) => ScummHelper.WriteUInt16(dst, offset, (ushort)value));
+            var putPixel = size == sizeof(uint) ? ScummHelper.WriteUInt32 : new Action<byte[], int, uint>((dst, offset, value) => dst.WriteUInt16(offset, (ushort)value));
 
             int halfHeight = yHeight >> 1;
             int halfWidth = yWidth >> 1;
@@ -200,13 +201,13 @@ namespace NScumm.Core.Graphics
                         return val;
                     });
 
-                    putPixel(dstPtr, d, value(ySrc[y]));
-                    putPixel(dstPtr, d + dstPitch, value(ySrc[y + yPitch]));
+                    putPixel(dstPtr.Data, dstPtr.Offset+ d, value(ySrc[y]));
+                    putPixel(dstPtr.Data, dstPtr.Offset + d + dstPitch, value(ySrc[y + yPitch]));
                     y++;
                     d += size;
 
-                    putPixel(dstPtr, d, value(ySrc[y]));
-                    putPixel(dstPtr, d + dstPitch, value(ySrc[y + yPitch]));
+                    putPixel(dstPtr.Data, dstPtr.Offset + d, value(ySrc[y]));
+                    putPixel(dstPtr.Data, dstPtr.Offset + d + dstPitch, value(ySrc[y + yPitch]));
                     y++;
                     d += size;
                 }

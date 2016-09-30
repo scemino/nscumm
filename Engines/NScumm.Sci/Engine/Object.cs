@@ -57,10 +57,11 @@ namespace NScumm.Sci.Engine
         /// Register containing species "selector" for SCI3
         /// </summary>
         private Register _speciesSelectorSci3;
+
         /// <summary>
         /// Register containing info "selector" for SCI3
         /// </summary>
-        private Register _infoSelectorSci3;
+        private StackPtr _infoSelectorSci3 = new StackPtr(new Register[1], 0);
         /// <summary>
         /// base + object offset within base
         /// </summary>
@@ -81,7 +82,7 @@ namespace NScumm.Sci.Engine
         private int _flags;
         private bool[] _mustSetViewVisible;
 
-        public Register Pos { get { return _pos; } }
+        public Register Pos => _pos;
 
         public Register SpeciesSelector
         {
@@ -89,8 +90,7 @@ namespace NScumm.Sci.Engine
             {
                 if (ResourceManager.GetSciVersion() <= SciVersion.V3)
                     return _variables[_offset];
-                else    // SCI3
-                    return _speciesSelectorSci3;
+                return _speciesSelectorSci3;
             }
             set
             {
@@ -107,8 +107,7 @@ namespace NScumm.Sci.Engine
             {
                 if (ResourceManager.GetSciVersion() <= SciVersion.V3)
                     return _variables[_offset + 1];
-                else    // SCI3
-                    return _superClassPosSci3;
+                return _superClassPosSci3;
             }
             set
             {
@@ -125,8 +124,7 @@ namespace NScumm.Sci.Engine
             {
                 if (ResourceManager.GetSciVersion() < SciVersion.V3)
                     return _variables[4];
-                else    // SCI3
-                    return Register.Make(0, _baseObj.Data.ReadSci11EndianUInt16(_baseObj.Offset + 6));
+                return Register.Make(0, _baseObj.Data.ReadSci11EndianUInt16(_baseObj.Offset + 6));
             }
             set
             {
@@ -144,9 +142,7 @@ namespace NScumm.Sci.Engine
             {
                 if (ResourceManager.GetSciVersion() < SciVersion.V3)
                     return _variables[2];
-                else
-                    // This should never occur, this is called from a SCI1.1 - SCI2.1 only function
-                    Error("getPropDictSelector called for SCI3");
+                Error("getPropDictSelector called for SCI3");
                 return Register.NULL_REG;
             }
             set
@@ -159,44 +155,41 @@ namespace NScumm.Sci.Engine
             }
         }
 
-        public Register InfoSelector
+        public StackPtr InfoSelector
         {
             get
             {
                 if (ResourceManager.GetSciVersion() <= SciVersion.V3)
-                    return _variables[_offset + 2];
-                else    // SCI3
-                    return _infoSelectorSci3;
+                    return new StackPtr(_variables,_offset + 2);
+                return _infoSelectorSci3;
             }
             set
             {
                 if (ResourceManager.GetSciVersion() <= SciVersion.V3)
-                    _variables[_offset + 2] = value;
+                    _variables[_offset + 2] = value[0];
                 else    // SCI3
                     _infoSelectorSci3 = value;
             }
         }
 
-        public Register NameSelector
+        public StackPtr NameSelector
         {
             get
             {
                 if (ResourceManager.GetSciVersion() <= SciVersion.V3)
-                    return _offset + 3 < (ushort)_variables.Length ? _variables[_offset + 3] : Register.NULL_REG;
-                else    // SCI3
-                    return _variables.Length != 0 ? _variables[0] : Register.NULL_REG;
+                    return _offset + 3 < (ushort)_variables.Length ? new StackPtr(_variables,_offset + 3) : StackPtr.Null;
+                return _variables.Length != 0 ? new StackPtr(_variables,0) : StackPtr.Null;
             }
         }
 
 
+        public bool IsClass => (InfoSelector[0].Offset & InfoFlagClass) != 0;
 
-        public bool IsClass { get { return (InfoSelector.Offset & InfoFlagClass) != 0; } }
+        public bool IsFreed => (_flags & OBJECT_FLAG_FREED) != 0;
 
-        public bool IsFreed { get { return (_flags & OBJECT_FLAG_FREED) != 0; } }
+        public int VarCount => _variables.Length;
 
-        public int VarCount { get { return _variables.Length; } }
-
-        public uint MethodCount { get { return _methodCount; } }
+        public uint MethodCount => _methodCount;
 
         public SciObject()
         {
@@ -212,8 +205,7 @@ namespace NScumm.Sci.Engine
             {
                 if (location == _propertyOffsetsSci3[i])
                 {
-                    Register.SetSegment(_variables[i], (ushort)segment);
-                    Register.IncOffset(_variables[i], (short)offset);
+                    _variables[i] = Register.Make((ushort) segment, (ushort) (_variables[i].Offset + (short) offset));
                     return true;
                 }
             }
@@ -307,7 +299,7 @@ namespace NScumm.Sci.Engine
                 }
                 else
                 {
-                    _infoSelectorSci3 = Register.Make(0, _baseObj.Data.ReadSci11EndianUInt16(_baseObj.Offset + 10));
+                    _infoSelectorSci3[0] = Register.Make(0, _baseObj.Data.ReadSci11EndianUInt16(_baseObj.Offset + 10));
                 }
             }
         }
@@ -485,16 +477,16 @@ namespace NScumm.Sci.Engine
 
                     // We have to do a little bit of work to get the name of the object
                     // before any relocations are done.
-                    Register nameReg = NameSelector;
+                    StackPtr nameReg = NameSelector;
                     string name;
-                    if (nameReg.IsNull)
+                    if (nameReg[0].IsNull)
                     {
                         name = "<no name>";
                     }
                     else
                     {
-                        nameReg = Register.SetSegment(nameReg, _pos.Segment);
-                        name = segMan.DerefString(nameReg);
+                        nameReg.SetSegment(0, _pos.Segment);
+                        name = segMan.DerefString(nameReg[0]);
                         if (name == null)
                             name = "<invalid name>";
                     }
@@ -572,7 +564,7 @@ namespace NScumm.Sci.Engine
             {
                 throw new InvalidOperationException($"Attempt to relocate odd variable #{idx}.5e (relative to {block_location:X4})");
             }
-            block[idx] = Register.SetSegment(block[idx], segment); // Perform relocation
+            block[idx] = Register.Make(segment,(ushort) block[idx].Offset); // Perform relocation
             if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
                 block[idx] = Register.IncOffset(block[idx], (short)scriptSize);
 

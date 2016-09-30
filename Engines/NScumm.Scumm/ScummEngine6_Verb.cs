@@ -32,7 +32,7 @@ namespace NScumm.Scumm
         [OpCode(0x94)]
         protected virtual void GetVerbFromXY(int x, int y)
         {
-            var over = FindVerbAtPos(new Core.Graphics.Point(x, y));
+            var over = FindVerbAtPos(new Core.Graphics.Point((short) x, (short) y));
             if (over != 0)
                 over = Verbs[over].VerbId;
             Push(over);
@@ -75,8 +75,8 @@ namespace NScumm.Scumm
                     vs.HiColor = (byte)Pop();
                     break;
                 case 128:               // SO_VERB_AT
-                    vs.CurRect.Top = Pop();
-                    vs.CurRect.Left = Pop();
+                    vs.CurRect.Top = (short) Pop();
+                    vs.CurRect.Left = (short) Pop();
                     break;
                 case 129:               // SO_VERB_ON
                     vs.CurMode = 1;

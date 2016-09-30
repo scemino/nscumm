@@ -22,13 +22,13 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
 {
-    class sort_temp_t
+    internal class sort_temp_t
     {
         public Register key, value;
         public Register order;
     }
 
-    partial class Kernel
+    internal partial class Kernel
     {
         private static Register kEmptyList(EngineState s, int argc, StackPtr argv)
         {

@@ -22,6 +22,7 @@
 using System.IO;
 using NScumm.Core;
 using NScumm.Core.Audio;
+using NScumm.Core.Common;
 
 namespace NScumm.Queen
 {
@@ -150,7 +151,7 @@ namespace NScumm.Queen
             var f = _vm.Resource.FindSound(name, out size);
             if (f != null)
             {
-                var subStream = new SeekableSubReadStream(f, f.Position, f.Position + size);
+                var subStream = new SeekableSubReadStream(f, f.Position, f.Position + size, false);
                 if (isSpeech)
                     PlaySoundData(subStream, ref _speechHandle);
                 else

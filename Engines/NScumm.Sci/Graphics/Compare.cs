@@ -46,13 +46,13 @@ namespace NScumm.Sci.Graphics
             Register tmp;
             if (SciEngine.LookupSelector(_segMan, @object, s => s.brLeft, null, out tmp) == SelectorType.Variable)
             {
-                int x = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.x);
-                int y = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.y);
+                short x = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.x);
+                short y = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.y);
                 short z = (short)((SciEngine.Selector(s => s.z) > -1) ? SciEngine.ReadSelectorValue(_segMan, @object, s => s.z) : 0);
-                short yStep = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.yStep);
+                var yStep = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.yStep);
                 int viewId = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.view);
-                short loopNo = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.loop);
-                short celNo = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.cel);
+                var loopNo = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.loop);
+                var celNo = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.cel);
 
                 // HACK: Ignore invalid views for now (perhaps unimplemented text views?)
                 if (viewId == 0xFFFF)   // invalid view
@@ -64,9 +64,9 @@ namespace NScumm.Sci.Graphics
                     scaleSignal = (ViewScaleSignals)SciEngine.ReadSelectorValue(_segMan, @object, s => s.scaleSignal);
                 }
 
-                Rect celRect = new Rect();
+                var celRect = new Rect();
 
-                GfxView tmpView = _cache.GetView(viewId);
+                var tmpView = _cache.GetView(viewId);
                 if (!tmpView.IsScaleable)
                     scaleSignal = 0;
 
@@ -78,7 +78,7 @@ namespace NScumm.Sci.Graphics
                     if (tmpView.IsSci2Hires)
 						tmpView.AdjustToUpscaledCoordinates(ref y,ref  x);
 
-					celRect = tmpView.GetCelRect(loopNo, celNo, (short)x, (short)y, z);
+					tmpView.GetCelRect(loopNo, celNo, x, y, z, out celRect);
 
                     if (tmpView.IsSci2Hires)
                     {
@@ -87,8 +87,8 @@ namespace NScumm.Sci.Graphics
                     }
                 }
 
-                celRect.Bottom = y + 1;
-                celRect.Top = celRect.Bottom - yStep;
+                celRect.Bottom = (short) (y + 1);
+                celRect.Top = (short) (celRect.Bottom - yStep);
 
                 SciEngine.WriteSelectorValue(_segMan, @object, s => s.brLeft, (ushort)celRect.Left);
                 SciEngine.WriteSelectorValue(_segMan, @object, s => s.brRight, (ushort)celRect.Right);
@@ -104,10 +104,10 @@ namespace NScumm.Sci.Graphics
             ushort controlMask;
             ushort result;
 
-            checkRect.Left = (int)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brLeft);
-            checkRect.Top = (int)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brTop);
-            checkRect.Right = (int)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brRight);
-            checkRect.Bottom = (int)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brBottom);
+            checkRect.Left = (short) SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brLeft);
+            checkRect.Top = (short) SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brTop);
+            checkRect.Right = (short) SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brRight);
+            checkRect.Bottom = (short) SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brBottom);
 
             if (!checkRect.IsValidRect)
             {   // can occur in Iceman and Mother Goose - HACK? TODO: is this really occuring in sierra sci? check this
@@ -122,7 +122,7 @@ namespace NScumm.Sci.Graphics
             result = (ushort)(IsOnControl(GfxScreenMasks.CONTROL, adjustedRect) & controlMask);
             if ((result == 0) && (signal & (ViewSignals.IgnoreActor | ViewSignals.RemoveView)) == 0)
             {
-                List list = _segMan.LookupList(listReference);
+                var list = _segMan.LookupList(listReference);
                 if (list == null)
                     throw new InvalidOperationException("kCanBeHere called with non-list as parameter");
 
@@ -133,8 +133,8 @@ namespace NScumm.Sci.Graphics
 
         private Register CanBeHereCheckRectList(Register checkObject, Rect checkRect, List list)
         {
-            Register curAddress = list.first;
-            Node curNode = _segMan.LookupNode(curAddress);
+            var curAddress = list.first;
+            var curNode = _segMan.LookupNode(curAddress);
             Register curObject;
             ViewSignals signal;
             Rect curRect;
@@ -147,10 +147,10 @@ namespace NScumm.Sci.Graphics
                     signal = (ViewSignals)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.signal);
                     if ((signal & (ViewSignals.IgnoreActor | ViewSignals.RemoveView | ViewSignals.NoUpdate)) == 0)
                     {
-                        curRect.Left = (int)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brLeft);
-                        curRect.Top = (int)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brTop);
-                        curRect.Right = (int)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brRight);
-                        curRect.Bottom = (int)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brBottom);
+                        curRect.Left = (short) SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brLeft);
+                        curRect.Top = (short) SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brTop);
+                        curRect.Right = (short) SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brRight);
+                        curRect.Bottom = (short) SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brBottom);
                         // Check if curRect is within checkRect
                         // This behavior is slightly odd, but it's how the original SCI
                         // engine did it: a rect cannot be contained within itself
@@ -201,7 +201,7 @@ namespace NScumm.Sci.Graphics
 
         public Rect GetNSRect(Register @object)
         {
-            Rect nsRect = new Rect();
+            var nsRect = new Rect();
             nsRect.Top = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.nsTop);
             nsRect.Left = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.nsLeft);
             nsRect.Bottom = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.nsBottom);
@@ -220,48 +220,20 @@ namespace NScumm.Sci.Graphics
 
         public void KernelSetNowSeen(Register objectReference)
         {
-            GfxView view = null;
-            Rect celRect = new Rect(0, 0);
-            int viewId = (int)SciEngine.ReadSelectorValue(_segMan, objectReference, o => o.view);
-
-            // HACK: Ignore invalid views for now (perhaps unimplemented text views?)
-            if (viewId == 0xFFFF)   // invalid view
-                return;
-
-            short loopNo = (short)SciEngine.ReadSelectorValue(_segMan, objectReference, o => o.loop);
-            short celNo = (short)SciEngine.ReadSelectorValue(_segMan, objectReference, o => o.cel);
-            short x = (short)SciEngine.ReadSelectorValue(_segMan, objectReference, o => o.x);
-            short y = (short)SciEngine.ReadSelectorValue(_segMan, objectReference, o => o.y);
+            var viewId = (int) SciEngine.ReadSelectorValue(_segMan, objectReference, o => o.view);
+            var loopNo = (short) SciEngine.ReadSelectorValue(_segMan, objectReference, o => o.loop);
+            var celNo = (short) SciEngine.ReadSelectorValue(_segMan, objectReference, o => o.cel);
+            var x = (short) SciEngine.ReadSelectorValue(_segMan, objectReference, o => o.x);
+            var y = (short) SciEngine.ReadSelectorValue(_segMan, objectReference, o => o.y);
             short z = 0;
             if (SciEngine.Selector(o => o.z) > -1)
-                z = (short)SciEngine.ReadSelectorValue(_segMan, objectReference, o => o.z);
+                z = (short) SciEngine.ReadSelectorValue(_segMan, objectReference, o => o.z);
 
-            view = _cache.GetView(viewId);
+            var view = _cache.GetView(viewId);
+            Rect celRect;
+            view.GetCelRect(loopNo, celNo, x, y, z, out celRect);
 
-# if ENABLE_SCI32
-            if (view.isSci2Hires())
-                view.adjustToUpscaledCoordinates(y, x);
-            else if (getSciVersion() == SCI_VERSION_2_1)
-                _coordAdjuster.fromScriptToDisplay(y, x);
-#endif
-
-            celRect = view.GetCelRect(loopNo, celNo, x, y, z);
-
-# if ENABLE_SCI32
-            if (view.isSci2Hires())
-            {
-                view.adjustBackUpscaledCoordinates(celRect.top, celRect.left);
-                view.adjustBackUpscaledCoordinates(celRect.bottom, celRect.right);
-            }
-            else if (getSciVersion() == SCI_VERSION_2_1)
-            {
-                _coordAdjuster.fromDisplayToScript(celRect.top, celRect.left);
-                _coordAdjuster.fromDisplayToScript(celRect.bottom, celRect.right);
-            }
-#endif
-
-            Register tmp;
-            if (SciEngine.LookupSelector(_segMan, objectReference, o => o.nsTop, null, out tmp) == SelectorType.Variable)
+            if (SciEngine.LookupSelector(_segMan, objectReference, o => o.nsTop, null) == SelectorType.Variable)
             {
                 SetNSRect(objectReference, celRect);
             }
@@ -269,20 +241,20 @@ namespace NScumm.Sci.Graphics
 
         public ushort KernelOnControl(GfxScreenMasks screenMask, Rect rect)
         {
-            Rect adjustedRect = _coordAdjuster.OnControl(rect);
+            var adjustedRect = _coordAdjuster.OnControl(rect);
 
-            ushort result = IsOnControl(screenMask, adjustedRect);
+            var result = IsOnControl(screenMask, adjustedRect);
             return result;
         }
 
         public bool KernelIsItSkip(int viewId, short loopNo, short celNo, Point position)
         {
-            GfxView tmpView = _cache.GetView(viewId);
-            CelInfo celInfo = tmpView.GetCelInfo(loopNo, celNo);
-            position.X = ScummHelper.Clip(position.X, 0, celInfo.width - 1);
-            position.Y = ScummHelper.Clip(position.Y, 0, celInfo.height - 1);
+            var tmpView = _cache.GetView(viewId);
+            var celInfo = tmpView.GetCelInfo(loopNo, celNo);
+            position.X = (short) ScummHelper.Clip(position.X, 0, celInfo.width - 1);
+            position.Y = (short) ScummHelper.Clip(position.Y, 0, celInfo.height - 1);
             var celData = tmpView.GetBitmap(loopNo, celNo);
-            bool result = (celData[position.Y * celInfo.width + position.X] == celInfo.clearKey);
+            var result = (celData[position.Y * celInfo.width + position.X] == celInfo.clearKey);
             return result;
         }
     }

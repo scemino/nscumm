@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using NScumm.Core.Common;
 using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Core
@@ -296,7 +297,7 @@ namespace NScumm.Core
             if (len == 0)
                 return null;
 
-            return new SeekableSubReadStream(_stream, _stream.Position, _stream.Position + len);
+            return _stream.ReadStream(len);
         }
 
         public Stream GetResource(string fileName)
@@ -315,7 +316,7 @@ namespace NScumm.Core
                         if (len == 0)
                             return null;
 
-                        return new SeekableSubReadStream(_stream, _stream.Position, _stream.Position + len);
+                        return _stream.ReadStream(len);
                     }
                 }
             }

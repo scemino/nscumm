@@ -52,7 +52,7 @@ namespace NScumm.Sci
     }
 
     // our engine debug levels
-    static class DebugLevels
+    internal static class DebugLevels
     {
         public const int Error = 1 << 0;
         public const int Nodes = 1 << 1;
@@ -105,6 +105,7 @@ namespace NScumm.Sci
         HOYLE2,
         HOYLE3,
         HOYLE4,
+        HOYLE5,
         ICEMAN,
         ISLANDBRAIN,
         JONES,
@@ -136,12 +137,14 @@ namespace NScumm.Sci
         PQ2,
         PQ3,
         PQ4,
+        PQ4DEMO,	// We have a separate ID for PQ4 demo, because it's actually a completely different game (SCI1.1 vs SCI2/SCI2.1)
         PQSWAT,
         QFG1,
         QFG1VGA,
         QFG2,
         QFG3,
         QFG4,
+        QFG4DEMO,	// We have a separate ID for QFG4 demo, because it's actually a completely different game (SCI1.1 vs SCI2/SCI2.1)
         RAMA,
         SHIVERS,
         //SHIVERS2,	// Not SCI
@@ -177,14 +180,30 @@ namespace NScumm.Sci
 
         private const GuiOptions GUIO_GK2_MAC = GUIO_GK2;
 
+        private const GuiOptions GUIO_HOYLE5_DEMO = GuiOptions.NOSPEECH |
+                                                    GuiOptions.NOASPECT |
+                                                    GAMEOPTION_ORIGINAL_SAVELOAD;
+
+        private const GuiOptions GUIO_KQ7_DEMO = GuiOptions.NOSPEECH |
+                                                 GuiOptions.NOASPECT |
+                                                 GAMEOPTION_PREFER_DIGITAL_SFX |
+                                                 GAMEOPTION_ORIGINAL_SAVELOAD |
+                                                 GAMEOPTION_FB01_MIDI;
+
+        private const GuiOptions GUIO_KQ7 = GuiOptions.NOASPECT |
+                                            GAMEOPTION_PREFER_DIGITAL_SFX |
+                                            GAMEOPTION_ORIGINAL_SAVELOAD |
+                                            GAMEOPTION_FB01_MIDI;
+
+
 #if ENABLE_SCI32
-        const GuiOptions GUIO_GK1_FLOPPY =
+        private const GuiOptions GUIO_GK1_FLOPPY =
             GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI;
 
-        const GuiOptions GUIO_GK1_CD =
+        private const GuiOptions GUIO_GK1_CD =
             GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI;
 
-        const GuiOptions GUIO_GK1_MAC = GUIO_GK1_FLOPPY;
+        private const GuiOptions GUIO_GK1_MAC = GUIO_GK1_FLOPPY;
 #endif
 
         public SciMetaEngine()
@@ -531,7 +550,7 @@ namespace NScumm.Sci
             new ADGameDescription("chest", "", new [] {
                 new ADGameFileDescription("resource.map", 0, "9dd015e79cac4f91e7de805448f39775", 1912),
                 new ADGameFileDescription("resource.000", 0, "e4efcd042f86679dd4e1834bb3a38edb", 3770943),
-            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.UNSATBLE),
+            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.UNSTABLE),
 #endif
             // Christmas Card 1988 - English DOS
             // SCI interpreter version 0.000.294
@@ -1502,6 +1521,237 @@ namespace NScumm.Sci
                 }, Core.Language.EN_ANY, Platform.Macintosh, ADGameFlags.NO_FLAGS,
                 GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER | GAMEOPTION_PREFER_DIGITAL_SFX |
                 GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+#if Undefined // TODO: unknown if these files are corrupt
+// Hoyle 3 - English Amiga (from www.back2roots.org)
+// Executable scanning reports "1.005.000"
+// SCI interpreter version 1.000.510
+            new ADGameDescription("hoyle3", "", new[]
+            {
+                new ADGameFileDescription("resource.map", 0, "f1f158e428398cb87fc41fb4aa8c2119", 2088),
+                new ADGameFileDescription("resource.000", 0, "595b6039ea1356e7f96a52c58eedcf22", 355791),
+                new ADGameFileDescription("resource.001", 0, "143df8aef214a2db34c2d48190742012", 632273),
+            }, Core.Language.EN_ANY, Platform.Amiga, ADGameFlags.NO_FLAGS,
+                        GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                        GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+#endif
+
+            // Hoyle 3 - English DOS Non-Interactive Demo
+            // Executable scanning reports "x.yyy.zzz"
+            // SCI interpreter version 1.000.510 (just a guess)
+            new ADGameDescription("hoyle3", "Demo", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "0d06cacc87dc21a08cd017e73036f905", 735),
+                    new ADGameFileDescription("resource.001", 0, "24db2bccda0a3c43ac4a7b5edb116c7e", 797678),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.DEMO,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 3 - English DOS Floppy (from jvprat)
+            // Executable scanning reports "x.yyy.zzz", Floppy label reports "1.0, 11.2.91", VERSION file reports "1.000"
+            // SCI interpreter version 1.000.510 (just a guess)
+            new ADGameDescription("hoyle3", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "7216a2972f9c595c45ab314941628e43", 2247),
+                    new ADGameFileDescription("resource.000", 0, "6ef28cac094dcd97fdb461662ead6f92", 541845),
+                    new ADGameFileDescription("resource.001", 0, "0a98a268ee99b92c233a0d7187c1f0fa", 845795),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 3 - English DOS Floppy (supplied by eddydrama in bug report #3038837)
+            new ADGameDescription("hoyle3", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "31c9fc0977ac6e5b566c37096803d0cb", 2469),
+                    new ADGameFileDescription("resource.000", 0, "6ef28cac094dcd97fdb461662ead6f92", 12070),
+                    new ADGameFileDescription("resource.001", 0, "ca6a9750a2c138d8bcbba369126040e9", 348646),
+                    new ADGameFileDescription("resource.002", 0, "0a98a268ee99b92c233a0d7187c1f0fa", 345811),
+                    new ADGameFileDescription("resource.003", 0, "97cfd72633f8f9b2a0b1d4116cf3ee81", 346116),
+                    new ADGameFileDescription("resource.004", 0, "2884fb91b225fabd9ca87ea231293b48", 351218),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 3 EGA - English DOS Floppy 1.0 (supplied by abevi in bug report #2612718)
+            new ADGameDescription("hoyle3", "EGA", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "1728af1f6a85938c3522e64449e76ca1", 2205),
+                    new ADGameFileDescription("resource.000", 0, "6ef28cac094dcd97fdb461662ead6f92", 319905),
+                    new ADGameFileDescription("resource.001", 0, "0a98a268ee99b92c233a0d7187c1f0fa", 526438),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 4 (Hoyle Classic Card Games) - English DOS Demo
+            new ADGameDescription("hoyle4", "Demo", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "60f764020a6b788bbbe415dbc2ccb9f3", 931),
+                    new ADGameFileDescription("resource.000", 0, "5fe3670e3ddcd4f85c10013b5453141a", 615522),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.DEMO,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 4 (Hoyle Classic Card Games) - English DOS Demo
+            // SCI interpreter version 1.001.200 (just a guess)
+            // Does anyone have this version? -clone2727
+            new ADGameDescription("hoyle4", "Demo", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "662087cb383e52e3cc4ae7ecb10e20aa", 938),
+                    new ADGameFileDescription("resource.000", 0, "24c10844792c54d476d272213cbac300", 675252),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.DEMO,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 4 (Hoyle Classic Card Games) - English DOS/Win
+            // Supplied by abevi in bug report #3039291
+            new ADGameDescription("hoyle4", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "2b577c975cc8d8d43f61b6a756129fe3", 4352),
+                    new ADGameFileDescription("resource.000", 0, "43e2c15ce436aab611a462ad0603e12d", 2000132),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Hoyle 4 (Hoyle Classic Card Games) - English Macintosh Floppy
+            // VERSION file reports "2.0"
+            new ADGameDescription("hoyle4", "", new[]
+                {
+                    new ADGameFileDescription("Data1", 0, "99575fae4579540a314bbedd72d51e8c", 7682887),
+                    new ADGameFileDescription("Data2", 0, "7d4bf5bdf3c02edbf35cb8471c84ec13", 1539134),
+                }, Core.Language.EN_ANY, Platform.Macintosh, ADGameFlags.MACRESFORK,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+#if ENABLE_SCI32
+
+// Hoyle 5 (Hoyle Classic Games) - Windows demo
+            new ADGameDescription("hoyle5", "Demo", new[]
+                {
+                    new ADGameFileDescription("ressci.000", 0, "98a39ae535dd01714ac313f8ba925045", 7260363),
+                    new ADGameFileDescription("resmap.000", 0, "10267a1542a73d527e50f0340549088b", 4900),
+                }, Core.Language.EN_ANY, Platform.Windows, ADGameFlags.DEMO | ADGameFlags.UNSTABLE,
+                GUIO_HOYLE5_DEMO),
+#endif // ENABLE_SCI32
+
+            // ImagiNation Network (INN) Demo
+            // SCI interpreter version 1.001.097
+            new ADGameDescription("inndemo", "", new[]
+            {
+                new ADGameFileDescription("resource.000", 0, "535b1b920441ec73f42eaa4ccfd47b89", 514578),
+                new ADGameFileDescription("resource.map", 0, "333daf27c3e8a6d274a3e0061ed7cd5c", 1545),
+            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH |
+                                                                         GAMEOPTION_PREFER_DIGITAL_SFX |
+                                                                         GAMEOPTION_ORIGINAL_SAVELOAD |
+                                                                         GAMEOPTION_FB01_MIDI),
+
+            // Jones in the Fast Lane EGA - English DOS
+            // SCI interpreter version 1.000.172 (not 100% sure FIXME)
+            new ADGameDescription("jones", "EGA", new[]
+            {
+                new ADGameFileDescription("resource.map", 0, "be4cf9e8c1e253623ef35ae3b8a1d998", 1800),
+                new ADGameFileDescription("resource.001", 0, "bac3ec6cb3e3920984ab0f32becf5163", 202105),
+                new ADGameFileDescription("resource.002", 0, "b86daa3ba2784d1502da881eedb80d9b", 341771),
+            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH |
+                                                                         GAMEOPTION_PREFER_DIGITAL_SFX |
+                                                                         GAMEOPTION_ORIGINAL_SAVELOAD |
+                                                                         GAMEOPTION_FB01_MIDI),
+
+            // Jones in the Fast Lane EGA - English DOS (supplied by EddyDrama in bug report #3038761)
+            new ADGameDescription("jones", "EGA", new[]
+            {
+                new ADGameFileDescription("resource.map", 0, "8e92cf319180cc8b5b87b2ce93a4fe22", 1602),
+                new ADGameFileDescription("resource.001", 0, "bac3ec6cb3e3920984ab0f32becf5163", 511528),
+            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH |
+                                                                         GAMEOPTION_PREFER_DIGITAL_SFX |
+                                                                         GAMEOPTION_ORIGINAL_SAVELOAD |
+                                                                         GAMEOPTION_FB01_MIDI),
+
+            // Jones in the Fast Lane VGA - English DOS
+            // SCI interpreter version 1.000.172
+            new ADGameDescription("jones", "", new[]
+            {
+                new ADGameFileDescription("resource.map", 0, "65cbe19b36fffc71c8e7b2686bd49ad7", 1800),
+                new ADGameFileDescription("resource.001", 0, "bac3ec6cb3e3920984ab0f32becf5163", 313476),
+                new ADGameFileDescription("resource.002", 0, "b86daa3ba2784d1502da881eedb80d9b", 719747),
+            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH |
+                                                                         GAMEOPTION_PREFER_DIGITAL_SFX |
+                                                                         GAMEOPTION_ORIGINAL_SAVELOAD |
+                                                                         GAMEOPTION_FB01_MIDI),
+
+            // Jones in the Fast Lane VGA - English DOS (supplied by omer_mor in bug report #3037054)
+            // VERSION file reports "1.000.060"
+            new ADGameDescription("jones", "", new[]
+            {
+                new ADGameFileDescription("resource.map", 0, "db175ab494ab0666f19ab8f2597a8e49", 1602),
+                new ADGameFileDescription("resource.001", 0, "bac3ec6cb3e3920984ab0f32becf5163", 994487),
+            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH |
+                                                                         GAMEOPTION_PREFER_DIGITAL_SFX |
+                                                                         GAMEOPTION_ORIGINAL_SAVELOAD |
+                                                                         GAMEOPTION_FB01_MIDI),
+
+            // Jones in the Fast Lane - English DOS CD
+            new ADGameDescription("jones", "CD", new[]
+            {
+                new ADGameFileDescription("resource.map", 0, "459f5b04467bc2107aec02f5c4b71b37", 4878),
+                new ADGameFileDescription("resource.001", 0, "3876da2ce16fb7dea2f5d943d946fa84", 1652150),
+            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.CD, GAMEOPTION_JONES_CDAUDIO),
+
+            // Jones in the Fast Lane - English DOS CD
+            // Same entry as the DOS version above. This one is used for the alternate
+            // General MIDI music tracks in the Windows version
+            new ADGameDescription("jones", "CD", new[]
+            {
+                new ADGameFileDescription("resource.map", 0, "459f5b04467bc2107aec02f5c4b71b37", 4878),
+                new ADGameFileDescription("resource.001", 0, "3876da2ce16fb7dea2f5d943d946fa84", 1652150),
+            }, Core.Language.EN_ANY, Platform.Windows, ADGameFlags.CD, GuiOptions.MIDIGM |
+                                                                       GAMEOPTION_PREFER_DIGITAL_SFX |
+                                                                       GAMEOPTION_FB01_MIDI |
+                                                                       GAMEOPTION_JONES_CDAUDIO),
+
+            // Jones in the Fast Lane - English DOS US CD (alternate version)
+            // Supplied by collector9 in bug #3614668
+            new ADGameDescription("jones", "CD", new[]
+            {
+                new ADGameFileDescription("resource.map", 0, "4344ff3f796707843b992adec2c87663", 4878),
+                new ADGameFileDescription("resource.001", 0, "3876da2ce16fb7dea2f5d943d946fa84", 1652062),
+            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.CD, GAMEOPTION_JONES_CDAUDIO),
+
+            // Jones in the Fast Lane - English DOS US CD (alternate version)
+            // Same entry as the DOS version above. This one is used for the alternate
+            // General MIDI music tracks in the Windows version
+            new ADGameDescription("jones", "CD", new[]
+            {
+                new ADGameFileDescription("resource.map", 0, "4344ff3f796707843b992adec2c87663", 4878),
+                new ADGameFileDescription("resource.001", 0, "3876da2ce16fb7dea2f5d943d946fa84", 1652062),
+            }, Core.Language.EN_ANY, Platform.Windows, ADGameFlags.CD, GuiOptions.MIDIGM |
+                                                                       GAMEOPTION_PREFER_DIGITAL_SFX |
+                                                                       GAMEOPTION_FB01_MIDI |
+                                                                       GAMEOPTION_JONES_CDAUDIO),
+
+            // King's Quest 1 SCI Remake - English Amiga (from www.back2roots.org)
+            // Executable scanning reports "1.003.007"
+            // SCI interpreter version 0.001.010
+            new ADGameDescription("kq1sci", "SCI", new[]
+            {
+                new ADGameFileDescription("resource.map", 0, "37ed1a05eb719629eba15059c2eb6cbe", 6798),
+                new ADGameFileDescription("resource.001", 0, "9ae2a13708d691cd42f9129173c4b39d", 266621),
+                new ADGameFileDescription("resource.002", 0, "9ae2a13708d691cd42f9129173c4b39d", 795123),
+                new ADGameFileDescription("resource.003", 0, "9ae2a13708d691cd42f9129173c4b39d", 763224),
+                new ADGameFileDescription("resource.004", 0, "9ae2a13708d691cd42f9129173c4b39d", 820443),
+            }, Core.Language.EN_ANY, Platform.Amiga, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH |
+                                                                           GAMEOPTION_PREFER_DIGITAL_SFX |
+                                                                           GAMEOPTION_ORIGINAL_SAVELOAD |
+                                                                           GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 1 SCI Remake - English DOS Non-Interactive Demo
+            // Executable scanning reports "S.old.010"
+            new ADGameDescription("kq1sci", "SCI/Demo", new[]
+            {
+                new ADGameFileDescription("resource.map", 0, "59b13619078bd47011421468959ee5d4", 954),
+                new ADGameFileDescription("resource.001", 0, "4cfb9040db152868f7cb6a1e8151c910", 296555),
+            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.DEMO, GuiOptions.NOSPEECH |
+                                                                     GAMEOPTION_EGA_UNDITHER |
+                                                                     GAMEOPTION_PREFER_DIGITAL_SFX |
+                                                                     GAMEOPTION_ORIGINAL_SAVELOAD |
+                                                                     GAMEOPTION_FB01_MIDI),
 
             // King's Quest 1 SCI Remake - English DOS (from the King's Quest Collection)
             // Executable scanning reports "S.old.010", VERSION file reports "1.000.051"
@@ -1516,6 +1766,217 @@ namespace NScumm.Sci
                                                                          GAMEOPTION_PREFER_DIGITAL_SFX |
                                                                          GAMEOPTION_ORIGINAL_SAVELOAD |
                                                                          GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 1 SCI Remake - English DOS (supplied by ssburnout in bug report #3049193)
+            // 1.000.051 9x5.25" (label: INT#9.19.90)
+            new ADGameDescription("kq1sci", "SCI", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "4dac689e98b2fa6806232fdd61e24712", 9936),
+                    new ADGameFileDescription("resource.001", 0, "fed9e0072ffd511d248674e60dee2099", 196027),
+                    new ADGameFileDescription("resource.002", 0, "fed9e0072ffd511d248674e60dee2099", 330278),
+                    new ADGameFileDescription("resource.003", 0, "fed9e0072ffd511d248674e60dee2099", 355008),
+                    new ADGameFileDescription("resource.004", 0, "fed9e0072ffd511d248674e60dee2099", 265478),
+                    new ADGameFileDescription("resource.005", 0, "fed9e0072ffd511d248674e60dee2099", 316854),
+                    new ADGameFileDescription("resource.006", 0, "fed9e0072ffd511d248674e60dee2099", 351062),
+                    new ADGameFileDescription("resource.007", 0, "fed9e0072ffd511d248674e60dee2099", 330472),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 4 - English Amiga (from www.back2roots.org)
+            // Executable scanning reports "1.002.032"
+            // SCI interpreter version 0.000.685
+            new ADGameDescription("kq4sci", "SCI", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "f88dd267fb9504d40a04d599c048d42b", 6354),
+                    new ADGameFileDescription("resource.000", 0, "77615c595388acf3d1df8e107bfb6b52", 138523),
+                    new ADGameFileDescription("resource.001", 0, "52c2231765eced34faa7f7bcff69df83", 44751),
+                    new ADGameFileDescription("resource.002", 0, "fb351106ec865fad9af5d78bd6b8e3cb", 663629),
+                    new ADGameFileDescription("resource.003", 0, "fd16c9c223f7dc5b65f06447615224ff", 683016),
+                    new ADGameFileDescription("resource.004", 0, "3fac034c7d130e055d05bc43a1f8d5f8", 549993),
+                }, Core.Language.EN_ANY, Platform.Amiga, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER |
+                GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 4 - English DOS Non-Interactive Demo
+            // Executable scanning reports "0.000.494"
+            new ADGameDescription("kq4sci", "SCI/Demo", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "992ac7cc31d3717fe53818a9bb6d1dae", 594),
+                    new ADGameFileDescription("resource.001", 0, "143e1c14f15ad0fbfc714f648a65f661", 205330),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.DEMO,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER |
+                GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 4 - English DOS (original boxed release, 3 1/2" disks)
+            // SCI interpreter version 0.000.247
+            new ADGameDescription("kq4sci", "SCI", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "042d54434174d8f9faf926ade2ffd805", 7416),
+                    new ADGameFileDescription("resource.001", 0, "851a62d00972dc4002f472cc0d84e71d", 491919),
+                    new ADGameFileDescription("resource.002", 0, "851a62d00972dc4002f472cc0d84e71d", 678804),
+                    new ADGameFileDescription("resource.003", 0, "851a62d00972dc4002f472cc0d84e71d", 683145),
+                    new ADGameFileDescription("resource.004", 0, "851a62d00972dc4002f472cc0d84e71d", 649441),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.DEMO,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER |
+                GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 4 - English DOS (from the King's Quest Collection)
+            // Executable scanning reports "0.000.502"
+            // SCI interpreter version 0.000.502
+            new ADGameDescription("kq4sci", "SCI", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "3164a39790b599c954ecf716d0b32be8", 7476),
+                    new ADGameFileDescription("resource.001", 0, "77615c595388acf3d1df8e107bfb6b52", 452523),
+                    new ADGameFileDescription("resource.002", 0, "77615c595388acf3d1df8e107bfb6b52", 536573),
+                    new ADGameFileDescription("resource.003", 0, "77615c595388acf3d1df8e107bfb6b52", 707591),
+                    new ADGameFileDescription("resource.004", 0, "77615c595388acf3d1df8e107bfb6b52", 479562),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER |
+                GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 4 - English DOS (supplied by ssburnout in bug report #3049193)
+            // 1.006.003 8x5.25" (label: Int.#0.000.502)
+            new ADGameDescription("kq4sci", "SCI", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "a22b66e6fa0d82460b985e9f7e562950", 9384),
+                    new ADGameFileDescription("resource.001", 0, "6db7de6f93c6ea62dca78abee677f8c0", 174852),
+                    new ADGameFileDescription("resource.002", 0, "6db7de6f93c6ea62dca78abee677f8c0", 356024),
+                    new ADGameFileDescription("resource.003", 0, "6db7de6f93c6ea62dca78abee677f8c0", 335716),
+                    new ADGameFileDescription("resource.004", 0, "6db7de6f93c6ea62dca78abee677f8c0", 312231),
+                    new ADGameFileDescription("resource.005", 0, "6db7de6f93c6ea62dca78abee677f8c0", 283466),
+                    new ADGameFileDescription("resource.006", 0, "6db7de6f93c6ea62dca78abee677f8c0", 324789),
+                    new ADGameFileDescription("resource.007", 0, "6db7de6f93c6ea62dca78abee677f8c0", 334441),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER |
+                GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 4 - English DOS
+            // SCI interpreter version 0.000.274
+            new ADGameDescription("kq4sci", "SCI", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "adbe267662a5915d3c89c9075ec8cf3e", 9474),
+                    new ADGameFileDescription("resource.001", 0, "851a62d00972dc4002f472cc0d84e71d", 188239),
+                    new ADGameFileDescription("resource.002", 0, "851a62d00972dc4002f472cc0d84e71d", 329895),
+                    new ADGameFileDescription("resource.003", 0, "851a62d00972dc4002f472cc0d84e71d", 355385),
+                    new ADGameFileDescription("resource.004", 0, "851a62d00972dc4002f472cc0d84e71d", 322951),
+                    new ADGameFileDescription("resource.005", 0, "851a62d00972dc4002f472cc0d84e71d", 321593),
+                    new ADGameFileDescription("resource.006", 0, "851a62d00972dc4002f472cc0d84e71d", 333777),
+                    new ADGameFileDescription("resource.007", 0, "851a62d00972dc4002f472cc0d84e71d", 341038),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER |
+                GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 4 - English DOS
+            // SCI interpreter version 0.000.253
+            new ADGameDescription("kq4sci", "SCI", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "381d9dcb69c626f0a60631dbfec1d13a", 9474),
+                    new ADGameFileDescription("resource.001", 0, "0c8566848a76eea19a6d6220914030a7", 191559),
+                    new ADGameFileDescription("resource.002", 0, "0c8566848a76eea19a6d6220914030a7", 333345),
+                    new ADGameFileDescription("resource.003", 0, "0c8566848a76eea19a6d6220914030a7", 358513),
+                    new ADGameFileDescription("resource.004", 0, "0c8566848a76eea19a6d6220914030a7", 326297),
+                    new ADGameFileDescription("resource.005", 0, "0c8566848a76eea19a6d6220914030a7", 325102),
+                    new ADGameFileDescription("resource.006", 0, "0c8566848a76eea19a6d6220914030a7", 337288),
+                    new ADGameFileDescription("resource.007", 0, "0c8566848a76eea19a6d6220914030a7", 343882),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER |
+                GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 4 - English Atari ST (double-sided diskettes)
+            // Game version 1.003.006 (January 12, 1989)
+            // SCI interpreter version 1.001.008
+            // Provided by fischersfritz in bug report #3110941
+            new ADGameDescription("kq4sci", "SCI", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "8800cd62b1eee93752099986dc704a16", 7416),
+                    new ADGameFileDescription("resource.001", 0, "a3cdb4848fb859fdd302976fff56490f", 450790),
+                    new ADGameFileDescription("resource.002", 0, "a3cdb4848fb859fdd302976fff56490f", 535276),
+                    new ADGameFileDescription("resource.003", 0, "a3cdb4848fb859fdd302976fff56490f", 705074),
+                    new ADGameFileDescription("resource.004", 0, "a3cdb4848fb859fdd302976fff56490f", 478366),
+                }, Core.Language.EN_ANY, Platform.AtariST, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER |
+                GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 5 - English Amiga (from www.back2roots.org)
+            // Executable scanning reports "1.004.018"
+            // SCI interpreter version 1.000.060
+            new ADGameDescription("kq5", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "fcbcca058e1157221ffc27251cd59bc3", 8040),
+                    new ADGameFileDescription("resource.000", 0, "c595ca99e7fa9b2cabcf69cfab0caf67", 344909),
+                    new ADGameFileDescription("resource.001", 0, "964a3be90d810a99baf72ea70c09f935", 836477),
+                    new ADGameFileDescription("resource.002", 0, "d10f3e8ff2cd95a798b21cd08797b694", 814730),
+                    new ADGameFileDescription("resource.003", 0, "f72fdd994d9ba03a8360d639f256344e", 804882),
+                    new ADGameFileDescription("resource.004", 0, "a5b80f95c66b3a032348989408eec287", 747914),
+                    new ADGameFileDescription("resource.005", 0, "31a5487f4d942e6354d5be49d59707c9", 834146),
+                    new ADGameFileDescription("resource.006", 0, "26c0c25399b6715fec03fc3e12544fe3", 823048),
+                    new ADGameFileDescription("resource.007", 0, "b914b5901e786327213e779725d30dd1", 778772),
+                }, Core.Language.EN_ANY, Platform.Amiga, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 5 - German Amiga (also includes english language)
+            // Executable scanning reports "1.004.024"
+            // SCI interpreter version 1.000.060
+            new ADGameDescription("kq5", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "bfbffd923cd64b24498e54f797aa6e41", 8250),
+                    new ADGameFileDescription("resource.000", 0, "79479b5e4e5b0085d8eea1c7ff0f9f5a", 306893),
+                    new ADGameFileDescription("resource.001", 0, "7840aadc82977c7b4f504a7e4a12829f", 720376),
+                    new ADGameFileDescription("resource.002", 0, "d547167d4204170b44de8e1d63506215", 792586),
+                    new ADGameFileDescription("resource.003", 0, "9cbb0712816097cbc9d0c1f987717c7f", 646446),
+                    new ADGameFileDescription("resource.004", 0, "319712573661bd122390cdfbafb000fd", 831842),
+                    new ADGameFileDescription("resource.005", 0, "5aa3d59968b569cd509dde00d4eb8751", 754201),
+                    new ADGameFileDescription("resource.006", 0, "56546b20db11a4836f900efa6d3a3e74", 672099),
+                    new ADGameFileDescription("resource.007", 0, "56546b20db11a4836f900efa6d3a3e74", 794194),
+                }, Core.Language.DE_DEU, Platform.Amiga, ADGameFlags.ADDENGLISH,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 5 - Italian Amiga (also includes english language)
+            // Executable scanning reports "1.004.024"
+            // SCI interpreter version 1.000.060
+            new ADGameDescription("kq5", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "12e2f80c0269932411716dad06d2b229", 8250),
+                    new ADGameFileDescription("resource.000", 0, "c598ff615a61bc0e418761283409f128", 305879),
+                    new ADGameFileDescription("resource.001", 0, "17e63cfe78632fe07222e13a26dc0fb2", 720023),
+                    new ADGameFileDescription("resource.002", 0, "abb340a53e4873a7c3bacfb16c0b779d", 792432),
+                    new ADGameFileDescription("resource.003", 0, "aced8ce0be07eef77c0e7cff8cc4e476", 646088),
+                    new ADGameFileDescription("resource.004", 0, "13fc1f1679f7f226ba52ffffe2e65f38", 831805),
+                    new ADGameFileDescription("resource.005", 0, "de3c5c09e350fded36ca354998c2194d", 754784),
+                    new ADGameFileDescription("resource.006", 0, "11cb750f5f816445ad0f4b9f50a4f59a", 672527),
+                    new ADGameFileDescription("resource.007", 0, "11cb750f5f816445ad0f4b9f50a4f59a", 794259),
+                }, Core.Language.IT_ITA, Platform.Amiga, ADGameFlags.ADDENGLISH,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 5 - English DOS CD (from the King's Quest Collection)
+            // Executable scanning reports "x.yyy.zzz", VERSION file reports "1.000.052"
+            // SCI interpreter version 1.000.784
+            new ADGameDescription("kq5", "CD", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "f68ba690e5920725dcf9328001b90e33", 13122),
+                    new ADGameFileDescription("resource.000", 0, "449471bfd77be52f18a3773c7f7d843d", 571368),
+                    new ADGameFileDescription("resource.001", 0, "b45a581ff8751e052c7e364f58d3617f", 16800210),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.CD,
+                GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 5 - English DOS CD (from the King's Quest Collection)
+            // Executable scanning reports "x.yyy.zzz", VERSION file reports "1.000.052"
+            // SCI interpreter version 1.000.784
+            // Same entry as the DOS version above. This one is used for the alternate
+            // MIDI music tracks in the Windows version
+            new ADGameDescription("kq5", "CD", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "f68ba690e5920725dcf9328001b90e33", 13122),
+                    new ADGameFileDescription("resource.000", 0, "449471bfd77be52f18a3773c7f7d843d", 571368),
+                    new ADGameFileDescription("resource.001", 0, "b45a581ff8751e052c7e364f58d3617f", 16800210),
+                }, Core.Language.EN_ANY, Platform.Windows, ADGameFlags.CD,
+                GuiOptions.MIDIGM | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
 
             // King's Quest 5 - English DOS Floppy
             // SCI interpreter version 1.000.060
@@ -1766,6 +2227,275 @@ namespace NScumm.Sci
                 GuiOptions.NOSPEECH | GuiOptions.NOASPECT | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD
                 | GAMEOPTION_FB01_MIDI),
 
+            // King's Quest 6 - English DOS Non-Interactive Demo
+            // Executable scanning reports "1.001.055", VERSION file reports "1.000.000"
+            // SCI interpreter version 1.001.055
+            new ADGameDescription("kq6", "Demo", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "f75727c00a6d884234fa2a43c951943a", 706),
+                    new ADGameFileDescription("resource.000", 0, "535b1b920441ec73f42eaa4ccfd47b89", 264116),
+                    new ADGameFileDescription("resource.msg", 0, "54d1fdc936f98c81f9e4c19e04fb1510", 8260),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.DEMO,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD
+                | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 6 - English DOS Playable CD "Sneak Peaks" Demo (first island fully playable)
+            //  (supplied by KQ5 G5 in bug report #6824)
+            // Executable scanning reports "1.cfs.158 Not a release version", VERSION file reports "1.000.000"
+            // SCI interpreter version ???
+            new ADGameDescription("kq6", "Demo/CD", new[]
+                {
+                    new ADGameFileDescription("resource.000", 0, "233394a5f33b475ae5975e7e9a420865", 8345598),
+                    new ADGameFileDescription("resource.map", 0, "eb9e177281b7cde188dc0d83194cd365", 8960),
+                    new ADGameFileDescription("resource.msg", 0, "3cf5de44de36191f109d425b8450efc8", 259510),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.DEMO,
+                GuiOptions.NOSPEECH | GAMEOPTION_HIGH_RESOLUTION_GRAPHICS | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD
+                | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 6 - English DOS Floppy
+            // SCI interpreter version 1.001.054
+            new ADGameDescription("kq6", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "a362063318eebe7d6423b1d9dc6213e1", 8703),
+                    new ADGameFileDescription("resource.000", 0, "f2b7f753992c56a0c7a08d6a5077c895", 7863324),
+                    new ADGameFileDescription("resource.msg", 0, "3cf5de44de36191f109d425b8450efc8", 258590),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD
+                | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 6 - French DOS Floppy (supplied by misterhands in bug #3503425)
+            // SCI interpreter version ???
+            new ADGameDescription("kq6", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "a362063318eebe7d6423b1d9dc6213e1", 8703),
+                    new ADGameFileDescription("resource.000", 0, "f2b7f753992c56a0c7a08d6a5077c895", 7863324),
+                    new ADGameFileDescription("resource.msg", 0, "adc2aa8adbdcc97507d44a6f492fbd77", 265194),
+                }, Core.Language.FR_FRA, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD
+                | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 6 - German DOS Floppy (supplied by markcoolio in bug report #2727156)
+            // SCI interpreter version 1.001.054
+            new ADGameDescription("kq6", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "a362063318eebe7d6423b1d9dc6213e1", 8703),
+                    new ADGameFileDescription("resource.000", 0, "f2b7f753992c56a0c7a08d6a5077c895", 7863324),
+                    new ADGameFileDescription("resource.msg", 0, "756297b2155db9e43f621c6f6fb763c3", 282822),
+                }, Core.Language.DE_DEU, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD
+                | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 6 - Spanish DOS Floppy (from jvprat)
+            // Executable scanning reports "1.cfs.158", VERSION file reports "1.000.000, July 5, 1994"
+            // SCI interpreter version 1.001.055
+            new ADGameDescription("kq6", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "a73a5ab04b8f60c4b75b946a4dccea5a", 8953),
+                    new ADGameFileDescription("resource.000", 0, "4da3ad5868a775549a7cc4f72770a58e", 8537260),
+                    new ADGameFileDescription("resource.msg", 0, "41eed2d3893e1ca6c3695deba4e9d2e8", 267102),
+                }, Core.Language.ES_ESP, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD
+                | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 6 - Italian DOS Floppy (supplied by guybrush79 in bug report #3606719)
+            new ADGameDescription("kq6", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "48c9fc8e96cbdac078ca7d3df274e29a", 8942),
+                    new ADGameFileDescription("resource.000", 0, "d3358ba7306378aed83d02b5c3f11311", 8531908),
+                    new ADGameFileDescription("resource.msg", 0, "b7e8220be596fd6a9287eae5a8fd354a", 279886),
+                }, Core.Language.IT_ITA, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD
+                | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 6 - English DOS CD (from the King's Quest Collection)
+            // Executable scanning reports "1.cfs.158", VERSION file reports "1.034 9/11/94 - KQ6 version 1.000.00G"
+            // SCI interpreter version 1.001.054
+            new ADGameDescription("kq6", "CD", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "7a550ebfeae2575ca00d47703a6a774c", 9215),
+                    new ADGameFileDescription("resource.000", 0, "233394a5f33b475ae5975e7e9a420865", 8376352),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.CD,
+                GAMEOPTION_HIGH_RESOLUTION_GRAPHICS | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD
+                | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 6 - English Windows CD (from the King's Quest Collection)
+            // Executable scanning reports "1.cfs.158", VERSION file reports "1.034 9/11/94 - KQ6 version 1.000.00G"
+            // SCI interpreter version 1.001.054
+            new ADGameDescription("kq6", "CD", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "7a550ebfeae2575ca00d47703a6a774c", 9215),
+                    new ADGameFileDescription("resource.000", 0, "233394a5f33b475ae5975e7e9a420865", 8376352),
+                }, Core.Language.EN_ANY, Platform.Windows, ADGameFlags.CD,
+                GuiOptions.NOASPECT | GAMEOPTION_HIGH_RESOLUTION_GRAPHICS | GAMEOPTION_KQ6_WINDOWS_CURSORS |
+                GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD
+                | GAMEOPTION_FB01_MIDI),
+
+            // King's Quest 6 - English Macintosh Floppy
+            // VERSION file reports "1.0"
+            new ADGameDescription("kq6", "", new[]
+                {
+                    new ADGameFileDescription("Data1", 0, "a183fc0c22fcbd9be4c8800d974b5599", 3892124),
+                    new ADGameFileDescription("Data2", 0, "b3722460dfd3097a1fbaf99a21ad8ea5", 15031272),
+                }, Core.Language.EN_ANY, Platform.Macintosh, ADGameFlags.MACRESFORK,
+                GuiOptions.NOASPECT |
+                GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD
+                | GAMEOPTION_FB01_MIDI),
+#if ENABLE_SCI32
+            // King's Quest 7 - English Windows (from the King's Quest Collection)
+            // Executable scanning reports "2.100.002", VERSION file reports "1.4"
+            new ADGameDescription("kq7", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "2be9ab94429c721af8e05c507e048a15", 18697),
+                    new ADGameFileDescription("resource.000", 0, "eb63ea3a2c2469dc2d777d351c626404", 203882535),
+                }, Core.Language.EN_ANY, Platform.Windows, ADGameFlags.UNSTABLE | ADGameFlags.CD,
+                GUIO_KQ7),
+
+            // King's Quest 7 - English Windows-interpreter-only (supplied by m_kiewitz)
+            // SCI interpreter version 2.100.002, VERSION file reports "1.51"
+            new ADGameDescription("kq7", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "838b9ff132bd6962026fee832e8a7ddb", 18697),
+                    new ADGameFileDescription("resource.000", 0, "eb63ea3a2c2469dc2d777d351c626404", 206626576),
+                    new ADGameFileDescription("resource.aud", 0, "c2a988a16053eb98c7b73a75139902a0", 217716879),
+                }, Core.Language.EN_ANY, Platform.Windows, ADGameFlags.UNSTABLE | ADGameFlags.CD,
+                GUIO_KQ7),
+
+            // King's Quest 7 - German Windows-interpreter-only (supplied by markcoolio in bug report #2727402)
+            // SCI interpreter version 2.100.002, VERSION file reports "1.51"
+            // same as English 1.51, only resource.aud/resource.sfx are different
+            new ADGameDescription("kq7", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "838b9ff132bd6962026fee832e8a7ddb", 18697),
+                    new ADGameFileDescription("resource.000", 0, "eb63ea3a2c2469dc2d777d351c626404", 206626576),
+                    new ADGameFileDescription("resource.aud", 0, "3f17bcaf8a9ff6a6c2d4de1a2078fdcc", 258119621),
+                }, Core.Language.DE_DEU, Platform.Windows, ADGameFlags.UNSTABLE | ADGameFlags.CD,
+                GUIO_KQ7),
+
+            // King's Quest 7 - English Windows (from abevi)
+            // VERSION 1.65c
+            new ADGameDescription("kq7", "", new[]
+                {
+                    new ADGameFileDescription("resource.000", 0, "4948e4e1506f1e1c4e1d47abfa06b7f8", 204385195),
+                    new ADGameFileDescription("resource.map", 0, "40ccafb2195301504eba2e4f4f2c7f3d", 18925),
+                }, Core.Language.EN_ANY, Platform.Windows, ADGameFlags.UNSTABLE | ADGameFlags.CD,
+                GUIO_KQ7),
+
+            // King's Quest 7 - English DOS (from FRG)
+            // SCI interpreter version 2.100.002, VERSION file reports "2.00b"
+            new ADGameDescription("kq7", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "8676b0fbbd7362989a029fe72fea14c6", 18709),
+                    new ADGameFileDescription("resource.000", 0, "51c1ead1163e19a2de8f121c39df7a76", 200764100),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.UNSTABLE | ADGameFlags.CD,
+                GUIO_KQ7),
+
+            // King's Quest 7 - English Windows (from FRG)
+            // SCI interpreter version 2.100.002, VERSION file reports "2.00b"
+            new ADGameDescription("kq7", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "8676b0fbbd7362989a029fe72fea14c6", 18709),
+                    new ADGameFileDescription("resource.000", 0, "51c1ead1163e19a2de8f121c39df7a76", 200764100),
+                }, Core.Language.EN_ANY, Platform.Windows, ADGameFlags.UNSTABLE | ADGameFlags.CD,
+                GUIO_KQ7),
+
+            // King's Quest 7 - Spanish DOS (from jvprat)
+            // Executable scanning reports "2.100.002", VERSION file reports "2.00"
+            new ADGameDescription("kq7", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "0b62693cbe87e3aaca3e8655a437f27f", 18709),
+                    new ADGameFileDescription("resource.000", 0, "51c1ead1163e19a2de8f121c39df7a76", 200764100),
+                }, Core.Language.ES_ESP, Platform.DOS, ADGameFlags.UNSTABLE | ADGameFlags.CD,
+                GUIO_KQ7),
+
+            // King's Quest 7 - English DOS Non-Interactive Demo
+            // SCI interpreter version 2.100.002
+            new ADGameDescription("kq7", "Demo", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "b44f774108d63faa1d021101221c5a54", 1690),
+                    new ADGameFileDescription("resource.000", 0, "d9659d2cf0c269c6a9dc776707f5bea0", 2433827),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.DEMO | ADGameFlags.UNSTABLE,
+                GUIO_KQ7_DEMO),
+
+            // King's Quest 7 - English Windows Demo (from DrMcCoy)
+            // SCI interpreter version 2.100.002
+            new ADGameDescription("kq7", "Demo", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "38e627a37a975aea40cc72b0518b0709", 18412),
+                    new ADGameFileDescription("resource.000", 0, "bad61d50aaa64298fa57a7c6ccd3bccf", 84020382),
+                }, Core.Language.EN_ANY, Platform.Windows, ADGameFlags.DEMO | ADGameFlags.UNSTABLE | ADGameFlags.CD,
+                GUIO_KQ7_DEMO),
+
+            // King's Questions mini-game from the King's Quest Collection
+            // SCI interpreter version 2.000.000
+            new ADGameDescription("kquestions", "", new[]
+                {
+                    new ADGameFileDescription("resource.000", 0, "9b1cddecd4f0720d83661ba7aed28891", 162697),
+                    new ADGameFileDescription("resource.map", 0, "93a2251fa64e729d7a7d2fe56b217c8e", 502),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.UNSTABLE,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_FB01_MIDI),
+
+#endif // ENABLE_SCI32
+
+            // Laura Bow - English Amiga
+            // Executable scanning reports "1.002.030"
+            // SCI interpreter version 0.000.685
+            new ADGameDescription("laurabow", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "731ab85e138f8cef1a7f4d1f36dfd375", 7422),
+                    new ADGameFileDescription("resource.000", 0, "e45c888d9c7c04aec0a20e9f820b79ff", 126317),
+                    new ADGameFileDescription("resource.001", 0, "42fe895e9eb60e103025fd9ca737a849", 264763),
+                    new ADGameFileDescription("resource.002", 0, "6f1ebd3692ce76644e0e06a38b7b56b5", 677436),
+                    new ADGameFileDescription("resource.003", 0, "2ab23f64306b18c28302c8ec2964c5d6", 605134),
+                    new ADGameFileDescription("resource.004", 0, "aa553977f7e5804081de293800d3bcce", 695067),
+                    new ADGameFileDescription("resource.005", 0, "bfd870d51dc97729f0914095f58e6957", 676881),
+                }, Core.Language.EN_ANY, Platform.Amiga, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Laura Bow - English Atari ST (from jvprat)
+            // Executable scanning reports "1.002.030", Floppy label reports "1.000.062, 9.23.90"
+            // SCI interpreter version 0.000.685
+            new ADGameDescription("laurabow", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "9f90878e6e1b8c96e692203f068ce2b1", 8478),
+                    new ADGameFileDescription("resource.001", 0, "e45c888d9c7c04aec0a20e9f820b79ff", 515964),
+                    new ADGameFileDescription("resource.002", 0, "e45c888d9c7c04aec0a20e9f820b79ff", 721149),
+                    new ADGameFileDescription("resource.003", 0, "e45c888d9c7c04aec0a20e9f820b79ff", 667365),
+                    new ADGameFileDescription("resource.004", 0, "e45c888d9c7c04aec0a20e9f820b79ff", 683737),
+                }, Core.Language.EN_ANY, Platform.AtariST, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Laura Bow - English DOS Non-Interactive Demo
+            // Executable scanning reports "x.yyy.zzz"
+            new ADGameDescription("laurabow", "Demo", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "e625726268ff4e123ada11f31f0249f3", 768),
+                    new ADGameFileDescription("resource.001", 0, "0c8912290af0890f8d95faeb4ddb2d68", 333031),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.DEMO,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
+            // Laura Bow - English DOS 3.5" Floppy (from "The Roberta Williams Anthology"/1996)
+            // SCI interpreter version 0.000.631
+            new ADGameDescription("laurabow", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "4e511f47d9893fa529d6621a93fa0030", 8478),
+                    new ADGameFileDescription("resource.001", 0, "e45c888d9c7c04aec0a20e9f820b79ff", 515788),
+                    new ADGameFileDescription("resource.002", 0, "e45c888d9c7c04aec0a20e9f820b79ff", 721381),
+                    new ADGameFileDescription("resource.003", 0, "e45c888d9c7c04aec0a20e9f820b79ff", 667468),
+                    new ADGameFileDescription("resource.004", 0, "e45c888d9c7c04aec0a20e9f820b79ff", 683807),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_EGA_UNDITHER | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+
             // Laura Bow - English DOS (from FRG)
             // SCI interpreter version 0.000.631
             new ADGameDescription("laurabow", "", new[]
@@ -1782,6 +2512,85 @@ namespace NScumm.Sci
                                                                          GAMEOPTION_PREFER_DIGITAL_SFX |
                                                                          GAMEOPTION_ORIGINAL_SAVELOAD |
                                                                          GAMEOPTION_FB01_MIDI),
+
+            // Laura Bow 2 - English DOS Non-Interactive Demo (from FRG)
+            // Executable scanning reports "x.yyy.zzz"
+            // SCI interpreter version 1.001.069 (just a guess)
+            new ADGameDescription("laurabow2", "Demo", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "24dffc5db1d88c7999f13e8767ed7346", 855),
+                    new ADGameFileDescription("resource.000", 0, "2b2b1b4f7584f9b38fd13f6ab95634d1", 781912),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.DEMO,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD |
+                GAMEOPTION_FB01_MIDI),
+
+            // Laura Bow 2 - English DOS Floppy v1.0
+            // Executable scanning reports "2.000.274"
+            // SCI interpreter version 1.001.069 (just a guess)
+            new ADGameDescription("laurabow2", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "610bfd9a852004222f0faaf5fc9e630a", 6489),
+                    new ADGameFileDescription("resource.000", 0, "57084910bc923bff5d6d9bc1b56e9604", 5035964),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD |
+                GAMEOPTION_FB01_MIDI),
+
+            // Laura Bow 2 v1.1 - English DOS Floppy (supplied by misterhands in bug report #6543)
+            // Executable scanning reports "2.000.274"
+            new ADGameDescription("laurabow2", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "3b6dfbcda210bbc3f23fd1927113bf98", 6483),
+                    new ADGameFileDescription("resource.000", 0, "57084910bc923bff5d6d9bc1b56e9604", 5028766),
+                    new ADGameFileDescription("resource.msg", 0, "d1755fc4f41b5210febc9410503c6a29", 278354),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
+                GAMEOPTION_ORIGINAL_SAVELOAD |
+                GAMEOPTION_FB01_MIDI),
+
+            // Laura Bow 2 - English DOS CD (from "The Roberta Williams Antology"/1996)
+            // Executable scanning reports "1.001.072", VERSION file reports "1.1" (from jvprat)
+            // SCI interpreter version 1.001.069 (just a guess)
+            new ADGameDescription("laurabow2", "CD", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "a70945e61ba7ac7bfea6b7bd72c6aec5", 7274),
+                    new ADGameFileDescription("resource.000", 0, "82578b8d5a7e09c4c58891ca49fae35b", 5598672),
+                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.CD,
+                GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD |
+                GAMEOPTION_FB01_MIDI),
+
+            // Laura Bow 2 v1.1 - French DOS Floppy (from Hkz)
+            new ADGameDescription("laurabow2", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "3b6dfbcda210bbc3f23fd1927113bf98", 6483),
+                    new ADGameFileDescription("resource.000", 0, "57084910bc923bff5d6d9bc1b56e9604", 5028766),
+                    new ADGameFileDescription("resource.msg", 0, "0fceedfbdd85a4bc7851fdd9dd2d2f19", 278253),
+                }, Core.Language.FR_FRA, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD |
+                GAMEOPTION_FB01_MIDI),
+
+            // Laura Bow 2 v1.1 - German DOS Floppy (from Tobis87, updated info from  markcoolio in bug report #2723787, updated info from #2797962))
+            // Executable scanning reports "2.000.274"
+            new ADGameDescription("laurabow2", "", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "3b6dfbcda210bbc3f23fd1927113bf98", 6483),
+                    new ADGameFileDescription("resource.000", 0, "57084910bc923bff5d6d9bc1b56e9604", 5028766),
+                    new ADGameFileDescription("resource.msg", 0, "795c928cd00dfec9fbc62ebcd12e1f65", 303185),
+                }, Core.Language.DE_DEU, Platform.DOS, ADGameFlags.NO_FLAGS,
+                GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD |
+                GAMEOPTION_FB01_MIDI),
+
+            // Laura Bow 2 - Spanish DOS CD (from jvprat)
+            // Executable scanning reports "2.000.274", VERSION file reports "1.000.000, May 10, 1994"
+            new ADGameDescription("laurabow2", "CD", new[]
+                {
+                    new ADGameFileDescription("resource.map", 0, "3b6dfbcda210bbc3f23fd1927113bf98", 6483),
+                    new ADGameFileDescription("resource.000", 0, "57084910bc923bff5d6d9bc1b56e9604", 5028766),
+                    new ADGameFileDescription("resource.msg", 0, "71f1f0cd9f082da2e750c793a8ed9d84", 286141),
+                }, Core.Language.ES_ESP, Platform.DOS, ADGameFlags.CD,
+                GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD |
+                GAMEOPTION_FB01_MIDI),
 
             // Larry 1 EGA Remake - English DOS (from spookypeanut)
             // SCI interpreter version 0.000.510 (or 0.000.577?)

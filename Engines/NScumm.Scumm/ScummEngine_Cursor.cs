@@ -124,7 +124,7 @@ namespace NScumm.Scumm
                 _charset.SetCurID(1);
             }
 
-            var s = new Surface(_charset.GetCharWidth(chr), _charset.GetFontHeight(), PixelFormat.Indexed8, false);
+            var s = new Surface((ushort) _charset.GetCharWidth(chr), (ushort) _charset.GetFontHeight(), PixelFormat.Indexed8, false);
             var p = new PixelNavigator(s);
             Gdi.Fill(new PixelNavigator(s), 123, s.Width, s.Height);
 

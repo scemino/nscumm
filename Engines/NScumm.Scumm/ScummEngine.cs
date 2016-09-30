@@ -301,7 +301,7 @@ namespace NScumm.Scumm
 
             // Create the text surface
             var pixelFormat = _game.Features.HasFlag(GameFeatures.Is16BitColor) ? PixelFormat.Rgb16 : PixelFormat.Indexed8;
-            _textSurface = new Surface(ScreenWidth * _textSurfaceMultiplier, ScreenHeight * _textSurfaceMultiplier, PixelFormat.Indexed8, false);
+            _textSurface = new Surface((ushort) (ScreenWidth * _textSurfaceMultiplier), (ushort) (ScreenHeight * _textSurfaceMultiplier), PixelFormat.Indexed8, false);
             ClearTextSurface();
 
             if (Game.Platform == Platform.FMTowns)
@@ -330,7 +330,7 @@ namespace NScumm.Scumm
             // Allocate gfx compositing buffer (not needed for V7/V8 games).
             if (Game.Version < 7)
             {
-                _composite = new Surface(ScreenWidth, ScreenHeight, pixelFormat, false);
+                _composite = new Surface((ushort) ScreenWidth, (ushort) ScreenHeight, pixelFormat, false);
             }
             InitActors();
             OwnerRoom = Game.Version >= 7 ? 0x0FF : 0x0F;
@@ -514,7 +514,7 @@ namespace NScumm.Scumm
                 if (Game.GameId != GameId.Monkey1)
                 {
                     Gdi.Fill(TextSurface,
-                        new Rect(0, 0, _textSurface.Width * _textSurfaceMultiplier, _textSurface.Height * _textSurfaceMultiplier), 0);
+                        new Rect(0, 0, (short) (_textSurface.Width * _textSurfaceMultiplier), (short) (_textSurface.Height * _textSurfaceMultiplier)), 0);
                     _townsScreen.ClearLayer(1);
                 }
             }

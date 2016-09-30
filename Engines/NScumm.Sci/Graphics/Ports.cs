@@ -28,7 +28,7 @@ namespace NScumm.Sci.Graphics
 {
     // window styles
     [Flags]
-    enum WindowManagerStyle
+    internal enum WindowManagerStyle
     {
         TRANSPARENT = (1 << 0),
         NOFRAME = (1 << 1),
@@ -120,10 +120,10 @@ namespace NScumm.Sci.Graphics
             OpenPort(_menuPort);
             SetPort(_menuPort);
             _text16.SetFont(0);
-            _menuPort.rect = new Rect(0, 0, _screen.ScriptWidth, _screen.ScriptHeight);
-            _menuBarRect = new Rect(0, 0, _screen.ScriptWidth, 9);
-            _menuRect = new Rect(0, 0, _screen.ScriptWidth, 10);
-            _menuLine = new Rect(0, 9, _screen.ScriptWidth, 10);
+            _menuPort.rect = new Rect(0, 0, (short) _screen.ScriptWidth, (short) _screen.ScriptHeight);
+            _menuBarRect = new Rect(0, 0, (short) _screen.ScriptWidth, 9);
+            _menuRect = new Rect(0, 0, (short) _screen.ScriptWidth, 10);
+            _menuLine = new Rect(0, 9, (short) _screen.ScriptWidth, 10);
 
             _wmgrPort = new Port(1);
             _windowsById = new List<Port>() {
@@ -178,19 +178,19 @@ namespace NScumm.Sci.Graphics
             if (!_usesOldGfxFunctions)
             {
                 SetOrigin(0, offTop);
-                _wmgrPort.rect.Bottom = _screen.Height - offTop;
+                _wmgrPort.rect.Bottom = (short) (_screen.Height - offTop);
             }
             else
             {
-                _wmgrPort.rect.Bottom = _screen.Height;
+                _wmgrPort.rect.Bottom = (short) _screen.Height;
             }
-            _wmgrPort.rect.Right = _screen.ScriptWidth;
+            _wmgrPort.rect.Right = (short) _screen.ScriptWidth;
             _wmgrPort.rect.MoveTo(0, 0);
             _wmgrPort.curTop = 0;
             _wmgrPort.curLeft = 0;
             _windowList.Add(_wmgrPort);
 
-            _picWind = AddWindow(new Rect(0, offTop, _screen.ScriptWidth, _screen.ScriptHeight), null, null, WindowManagerStyle.TRANSPARENT | WindowManagerStyle.NOFRAME, 0, true);
+            _picWind = AddWindow(new Rect(0, offTop, (short) _screen.ScriptWidth, (short) _screen.ScriptHeight), null, null, WindowManagerStyle.TRANSPARENT | WindowManagerStyle.NOFRAME, 0, true);
             // For SCI0 games till kq4 (.502 - not including) we set _picWind top to offTop instead
             //  Because of the menu/status bar
             if (_usesOldGfxFunctions)
@@ -253,10 +253,10 @@ namespace NScumm.Sci.Graphics
 
         public void ClipLine(ref Point start, ref Point end)
         {
-            start.Y = ScummHelper.Clip(start.Y, _curPort.rect.Top, _curPort.rect.Bottom - 1);
-            start.X = ScummHelper.Clip(start.X, _curPort.rect.Left, _curPort.rect.Right - 1);
-            end.Y = ScummHelper.Clip(end.Y, _curPort.rect.Top, _curPort.rect.Bottom - 1);
-            end.X = ScummHelper.Clip(end.X, _curPort.rect.Left, _curPort.rect.Right - 1);
+            start.Y = (short) ScummHelper.Clip(start.Y, _curPort.rect.Top, _curPort.rect.Bottom - 1);
+            start.X = (short) ScummHelper.Clip(start.X, _curPort.rect.Left, _curPort.rect.Right - 1);
+            end.Y = (short) ScummHelper.Clip(end.Y, _curPort.rect.Top, _curPort.rect.Bottom - 1);
+            end.X = (short) ScummHelper.Clip(end.X, _curPort.rect.Left, _curPort.rect.Right - 1);
         }
 
         public void PriorityBandsInitSci11(ByteAccess data)
@@ -479,7 +479,7 @@ namespace NScumm.Sci.Graphics
             // bit of the left dimension in their interpreter. It seems Sierra did it
             // for EGA byte alignment (EGA uses 1 byte for 2 pixels) and left it in
             // their interpreter even in the newer VGA games.
-            r.Left = r.Left & 0xFFFE;
+            r.Left = (short) (r.Left & 0xFFFE);
 
             if (r.Width > _screen.ScriptWidth)
             {
@@ -488,7 +488,7 @@ namespace NScumm.Sci.Graphics
                 // Also happens frequently in the demo of GK1.
                 Warning($"Fixing too large window, left: {dims.Left}, right: {dims.Right}");
                 r.Left = 0;
-                r.Right = _screen.ScriptWidth - 1;
+                r.Right = (short) (_screen.ScriptWidth - 1);
                 if ((style != _styleUser) && !style.HasFlag(WindowManagerStyle.NOFRAME))
                     r.Right--;
             }
@@ -570,16 +570,16 @@ namespace NScumm.Sci.Graphics
 
             if (wmprect.Bottom < pwnd.dims.Bottom)
             {
-                pwnd.dims.MoveTo(pwnd.dims.Left, wmprect.Bottom - pwnd.dims.Bottom + pwnd.dims.Top);
+                pwnd.dims.MoveTo(pwnd.dims.Left, (short) (wmprect.Bottom - pwnd.dims.Bottom + pwnd.dims.Top));
                 if (restoreRect.HasValue)
-                    pwnd.restoreRect.MoveTo(pwnd.restoreRect.Left, wmprect.Bottom - pwnd.restoreRect.Bottom + pwnd.restoreRect.Top);
+                    pwnd.restoreRect.MoveTo(pwnd.restoreRect.Left, (short) (wmprect.Bottom - pwnd.restoreRect.Bottom + pwnd.restoreRect.Top));
             }
 
             if (wmprect.Right < pwnd.dims.Right)
             {
-                pwnd.dims.MoveTo(wmprect.Right + pwnd.dims.Left - pwnd.dims.Right, pwnd.dims.Top);
+                pwnd.dims.MoveTo((short) (wmprect.Right + pwnd.dims.Left - pwnd.dims.Right), pwnd.dims.Top);
                 if (restoreRect.HasValue)
-                    pwnd.restoreRect.MoveTo(wmprect.Right + pwnd.restoreRect.Left - pwnd.restoreRect.Right, pwnd.restoreRect.Top);
+                    pwnd.restoreRect.MoveTo((short) (wmprect.Right + pwnd.restoreRect.Left - pwnd.restoreRect.Right), pwnd.restoreRect.Top);
             }
 
             if (wmprect.Left > pwnd.dims.Left)
@@ -589,7 +589,7 @@ namespace NScumm.Sci.Graphics
                     pwnd.restoreRect.MoveTo(wmprect.Left, pwnd.restoreRect.Top);
             }
 
-            pwnd.rect.MoveTo(pwnd.rect.Left + pwnd.dims.Left - oldleft, pwnd.rect.Top + pwnd.dims.Top - oldtop);
+            pwnd.rect.MoveTo((short) (pwnd.rect.Left + pwnd.dims.Left - oldleft), (short) (pwnd.rect.Top + pwnd.dims.Top - oldtop));
 
             if (!restoreRect.HasValue)
                 pwnd.restoreRect = pwnd.dims;
@@ -754,7 +754,7 @@ namespace NScumm.Sci.Graphics
                         if (ResourceManager.GetSciVersion() <= SciVersion.V0_LATE)
                         {
                             // draw a black line between titlebar and actual window content for SCI0
-                            r.Bottom = r.Top + 10;
+                            r.Bottom = (short) (r.Top + 10);
                             _paint16.FrameRect(r);
                         }
                         r.Grow(-1);
@@ -771,7 +771,7 @@ namespace NScumm.Sci.Graphics
                         }
 
                         r.Grow(+1);
-                        r.Bottom = pWnd.dims.Bottom - 1;
+                        r.Bottom = (short) (pWnd.dims.Bottom - 1);
                         r.Top += 9;
                     }
 

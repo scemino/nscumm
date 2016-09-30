@@ -27,14 +27,14 @@ using NScumm.Scumm.Graphics;
 
 namespace NScumm.Scumm
 {
-    partial class ScummEngine6
+    internal partial class ScummEngine6
     {
         protected int _blastObjectQueuePos;
         protected readonly BlastObject[] _blastObjectQueue = CreateBlastObjects();
-        int _blastTextQueuePos;
-        readonly BlastText[] _blastTextQueue = CreateBlastTexts();
+        private int _blastTextQueuePos;
+        private readonly BlastText[] _blastTextQueue = CreateBlastTexts();
 
-        static BlastObject[] CreateBlastObjects()
+        private static BlastObject[] CreateBlastObjects()
         {
             var blastObjects = new BlastObject[200];
             for (int i = 0; i < blastObjects.Length; i++)
@@ -44,7 +44,7 @@ namespace NScumm.Scumm
             return blastObjects;
         }
 
-        static BlastText[] CreateBlastTexts()
+        private static BlastText[] CreateBlastTexts()
         {
             var blastTextQueue = new BlastText[50];
             for (int i = 0; i < blastTextQueue.Length; i++)
@@ -224,7 +224,7 @@ namespace NScumm.Scumm
                 var a = Actors[obj];
                 a.ScaleX = (byte)state;
                 a.ScaleY = (byte)state;
-                a.PutActor(new Point(x, y), CurrentRoom);
+                a.PutActor(new Point((short) x, (short) y), CurrentRoom);
                 a.DrawToBackBuf = true;
                 a.DrawCostume();
                 a.DrawToBackBuf = false;
@@ -241,7 +241,7 @@ namespace NScumm.Scumm
 
             if (x != -1)
             {
-                _objs[objnum].Position = new Point(x * 8, y * 8);
+                _objs[objnum].Position = new Point((short) (x * 8), (short) (y * 8));
             }
 
             PutState(obj, state);
@@ -285,7 +285,7 @@ namespace NScumm.Scumm
 
             if (x != -1 && x != 0x7FFFFFFF)
             {
-                _objs[i].Position = new Point((x * 8), (y * 8));
+                _objs[i].Position = new Point((short) (x * 8), (short) (y * 8));
             }
 
             AddObjectToDrawQue((byte)i);
@@ -308,12 +308,12 @@ namespace NScumm.Scumm
             PutState(obj, state);
         }
 
-        int GetObjOldDir(int index)
+        private int GetObjOldDir(int index)
         {
             return ScummHelper.NewDirToOldDir(GetObjNewDir(index));
         }
 
-        int GetObjNewDir(int index)
+        private int GetObjNewDir(int index)
         {
             int dir;
             if (IsActor(index))
@@ -328,7 +328,7 @@ namespace NScumm.Scumm
             return dir;
         }
 
-        int GetDistanceBetween(bool isObj1, int b, int c, bool isObj2, int e, int f)
+        private int GetDistanceBetween(bool isObj1, int b, int c, bool isObj2, int e, int f)
         {
             int i, j;
             Point pos1;
@@ -345,7 +345,7 @@ namespace NScumm.Scumm
             }
             else
             {
-                pos1 = new Point(b, c);
+                pos1 = new Point((short) b, (short) c);
             }
 
             if (isObj2)
@@ -357,7 +357,7 @@ namespace NScumm.Scumm
             }
             else
             {
-                pos2 = new Point(e, f);
+                pos2 = new Point((short) e, (short) f);
             }
 
             return ScummMath.GetDistance(pos1, pos2) * 0xFF / ((i + j) / 2);
@@ -397,7 +397,7 @@ namespace NScumm.Scumm
 
             var eo = _blastObjectQueue[_blastObjectQueuePos++];
             eo.Number = objectNumber;
-            eo.Rect = new Rect(left, top, right, bottom);
+            eo.Rect = new Rect((short) left, (short) top, (short) right, (short) bottom);
             eo.ScaleX = scaleX;
             eo.ScaleY = scaleY;
             eo.Image = image - 1;
@@ -450,7 +450,7 @@ namespace NScumm.Scumm
 
         // Used in Scumm v8, to allow the verb coin to be drawn over the inventory
         // chest. I'm assuming that draw order won't matter here.
-        void ProcessUpperActors()
+        private void ProcessUpperActors()
         {
             for (var i = 1; i < Actors.Length; i++)
             {
@@ -462,7 +462,7 @@ namespace NScumm.Scumm
             }
         }
 
-        void RemoveBlastObjects()
+        private void RemoveBlastObjects()
         {
             for (var i = 0; i < _blastObjectQueuePos; i++)
             {
@@ -472,7 +472,7 @@ namespace NScumm.Scumm
             _blastObjectQueuePos = 0;
         }
 
-        void RemoveBlastObject(BlastObject eo)
+        private void RemoveBlastObject(BlastObject eo)
         {
             var vs = MainVirtScreen;
 
@@ -480,7 +480,7 @@ namespace NScumm.Scumm
 
             var r = eo.Rect;
 
-            r.Clip(vs.Width, vs.Height);
+            r.Clip((short) vs.Width, (short) vs.Height);
 
             if (r.Width <= 0 || r.Height <= 0)
                 return;
@@ -498,7 +498,7 @@ namespace NScumm.Scumm
             MarkRectAsDirty(MainVirtScreen, r, Gdi.UsageBitRestored);
         }
 
-        void DrawBlastObjects()
+        private void DrawBlastObjects()
         {
             for (int i = 0; i < _blastObjectQueuePos; i++)
             {
@@ -507,7 +507,7 @@ namespace NScumm.Scumm
             }
         }
 
-        void DrawBlastObject(BlastObject eo)
+        private void DrawBlastObject(BlastObject eo)
         {
             var objnum = GetObjectIndex(eo.Number);
             if (objnum == -1)
@@ -547,7 +547,7 @@ namespace NScumm.Scumm
 
             bdd.DrawBomp();
 
-            MarkRectAsDirty(MainVirtScreen, new Rect(bdd.X, bdd.X + bdd.Width, bdd.Y, bdd.Y + bdd.Height));
+            MarkRectAsDirty(MainVirtScreen, new Rect((short) bdd.X, (short) (bdd.X + bdd.Width), (short) bdd.Y, (short) (bdd.Y + bdd.Height)));
         }
 
         protected void EnqueueText(byte[] text, int x, int y, byte color, byte charset, bool center)
@@ -572,7 +572,7 @@ namespace NScumm.Scumm
             _blastTextQueuePos = 0;
         }
 
-        void DrawBlastTexts()
+        private void DrawBlastTexts()
         {
             for (var i = 0; i < _blastTextQueuePos; i++)
             {

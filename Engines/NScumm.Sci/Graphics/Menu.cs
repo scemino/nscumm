@@ -27,7 +27,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Graphics
 {
-    enum MenuAttribute
+    internal enum MenuAttribute
     {
         SAID = 0x6d,
         TEXT = 0x6e,
@@ -36,7 +36,7 @@ namespace NScumm.Sci.Graphics
         TAG = 0x71
     }
 
-    class GuiMenuEntry
+    internal class GuiMenuEntry
     {
         public ushort id;
         public string text;
@@ -50,7 +50,7 @@ namespace NScumm.Sci.Graphics
         }
     }
 
-    class GuiMenuItemEntry
+    internal class GuiMenuItemEntry
     {
         public ushort menuId;
         public ushort id;
@@ -206,8 +206,8 @@ namespace NScumm.Sci.Graphics
                 case SciEvent.SCI_EVENT_MOUSE_PRESS:
                     {
                         Point mousePosition = new Point();
-                        mousePosition.X = (int)SciEngine.ReadSelectorValue(_segMan, eventObject, o => o.x);
-                        mousePosition.Y = (int)SciEngine.ReadSelectorValue(_segMan, eventObject, o => o.y);
+                        mousePosition.X = (short) SciEngine.ReadSelectorValue(_segMan, eventObject, o => o.x);
+                        mousePosition.Y = (short) SciEngine.ReadSelectorValue(_segMan, eventObject, o => o.y);
                         if (mousePosition.Y < 10)
                         {
                             InteractiveStart(pauseSound);
@@ -224,7 +224,7 @@ namespace NScumm.Sci.Graphics
                 _paint16.BitsRestore(_menuSaveHandle);
                 // Display line inbetween menubar and actual menu
                 Rect menuLine = _menuRect;
-                menuLine.Bottom = menuLine.Top + 1;
+                menuLine.Bottom = (short) (menuLine.Top + 1);
                 _paint16.BitsShow(menuLine);
                 _paint16.KernelGraphRedrawBox(_menuRect);
                 _menuSaveHandle = Register.NULL_REG;
@@ -526,8 +526,8 @@ namespace NScumm.Sci.Graphics
             if (itemId == 0)
                 return;
 
-            itemRect.Top += (itemId - 1) * _ports._curPort.fontHeight + 1;
-            itemRect.Bottom = itemRect.Top + _ports._curPort.fontHeight;
+            itemRect.Top = (short) (itemRect.Top+ (itemId - 1) * _ports._curPort.fontHeight + 1);
+            itemRect.Bottom = (short) (itemRect.Top + _ports._curPort.fontHeight);
             itemRect.Left++; itemRect.Right--;
 
             _paint16.InvertRect(itemRect);
@@ -550,7 +550,7 @@ namespace NScumm.Sci.Graphics
                 _paint16.BitsRestore(_menuSaveHandle);
                 // Display line inbetween menubar and actual menu
                 Rect menuLine = _menuRect;
-                menuLine.Bottom = menuLine.Top + 1;
+                menuLine.Bottom = (short) (menuLine.Top + 1);
                 _paint16.BitsShow(menuLine);
                 _paint16.KernelGraphRedrawBox(_menuRect);
             }
@@ -577,7 +577,7 @@ namespace NScumm.Sci.Graphics
             }
             _paint16.BitsShow(_ports._menuBarRect);
 
-            _menuRect.Bottom = _menuRect.Top + 2;
+            _menuRect.Bottom = (short) (_menuRect.Top + 2);
             for (int i = 0; i < _itemList.Count; i++)
             {
                 listItemEntry = _itemList[i];
@@ -588,8 +588,8 @@ namespace NScumm.Sci.Graphics
                     maxTextRightAlignedWidth = Math.Max(maxTextRightAlignedWidth, listItemEntry.textRightAlignedWidth);
                 }
             }
-            _menuRect.Right = _menuRect.Left + 16 + 4 + 2;
-            _menuRect.Right += maxTextWidth + maxTextRightAlignedWidth;
+            _menuRect.Right = (short) (_menuRect.Left + 16 + 4 + 2);
+            _menuRect.Right = (short) (_menuRect.Right+ maxTextWidth + maxTextRightAlignedWidth);
             if (maxTextRightAlignedWidth == 0)
                 _menuRect.Right -= 5;
 
@@ -597,7 +597,7 @@ namespace NScumm.Sci.Graphics
             // (this happens in multilingual sq3 and lsl3).
             if (_menuRect.Right > _screen.Width)
             {
-                _menuRect.Translate(-(_menuRect.Right - _screen.Width), 0);
+                _menuRect.Translate((short) -(_menuRect.Right - _screen.Width), 0);
             }
 
             // Save background
@@ -626,11 +626,11 @@ namespace NScumm.Sci.Graphics
                     else {
                         // We dont 100% follow sierra here, we draw the line from left to right. Looks better
                         // BTW. SCI1.1 seems to put 2 pixels and then skip one, we don't do this at all (lsl6)
-                        pixelPos.Y = topPos + (_ports._curPort.fontHeight >> 1) - 1;
-                        pixelPos.X = _menuRect.Left - 7;
+                        pixelPos.Y = (short) (topPos + (_ports._curPort.fontHeight >> 1) - 1);
+                        pixelPos.X = (short) (_menuRect.Left - 7);
                         while (pixelPos.X < (_menuRect.Right - 1))
                         {
-                            _screen.PutPixel((short)pixelPos.X, (short)pixelPos.Y, GfxScreenMasks.VISUAL, 0, 0, 0);
+                            _screen.PutPixel(pixelPos.X, pixelPos.Y, GfxScreenMasks.VISUAL, 0, 0, 0);
                             pixelPos.X += 2;
                         }
                     }

@@ -29,9 +29,9 @@ using NScumm.Scumm.Graphics;
 
 namespace NScumm.Scumm.IO
 {
-    class ResourceFile2: ResourceFile
+    internal class ResourceFile2: ResourceFile
     {
-        const int HeaderSize = 4;
+        private const int HeaderSize = 4;
 
         public ResourceFile2(Stream stream)
             : base(stream)
@@ -131,7 +131,7 @@ namespace NScumm.Scumm.IO
             return room;
         }
 
-        long GetImageSize(long offset, int width, int height)
+        private long GetImageSize(long offset, int width, int height)
         {
             height &= 0xFFF8;
             byte data;
@@ -188,7 +188,7 @@ namespace NScumm.Scumm.IO
             return _reader.BaseStream.Position - offset;
         }
 
-        void ReadBoxes(long offset, Room room)
+        private void ReadBoxes(long offset, Room room)
         {
             _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
             var numBoxes = _reader.ReadByte();
@@ -257,7 +257,7 @@ namespace NScumm.Scumm.IO
             return header;
         }
 
-        ObjectData ReadObject(long offset)
+        private ObjectData ReadObject(long offset)
         {
             _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
             var size = _reader.ReadUInt16();
@@ -279,12 +279,12 @@ namespace NScumm.Scumm.IO
             var height = tmpActor & 0xF8;
             var obj = new ObjectData(id)
             {
-                Position = new Point(x, y),
+                Position = new Point((short) x, (short) y),
                 ParentState = (byte)parentState,
                 Width = (ushort)width,
                 Height = (ushort)height,
                 Parent = parent,
-                Walk = new Point(walkX, walkY),
+                Walk = new Point((short) walkX, (short) walkY),
                 ActorDir = actor,
                 Preposition = preposition
             };
@@ -296,7 +296,7 @@ namespace NScumm.Scumm.IO
             return obj;
         }
 
-        void ReadObjectScriptOffsets(ObjectData obj)
+        private void ReadObjectScriptOffsets(ObjectData obj)
         {
             byte entry;
             while ((entry = _reader.ReadByte()) != 0)
@@ -305,7 +305,7 @@ namespace NScumm.Scumm.IO
             }
         }
 
-        void ReadName(ObjectData obj)
+        private void ReadName(ObjectData obj)
         {
             byte entry;
             var name = new List<byte>();
@@ -316,7 +316,7 @@ namespace NScumm.Scumm.IO
             obj.Name = name.ToArray();
         }
 
-        byte[] ReadBytes(long offset, int length)
+        private byte[] ReadBytes(long offset, int length)
         {
             _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
             return _reader.ReadBytes(length);

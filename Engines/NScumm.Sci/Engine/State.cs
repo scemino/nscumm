@@ -110,9 +110,6 @@ namespace NScumm.Sci.Engine
         /// </summary>
         public short _lastSaveNewId;
 
-# if ENABLE_SCI32
-        public VirtualIndexFile _virtualIndexFile;
-#endif
         /// <summary>
         /// Remembers the item selected in QfG import rooms
         /// </summary>
@@ -258,13 +255,13 @@ namespace NScumm.Sci.Engine
             SciEngine.Instance._soundCmd.SyncPlayList(s);
 
 # if ENABLE_SCI32
-            if (getSciVersion() >= SCI_VERSION_2)
+            if (ResourceManager.GetSciVersion() >= SciVersion.V2)
             {
-                g_sci._gfxPalette32.saveLoadWithSerializer(s);
+                SciEngine.Instance._gfxPalette32.SaveLoadWithSerializer(s);
             }
             else
 #endif
-            // TODO: SciEngine.Instance._gfxPalette16.SaveLoadWithSerializer(s);
+            SciEngine.Instance._gfxPalette16.SaveLoadWithSerializer(s);
 
         }
 

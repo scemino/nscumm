@@ -583,7 +583,7 @@ namespace NScumm.Sword1
             {
                 // there's no grid for the background layer, so it's totalLayers - 1
                 _layerGrid[cnt] = new UShortAccess(_resMan.OpenFetchRes(SwordRes.RoomDefTable[_currentScreen].grids[cnt]));
-                _layerGrid[cnt].Offset += 14 * 2;
+                _layerGrid[cnt].Data.Offset += 14 * 2;
             }
             _parallax[0] = _parallax[1] = null;
             if (SwordRes.RoomDefTable[_currentScreen].parallax[0] != 0)
@@ -1062,7 +1062,7 @@ namespace NScumm.Sword1
                 {
                     if (_layerGrid[level][gridX + blkx + gridY * lGridSizeX] != 0)
                     {
-                        var grid = new UShortAccess(_layerGrid[level].Data, _layerGrid[level].Offset + (gridX + blkx + gridY * lGridSizeX) * 2);
+                        var grid = new UShortAccess(_layerGrid[level].Data, _layerGrid[level].Data.Offset + (gridX + blkx + gridY * lGridSizeX) * 2);
                         for (short blky = (short)(bHeight - 1); blky >= 0; blky--)
                         {
                             if (grid[0] != 0)
@@ -1076,7 +1076,7 @@ namespace NScumm.Sword1
                             }
                             else
                                 break;
-                            grid.Offset -= lGridSizeX * 2;
+                            grid.Data.Offset -= lGridSizeX * 2;
                         }
                     }
                 }

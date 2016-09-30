@@ -18,12 +18,12 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using Microsoft.Xna.Framework;
 using System.IO;
-using NScumm.Core;
 using System.Linq;
+using Microsoft.Xna.Framework;
+using NScumm.Core;
 
-namespace NScumm
+namespace NScumm.Desktop.Screens
 {
     public class MainMenuScreen : MenuScreen
     {

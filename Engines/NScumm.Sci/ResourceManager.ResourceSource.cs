@@ -25,7 +25,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci
 {
-    enum ResSourceType
+    internal enum ResSourceType
     {
         /// <summary>
         /// Directories containing game resources/patches.
@@ -72,7 +72,7 @@ namespace NScumm.Sci
     /// <summary>
     /// Resource status types
     /// </summary>
-    enum ResourceStatus
+    internal enum ResourceStatus
     {
         NoMalloc = 0,
         Allocated,
@@ -86,7 +86,7 @@ namespace NScumm.Sci
         Locked
     }
 
-    partial class ResourceManager
+    internal partial class ResourceManager
     {
         public class ResourceMap : Dictionary<ResourceId, ResourceSource.Resource>
         {
@@ -188,10 +188,10 @@ namespace NScumm.Sci
 #if ENABLE_SCI32
                         case ResVersion.Sci2:
                         case ResVersion.Sci3:
-                            type = _resMan.ConvertResType(file.readByte());
+                            type = _resMan.ConvertResType(br.ReadByte());
                             number = br.ReadUInt16();
-                            szPacked = br.ReadUInt32();
-                            szUnpacked = br.ReadUInt32();
+                            szPacked = br.ReadInt32();
+                            szUnpacked = br.ReadInt32();
 
                             // The same comment applies here as in
                             // detectVolVersion regarding SCI3. We ignore the
@@ -199,7 +199,7 @@ namespace NScumm.Sci
                             // it exists in the file.
                             wCompression = br.ReadUInt16();
 
-                            if (volVersion == kResVersionSci3)
+                            if (volVersion == ResVersion.Sci3)
                                 wCompression = szPacked != szUnpacked ? 32 : 0;
 
                             break;
@@ -393,7 +393,7 @@ namespace NScumm.Sci
                         return errorNum;
 
                     // getting a decompressor
-                    Decompressor dec = null;
+                    Decompressor dec;
                     switch (compression)
                     {
                         case ResourceCompression.None:
@@ -406,14 +406,14 @@ namespace NScumm.Sci
                         case ResourceCompression.LZW1:
                         case ResourceCompression.LZW1View:
                         case ResourceCompression.LZW1Pic:
-                            dec = new DecompressorLZW(compression);
+                            dec = new DecompressorLzw(compression);
                             break;
                         case ResourceCompression.DCL:
-                            dec = new DecompressorDCL();
+                            dec = new DecompressorDcl();
                             break;
 #if ENABLE_SCI32
                         case ResourceCompression.STACpack:
-                            dec = new DecompressorLZS;
+                            dec = new DecompressorLzs();
                             break;
 #endif
                         default:
@@ -430,6 +430,12 @@ namespace NScumm.Sci
                     return errorNum;
                 }
 
+#if ENABLE_SCI32
+                public Stream MakeStream()
+                {
+                    return new MemoryStream(data, 0, size);
+                }
+#endif
             }
 
             protected readonly ResSourceType _sourceType;
@@ -643,7 +649,7 @@ namespace NScumm.Sci
             }
         }
 
-        class DirectoryResourceSource : ResourceSource
+        private class DirectoryResourceSource : ResourceSource
         {
             public DirectoryResourceSource(string name)
                     : base(ResSourceType.Directory, name)
@@ -662,7 +668,7 @@ namespace NScumm.Sci
             }
         }
 
-        class VolumeResourceSource : ResourceSource
+        private class VolumeResourceSource : ResourceSource
         {
             private ResourceSource _associatedMap;
 
@@ -686,7 +692,7 @@ namespace NScumm.Sci
             }
         }
 
-        class PatchResourceSource : ResourceSource
+        private class PatchResourceSource : ResourceSource
         {
             public PatchResourceSource(string name) : base(ResSourceType.Patch, name) { }
 
@@ -703,7 +709,7 @@ namespace NScumm.Sci
             }
         }
 
-        class ExtMapResourceSource : ResourceSource
+        private class ExtMapResourceSource : ResourceSource
         {
             public ExtMapResourceSource(string name, int volNum, object resFile = null)
                 : base(ResSourceType.ExtMap, name, volNum, resFile)
@@ -719,7 +725,7 @@ namespace NScumm.Sci
             }
         }
 
-        class IntMapResourceSource : ResourceSource
+        private class IntMapResourceSource : ResourceSource
         {
             public IntMapResourceSource(string name, int volNum)
             : base(ResSourceType.IntMap, name, volNum)
@@ -732,7 +738,7 @@ namespace NScumm.Sci
             }
         }
 
-        class AudioVolumeResourceSource : VolumeResourceSource
+        private class AudioVolumeResourceSource : VolumeResourceSource
         {
             protected uint _audioCompressionType;
             protected int[] _audioCompressionOffsetMapping;
@@ -850,6 +856,98 @@ namespace NScumm.Sci
                 if (_resourceFile != null)
                     fileStream.Dispose();
             }
+        }
+
+        /// <summary>
+        /// Reads resources from SCI2.1+ chunk resources
+        /// </summary>
+        private class ChunkResourceSource : ResourceSource
+        {
+            public ChunkResourceSource(string name, ushort number)
+                : base(ResSourceType.Chunk, name)
+            {
+                // Chunk resources are resources that hold other resources. They are normally called
+                // when using the kLoadChunk SCI2.1 kernel function. However, for example, the Lighthouse
+                // SCI2.1 demo has a chunk but no scripts outside of the chunk.
+
+                // A chunk resource is pretty straightforward in terms of layout
+                // It begins with 11-byte entries in the header:
+                // =========
+                // b resType
+                // w nEntry
+                // dw offset
+                // dw length
+            }
+
+            public override void ScanSource(ResourceManager resMan)
+            {
+                Resource chunk = resMan.FindResource(new ResourceId(ResourceType.Chunk, _number), false);
+
+                if (chunk == null)
+                    Error("Trying to load non-existent chunk");
+
+                var ptr = new BytePtr(chunk.data);
+                var firstOffset = 0;
+
+                for (;;)
+                {
+                    ResourceType type = resMan.ConvertResType(ptr.Value);
+                    ushort number = ptr.ToUInt16(1);
+                    ResourceId id = new ResourceId(type, number);
+
+                    ResourceEntry entry = new ResourceEntry
+                    {
+                        offset = ptr.ToInt32(3),
+                        length = ptr.ToInt32(7)
+                    };
+
+                    _resMap[id] = entry;
+                    ptr.Offset += 11;
+
+                    DebugC(DebugLevels.ResMan, 2, "Found {0} in chunk {1}", id, _number);
+
+                    resMan.UpdateResource(id, this, entry.length);
+
+                    // There's no end marker to the data table, but the first resource
+                    // begins directly after the entry table. So, when we hit the first
+                    // resource, we're at the end of the entry table.
+
+                    if (firstOffset == 0)
+                        firstOffset = entry.offset;
+
+                    if (ptr.Offset >= firstOffset)
+                        break;
+                }
+            }
+
+            public override void LoadResource(ResourceManager resMan, Resource res)
+            {
+                Resource chunk = resMan.FindResource(new ResourceId(ResourceType.Chunk, _number), false);
+
+                if (!_resMap.ContainsKey(res._id))
+                    Error("Trying to load non-existent resource from chunk {0}: {1} {2}", _number,
+                        GetResourceTypeName(res._id.Type), res._id.Number);
+
+                ResourceEntry entry = _resMap[res._id];
+                res.data = new byte[entry.length];
+                res.size = entry.length;
+                res._header = null;
+                res._headerSize = 0;
+                res._status = ResourceStatus.Allocated;
+
+                // Copy the resource data over
+                Array.Copy(chunk.data, entry.offset, res.data, 0, entry.length);
+            }
+
+            protected ushort _number;
+
+            private class ResourceEntry
+            {
+                public int offset;
+                public int length;
+            }
+
+            private Dictionary<ResourceId, ResourceEntry> _resMap;
         }
 
         public bool DetectEarlySound()

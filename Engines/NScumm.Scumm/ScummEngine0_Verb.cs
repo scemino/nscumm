@@ -62,8 +62,8 @@ namespace NScumm.Scumm
                 vs.Center = false;
                 vs.ImgIndex = 0;
                 vs.Prep = (byte)VerbPrepIdType(vtable[i - 1].id);
-                vs.CurRect.Left = vtable[i - 1].x_pos * 8;
-                vs.CurRect.Top = vtable[i - 1].y_pos * 8 + virt.TopLine + 8;
+                vs.CurRect.Left = (short) (vtable[i - 1].x_pos * 8);
+                vs.CurRect.Top = (short) (vtable[i - 1].y_pos * 8 + virt.TopLine + 8);
                 vs.Text = System.Text.Encoding.UTF8.GetBytes(vtable[i - 1].name);
             }
         }
@@ -136,7 +136,7 @@ namespace NScumm.Scumm
             if (a.MiscFlags.HasFlag(ActorV0MiscFlags.Freeze))
                 return;
 
-            a.StartWalk(new Point(Variables[6], Variables[7]), -1);
+            a.StartWalk(new Point((short) Variables[6], (short) Variables[7]), -1);
         }
 
         protected override void CheckExecVerbs()
@@ -251,7 +251,7 @@ namespace NScumm.Scumm
                             // click into main screen
                             if (_activeVerb == VerbsV0.Give && _activeObject != 0)
                             {
-                                int actor = GetActorFromPos(new Point(x, y));
+                                int actor = GetActorFromPos(new Point((short) x, (short) y));
                                 if (actor != 0)
                                     obj = OBJECT_V0(actor, ObjectV0Type.Actor);
                             }
@@ -358,7 +358,7 @@ namespace NScumm.Scumm
             str[i] = 0;
 
             String[2].Charset = 1;
-            String[2].Position = new Point(0, VerbVirtScreen.TopLine + (8 * VerbDemoNumber));
+            String[2].Position = new Point(0, (short) (VerbVirtScreen.TopLine + (8 * VerbDemoNumber)));
             String[2].Right = (short)(VerbVirtScreen.Width - 1);
             String[2].Color = (byte)v0DemoStr[VerbDemoNumber].Color;
             DrawString(2, str);

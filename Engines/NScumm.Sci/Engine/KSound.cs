@@ -25,7 +25,7 @@ using NScumm.Core.IO;
 
 namespace NScumm.Sci.Engine
 {
-    enum AudioCommands
+    internal enum AudioCommands
     {
         WPlay = 1, /* Loads an audio stream */
         Play = 2, /* Plays an audio stream */
@@ -39,8 +39,44 @@ namespace NScumm.Sci.Engine
         CD = 10 /* Plays SCI1.1 CD audio */
     }
 
-    partial class Kernel
+    internal partial class Kernel
     {
+#if ENABLE_SCI32
+        private static Register kDoSoundPhantasmagoriaMac(EngineState s, int argc, StackPtr argv) {
+            // Phantasmagoria Mac (and seemingly no other game (!)) uses this
+            // cutdown version of kDoSound.
+
+            switch (argv[0].ToUInt16()) {
+                case 0:
+                    return SciEngine.Instance._soundCmd.kDoSoundMasterVolume(argc - 1, argv + 1, ref s.r_acc);
+                case 2:
+                    SciEngine.Instance._soundCmd.kDoSoundInit(argc - 1, argv + 1);
+                    return s.r_acc;
+                case 3:
+                    SciEngine.Instance._soundCmd.kDoSoundDispose(argc - 1, argv + 1);
+                    return s.r_acc;
+                case 4:
+                    SciEngine.Instance._soundCmd.kDoSoundPlay(argc - 1, argv + 1);
+                    return s.r_acc;
+                case 5:
+                    SciEngine.Instance._soundCmd.kDoSoundStop(argc - 1, argv + 1);
+                    return s.r_acc;
+                case 8:
+                    SciEngine.Instance._soundCmd.kDoSoundSetVolume(argc - 1, argv + 1);
+                    return s.r_acc;
+                case 9:
+                    SciEngine.Instance._soundCmd.kDoSoundSetLoop(argc - 1, argv + 1);
+                    return s.r_acc;
+                case 10:
+                    SciEngine.Instance._soundCmd.kDoSoundUpdateCues(argc - 1, argv + 1);
+                    return s.r_acc;
+            }
+
+            Error("Unknown kDoSound Phantasmagoria Mac subop {0}", argv[0].ToUInt16());
+            return s.r_acc;
+        }
+#endif
+
         private static Register kDoAudio(EngineState s, int argc, StackPtr argv)
         {
             // JonesCD uses different functions based on the cdaudio.map file
@@ -117,7 +153,7 @@ namespace NScumm.Sci.Engine
                 case AudioCommands.Volume:
                     {
                         short volume = argv[1].ToInt16();
-                        volume = (short)ScummHelper.Clip(volume, 0, AudioPlayer.AUDIO_VOLUME_MAX);
+                        volume = (short)ScummHelper.Clip(volume, 0, AudioPlayer.AudioVolumeMax);
                         DebugC(DebugLevels.Sound, "kDoAudio: set volume to {0}", volume);
                         mixer.SetVolumeForSoundType(SoundType.Speech, volume * 2);
                         break;
@@ -275,7 +311,7 @@ namespace NScumm.Sci.Engine
 
         private static Register kDoSoundMasterVolume(EngineState s, int argc, StackPtr argv)
         {
-            return SciEngine.Instance._soundCmd.kDoSoundMasterVolume(argc, argv);
+            return SciEngine.Instance._soundCmd.kDoSoundMasterVolume(argc, argv, ref s.r_acc);
         }
 
         private static Register kDoSoundUpdate(EngineState s, int argc, StackPtr argv)

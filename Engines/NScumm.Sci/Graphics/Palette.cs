@@ -26,14 +26,14 @@ using System.IO;
 
 namespace NScumm.Sci.Graphics
 {
-    enum ColorRemappingType
+    internal enum ColorRemappingType
     {
         None = 0,
         ByRange = 1,
         ByPercent = 2
     }
 
-    class PalSchedule
+    internal class PalSchedule
     {
         public byte from;
         public uint schedule;
@@ -142,10 +142,6 @@ namespace NScumm.Sci.Graphics
 
             _macClut = null;
             LoadMacIconBarPalette();
-
-# if ENABLE_SCI32
-            _clutTable = 0;
-#endif
 
             switch (_resMan.ViewType)
             {
@@ -268,6 +264,11 @@ namespace NScumm.Sci.Graphics
             }
         }
 
+        internal void SaveLoadWithSerializer(Serializer s)
+        {
+            throw new NotImplementedException();
+        }
+
         private void PalVaryRemoveTimer()
         {
             if (_timerPalette != null)
@@ -282,7 +283,7 @@ namespace NScumm.Sci.Graphics
 
             for (int i = 1; i < 255; i++)
             {
-                if (newPalette.colors[i].used != 0)
+                if (newPalette.colors[i].used!=0)
                 {
                     if ((newPalette.colors[i].r != destPalette.colors[i].r) ||
                         (newPalette.colors[i].g != destPalette.colors[i].g) ||
@@ -310,7 +311,7 @@ namespace NScumm.Sci.Graphics
             for (int i = 1; i < 255; i++)
             {
                 // skip unused colors
-                if (newPalette.colors[i].used == 0)
+                if (newPalette.colors[i].used==0)
                     continue;
 
                 // forced palette merging or dest color is not used yet

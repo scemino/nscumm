@@ -26,13 +26,13 @@ namespace NScumm.Core.Graphics
         /// <summary>
         /// The horizontal part of the point.
         /// </summary>
-        public int X;
+        public short X;
         /// <summary>
         /// The vertical part of the point
         /// </summary>
-        public int Y;
+        public short Y;
 
-        public Point(int x, int y)
+        public Point(short x, short y)
         {
             X = x;
             Y = y;
@@ -46,12 +46,12 @@ namespace NScumm.Core.Graphics
 
         public static Point operator -(Point pos1, Point pos2)
         {
-            return new Point(pos1.X - pos2.X, pos1.Y - pos2.Y);
+            return new Point((short) (pos1.X - pos2.X), (short) (pos1.Y - pos2.Y));
         }
 
         public static Point operator +(Point pos1, Point pos2)
         {
-            return new Point(pos1.X + pos2.X, pos1.Y + pos2.Y);
+            return new Point((short) (pos1.X + pos2.X), (short) (pos1.Y + pos2.Y));
         }
 
         public static bool operator ==(Point pos1, Point pos2)
@@ -83,7 +83,7 @@ namespace NScumm.Core.Graphics
             return false;
         }
 
-        public Point Offset(int x, int y)
+        public Point Offset(short x, short y)
         {
             X += x;
             Y += y;
@@ -112,7 +112,7 @@ namespace NScumm.Core.Graphics
         {
             get
             { 
-                return string.Format("({0}, {1})", X, Y);
+                return $"({X}, {Y})";
             }    
         }
     }

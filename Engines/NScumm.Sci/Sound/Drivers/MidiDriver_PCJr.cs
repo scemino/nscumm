@@ -233,7 +233,7 @@ namespace NScumm.Sci.Sound.Drivers
             }
         }
 
-        static readonly int[] freq_table = { // A4 is 440Hz, halftone map is x |-> ** 2^(x/12)
+        private static readonly int[] freq_table = { // A4 is 440Hz, halftone map is x |-> ** 2^(x/12)
             28160, // A10
             29834,
             31608,

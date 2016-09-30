@@ -26,7 +26,7 @@ using NScumm.Core.Graphics;
 
 namespace NScumm.Sci.Engine
 {
-    partial class Kernel
+    internal partial class Kernel
     {
         private static Register kIntersections(EngineState s, int argc, StackPtr argv)
         {
@@ -184,12 +184,12 @@ namespace NScumm.Sci.Engine
                 {
                     // If the lines overlap, we test the source and destination points
                     // against the poly segment
-                    if ((pIntercept == qIntercept) && (PointInRect(new Point(pSourceX, pSourceY), (short)qSourceX, (short)qSourceY, (short)qDestX, (short)qDestY)))
+                    if ((pIntercept == qIntercept) && (PointInRect(new Point((short) pSourceX, (short) pSourceY), (short)qSourceX, (short)qSourceY, (short)qDestX, (short)qDestY)))
                     {
                         intersectionX = pSourceX * 100;
                         intersectionY = pSourceY * 100;
                     }
-                    else if ((pIntercept == qIntercept) && PointInRect(new Point(qDestX, qDestY), (short)pSourceX, (short)pSourceY, (short)pDestX, (short)pDestY))
+                    else if ((pIntercept == qIntercept) && PointInRect(new Point((short) qDestX, (short) qDestY), (short)pSourceX, (short)pSourceY, (short)pDestX, (short)pDestY))
                     {
                         intersectionX = qDestX * 100;
                         intersectionY = qDestY * 100;
@@ -231,8 +231,8 @@ namespace NScumm.Sci.Engine
 
                     // If intersection point lies on both the query line segment and the poly
                     // line segment, add it to the output
-                    if (((PointInRect(new Point(intersectionX, intersectionY), (short)pSourceX, (short)pSourceY, (short)pDestX, (short)pDestY))
-                        && PointInRect(new Point(intersectionX, intersectionY), (short)qSourceX, (short)qSourceY, (short)qDestX, (short)qDestY)))
+                    if (((PointInRect(new Point((short) intersectionX, (short) intersectionY), (short)pSourceX, (short)pSourceY, (short)pDestX, (short)pDestY))
+                        && PointInRect(new Point((short) intersectionX, (short) intersectionY), (short)qSourceX, (short)qSourceY, (short)qDestX, (short)qDestY)))
                     {
                         var o = outBuf.Value;
                         o[outCount * 3] = Register.Make(0, (ushort)intersectionX);

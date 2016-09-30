@@ -28,14 +28,12 @@ namespace NScumm.Core.Video
         private AudioInfo _audioInfo;
         private QueuingAudioStream _audioStream;
         public override IAudioStream AudioStream => _audioStream;
-        public override IMixer Mixer { get; }
 
         public override SoundType SoundType { get; }
         public override bool IsRewindable => true;
 
-        public SmackerAudioTrack(IMixer mixer, AudioInfo audioInfo, SoundType soundType)
+        public SmackerAudioTrack(AudioInfo audioInfo, SoundType soundType)
         {
-            Mixer = mixer;
             _audioInfo = audioInfo;
             SoundType = soundType;
             _audioStream = new QueuingAudioStream((int)_audioInfo.sampleRate, _audioInfo.isStereo);

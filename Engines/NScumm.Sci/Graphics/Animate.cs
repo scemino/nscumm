@@ -26,7 +26,7 @@ namespace NScumm.Sci.Graphics
 {
     // Flags for the signal selector
     [Flags]
-    enum ViewSignals
+    internal enum ViewSignals
     {
         StopUpdate = 0x0001,
         ViewUpdated = 0x0002,
@@ -47,7 +47,7 @@ namespace NScumm.Sci.Graphics
     }
 
     [Flags]
-    enum ViewScaleSignals
+    internal enum ViewScaleSignals
     {
         DoScaling = 0x0001, // enables scaling when drawing that cel (involves scaleX and scaleY)
         GlobalScaling = 0x0002, // means that global scaling shall get applied on that cel (sets scaleX/scaleY)
@@ -242,7 +242,7 @@ namespace NScumm.Sci.Graphics
                 if ((it.signal & ViewSignals.DisposeMe) != 0)
                 {
                     // Call .delete_ method of that object
-                    SciEngine.InvokeSelector(_s, it.@object, s => s.delete_, argc, argv);
+                    SciEngine.InvokeSelector(_s, it.@object, s => s.delete, argc, argv);
                 }
             }
         }
@@ -258,10 +258,10 @@ namespace NScumm.Sci.Graphics
                 if (it.showBitsFlag || !(it.signal.HasFlag((ViewSignals.RemoveView | ViewSignals.NoUpdate)) ||
                                                 (!(it.signal.HasFlag(ViewSignals.RemoveView)) && (it.signal.HasFlag(ViewSignals.NoUpdate)) && oldPicNotValid != 0)))
                 {
-                    lsRect.Left = (int)SciEngine.ReadSelectorValue(_s._segMan, it.@object, s => s.lsLeft);
-                    lsRect.Top = (int)SciEngine.ReadSelectorValue(_s._segMan, it.@object, s => s.lsTop);
-                    lsRect.Right = (int)SciEngine.ReadSelectorValue(_s._segMan, it.@object, s => s.lsRight);
-                    lsRect.Bottom = (int)SciEngine.ReadSelectorValue(_s._segMan, it.@object, s => s.lsBottom);
+                    lsRect.Left = (short) SciEngine.ReadSelectorValue(_s._segMan, it.@object, s => s.lsLeft);
+                    lsRect.Top = (short) SciEngine.ReadSelectorValue(_s._segMan, it.@object, s => s.lsTop);
+                    lsRect.Right = (short) SciEngine.ReadSelectorValue(_s._segMan, it.@object, s => s.lsRight);
+                    lsRect.Bottom = (short) SciEngine.ReadSelectorValue(_s._segMan, it.@object, s => s.lsBottom);
 
                     workerRect = lsRect;
                     workerRect.Clip(it.celRect);
@@ -393,7 +393,7 @@ namespace NScumm.Sci.Graphics
                     if (!(it.signal.HasFlag(ViewSignals.IgnoreActor)))
                     {
                         rect = it.celRect;
-                        rect.Top = ScummHelper.Clip(_ports.KernelPriorityToCoordinate((byte)it.priority) - 1, rect.Top, rect.Bottom - 1);
+                        rect.Top = (short) ScummHelper.Clip(_ports.KernelPriorityToCoordinate((byte)it.priority) - 1, rect.Top, rect.Bottom - 1);
                         _paint16.FillRect(rect, GfxScreenMasks.CONTROL, 0, 0, 15);
                     }
                 }
@@ -433,7 +433,7 @@ namespace NScumm.Sci.Graphics
                     if (!(it.signal.HasFlag(ViewSignals.IgnoreActor)))
                     {
                         rect = it.celRect;
-                        rect.Top = ScummHelper.Clip(_ports.KernelPriorityToCoordinate((byte)it.priority) - 1, rect.Top, rect.Bottom - 1);
+                        rect.Top = (short) ScummHelper.Clip(_ports.KernelPriorityToCoordinate((byte)it.priority) - 1, rect.Top, rect.Bottom - 1);
                         _paint16.FillRect(rect, GfxScreenMasks.CONTROL, 0, 0, 15);
                     }
                 }
@@ -527,7 +527,7 @@ namespace NScumm.Sci.Graphics
                 }
                 else
                 {
-                    it.celRect = view.GetCelRect(it.loopNo, it.celNo, it.x, it.y, it.z);
+                    view.GetCelRect(it.loopNo, it.celNo, it.x, it.y, it.z, out it.celRect);
                 }
             }
 
@@ -830,14 +830,14 @@ namespace NScumm.Sci.Graphics
                     SciEngine.Instance._gfxCompare.SetNSRect(curObject, it.celRect);
                 }
                 else {
-                    it.celRect = view.GetCelRect(it.loopNo, it.celNo, it.x, it.y, it.z);
+                    view.GetCelRect(it.loopNo, it.celNo, it.x, it.y, it.z, out it.celRect);
                 }
 
                 // draw corresponding cel
                 _paint16.DrawCel(view, it.loopNo, it.celNo, it.celRect, (byte)it.priority, (ushort)it.paletteNo, (ushort)it.scaleX, (ushort)it.scaleY);
                 if (!it.signal.HasFlag(ViewSignals.IgnoreActor))
                 {
-                    it.celRect.Top = ScummHelper.Clip(_ports.KernelPriorityToCoordinate((byte)it.priority) - 1, it.celRect.Top, it.celRect.Bottom - 1);
+                    it.celRect.Top = (short) ScummHelper.Clip(_ports.KernelPriorityToCoordinate((byte)it.priority) - 1, it.celRect.Top, it.celRect.Bottom - 1);
                     _paint16.FillRect(it.celRect, GfxScreenMasks.CONTROL, 0, 0, 15);
                 }
             }
@@ -859,12 +859,12 @@ namespace NScumm.Sci.Graphics
                 priority = _ports.KernelCoordinateToPriority(y);
 
             // Create rect according to coordinates and given cel
-            celRect = view.GetCelRect(loopNo, celNo, x, y, 0);
+            view.GetCelRect(loopNo, celNo, x, y, 0, out celRect);
             _paint16.DrawCel(view, loopNo, celNo, celRect, (byte)priority, 0);
 
             if (control != -1)
             {
-                celRect.Top = ScummHelper.Clip(_ports.KernelPriorityToCoordinate((byte)priority) - 1, celRect.Top, celRect.Bottom - 1);
+                celRect.Top = (short) ScummHelper.Clip(_ports.KernelPriorityToCoordinate((byte)priority) - 1, celRect.Top, celRect.Bottom - 1);
                 _paint16.FillRect(celRect, GfxScreenMasks.CONTROL, 0, 0, (byte)control);
             }
         }

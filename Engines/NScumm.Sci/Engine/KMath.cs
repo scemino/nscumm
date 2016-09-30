@@ -20,7 +20,7 @@ using System;
 
 namespace NScumm.Sci.Engine
 {
-    partial class Kernel
+    internal partial class Kernel
     {
         private static Register kAbs(EngineState s, int argc, StackPtr argv)
         {

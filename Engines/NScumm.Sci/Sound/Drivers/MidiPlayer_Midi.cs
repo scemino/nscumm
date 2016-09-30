@@ -133,7 +133,7 @@ namespace NScumm.Sci.Sound.Drivers
             }
         }
 
-        class Channel
+        private class Channel
         {
             public byte mappedPatch;
             public byte patch;
@@ -155,27 +155,27 @@ namespace NScumm.Sci.Sound.Drivers
         }
 
         private bool _isMt32;
-        bool _useMT32Track;
-        bool _hasReverb;
-        bool _playSwitch;
-        int _masterVolume;
+        private bool _useMT32Track;
+        private bool _hasReverb;
+        private bool _playSwitch;
+        private int _masterVolume;
 
-        byte[][] _reverbConfig = new byte[ReverbConfigNr][];
-        Channel[] _channels = new Channel[16];
-        byte[] _percussionMap = new byte[128];
-        byte[] _keyShift = new byte[128];
-        byte[] _volAdjust = new byte[128];
-        byte[] _patchMap = new byte[128];
-        byte[] _velocityMapIdx = new byte[128];
-        byte[][] _velocityMap = new byte[4][];
+        private byte[][] _reverbConfig = new byte[ReverbConfigNr][];
+        private Channel[] _channels = new Channel[16];
+        private byte[] _percussionMap = new byte[128];
+        private byte[] _keyShift = new byte[128];
+        private byte[] _volAdjust = new byte[128];
+        private byte[] _patchMap = new byte[128];
+        private byte[] _velocityMapIdx = new byte[128];
+        private byte[][] _velocityMap = new byte[4][];
 
         // These are extensions used for our own MT-32 to GM mapping
-        byte[] _pitchBendRange = new byte[128];
-        byte[] _percussionVelocityScale = new byte[128];
+        private byte[] _pitchBendRange = new byte[128];
+        private byte[] _percussionVelocityScale = new byte[128];
 
-        byte[] _goodbyeMsg = new byte[20];
-        byte[] _sysExBuf = new byte[MaxSysExSize];
-        List<Mt32ToGmMap> Mt32dynamicMappings = new List<Mt32ToGmMap>();
+        private byte[] _goodbyeMsg = new byte[20];
+        private byte[] _sysExBuf = new byte[MaxSysExSize];
+        private List<Mt32ToGmMap> Mt32dynamicMappings = new List<Mt32ToGmMap>();
 
         public MidiPlayer_Midi(SciVersion version)
             : base(version)
@@ -1193,7 +1193,7 @@ namespace NScumm.Sci.Sound.Drivers
                 SysEx(_sysExBuf, (ushort)(len + 8));
         }
 
-        struct Mt32ToGmMap
+        private struct Mt32ToGmMap
         {
             public string name;
             public byte gmInstr;
@@ -1207,7 +1207,7 @@ namespace NScumm.Sci.Sound.Drivers
             }
         }
 
-        static readonly Mt32ToGmMap[] Mt32PresetTimbreMaps = {
+        private static readonly Mt32ToGmMap[] Mt32PresetTimbreMaps = {
             /*000*/ new Mt32ToGmMap("AcouPiano1", 0, MIDI_UNMAPPED),
             /*001*/  new Mt32ToGmMap("AcouPiano2", 1, MIDI_UNMAPPED),
             /*002*/  new Mt32ToGmMap("AcouPiano3", 0, MIDI_UNMAPPED),
@@ -1338,7 +1338,7 @@ namespace NScumm.Sci.Sound.Drivers
             /*127*/  new Mt32ToGmMap("JungleTune", 75, MIDI_UNMAPPED) // approximation
         };
 
-        static readonly Mt32ToGmMap[] Mt32RhythmTimbreMaps = {
+        private static readonly Mt32ToGmMap[] Mt32RhythmTimbreMaps = {
             /*00*/  new Mt32ToGmMap("Acou BD   ", MIDI_MAPPED_TO_RHYTHM, 35),
             /*01*/  new Mt32ToGmMap("Acou SD   ", MIDI_MAPPED_TO_RHYTHM, 38),
             /*02*/  new Mt32ToGmMap("Acou HiTom", 117, 50),
@@ -1371,7 +1371,7 @@ namespace NScumm.Sci.Sound.Drivers
             /*29*/  new Mt32ToGmMap("OpenHiHat2", MIDI_MAPPED_TO_RHYTHM, 44)
         };
 
-        static readonly byte[] Mt32PresetRhythmKeymap = {
+        private static readonly byte[] Mt32PresetRhythmKeymap = {
             MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED,
             MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED,
             MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED, MIDI_UNMAPPED,
@@ -1395,7 +1395,8 @@ namespace NScumm.Sci.Sound.Drivers
    ??? - I'm clueless?
    R   - Rhythm...
 */
-        static readonly Mt32ToGmMap[] Mt32MemoryTimbreMaps = {
+
+        private static readonly Mt32ToGmMap[] Mt32MemoryTimbreMaps = {
             new Mt32ToGmMap("AccPnoKA2 ", 1, MIDI_UNMAPPED),     // ++ (KQ1)
             new Mt32ToGmMap("Acou BD   ", MIDI_MAPPED_TO_RHYTHM, 35),   // R (PQ2)
             new Mt32ToGmMap("Acou SD   ", MIDI_MAPPED_TO_RHYTHM, 38),   // R (PQ2)

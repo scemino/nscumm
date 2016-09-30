@@ -88,7 +88,7 @@ namespace NScumm.Scumm
         [OpCode(0x7e)]
         protected virtual void WalkActorTo(int index, int x, int y)
         {
-            Actors[index].StartWalk(new Point(x, y), -1);
+            Actors[index].StartWalk(new Point((short) x, (short) y), -1);
         }
 
         [OpCode(0x7f)]
@@ -110,7 +110,7 @@ namespace NScumm.Scumm
                     actor.Room = (byte)room;
                 }
             }
-            actor.PutActor(new Point(x, y), (byte)room);
+            actor.PutActor(new Point((short) x, (short) y), (byte)room);
         }
 
         [OpCode(0x80)]
@@ -375,7 +375,7 @@ namespace NScumm.Scumm
         [OpCode(0x9f)]
         protected virtual void GetActorFromXY(int x, int y)
         {
-            Push(GetActorFromPos(new Point(x, y)));
+            Push(GetActorFromPos(new Point((short) x, (short) y)));
         }
 
         [OpCode(0xa2)]

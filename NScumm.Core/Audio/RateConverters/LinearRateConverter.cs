@@ -18,6 +18,7 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 
 namespace NScumm.Core.Audio
@@ -25,8 +26,8 @@ namespace NScumm.Core.Audio
     public class LinearRateConverter : IRateConverter
     {
         const int FRAC_BITS_LOW = 15;
-        const int FRAC_ONE_LOW = (1 << FRAC_BITS_LOW);
-        const int FRAC_HALF_LOW = (1 << (FRAC_BITS_LOW - 1));
+        const int FRAC_ONE_LOW = 1 << FRAC_BITS_LOW;
+        const int FRAC_HALF_LOW = 1 << (FRAC_BITS_LOW - 1);
 
         int opos;
         int oposInc;
@@ -49,7 +50,7 @@ namespace NScumm.Core.Audio
             {
                 throw new ArgumentOutOfRangeException("rate effect can only handle rates < 131072");
             }
-            
+
 
             opos = FRAC_ONE_LOW;
             inBuf = new short[RateHelper.IntermediateBufferSize];
@@ -67,7 +68,7 @@ namespace NScumm.Core.Audio
             inLen = 0;
         }
 
-        public int Flow(IAudioStream input, short[] obuf, int count, int volLeft, int volRight)
+        public int Flow(IAudioStream input, Ptr<short> obuf, int count, int volLeft, int volRight)
         {
             var obufPos = 0;
             var inPos = 0;
@@ -86,7 +87,7 @@ namespace NScumm.Core.Audio
                         if (inLen <= 0)
                             return obufPos / 2;
                     }
-                    inLen -= (stereo ? 2 : 1);
+                    inLen -= stereo ? 2 : 1;
                     ilast0 = icur0;
                     icur0 = inBuf[inPos++];
                     if (stereo)
@@ -103,14 +104,20 @@ namespace NScumm.Core.Audio
                 {
                     // interpolate
                     int out0, out1;
-                    out0 = (short)(ilast0 + (((icur0 - ilast0) * opos + FRAC_HALF_LOW) >> FRAC_BITS_LOW));
-                    out1 = stereo ? (short)(ilast1 + (((icur1 - ilast1) * opos + FRAC_HALF_LOW) >> FRAC_BITS_LOW)) : out0;
+                    out0 = (short) (ilast0 + (((icur0 - ilast0) * opos + FRAC_HALF_LOW) >> FRAC_BITS_LOW));
+                    out1 = stereo
+                        ? (short) (ilast1 + (((icur1 - ilast1) * opos + FRAC_HALF_LOW) >> FRAC_BITS_LOW))
+                        : out0;
 
                     // output left channel
-                    RateHelper.ClampedAdd(ref obuf[obufPos + (reverseStereo ? 1 : 0)], (out0 * volLeft) / Mixer.MaxMixerVolume);
+                    obuf[obufPos + (reverseStereo ? 1 : 0)]
+                        = RateHelper.ClampedAdd(obuf[obufPos + (reverseStereo ? 1 : 0)],
+                            out0 * volLeft / Mixer.MaxMixerVolume);
 
                     // output right channel
-                    RateHelper.ClampedAdd(ref obuf[obufPos + (reverseStereo ? 0 : 1)], (out1 * volRight) / Mixer.MaxMixerVolume);
+                    obuf[obufPos + (reverseStereo ? 0 : 1)]
+                        = RateHelper.ClampedAdd(obuf[obufPos + (reverseStereo ? 0 : 1)],
+                            out1 * volRight / Mixer.MaxMixerVolume);
 
                     obufPos += 2;
 
@@ -119,7 +126,6 @@ namespace NScumm.Core.Audio
                 }
             }
             return obufPos / 2;
-
         }
 
         public int Drain(short[] obuf, int vol)
@@ -128,4 +134,3 @@ namespace NScumm.Core.Audio
         }
     }
 }
-

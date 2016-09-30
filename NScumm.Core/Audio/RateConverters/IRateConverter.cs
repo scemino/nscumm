@@ -23,7 +23,7 @@ namespace NScumm.Core.Audio
 {
     public interface IRateConverter
     {
-        int Flow(IAudioStream input, short[] obuf, int count, int volLeft, int volRight);
+        int Flow(IAudioStream input, Ptr<short> obuf, int count, int volLeft, int volRight);
 
         int Drain(short[] obuf, int vol);
     }

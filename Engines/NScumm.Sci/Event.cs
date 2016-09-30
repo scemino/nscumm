@@ -18,7 +18,6 @@
 
 using NScumm.Core.Graphics;
 using System.Collections.Generic;
-using System;
 using System.Linq;
 using NScumm.Core.Input;
 using NScumm.Core;
@@ -29,8 +28,8 @@ namespace NScumm.Sci
     {
         /*Values for type*/
         public const int SCI_EVENT_NONE = 0;
-        public const int SCI_EVENT_MOUSE_PRESS = (1 << 0);
-        public const int SCI_EVENT_MOUSE_RELEASE = (1 << 1);
+        public const int SCI_EVENT_MOUSE_PRESS = 1 << 0;
+        public const int SCI_EVENT_MOUSE_RELEASE = 1 << 1;
         public const int SCI_EVENT_KEYBOARD = (1 << 2);
         public const int SCI_EVENT_DIRECTION = (1 << 6);
         public const int SCI_EVENT_SAID = (1 << 7);
@@ -108,6 +107,15 @@ namespace NScumm.Sci
          */
         public Point mousePos;
 
+#if ENABLE_SCI32
+        /**
+         * The mouse position at the time the event was created,
+         * in script coordinates.
+         */
+        public Point mousePosSci;
+#endif
+
+
         public SciEvent(short type, short data, short modifiers, short character, Point mousePos)
         {
             this.type = type;
@@ -139,7 +147,7 @@ namespace NScumm.Sci
             // Get all queued events from graphics driver
             do
             {
-                @event = GetScummVMEvent();
+                @event = GetScummVmEvent();
                 if (@event.type != SciEvent.SCI_EVENT_NONE)
                     _events.Add(@event);
             } while (@event.type != SciEvent.SCI_EVENT_NONE);
@@ -169,7 +177,7 @@ namespace NScumm.Sci
             return @event;
         }
 
-        private SciEvent GetScummVMEvent()
+        private SciEvent GetScummVmEvent()
         {
             SciEvent input = new SciEvent(SciEvent.SCI_EVENT_NONE, 0, 0, 0, new Point(0, 0));
             SciEvent noEvent = new SciEvent(SciEvent.SCI_EVENT_NONE, 0, 0, 0, new Point(0, 0));

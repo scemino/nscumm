@@ -73,18 +73,18 @@ namespace NScumm.Scumm.Graphics
 
             if (FirstChar)
             {
-                Str.Left = Left;
-                Str.Top = Top;
-                Str.Right = Left;
-                Str.Bottom = Top;
+                Str.Left = (short) Left;
+                Str.Top = (short) Top;
+                Str.Right = (short) Left;
+                Str.Bottom = (short) Top;
                 FirstChar = false;
             }
 
             if (Left < Str.Left)
-                Str.Left = Left;
+                Str.Left = (short) Left;
 
             if (Top < Str.Top)
-                Str.Top = Top;
+                Str.Top = (short) Top;
 
             int drawTop = Top - vs.TopLine;
 
@@ -104,13 +104,13 @@ namespace NScumm.Scumm.Graphics
 
             if (Str.Right < Left)
             {
-                Str.Right = Left;
+                Str.Right = (short) Left;
                 if (Vm.Game.Platform != Platform.FMTowns && _enableShadow)
                     Str.Right++;
             }
 
             if (Str.Bottom < Top + _origHeight)
-                Str.Bottom = Top + _origHeight;
+                Str.Bottom = (short) (Top + _origHeight);
 
             Top -= _offsY;
         }

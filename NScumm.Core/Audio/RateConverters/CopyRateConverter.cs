@@ -37,7 +37,7 @@ namespace NScumm.Core.Audio
             _bufferSize = 0;
         }
 
-        public int Flow(IAudioStream input, short[] obuf, int count, int volLeft, int volRight)
+        public int Flow(IAudioStream input, Ptr<short> obuf, int count, int volLeft, int volRight)
         {
             Debug.Assert(input.IsStereo == stereo);
 
@@ -66,10 +66,10 @@ namespace NScumm.Core.Audio
                 var out1 = stereo ? _buffer[iPos + 1] : out0;
 
                 // output left channel
-                RateHelper.ClampedAdd(ref obuf[oPos + (reverseStereo ? 1 : 0)], (out0 * volLeft) / Mixer.MaxMixerVolume);
+                obuf[oPos + (reverseStereo ? 1 : 0)]=RateHelper.ClampedAdd(obuf[oPos + (reverseStereo ? 1 : 0)], out0 * volLeft / Mixer.MaxMixerVolume);
 
                 // output right channel
-                RateHelper.ClampedAdd(ref obuf[oPos + (reverseStereo ? 0 : 1)], (out1 * volRight) / Mixer.MaxMixerVolume);
+                obuf[oPos + (reverseStereo ? 0 : 1)]=RateHelper.ClampedAdd(obuf[oPos + (reverseStereo ? 0 : 1)], out1 * volRight / Mixer.MaxMixerVolume);
 
                 oPos += 2;
             }

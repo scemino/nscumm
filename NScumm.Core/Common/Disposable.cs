@@ -46,10 +46,7 @@ namespace NScumm.Core.Common
 
         public static void DisposeIfNotNull(this IDisposable obj)
         {
-            if(obj!= null)
-            {
-                obj.Dispose();
-            }
+            obj?.Dispose();
         }
     }
 }

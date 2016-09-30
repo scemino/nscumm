@@ -37,7 +37,7 @@ namespace NScumm.Sci.Engine
 
     internal class FileHandle : IDisposable
     {
-        public bool IsOpen { get { return _in != null || _out != null; } }
+        public bool IsOpen => _in != null || _out != null;
 
         public string _name;
         public Stream _in;
@@ -126,18 +126,18 @@ namespace NScumm.Sci.Engine
             _files.Clear();
             _virtualFiles.Clear();
 
-            int QfGImport = SciEngine.Instance.InQfGImportRoom;
-            if (QfGImport != 0)
+            int qfGImport = SciEngine.Instance.InQfGImportRoom;
+            if (qfGImport != 0)
             {
                 _files.Clear();
                 AddAsVirtualFiles("-QfG1-", "qfg1-*");
                 AddAsVirtualFiles("-QfG1VGA-", "qfg1vga-*");
-                if (QfGImport > 2)
+                if (qfGImport > 2)
                     AddAsVirtualFiles("-QfG2-", "qfg2-*");
-                if (QfGImport > 3)
+                if (qfGImport > 3)
                     AddAsVirtualFiles("-QfG3-", "qfg3-*");
 
-                if (QfGImport == 3)
+                if (qfGImport == 3)
                 {
                     // QfG3 sorts the filelisting itself, we can't let that happen otherwise our
                     //  virtual list would go out-of-sync
@@ -241,7 +241,7 @@ namespace NScumm.Sci.Engine
             }
 
             // Sort the list by creation date of the saves
-            saves.Sort(new Comparison<SavegameDesc>((d1, d2) =>
+            saves.Sort((d1, d2) =>
             {
                 // sort by date
                 var ret = d1.date.CompareTo(d2.date);
@@ -250,7 +250,7 @@ namespace NScumm.Sci.Engine
                     ret = d1.time.CompareTo(d2.time);
                 }
                 return ret;
-            }));
+            });
 
             return saves;
         }

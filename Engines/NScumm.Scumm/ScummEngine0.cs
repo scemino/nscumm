@@ -25,7 +25,6 @@ using System.Diagnostics;
 using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
-using NScumm.Core.Input;
 using NScumm.Core.IO;
 using NScumm.Scumm.IO;
 
@@ -844,10 +843,10 @@ namespace NScumm.Scumm
         void ClearSentenceLine()
         {
             Rect sentenceline;
-            sentenceline.Top = VerbVirtScreen.TopLine;
-            sentenceline.Bottom = VerbVirtScreen.TopLine + 8;
+            sentenceline.Top = (short) VerbVirtScreen.TopLine;
+            sentenceline.Bottom = (short) (VerbVirtScreen.TopLine + 8);
             sentenceline.Left = 0;
-            sentenceline.Right = VerbVirtScreen.Width - 1;
+            sentenceline.Right = (short) (VerbVirtScreen.Width - 1);
             RestoreBackground(sentenceline);
         }
 
@@ -871,7 +870,7 @@ namespace NScumm.Scumm
             buffer[i] = 0;
 
             String[2].Charset = 1;
-            String[2].Position = new Point(0, VerbVirtScreen.TopLine);
+            String[2].Position = new Point(0, (short) VerbVirtScreen.TopLine);
             String[2].Right = (short)(VerbVirtScreen.Width - 1);
             String[2].Color = 16;
             DrawString(2, buffer);

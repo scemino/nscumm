@@ -32,7 +32,7 @@ namespace NScumm.Sci.Graphics
         private const int SCI_CURSOR_SCI0_TRANSPARENCYCOLOR = 1;
         private const int MAX_CACHED_CURSORS = 10;
 
-        struct SciCursorSetPositionWorkarounds
+        private struct SciCursorSetPositionWorkarounds
         {
             public SciGameId gameId;
             public short newPositionY;
@@ -119,7 +119,7 @@ namespace NScumm.Sci.Graphics
             _isVisible = true;
 
             // center mouse cursor
-            SetPosition(new Point(_screen.ScriptWidth / 2, _screen.ScriptHeight / 2));
+            SetPosition(new Point((short) (_screen.ScriptWidth / 2), (short) (_screen.ScriptHeight / 2)));
             _moveZoneActive = false;
 
             _zoomZoneActive = false;
@@ -213,13 +213,13 @@ namespace NScumm.Sci.Graphics
                 // SCI0 cursors contain hotspot flags, not actual hotspot coordinates.
                 // If bit 0 of resourceData[3] is set, the hotspot should be centered,
                 // otherwise it's in the top left of the mouse cursor.
-                hotspot.X = hotspot.Y = resourceData[3] != 0 ? SCI_CURSOR_SCI0_HEIGHTWIDTH / 2 : 0;
+                hotspot.X = hotspot.Y = (short) (resourceData[3] != 0 ? SCI_CURSOR_SCI0_HEIGHTWIDTH / 2 : 0);
             }
             else
             {
                 // Cursors in newer SCI versions contain actual hotspot coordinates.
-                hotspot.X = resourceData.ToUInt16();
-                hotspot.Y = resourceData.ToUInt16(2);
+                hotspot.X = resourceData.ToInt16();
+                hotspot.Y = resourceData.ToInt16(2);
             }
 
             // Now find out what colors we are supposed to use
@@ -289,7 +289,7 @@ namespace NScumm.Sci.Graphics
                 }
                 else if (mousePoint.X >= _moveZone.Right)
                 {
-                    mousePoint.X = _moveZone.Right - 1;
+                    mousePoint.X = (short) (_moveZone.Right - 1);
                     clipped = true;
                 }
 
@@ -300,7 +300,7 @@ namespace NScumm.Sci.Graphics
                 }
                 else if (mousePoint.Y >= _moveZone.Bottom)
                 {
-                    mousePoint.Y = _moveZone.Bottom - 1;
+                    mousePoint.Y = (short) (_moveZone.Bottom - 1);
                     clipped = true;
                 }
 
@@ -319,7 +319,7 @@ namespace NScumm.Sci.Graphics
                 var rawPicBitmap = _zoomPicView.GetBitmap(0, 0);
 
                 // Compute hotspot of cursor
-                Point cursorHotspot = new Point((cursorCelInfo.width >> 1) - cursorCelInfo.displaceX, cursorCelInfo.height - cursorCelInfo.displaceY - 1);
+                Point cursorHotspot = new Point((short) ((cursorCelInfo.width >> 1) - cursorCelInfo.displaceX), (short) (cursorCelInfo.height - cursorCelInfo.displaceY - 1));
 
                 short targetX = (short)(((mousePoint.X - _moveZone.Left) * _zoomMultiplier));
                 short targetY = (short)(((mousePoint.Y - _moveZone.Top) * _zoomMultiplier));
@@ -449,7 +449,7 @@ namespace NScumm.Sci.Graphics
 
             if (cursorHotspot != new Point())
                 // Compute hotspot from xoffset/yoffset
-                cursorHotspot = new Point((celInfo.width >> 1) - celInfo.displaceX, celInfo.height - celInfo.displaceY - 1);
+                cursorHotspot = new Point((short) ((celInfo.width >> 1) - celInfo.displaceX), (short) (celInfo.height - celInfo.displaceY - 1));
 
             // Eco Quest 1 uses a 1x1 transparent cursor to hide the cursor from the
             // user. Some scalers don't seem to support this

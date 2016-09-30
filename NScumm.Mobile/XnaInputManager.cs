@@ -147,7 +147,7 @@ namespace NScumm
             var scaleX = (float)_width / rect.Width;
             var scaleY = (float)_height / rect.Height;
             RealPosition = pos;
-            _mousePosition = new Core.Graphics.Point((int)((pos.X - rect.Left) * scaleX), (int)((pos.Y - rect.Top) * scaleY));
+            _mousePosition = new Core.Graphics.Point((short)((pos.X - rect.Left) * scaleX), (short)((pos.Y - rect.Top) * scaleY));
         }
 
         private IEnumerable<GestureSample> GetGestures()

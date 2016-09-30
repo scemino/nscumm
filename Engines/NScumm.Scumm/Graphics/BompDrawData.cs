@@ -54,7 +54,7 @@ namespace NScumm.Scumm.Graphics
         {
             get
             { 
-                return string.Format("Rect={0}]", new Rect(X, Y, X + Width, Y + Height));
+                return $"Rect={new Rect((short) X, (short) Y, (short) (X + Width), (short) (Y + Height))}]";
             }
         }
 
@@ -68,7 +68,7 @@ namespace NScumm.Scumm.Graphics
 
             if (X < 0)
             {
-                clip.Left = -X;
+                clip.Left = (short) -X;
             }
             else
             {
@@ -77,23 +77,23 @@ namespace NScumm.Scumm.Graphics
 
             if (Y < 0)
             {
-                clip.Top = -Y;
+                clip.Top = (short) -Y;
             }
             else
             {
                 clip.Top = 0;
             }
 
-            clip.Right = Width;
+            clip.Right = (short) Width;
             if (clip.Right > Dst.Width - X)
             {
-                clip.Right = Dst.Width - X;
+                clip.Right = (short) (Dst.Width - X);
             }
 
-            clip.Bottom = Height;
+            clip.Bottom = (short) Height;
             if (clip.Bottom > Dst.Height - Y)
             {
-                clip.Bottom = Dst.Height - Y;
+                clip.Bottom = (short) (Dst.Height - Y);
             }
 
             var src = Src;
@@ -121,7 +121,7 @@ namespace NScumm.Scumm.Graphics
 
                 if (clip.Bottom > scaleBottom)
                 {
-                    clip.Bottom = scaleBottom;
+                    clip.Bottom = (short) scaleBottom;
                 }
             }
 
@@ -132,7 +132,7 @@ namespace NScumm.Scumm.Graphics
 
                 if (clip.Right > scaleRight)
                 {
-                    clip.Right = scaleRight;
+                    clip.Right = (short) scaleRight;
                 }
             }
 
@@ -259,7 +259,7 @@ namespace NScumm.Scumm.Graphics
                     BompApplyShadow3(shadowPalette, lineBuffer, linePos, dst, size, transparency);
                     break;
                 default:
-                    throw new ArgumentException(string.Format("Unknown shadow mode {0}", shadowMode));
+                    throw new ArgumentException($"Unknown shadow mode {shadowMode}");
             }
         }
 

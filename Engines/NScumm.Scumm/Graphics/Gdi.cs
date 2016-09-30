@@ -159,7 +159,7 @@ namespace NScumm.Scumm.Graphics
         {
             // Check whether lights are turned on or not
             var lightsOn = _vm.IsLightOn();
-            DrawBitmap(img, vs, new Point(x, y), width, height, stripnr, numstrip, roomWidth, flags, lightsOn);
+            DrawBitmap(img, vs, new Point((short) x, (short) y), width, height, stripnr, numstrip, roomWidth, flags, lightsOn);
         }
 
         public void DrawBitmap(ImageData img, VirtScreen vs, Point p, int width, int height, int stripnr, int numstrip, int roomWidth, DrawBitmaps flags, bool isLightOn)
@@ -169,9 +169,9 @@ namespace NScumm.Scumm.Graphics
             if ((_vm.TownsPaletteFlags & 2) != 0)
             {
                 int cx = (x - _vm.ScreenStartStrip) << 3;
-                Gdi.Fill(_vm.TextSurface, 
-                    new Rect(cx * _vm.TextSurfaceMultiplier, y * _vm.TextSurfaceMultiplier, 
-                        (cx + width - 1) * _vm.TextSurfaceMultiplier, (y + height - 1) * _vm.TextSurfaceMultiplier), 0);
+                Fill(_vm.TextSurface,
+                    new Rect((short) (cx * _vm.TextSurfaceMultiplier), (short) (y * _vm.TextSurfaceMultiplier),
+                        (short) ((cx + width - 1) * _vm.TextSurfaceMultiplier), (short) ((y + height - 1) * _vm.TextSurfaceMultiplier)), 0);
             }
 
             _objectMode = flags.HasFlag(DrawBitmaps.ObjectMode);
@@ -181,7 +181,7 @@ namespace NScumm.Scumm.Graphics
             if (sx < 0)
             {
                 numstrip -= -sx;
-                x += -sx;
+                x = (short) (x-sx);
                 stripnr += -sx;
                 sx = 0;
             }
@@ -238,7 +238,7 @@ namespace NScumm.Scumm.Graphics
         public static void Fill(Surface surface, Rect r, int color)
         {
             r = new Rect(r.Left, r.Top, r.Right, r.Bottom);
-            r.Clip(surface.Width, surface.Height);
+            r.Clip((short) surface.Width, (short) surface.Height);
 
             if (!r.IsValid)
                 return;
@@ -299,11 +299,11 @@ namespace NScumm.Scumm.Graphics
             }
         }
 
-        public static void Fill(byte[] dst, int dstPitch, byte color, int w, int h)
+        public static void Fill(BytePtr dst, int dstPitch, byte color, int w, int h)
         {
             if (w == dstPitch)
             {
-                for (var i = 0; i < dst.Length; i++)
+                for (var i = 0; i < dst.Data.Length-dst.Offset; i++)
                 {
                     dst[i] = color;
                 }

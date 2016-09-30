@@ -16,6 +16,8 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using NScumm.Sci.Engine;
+
 namespace NScumm.Sci.Graphics
 {
     /// <summary>
@@ -23,5 +25,11 @@ namespace NScumm.Sci.Graphics
     /// </summary>
     internal class GfxPaint32
     {
+        private SegManager _segMan;
+
+        public GfxPaint32(SegManager segMan)
+        {
+            _segMan = segMan;
+        }
     }
 }

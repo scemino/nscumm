@@ -841,7 +841,7 @@ namespace NScumm.Sword1
                             for (uint x = 0; x < thumb.Width; ++x)
                             {
                                 output.WriteUInt16BigEndian(pixels[0]);
-                                pixels.Offset += 2;
+                                pixels.Data.Offset += 2;
                             }
                         }
                         break;
@@ -888,9 +888,9 @@ namespace NScumm.Sword1
                 palette = _system.GraphicsManager.GetPalette();
             }
 
-            for (uint y = 0; y < screen.Height; ++y)
+            for (int y = 0; y < screen.Height; ++y)
             {
-                for (uint x = 0; x < screen.Width; ++x)
+                for (int x = 0; x < screen.Width; ++x)
                 {
                     Color c = new Color();
                     if (screenBpp == 1)
@@ -900,14 +900,14 @@ namespace NScumm.Sword1
                     }
                     else if (screenBpp == 2)
                     {
-                        ushort col = screen.Pixels.ToUInt16((int)(x * 2 + y * 2 * screen.Width));
+                        ushort col = screen.Pixels.ToUInt16(x * 2 + y * 2 * screen.Width);
                         byte r, g, b;
                         ColorHelper.ColorToRGB(col, out r, out g, out b);
                         c = Color.FromRgb(r, g, b);
                     }
 
                     var colDst = ColorHelper.RGBToColor((byte)c.R, (byte)c.G, (byte)c.B);
-                    surf.Pixels.WriteUInt16((int)(x * 2 + y * 2 * screen.Width), colDst);
+                    surf.Pixels.WriteUInt16(x * 2 + y * 2 * screen.Width, colDst);
                 }
             }
 
@@ -936,7 +936,7 @@ namespace NScumm.Sword1
                 height = (int)ThumbnailSize.ThumbnailHeight2;
             }
 
-            var output = new Surface((int)ThumbnailSize.ThumbnailWidth, height, PixelFormat.Rgb16, false);
+            var output = new Surface((int)ThumbnailSize.ThumbnailWidth, (ushort) height, PixelFormat.Rgb16, false);
             ScaleThumbnail(input, output);
 
             return output;

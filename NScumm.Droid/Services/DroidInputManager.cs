@@ -53,7 +53,7 @@ namespace NScumm.Droid.Services
 
         public Point GetMousePosition()
         {
-            return new Point((int)_x, (int)_y);
+            return new Point((short)_x, (short)_y);
         }
 
         public ScummInputState GetState()

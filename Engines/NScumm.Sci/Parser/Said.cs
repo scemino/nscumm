@@ -22,7 +22,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Parser
 {
-    enum SaidToken
+    internal enum SaidToken
     {
         COMMA = 0xF000,
         AMP = 0xF100,
@@ -37,13 +37,13 @@ namespace NScumm.Sci.Parser
         TERM = 0xFF00
     }
 
-    enum SaidWord
+    internal enum SaidWord
     {
         NONE = 0x0ffe,
         ANY = 0x0fff
     }
 
-    enum ScanSaidType
+    internal enum ScanSaidType
     {
         AND = 0,
         OR = 1
@@ -979,7 +979,7 @@ namespace NScumm.Sci.Parser
 
     */
 
-        static bool said_attach_subtree(ParseTreeNode pos, int major, int minor,
+        private static bool said_attach_subtree(ParseTreeNode pos, int major, int minor,
                                         ParseTreeNode subtree)
         {
             bool retval = true;

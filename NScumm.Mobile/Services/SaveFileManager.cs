@@ -61,9 +61,13 @@ namespace NScumm.Mobile.Services
                 "SaveGames");
         }
 
-        public void RemoveSavefile(string name)
+        public bool RemoveSavefile(string name)
         {
-            File.Delete(Path.Combine(GetSavePath(), name));
+            var path = Path.Combine(GetSavePath(), name);
+            var exists = File.Exists(path);
+            if(exists)
+                File.Delete(path);
+            return exists;
         }
 
         public bool RenameSavefile(string oldName, string newName)

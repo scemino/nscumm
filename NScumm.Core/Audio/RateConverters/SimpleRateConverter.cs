@@ -49,7 +49,7 @@ namespace NScumm.Core.Audio
             this.stereo = stereo;
             this.reverseStereo = reverseStereo;
 
-            if ((inrate % outrate) != 0)
+            if (inrate % outrate != 0)
             {
                 throw new ArgumentException("Input rate must be a multiple of output rate to use rate effect", "inrate");
             }
@@ -71,7 +71,7 @@ namespace NScumm.Core.Audio
             inLen = 0;
         }
 
-        public int Flow(IAudioStream input, short[] obuf, int count, int volLeft, int volRight)
+        public int Flow(IAudioStream input, Ptr<short> obuf, int count, int volLeft, int volRight)
         {
             int pos = 0;
             int oend = count * 2;
@@ -89,26 +89,28 @@ namespace NScumm.Core.Audio
                         if (inLen <= 0)
                             return pos / 2;
                     }
-                    inLen -= (stereo ? 2 : 1);
+                    inLen -= stereo ? 2 : 1;
                     opos--;
                     if (opos >= 0)
                     {
-                        inPtr += (stereo ? 2 : 1);
+                        inPtr += stereo ? 2 : 1;
                     }
                 } while (opos >= 0);
 
                 short out0, out1;
                 out0 = inBuf[inPtr++];
-                out1 = (stereo ? inBuf[inPtr++] : out0);
+                out1 = stereo ? inBuf[inPtr++] : out0;
 
                 // Increment output position
                 opos += oposInc;
 
                 // output left channel
-                RateHelper.ClampedAdd(ref obuf[reverseStereo ? 1 : 0], (out0 * (int)volLeft) / Mixer.MaxMixerVolume);
+                obuf[reverseStereo ? 1 : 0]
+                 = RateHelper.ClampedAdd(obuf[reverseStereo ? 1 : 0], out0 * volLeft / Mixer.MaxMixerVolume);
 
                 // output right channel
-                RateHelper.ClampedAdd(ref obuf[(reverseStereo ? 1 : 0) ^ 1], (out1 * (int)volRight) / Mixer.MaxMixerVolume);
+                obuf[(reverseStereo ? 1 : 0) ^ 1]
+                = RateHelper.ClampedAdd(obuf[(reverseStereo ? 1 : 0) ^ 1], out1 * volRight / Mixer.MaxMixerVolume);
 
                 pos += 2;
             }

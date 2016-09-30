@@ -18,12 +18,13 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
-using NScumm.Core.Graphics;
 using System.IO;
+using NScumm.Core.Graphics;
 using D = NScumm.Core.DebugHelper;
 
-namespace NScumm.Core
+namespace NScumm.Core.Image
 {
 	public class PCXDecoder
 	{
@@ -81,7 +82,7 @@ namespace NScumm.Core
 			stream.Seek (60, SeekOrigin.Current);	// PaletteInfo, HscreenSize, VscreenSize, Filler
 
 			byte[] scanLine = new byte[bytesPerscanLine];
-			byte[] dst;
+			BytePtr dst;
 			int dstPos = 0;
 			int x, y;
 
@@ -90,7 +91,7 @@ namespace NScumm.Core
 				dst = Surface.Pixels;
 
 				for (y = 0; y < height; y++) {
-					DecodeRLE (br, scanLine, bytesPerscanLine, compressed);
+					DecodeRle (br, scanLine, bytesPerscanLine, compressed);
 
 					for (x = 0; x < width; x++) {
 						byte b = scanLine [x];
@@ -107,8 +108,8 @@ namespace NScumm.Core
 				dst = Surface.Pixels;
 
 				for (y = 0; y < height; y++, dstPos += Surface.Pitch) {
-					DecodeRLE (br, scanLine, bytesPerscanLine, compressed);
-					Array.Copy (scanLine, 0, dst, dstPos, width);
+					DecodeRle (br, scanLine, bytesPerscanLine, compressed);
+					Array.Copy (scanLine, 0, dst.Data, dst.Offset + dstPos, width);
 				}
 
 				if (version == 5) {
@@ -128,7 +129,7 @@ namespace NScumm.Core
 				dst = Surface.Pixels;
 
 				for (y = 0; y < height; y++, dstPos += Surface.Pitch) {
-					DecodeRLE (br, scanLine, bytesPerscanLine, compressed);
+					DecodeRle (br, scanLine, bytesPerscanLine, compressed);
 
 					for (x = 0; x < width; x++) {
 						int m = 0x80 >> (x & 7), v = 0;
@@ -148,15 +149,14 @@ namespace NScumm.Core
 			return true;
 		}
 
-		private void DecodeRLE (BinaryReader stream, byte[] dst, int bytesPerscanLine, bool compressed)
+		private static void DecodeRle (BinaryReader stream, byte[] dst, int bytesPerscanLine, bool compressed)
 		{
 			var i = 0;
-			byte run, value;
 
-			if (compressed) {
+		    if (compressed) {
 				while (i < bytesPerscanLine) {
-					run = 1;
-					value = stream.ReadByte ();
+					byte run = 1;
+					var value = stream.ReadByte ();
 					if (value >= 0xc0) {
 						run = (byte)(value & 0x3f);
 						value = stream.ReadByte ();

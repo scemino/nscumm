@@ -742,7 +742,7 @@ namespace NScumm.Sky
             int x = target.Core.xcood - TOP_LEFT_X;
             int y = target.Core.ycood - TOP_LEFT_Y;
             // TODO: Make the box size change based on the object that has the focus
-            _skyScreen.SetFocusRectangle(new Rect(x, y, 192, 128));
+            _skyScreen.SetFocusRectangle(new Rect((short) x, (short) y, 192, 128));
 
 
             if (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.AllowText) || !speechFileFound)

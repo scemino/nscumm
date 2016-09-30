@@ -266,13 +266,13 @@ namespace NScumm.Scumm
             {
                 Variables[VariableCameraMinY.Value] = ScreenHeight / 2;
                 Variables[VariableCameraMaxY.Value] = roomData.Header.Height - (ScreenHeight / 2);
-                SetCameraAt(new Point((ScreenWidth / 2), (ScreenHeight / 2)));
+                SetCameraAt(new Point((short) (ScreenWidth / 2), (short) (ScreenHeight / 2)));
             }
             else
             {
                 _camera.Mode = CameraMode.Normal;
-                _camera.CurrentPosition.X = _camera.DestinationPosition.X = (ScreenWidth / 2);
-                _camera.CurrentPosition.Y = _camera.DestinationPosition.Y = (ScreenHeight / 2);
+                _camera.CurrentPosition.X = _camera.DestinationPosition.X = (short) (ScreenWidth / 2);
+                _camera.CurrentPosition.Y = _camera.DestinationPosition.Y = (short) (ScreenHeight / 2);
             }
 
             if (_roomResource == 0)

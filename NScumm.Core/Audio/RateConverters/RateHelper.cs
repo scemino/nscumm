@@ -40,6 +40,19 @@ namespace NScumm.Core.Audio
             a = (short)val;
         }
 
+        public static short ClampedAdd(short a, int b)
+        {
+            ClampedAdd(ref a,b);
+            return a;
+        }
+
+        public static void ClampedAdd(ref Ptr<short> a, int b)
+        {
+            short tmp = a.Value;
+            ClampedAdd(ref tmp, b);
+            a.Value = tmp;
+        }
+
         public static IRateConverter MakeRateConverter(int inrate, int outrate, bool stereo, bool reverseStereo)
         {
             if (inrate != outrate)

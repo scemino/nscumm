@@ -28,7 +28,7 @@ namespace NScumm.Droid.Services
 {
     internal class GfxManager : IGraphicsManager
     {
-        private EditableSurfaceView _view;
+        private readonly EditableSurfaceView _view;
         private Color[] _palColor;
         private Vector2 _hotspot;
 
@@ -74,26 +74,26 @@ namespace NScumm.Droid.Services
             throw new NotImplementedException();
         }
 
-        public void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int width, int height)
+        public void CopyRectToScreen(BytePtr buffer, int sourceStride, int x, int y, int width, int height)
         {
             CopyRectToScreen(buffer, 0, sourceStride, x, y, width, height);
         }
 
-        public void CopyRectToScreen(byte[] buffer, int startOffset, int sourceStride, int x, int y, int width, int height)
+        public void CopyRectToScreen(BytePtr buffer, int startOffset, int sourceStride, int x, int y, int width, int height)
         {
             var w = Bounds.Width;
             for (int h = 0; h < height; h++)
             {
-                Array.Copy(buffer, startOffset + h * sourceStride, Pixels, x + (y + h) * w, width);
+                Array.Copy(buffer.Data, buffer.Offset+ startOffset + h * sourceStride, Pixels, x + (y + h) * w, width);
             }
         }
 
-        public void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height)
+        public void CopyRectToScreen(BytePtr buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height)
         {
             var w = Bounds.Width;
             for (int h = 0; h < height; h++)
             {
-                Array.Copy(buffer, x + (h + y) * sourceStride, Pixels, dstX + (dstY + h) * w, width);
+                Array.Copy(buffer.Data, buffer.Offset + x + (h + y) * sourceStride, Pixels, dstX + (dstY + h) * w, width);
             }
         }
 
@@ -107,13 +107,13 @@ namespace NScumm.Droid.Services
             return _palColor;
         }
 
-        public void SetCursor(byte[] pixels, int width, int height, Point hotspot)
+        public void SetCursor(BytePtr pixels, int width, int height, Point hotspot)
         {
             SetCursor(pixels, 0, width, height, hotspot, 0xFF);
 
         }
 
-        public void SetCursor(byte[] pixels, int offset, int width, int height, Point hotspot, int keyColor)
+        public void SetCursor(BytePtr pixels, int offset, int width, int height, Point hotspot, int keyColor)
         {
             _hotspot = new Vector2(hotspot.X, hotspot.Y);
             _view._pixelsCursor = new byte[width * height * 4];

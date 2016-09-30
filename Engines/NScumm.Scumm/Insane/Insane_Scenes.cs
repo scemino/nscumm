@@ -21,6 +21,7 @@
 
 using System;
 using System.Diagnostics;
+using NScumm.Core;
 using NScumm.Scumm.IO;
 
 namespace NScumm.Scumm.Insane
@@ -221,7 +222,7 @@ namespace NScumm.Scumm.Insane
             _vm.Sound.StopAllSounds(); // IMUSE_StopAllSounds();
         }
 
-        public void ProcPostRendering(byte[] renderBitmap, int codecparam, int setupsan12,
+        public void ProcPostRendering(BytePtr renderBitmap, int codecparam, int setupsan12,
                                       int setupsan13, int curFrame, int maxFrame)
         {
             int tmpSnd;
@@ -410,7 +411,7 @@ namespace NScumm.Scumm.Insane
             _tiresRustle = false;
         }
 
-        void PostCaseMore(byte[] renderBitmap, int codecparam, int setupsan12, int setupsan13, int curFrame, int maxFrame)
+        void PostCaseMore(BytePtr renderBitmap, int codecparam, int setupsan12, int setupsan13, int curFrame, int maxFrame)
         {
             if (_actor[0].weapon <= 7)
             {
@@ -419,7 +420,7 @@ namespace NScumm.Scumm.Insane
             }
         }
 
-        void PostCase0(byte[] renderBitmap, int codecparam, int setupsan12,
+        void PostCase0(BytePtr renderBitmap, int codecparam, int setupsan12,
                        int setupsan13, int curFrame, int maxFrame)
         {
             TurnBen(true);
@@ -438,7 +439,7 @@ namespace NScumm.Scumm.Insane
             _continueFrame1 = curFrame;
         }
 
-        void PostCase1(byte[] renderBitmap, int codecparam, int setupsan12,
+        void PostCase1(BytePtr renderBitmap, int codecparam, int setupsan12,
                        int setupsan13, int curFrame, int maxFrame)
         {
 
@@ -455,7 +456,7 @@ namespace NScumm.Scumm.Insane
             _roadStop = false;
         }
 
-        void PostCase2(byte[] renderBitmap, int codecparam, int setupsan12,
+        void PostCase2(BytePtr renderBitmap, int codecparam, int setupsan12,
                        int setupsan13, int curFrame, int maxFrame)
         {
             TurnBen(_battleScene);
@@ -473,7 +474,7 @@ namespace NScumm.Scumm.Insane
             _continueFrame = curFrame;
         }
 
-        void PostCase3(byte[] renderBitmap, int codecparam, int setupsan12,
+        void PostCase3(BytePtr renderBitmap, int codecparam, int setupsan12,
                        int setupsan13, int curFrame, int maxFrame)
         {
             TurnBen(true);
@@ -532,7 +533,7 @@ namespace NScumm.Scumm.Insane
             _iactSceneId = 0;
         }
 
-        void PostCase5(byte[] renderBitmap, int codecparam, int setupsan12,
+        void PostCase5(BytePtr renderBitmap, int codecparam, int setupsan12,
                        int setupsan13, int curFrame, int maxFrame)
         {
             TurnBen(true);
@@ -576,7 +577,7 @@ namespace NScumm.Scumm.Insane
             _iactSceneId = 0;
         }
 
-        void PostCase6(byte[] renderBitmap, int codecparam, int setupsan12,
+        void PostCase6(BytePtr renderBitmap, int codecparam, int setupsan12,
                        int setupsan13, int curFrame, int maxFrame)
         {
 
@@ -599,7 +600,7 @@ namespace NScumm.Scumm.Insane
             _roadStop = false;
         }
 
-        void PostCase8(byte[] renderBitmap, int codecparam, int setupsan12,
+        void PostCase8(BytePtr renderBitmap, int codecparam, int setupsan12,
                        int setupsan13, int curFrame, int maxFrame)
         {
             if (curFrame >= maxFrame && !_needSceneSwitch)
@@ -636,7 +637,7 @@ namespace NScumm.Scumm.Insane
             _roadStop = false;
         }
 
-        void PostCase9(byte[] renderBitmap, int codecparam, int setupsan12,
+        void PostCase9(BytePtr renderBitmap, int codecparam, int setupsan12,
                        int setupsan13, int curFrame, int maxFrame)
         {
             if (curFrame >= maxFrame && !_needSceneSwitch)
@@ -649,7 +650,7 @@ namespace NScumm.Scumm.Insane
             _roadStop = false;
         }
 
-        void PostCase10(byte[] renderBitmap, int codecparam, int setupsan12,
+        void PostCase10(BytePtr renderBitmap, int codecparam, int setupsan12,
                         int setupsan13, int curFrame, int maxFrame)
         {
             if (curFrame >= maxFrame && !_needSceneSwitch)
@@ -705,7 +706,7 @@ namespace NScumm.Scumm.Insane
             _roadStop = false;
         }
 
-        void PostCase11(byte[] renderBitmap, int codecparam, int setupsan12,
+        void PostCase11(BytePtr renderBitmap, int codecparam, int setupsan12,
                         int setupsan13, int curFrame, int maxFrame)
         {
             if (curFrame >= maxFrame && !_needSceneSwitch)
@@ -727,7 +728,7 @@ namespace NScumm.Scumm.Insane
             _roadStop = false;
         }
 
-        void PostCase12(byte[] renderBitmap, int codecparam, int setupsan12,
+        void PostCase12(BytePtr renderBitmap, int codecparam, int setupsan12,
                         int setupsan13, int curFrame, int maxFrame)
         {
             if (_actor[1].y <= 200)
@@ -823,7 +824,7 @@ namespace NScumm.Scumm.Insane
             _continueFrame = curFrame;
         }
 
-        void PostCase14(byte[] renderBitmap, int codecparam, int setupsan12,
+        void PostCase14(BytePtr renderBitmap, int codecparam, int setupsan12,
                         int setupsan13, int curFrame, int maxFrame)
         {
             if (curFrame >= maxFrame)
@@ -854,7 +855,7 @@ namespace NScumm.Scumm.Insane
             _roadStop = false;
         }
 
-        void PostCase16(byte[] renderBitmap, int codecparam, int setupsan12,
+        void PostCase16(BytePtr renderBitmap, int codecparam, int setupsan12,
                         int setupsan13, int curFrame, int maxFrame)
         {
             int tmp;
@@ -899,7 +900,7 @@ namespace NScumm.Scumm.Insane
                 _counter1 = 0;
         }
 
-        void PostCase17(byte[] renderBitmap, int codecparam, int setupsan12,
+        void PostCase17(BytePtr renderBitmap, int codecparam, int setupsan12,
                         int setupsan13, int curFrame, int maxFrame)
         {
             if (curFrame >= maxFrame && !_needSceneSwitch)
@@ -921,7 +922,7 @@ namespace NScumm.Scumm.Insane
             _roadStop = false;
         }
 
-        void PostCase20(byte[] renderBitmap, int codecparam, int setupsan12,
+        void PostCase20(BytePtr renderBitmap, int codecparam, int setupsan12,
                         int setupsan13, int curFrame, int maxFrame)
         {
             TurnBen(true);
@@ -936,7 +937,7 @@ namespace NScumm.Scumm.Insane
             _continueFrame = curFrame;
         }
 
-        void PostCase23(byte[] renderBitmap, int codecparam, int setupsan12,
+        void PostCase23(BytePtr renderBitmap, int codecparam, int setupsan12,
                         int setupsan13, int curFrame, int maxFrame)
         {
             if (curFrame >= maxFrame)
@@ -957,7 +958,7 @@ namespace NScumm.Scumm.Insane
             _roadStop = false;
         }
 
-        void PostCaseAll(byte[] renderBitmap, int codecparam, int setupsan12, int setupsan13, int curFrame, int maxFrame)
+        void PostCaseAll(BytePtr renderBitmap, int codecparam, int setupsan12, int setupsan13, int curFrame, int maxFrame)
         {
             var tsceneProp = _sceneProp[_currScenePropIdx + _currScenePropSubIdx];
             if (tsceneProp.actor != -1)

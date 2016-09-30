@@ -30,15 +30,15 @@ namespace NScumm.Sci.Sound.Drivers
     {
         public const int Voices = 4;
 
-        const int kModeLoop = 1 << 0; // Instrument looping flag
-        const int kModePitch = 1 << 1; // Instrument pitch changes flag
+        private const int kModeLoop = 1 << 0; // Instrument looping flag
+        private const int kModePitch = 1 << 1; // Instrument pitch changes flag
 
-        const int Channels = 10;
-        const int BaseFreq = 20000; // Samplerate of the instrument bank
-        const int PanLeft = 91;
-        const int PanRight = 164;
+        private const int Channels = 10;
+        private const int BaseFreq = 20000; // Samplerate of the instrument bank
+        private const int PanLeft = 91;
+        private const int PanRight = 164;
 
-        class Channel
+        private class Channel
         {
             public int instrument;
             public int volume;
@@ -46,14 +46,14 @@ namespace NScumm.Sci.Sound.Drivers
             public ushort pitch;
         }
 
-        class Envelope
+        private class Envelope
         {
             public int length; // Phase period length in samples
             public int delta; // Velocity delta per period
             public int target; // Target velocity
         }
 
-        class Voice
+        private class Voice
         {
             public int instrument;
             public int note;
@@ -68,7 +68,7 @@ namespace NScumm.Sci.Sound.Drivers
             public int rate;
         }
 
-        class InstrumentSample
+        private class InstrumentSample
         {
             public string name;
             public int mode;
@@ -86,30 +86,30 @@ namespace NScumm.Sci.Sound.Drivers
             public short fixedNote;
         }
 
-        class Instrument : List<InstrumentSample>
+        private class Instrument : List<InstrumentSample>
         {
             public string name;
         }
 
-        class Bank
+        private class Bank
         {
             public string name;
             public int size;
             public Instrument[] instruments;
         }
 
-        bool _isSci1;
-        bool _isSci1Early; // KQ1/MUMG Amiga, patch 5
-        bool _playSwitch;
-        int _masterVolume;
-        int _frequency;
-        Envelope _envDecay = new Envelope();
-        Bank _bank; // Instrument bank
-        double[] _freqTable = new double[48];
+        private bool _isSci1;
+        private bool _isSci1Early; // KQ1/MUMG Amiga, patch 5
+        private bool _playSwitch;
+        private int _masterVolume;
+        private int _frequency;
+        private Envelope _envDecay = new Envelope();
+        private Bank _bank; // Instrument bank
+        private double[] _freqTable = new double[48];
 
-        Channel[] _channels = new Channel[MidiPlayer.MIDI_CHANNELS];
+        private Channel[] _channels = new Channel[MidiPlayer.MIDI_CHANNELS];
         /* Internal channels */
-        Voice[] _voices = new Voice[Channels];
+        private Voice[] _voices = new Voice[Channels];
 
 
         public MidiDriver_AmigaMac(IMixer mixer) : base(mixer)
@@ -1064,7 +1064,7 @@ namespace NScumm.Sci.Sound.Drivers
         }
     }
 
-    class MidiPlayer_AmigaMac : MidiPlayer
+    internal class MidiPlayer_AmigaMac : MidiPlayer
     {
         public MidiPlayer_AmigaMac(SciVersion version) : base(version)
         {

@@ -69,15 +69,15 @@ namespace NScumm.Scumm
         // only interpreted if SET_IFACE is set
         IFaceVerbs = 0x80,
         // only interpreted if SET_IFACE is set
-        IFaceAll = (IFaceSentence | IFaceInventory | IFaceVerbs)
+        IFaceAll = IFaceSentence | IFaceInventory | IFaceVerbs
     }
 
     public partial class ScummEngine2 : ScummEngine
     {
-        const int SENTENCE_SCRIPT = 2;
-        const int InventoryUpArrow = 4;
-        const int InventoryDownArrow = 5;
-        const int SentenceLine = 6;
+        private const int SENTENCE_SCRIPT = 2;
+        private const int InventoryUpArrow = 4;
+        private const int InventoryDownArrow = 5;
+        private const int SentenceLine = 6;
 
         public int? VariableMachineSpeed;
         public int? VariableNumActor;
@@ -97,18 +97,18 @@ namespace NScumm.Scumm
         public int? VariableClickObject;
 
         protected string _sentenceBuf;
-        bool _completeScreenRedraw;
-        sbyte _mouseOverBoxV2;
+        private bool _completeScreenRedraw;
+        private sbyte _mouseOverBoxV2;
         protected ushort _inventoryOffset;
 
-        struct V2MouseoverBox
+        private struct V2MouseoverBox
         {
             public Rect rect;
             public byte color;
             public byte hicolor;
         }
 
-        V2MouseoverBox[] _mouseOverBoxesV2 = new V2MouseoverBox[7];
+        private V2MouseoverBox[] _mouseOverBoxesV2 = new V2MouseoverBox[7];
 
         public ScummEngine2(GameSettings game, ISystem system, IMixer mixer)
             : base(game, system, mixer)
@@ -520,14 +520,14 @@ namespace NScumm.Scumm
             _opCodes[0xff] = IfState01;
         }
 
-        static readonly byte[] default_v1_cursor_colors =
+        private static readonly byte[] default_v1_cursor_colors =
             {
                 1, 1, 12, 11
             };
 
         protected override void SetBuiltinCursor(int idx)
         {
-            var color = (Game.Version <= 1) ? default_v1_cursor_colors[idx] : defaultCursorColors[idx];
+            var color = Game.Version <= 1 ? default_v1_cursor_colors[idx] : defaultCursorColors[idx];
 
             byte[] pixels;
             if (Game.Platform == Platform.Amiga)
@@ -559,8 +559,8 @@ namespace NScumm.Scumm
                 {
                     pixels[offs - _cursor.Width * i - (3 + i)] = color;
                     pixels[offs + _cursor.Width * i - (3 + i)] = color;
-                    pixels[offs - _cursor.Width * i + (3 + i)] = color;
-                    pixels[offs + _cursor.Width * i + (3 + i)] = color;
+                    pixels[offs - _cursor.Width * i + 3 + i] = color;
+                    pixels[offs + _cursor.Width * i + 3 + i] = color;
                     pixels[offs - _cursor.Width * (3 + i) - i] = color;
                     pixels[offs + _cursor.Width * (3 + i) - i] = color;
                     pixels[offs - _cursor.Width * (3 + i) + i] = color;
@@ -612,10 +612,10 @@ namespace NScumm.Scumm
                 pixels[offs - _cursor.Width + 7] = color;
                 pixels[offs + _cursor.Width - 7] = color;
                 pixels[offs + _cursor.Width + 7] = color;
-                pixels[offs - (_cursor.Width * 5) - 1] = color;
-                pixels[offs - (_cursor.Width * 5) + 1] = color;
-                pixels[offs + (_cursor.Width * 5) - 1] = color;
-                pixels[offs + (_cursor.Width * 5) + 1] = color;
+                pixels[offs - _cursor.Width * 5 - 1] = color;
+                pixels[offs - _cursor.Width * 5 + 1] = color;
+                pixels[offs + _cursor.Width * 5 - 1] = color;
+                pixels[offs + _cursor.Width * 5 + 1] = color;
             }
 
             _gfxManager.SetCursor(pixels, _cursor.Width, _cursor.Height, _cursor.Hotspot);
@@ -761,7 +761,7 @@ namespace NScumm.Scumm
                     else
                     {
                         // Scene was clicked
-                        RunInputScript((zone == MainVirtScreen) ? ClickArea.Scene : ClickArea.Verb, 0, code);
+                        RunInputScript(zone == MainVirtScreen ? ClickArea.Scene : ClickArea.Verb, 0, code);
                     }
                 }
             }
@@ -925,8 +925,8 @@ namespace NScumm.Scumm
             if (Game.Version < 7)
             {
                 Camera.Mode = CameraMode.Normal;
-                Camera.CurrentPosition.X = at;
-                SetCameraAt(new Point(at, 0));
+                Camera.CurrentPosition.X = (short) at;
+                SetCameraAt(new Point((short) at, 0));
                 Camera.MovingToActor = false;
             }
         }
@@ -982,7 +982,7 @@ namespace NScumm.Scumm
                         if (Game.Version <= 2)
                         {
                             // use generic name
-                            name = string.Format("Game {0}", (char)('A' + slot - 1));
+                            name = $"Game {(char) ('A' + slot - 1)}";
                         }
                         else
                         {
@@ -1006,7 +1006,7 @@ namespace NScumm.Scumm
                         var availSaves = ListSavegames(100);
                         var filename = MakeSavegameName(slot, false);
                         var directory = ServiceLocator.FileStorage.GetDirectoryName(Game.Path);
-                        if (availSaves[slot] && (ServiceLocator.FileStorage.FileExists(ServiceLocator.FileStorage.Combine(directory, filename))))
+                        if (availSaves[slot] && ServiceLocator.FileStorage.FileExists(ServiceLocator.FileStorage.Combine(directory, filename)))
                         {
                             result = 6; // save file exists
                         }
@@ -1211,12 +1211,12 @@ namespace NScumm.Scumm
             }
             if (Game.Version <= 3)
             {
-                var abr = a.AdjustXYToBeInBox(new Point(x, y));
+                var abr = a.AdjustXYToBeInBox(new Point((short) x, (short) y));
                 x = abr.Position.X;
                 y = abr.Position.Y;
             }
 
-            a.StartWalk(new Point(x, y), -1);
+            a.StartWalk(new Point((short) x, (short) y), -1);
         }
 
         protected void FaceActor()
@@ -1314,10 +1314,10 @@ namespace NScumm.Scumm
                     b = ReadByte();
                 SetResult(b);
                 _resultVarIndex++;
-            } while ((--a) > 0);
+            } while (--a > 0);
         }
 
-        void InitV2MouseOver()
+        private void InitV2MouseOver()
         {
             int i;
             int arrow_color, color, hi_color;
@@ -1343,8 +1343,8 @@ namespace NScumm.Scumm
             {
                 _mouseOverBoxesV2[2 * i].rect.Left = 0;
                 _mouseOverBoxesV2[2 * i].rect.Right = 144;
-                _mouseOverBoxesV2[2 * i].rect.Top = 32 + 8 * i;
-                _mouseOverBoxesV2[2 * i].rect.Bottom = _mouseOverBoxesV2[2 * i].rect.Top + 8;
+                _mouseOverBoxesV2[2 * i].rect.Top = (short) (32 + 8 * i);
+                _mouseOverBoxesV2[2 * i].rect.Bottom = (short) (_mouseOverBoxesV2[2 * i].rect.Top + 8);
 
                 _mouseOverBoxesV2[2 * i].color = (byte)color;
                 _mouseOverBoxesV2[2 * i].hicolor = (byte)hi_color;
@@ -1387,7 +1387,7 @@ namespace NScumm.Scumm
             _mouseOverBoxesV2[SentenceLine].hicolor = (byte)hi_color;
         }
 
-        void GetObjPreposition()
+        private void GetObjPreposition()
         {
             GetResult();
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -1403,14 +1403,14 @@ namespace NScumm.Scumm
             }
         }
 
-        void GetActorWalkBox()
+        private void GetActorWalkBox()
         {
             GetResult();
             var a = Actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
             SetResult(a.IsInCurrentRoom ? a.Walkbox : 0xFF);
         }
 
-        void GetClosestObjActor()
+        private void GetClosestObjActor()
         {
             int obj;
             int act;
@@ -1440,7 +1440,7 @@ namespace NScumm.Scumm
             SetResult(closest_obj);
         }
 
-        void EndCutscene()
+        private void EndCutscene()
         {
             cutScene.StackPointer = 0;
 
@@ -1453,7 +1453,7 @@ namespace NScumm.Scumm
             // Reset user state to values before cutscene
             SetUserState((UserStates)cutScene.Data[0].Data | UserStates.SetIFace | UserStates.SetCursor | UserStates.SetFreeze);
 
-            if ((Game.GameId == GameId.Maniac) /* && !(_game.platform == Common::kPlatformNES)*/)
+            if (Game.GameId == GameId.Maniac /* && !(_game.platform == Common::kPlatformNES)*/)
             {
                 Camera.Mode = (CameraMode)cutScene.Data[3].Data;
                 if (Camera.Mode == CameraMode.FollowActor)
@@ -1471,7 +1471,7 @@ namespace NScumm.Scumm
             }
         }
 
-        void WaitForMessage()
+        private void WaitForMessage()
         {
             if (Variables[VariableHaveMessage.Value] != 0)
             {
@@ -1480,7 +1480,7 @@ namespace NScumm.Scumm
             }
         }
 
-        void VerbOps()
+        private void VerbOps()
         {
             int verb = ReadByte();
             int slot, state;
@@ -1521,13 +1521,13 @@ namespace NScumm.Scumm
                                 } else*/
                         if (Game.Version == 1)
                         {
-                            vs.Color = (byte)((Game.GameId == GameId.Maniac && (Game.Features.HasFlag(GameFeatures.Demo))) ? 16 : 5);
+                            vs.Color = (byte)(Game.GameId == GameId.Maniac && Game.Features.HasFlag(GameFeatures.Demo) ? 16 : 5);
                             vs.HiColor = 7;
                             vs.DimColor = 11;
                         }
                         else
                         {
-                            vs.Color = (byte)((Game.GameId == GameId.Maniac && (Game.Features.HasFlag(GameFeatures.Demo))) ? 13 : 2);
+                            vs.Color = (byte)(Game.GameId == GameId.Maniac && Game.Features.HasFlag(GameFeatures.Demo) ? 13 : 2);
                             vs.HiColor = 14;
                             vs.DimColor = 8;
                         }
@@ -1540,8 +1540,8 @@ namespace NScumm.Scumm
                         vs.ImgIndex = 0;
                         vs.Prep = (byte)prep;
 
-                        vs.CurRect.Left = x;
-                        vs.CurRect.Top = y;
+                        vs.CurRect.Left = (short) x;
+                        vs.CurRect.Top = (short) y;
 
                         // FIXME: these keyboard map depends on the language of the game.
                         // E.g. a german keyboard has 'z' and 'y' swapped, while a french
@@ -1596,14 +1596,14 @@ namespace NScumm.Scumm
             }
         }
 
-        void PickupObject()
+        private void PickupObject()
         {
             int obj = GetVarOrDirectWord(OpCodeParameter.Param1);
 
             if (obj < 1)
             {
                 throw new InvalidOperationException(
-                    string.Format("pickupObject received invalid index {0} (script {1})", obj, Slots[CurrentScript].Number));
+                    $"pickupObject received invalid index {obj} (script {Slots[CurrentScript].Number})");
             }
 
             if (GetObjectIndex(obj) == -1)
@@ -1623,7 +1623,7 @@ namespace NScumm.Scumm
             //                Sound.AddSoundToQueue(51);    // play 'pickup' sound
         }
 
-        void WaitForSentence()
+        private void WaitForSentence()
         {
             if (SentenceNum == 0 && !IsScriptInUse(SENTENCE_SCRIPT))
                 return;
@@ -1632,7 +1632,7 @@ namespace NScumm.Scumm
             BreakHere();
         }
 
-        void SetActorElevation()
+        private void SetActorElevation()
         {
             int act = GetVarOrDirectByte(OpCodeParameter.Param1);
             int elevation = GetVarOrDirectByte(OpCodeParameter.Param2);
@@ -1641,7 +1641,7 @@ namespace NScumm.Scumm
             a.Elevation = elevation;
         }
 
-        void SwitchCostumeSet()
+        private void SwitchCostumeSet()
         {
             // NES version of maniac uses this to switch between the two
             // groups of costumes it has
@@ -1661,7 +1661,7 @@ namespace NScumm.Scumm
             //                Console.WriteLine("dummy invoked (opcode {0})", _opCode);
         }
 
-        void WaitForActor()
+        private void WaitForActor()
         {
             var a = Actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
             if (a.Moving != MoveFlags.None)
@@ -1678,7 +1678,7 @@ namespace NScumm.Scumm
             JumpRelative(b <= a);
         }
 
-        void WalkActorToObject()
+        private void WalkActorToObject()
         {
             int actor = GetVarOrDirectByte(OpCodeParameter.Param1);
             int obj = GetVarOrDirectWord(OpCodeParameter.Param2);
@@ -1701,7 +1701,7 @@ namespace NScumm.Scumm
             a.StartWalk(p, dir);
         }
 
-        void FindObject()
+        private void FindObject()
         {
             GetResult();
             int x = GetVarOrDirectByte(OpCodeParameter.Param1) * Actor2.V12_X_MULTIPLIER;
@@ -1714,7 +1714,7 @@ namespace NScumm.Scumm
             SetResult(obj);
         }
 
-        void CheckV2MouseOver(Point pos)
+        private void CheckV2MouseOver(Point pos)
         {
             var vs = VerbVirtScreen;
             Rect rect;
@@ -1789,7 +1789,7 @@ namespace NScumm.Scumm
             }
         }
 
-        void RedrawV2Inventory()
+        private void RedrawV2Inventory()
         {
             var vs = VerbVirtScreen;
             int i;
@@ -1804,10 +1804,10 @@ namespace NScumm.Scumm
                 return;
 
             // Clear on all invocations
-            inventoryBox.Top = vs.TopLine + inventoryArea;
-            inventoryBox.Bottom = vs.TopLine + vs.Height;
+            inventoryBox.Top = (short) (vs.TopLine + inventoryArea);
+            inventoryBox.Bottom = (short) (vs.TopLine + vs.Height);
             inventoryBox.Left = 0;
-            inventoryBox.Right = vs.Width;
+            inventoryBox.Right = (short) vs.Width;
             RestoreBackground(inventoryBox);
 
             String[1].Charset = 1;
@@ -1822,7 +1822,7 @@ namespace NScumm.Scumm
                     break;
 
                 String[1].Position = new Point(_mouseOverBoxesV2[i].rect.Left,
-                    _mouseOverBoxesV2[i].rect.Top + vs.TopLine);
+                    (short) (_mouseOverBoxesV2[i].rect.Top + vs.TopLine));
                 String[1].Right = (short)(_mouseOverBoxesV2[i].rect.Right - 1);
                 String[1].Color = _mouseOverBoxesV2[i].color;
 
@@ -1843,7 +1843,7 @@ namespace NScumm.Scumm
             {
                 String[1].Position = new Point(
                     _mouseOverBoxesV2[InventoryUpArrow].rect.Left,
-                    _mouseOverBoxesV2[InventoryUpArrow].rect.Top + vs.TopLine);
+                    (short) (_mouseOverBoxesV2[InventoryUpArrow].rect.Top + vs.TopLine));
                 String[1].Right = (short)(_mouseOverBoxesV2[InventoryUpArrow].rect.Right - 1);
                 String[1].Color = _mouseOverBoxesV2[InventoryUpArrow].color;
                 /*if (_game.platform == Common::kPlatformNES)
@@ -1857,7 +1857,7 @@ namespace NScumm.Scumm
             {
                 String[1].Position = new Point(
                     _mouseOverBoxesV2[InventoryDownArrow].rect.Left,
-                    _mouseOverBoxesV2[InventoryDownArrow].rect.Top + vs.TopLine);
+                    (short) (_mouseOverBoxesV2[InventoryDownArrow].rect.Top + vs.TopLine));
                 String[1].Right = (short)(_mouseOverBoxesV2[InventoryDownArrow].rect.Right - 1);
                 String[1].Color = _mouseOverBoxesV2[InventoryDownArrow].color;
                 /*if (Game.Platform == Platform.NES)
@@ -1913,7 +1913,7 @@ namespace NScumm.Scumm
             SetCameraAtEx(GetVarOrDirectByte(OpCodeParameter.Param1) * Actor2.V12_X_MULTIPLIER);
         }
 
-        void GetBitVar()
+        private void GetBitVar()
         {
             GetResult();
             var var = ReadWord();
@@ -1926,7 +1926,7 @@ namespace NScumm.Scumm
             SetResult((Variables[bit_var] & (1 << bit_offset)) != 0 ? 1 : 0);
         }
 
-        void IfClassOfIs()
+        private void IfClassOfIs()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             var clsop = GetVarOrDirectByte(OpCodeParameter.Param2);
@@ -1958,7 +1958,7 @@ namespace NScumm.Scumm
             var x = GetVarOrDirectByte(OpCodeParameter.Param2);
             var y = GetVarOrDirectByte(OpCodeParameter.Param3);
 
-            a.StartWalk(new Point(x, y), -1);
+            a.StartWalk(new Point((short) x, (short) y), -1);
         }
 
         protected virtual void IsLess()
@@ -1969,7 +1969,7 @@ namespace NScumm.Scumm
             JumpRelative(b < a);
         }
 
-        void ChainScript()
+        private void ChainScript()
         {
             var script = GetVarOrDirectByte(OpCodeParameter.Param1);
             StopScript(Slots[CurrentScript].Number);
@@ -1977,7 +1977,7 @@ namespace NScumm.Scumm
             RunScript(script, false, false, new int[0]);
         }
 
-        void SetBitVar()
+        private void SetBitVar()
         {
             var var = ReadWord();
             var a = GetVarOrDirectByte(OpCodeParameter.Param1);
@@ -1987,19 +1987,19 @@ namespace NScumm.Scumm
             bit_var >>= 4;
 
             if (GetVarOrDirectByte(OpCodeParameter.Param2) != 0)
-                Variables[bit_var] |= (1 << bit_offset);
+                Variables[bit_var] |= 1 << bit_offset;
             else
                 Variables[bit_var] &= ~(1 << bit_offset);
         }
 
-        void AddIndirect()
+        private void AddIndirect()
         {
             GetResultPosIndirect();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
             Variables[_resultVarIndex] += a;
         }
 
-        void SubIndirect()
+        private void SubIndirect()
         {
             GetResultPosIndirect();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -2030,7 +2030,7 @@ namespace NScumm.Scumm
             FetchScriptWord();
         }
 
-        void AssignVarByte()
+        private void AssignVarByte()
         {
             GetResult();
             SetResult(ReadByte());
@@ -2065,7 +2065,7 @@ namespace NScumm.Scumm
             BreakHere();
         }
 
-        void IfState01()
+        private void IfState01()
         {
             IfStateCommon(ObjectStateV2.Pickupable);
         }
@@ -2085,7 +2085,7 @@ namespace NScumm.Scumm
             IfStateCommon(ObjectStateV2.State8);
         }
 
-        void IfNotState01()
+        private void IfNotState01()
         {
             IfNotStateCommon(ObjectStateV2.Pickupable);
         }
@@ -2105,7 +2105,7 @@ namespace NScumm.Scumm
             IfNotStateCommon(ObjectStateV2.State8);
         }
 
-        void RoomOps()
+        private void RoomOps()
         {
             var a = GetVarOrDirectByte(OpCodeParameter.Param1);
             var b = GetVarOrDirectByte(OpCodeParameter.Param2);
@@ -2116,14 +2116,14 @@ namespace NScumm.Scumm
                 case 1:         // SO_ROOM_SCROLL
                     a *= 8;
                     b *= 8;
-                    if (a < (ScreenWidth / 2))
-                        a = (ScreenWidth / 2);
-                    if (b < (ScreenWidth / 2))
-                        b = (ScreenWidth / 2);
-                    if (a > roomData.Header.Width - (ScreenWidth / 2))
-                        a = roomData.Header.Width - (ScreenWidth / 2);
-                    if (b > roomData.Header.Width - (ScreenWidth / 2))
-                        b = roomData.Header.Width - (ScreenWidth / 2);
+                    if (a < ScreenWidth / 2)
+                        a = ScreenWidth / 2;
+                    if (b < ScreenWidth / 2)
+                        b = ScreenWidth / 2;
+                    if (a > roomData.Header.Width - ScreenWidth / 2)
+                        a = roomData.Header.Width - ScreenWidth / 2;
+                    if (b > roomData.Header.Width - ScreenWidth / 2)
+                        b = roomData.Header.Width - ScreenWidth / 2;
                     Variables[VariableCameraMinX.Value] = a;
                     Variables[VariableCameraMaxX.Value] = b;
                     break;
@@ -2144,7 +2144,7 @@ namespace NScumm.Scumm
             }
         }
 
-        void Lights()
+        private void Lights()
         {
             var a = GetVarOrDirectByte(OpCodeParameter.Param1);
             var b = ReadByte();
@@ -2205,7 +2205,7 @@ namespace NScumm.Scumm
             StopScriptCommon(GetVarOrDirectByte(OpCodeParameter.Param1));
         }
 
-        void CursorCommand()
+        private void CursorCommand()
         {   // TODO: Define the magic numbers
             var cmd = GetVarOrDirectWord(OpCodeParameter.Param1);
             var state = cmd >> 8;
@@ -2295,9 +2295,9 @@ namespace NScumm.Scumm
             RunScript(script, false, false, new int[0]);
         }
 
-        void Cutscene()
+        private void Cutscene()
         {
-            cutScene.Data[0].Data = ((int)_userState | (_userPut != 0 ? 16 : 0));
+            cutScene.Data[0].Data = (int)_userState | (_userPut != 0 ? 16 : 0);
             cutScene.Data[1].Data = Variables[VariableCursorState.Value];
             cutScene.Data[2].Data = CurrentRoom;
             cutScene.Data[3].Data = (int)Camera.Mode;
@@ -2352,9 +2352,9 @@ namespace NScumm.Scumm
 
             // Hide all verbs and inventory
             Rect rect;
-            rect.Top = VerbVirtScreen.TopLine;
-            rect.Bottom = VerbVirtScreen.TopLine + 8 * 88;
-            rect.Right = VerbVirtScreen.Width - 1;
+            rect.Top = (short) VerbVirtScreen.TopLine;
+            rect.Bottom = (short) (VerbVirtScreen.TopLine + 8 * 88);
+            rect.Right = (short) (VerbVirtScreen.Width - 1);
             //            if (_game.platform == Common::kPlatformNES)
             //            {
             //                rect.left = 16;
@@ -2370,7 +2370,7 @@ namespace NScumm.Scumm
             RunInventoryScript(1);
         }
 
-        void DoSentence()
+        private void DoSentence()
         {
             var a = GetVarOrDirectByte(OpCodeParameter.Param1);
             if (a == 0xFC)
@@ -2420,7 +2420,7 @@ namespace NScumm.Scumm
                         }
                         else
                         {
-                            isBackgroundScript = (st.Verb == 250);
+                            isBackgroundScript = st.Verb == 250;
                             isSpecialVerb = true;
                             st = Sentence[SentenceNum] = new Sentence(
                                 253,
@@ -2462,11 +2462,11 @@ namespace NScumm.Scumm
                     DrawSentence();
                     break;
                 default:
-                    throw new NotSupportedException(string.Format("DoSentence: unknown subopcode {0}", _opCode));
+                    throw new NotSupportedException($"DoSentence: unknown subopcode {_opCode}");
             }
         }
 
-        void DrawSentence()
+        private void DrawSentence()
         {
             Rect sentenceline;
 
@@ -2492,7 +2492,7 @@ namespace NScumm.Scumm
 
                 //                 For V1 games, the engine must compute the preposition.
                 //                 In all other Scumm versions, this is done by the sentence script.
-                if ((Game.GameId == GameId.Maniac && Game.Version == 1 /*&& !(Game.Platform == Platform.NES)*/) && (Variables[VariableSentencePreposition.Value] == 0))
+                if (Game.GameId == GameId.Maniac && Game.Version == 1 && (Variables[VariableSentencePreposition.Value] == 0))
                 {
                     if (Verbs[slot].Prep == 0xFF)
                     {
@@ -2520,7 +2520,7 @@ namespace NScumm.Scumm
             }
 
             String[2].Charset = 1;
-            String[2].Position = new Point(0, VerbVirtScreen.TopLine);
+            String[2].Position = new Point(0, (short) VerbVirtScreen.TopLine);
             String[2].Right = (short)(VerbVirtScreen.Width - 1);
             /*if (Game.Platform == Platform.NES) {
                 String[2].Position.X = 16;
@@ -2555,10 +2555,10 @@ namespace NScumm.Scumm
                 sentenceline.Right = _virtscr[kVerbVirtScreen].w - 1;
             } else*/
             {
-                sentenceline.Top = VerbVirtScreen.TopLine;
-                sentenceline.Bottom = VerbVirtScreen.TopLine + 8;
+                sentenceline.Top = (short) VerbVirtScreen.TopLine;
+                sentenceline.Bottom = (short) (VerbVirtScreen.TopLine + 8);
                 sentenceline.Left = 0;
-                sentenceline.Right = VerbVirtScreen.Width - 1;
+                sentenceline.Right = (short) (VerbVirtScreen.Width - 1);
             }
             RestoreBackground(sentenceline);
 
@@ -2609,10 +2609,10 @@ namespace NScumm.Scumm
             GetResult();
             var x = GetVarOrDirectByte(OpCodeParameter.Param1) * Actor2.V12_X_MULTIPLIER;
             var y = GetVarOrDirectByte(OpCodeParameter.Param2) * Actor2.V12_Y_MULTIPLIER;
-            SetResult(GetActorFromPos(new Point(x, y)));
+            SetResult(GetActorFromPos(new Point((short) x, (short) y)));
         }
 
-        void ActorOps()
+        private void ActorOps()
         {
             int act = GetVarOrDirectByte(OpCodeParameter.Param1);
             int arg = GetVarOrDirectByte(OpCodeParameter.Param2);
@@ -2654,13 +2654,13 @@ namespace NScumm.Scumm
                         a.TalkColor = (byte)arg;
                     break;
                 default:
-                    throw new NotSupportedException(string.Format("ActorOps: opcode {0} not yet supported", _opCode));
+                    throw new NotSupportedException($"ActorOps: opcode {_opCode} not yet supported");
             }
         }
 
         protected virtual void PanCameraTo()
         {
-            PanCameraToCore(new Point(GetVarOrDirectByte(OpCodeParameter.Param1) * Actor2.V12_X_MULTIPLIER, 0));
+            PanCameraToCore(new Point((short) (GetVarOrDirectByte(OpCodeParameter.Param1) * Actor2.V12_X_MULTIPLIER), 0));
         }
 
         protected void SetState04()
@@ -2683,12 +2683,12 @@ namespace NScumm.Scumm
             ClearStateCommon(ObjectStateV2.Untouchable);
         }
 
-        void SetState01()
+        private void SetState01()
         {
             SetStateCommon(ObjectStateV2.Pickupable);
         }
 
-        void ClearState01()
+        private void ClearState01()
         {
             ClearStateCommon(ObjectStateV2.Pickupable);
         }
@@ -2701,31 +2701,31 @@ namespace NScumm.Scumm
             ClearDrawObjectQueue();
         }
 
-        void IfStateCommon(ObjectStateV2 type)
+        private void IfStateCommon(ObjectStateV2 type)
         {
             var obj = GetActiveObject();
             JumpRelative((GetStateCore(obj) & (byte)type) != 0);
         }
 
-        void IfNotStateCommon(ObjectStateV2 type)
+        private void IfNotStateCommon(ObjectStateV2 type)
         {
             var obj = GetActiveObject();
             JumpRelative((GetStateCore(obj) & (byte)type) == 0);
         }
 
-        void SetStateCommon(ObjectStateV2 type)
+        private void SetStateCommon(ObjectStateV2 type)
         {
             var obj = GetActiveObject();
             PutState(obj, GetStateCore(obj) | (byte)type);
         }
 
-        void ClearStateCommon(ObjectStateV2 type)
+        private void ClearStateCommon(ObjectStateV2 type)
         {
             var obj = GetActiveObject();
             PutState(obj, GetStateCore(obj) & ~(byte)type);
         }
 
-        void PutActorAtObject()
+        private void PutActorAtObject()
         {
             Point p;
             var a = Actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
@@ -2744,7 +2744,7 @@ namespace NScumm.Scumm
             a.PutActor(p);
         }
 
-        void ResourceRoutines()
+        private void ResourceRoutines()
         {
 
             ResType[] resTypes =
@@ -2762,7 +2762,7 @@ namespace NScumm.Scumm
             int opcode = ReadByte();
 
             ResType type = ResType.Invalid;
-            if (0 <= (opcode >> 4) && (opcode >> 4) < resTypes.Length)
+            if (0 <= opcode >> 4 && opcode >> 4 < resTypes.Length)
                 type = resTypes[opcode >> 4];
 
             if ((opcode & 0x0f) == 0 || type == ResType.Invalid)
@@ -2800,7 +2800,7 @@ namespace NScumm.Scumm
             }
         }
 
-        void SetObjPreposition()
+        private void SetObjPreposition()
         {
             int obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             int unk = ReadByte();
@@ -2815,12 +2815,12 @@ namespace NScumm.Scumm
             }
         }
 
-        void GetResultPosIndirect()
+        private void GetResultPosIndirect()
         {
             _resultVarIndex = Variables[ReadByte()];
         }
 
-        void AssignVarWordIndirect()
+        private void AssignVarWordIndirect()
         {
             GetResultPosIndirect();
             SetResult(GetVarOrDirectWord(OpCodeParameter.Param1));
@@ -2839,7 +2839,7 @@ namespace NScumm.Scumm
             return GetVarOrDirectWord(OpCodeParameter.Param1);
         }
 
-        void GetActorElevation()
+        private void GetActorElevation()
         {
             GetResult();
             int act = GetVarOrDirectByte(OpCodeParameter.Param1);
@@ -2847,7 +2847,7 @@ namespace NScumm.Scumm
             SetResult(a.Elevation);
         }
 
-        void DrawObject()
+        private void DrawObject()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             var xpos = GetVarOrDirectByte(OpCodeParameter.Param2);
@@ -2860,8 +2860,8 @@ namespace NScumm.Scumm
             var od = _objs[idx];
             if (xpos != 0xFF)
             {
-                od.Walk = new Point(od.Walk.X + (xpos * 8) - od.Position.X, od.Walk.Y + (ypos * 8) - od.Position.Y);
-                od.Position = new Point(xpos * 8, ypos * 8);
+                od.Walk = new Point((short) (od.Walk.X + xpos * 8 - od.Position.X), (short) (od.Walk.Y + ypos * 8 - od.Position.Y));
+                od.Position = new Point((short) (xpos * 8), (short) (ypos * 8));
             }
             AddObjectToDrawQue((byte)idx);
 
@@ -2871,7 +2871,7 @@ namespace NScumm.Scumm
             var h = od.Height;
 
             var i = _objs.Length;
-            while ((i--) != 0)
+            while (i-- != 0)
             {
                 if (_objs[i].Number != 0 && _objs[i].Position.X == x && _objs[i].Position.Y == y && _objs[i].Width == w && _objs[i].Height == h)
                     PutState(_objs[i].Number, GetStateCore(_objs[i].Number) & ~(byte)ObjectStateV2.State8);
@@ -2904,7 +2904,7 @@ namespace NScumm.Scumm
             if (Game.GameId == GameId.Maniac && Game.Version <= 1 /*&& Game.Platform != Platform.NES*/)
                 a.Facing = 180;
 
-            a.PutActor(new Point(x, y));
+            a.PutActor(new Point((short) x, (short) y));
         }
 
         protected virtual void DecodeParseString()
@@ -2956,14 +2956,14 @@ namespace NScumm.Scumm
                 }
                 else if (Game.Features.HasFlag(GameFeatures.Demo))
                 {
-                    String[textSlot].Color = (byte)((Game.Version == 2) ? 15 : 1);
+                    String[textSlot].Color = (byte)(Game.Version == 2 ? 15 : 1);
                 }
             }
 
             ActorTalk(buffer);
         }
 
-        void LoadRoomWithEgo()
+        private void LoadRoomWithEgo()
         {
             int x, y, dir;
 
@@ -2975,7 +2975,7 @@ namespace NScumm.Scumm
             // The original interpreter sets the actors new room X/Y to the last rooms X/Y
             // This fixes a problem with MM: script 161 in room 12, the 'Oomph!' script
             // This scripts runs before the actor position is set to the correct room entry location
-            if ((Game.GameId == GameId.Maniac) /*&& (Game.Platform != Platform.NES)*/)
+            if (Game.GameId == GameId.Maniac /*&& (Game.Platform != Platform.NES)*/)
             {
                 a.PutActor(a.Position, room);
             }
@@ -3007,12 +3007,12 @@ namespace NScumm.Scumm
 
             if (x >= 0 && y >= 0)
             {
-                a.StartWalk(new Point(x, y), -1);
+                a.StartWalk(new Point((short) x, (short) y), -1);
             }
             RunScript(5, false, false, new int[0]);
         }
 
-        void ResetSentence()
+        private void ResetSentence()
         {
             Variables[VariableSentenceVerb.Value] = Variables[VariableBackupVerb.Value];
             Variables[VariableSentenceObject1.Value] = 0;

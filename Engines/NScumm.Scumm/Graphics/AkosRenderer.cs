@@ -27,7 +27,7 @@ using NScumm.Scumm.IO;
 
 namespace NScumm.Scumm.Graphics
 {
-    enum AkosOpcode: ushort
+    internal enum AkosOpcode: ushort
     {
         Return = 0xC001,
         SetVar = 0xC010,
@@ -93,7 +93,7 @@ namespace NScumm.Scumm.Graphics
         EndSeq = 0xC0FF
     }
 
-    struct CostumeInfo
+    internal struct CostumeInfo
     {
 		public ushort width  {
 			get { return Data.ToUInt16 (Offset); }
@@ -136,7 +136,7 @@ namespace NScumm.Scumm.Graphics
 		}
     }
 
-    class AkosRenderer: ICostumeRenderer
+    internal class AkosRenderer: ICostumeRenderer
     {
         public AkosRenderer(ScummEngine vm)
         {
@@ -283,7 +283,7 @@ namespace NScumm.Scumm.Graphics
 
         public bool ActorHitResult { get; set; }
 
-        byte DrawLimb(Actor a, int limb)
+        private byte DrawLimb(Actor a, int limb)
         {
             var cost = a.Cost;
             byte result = 0;
@@ -408,7 +408,7 @@ namespace NScumm.Scumm.Graphics
             return result;
         }
 
-        byte Codec1(int xmoveCur, int ymoveCur)
+        private byte Codec1(int xmoveCur, int ymoveCur)
         {
             int num_colors;
             bool use_scaling;
@@ -460,8 +460,8 @@ namespace NScumm.Scumm.Graphics
 
             v1.BoundsRect.Left = 0;
             v1.BoundsRect.Top = 0;
-            v1.BoundsRect.Right = _vm.MainVirtScreen.Width;
-            v1.BoundsRect.Bottom = _vm.MainVirtScreen.Height;
+            v1.BoundsRect.Right = (short) _vm.MainVirtScreen.Width;
+            v1.BoundsRect.Bottom = (short) _vm.MainVirtScreen.Height;
 
             if (use_scaling)
             {
@@ -484,7 +484,7 @@ namespace NScumm.Scumm.Graphics
                             v1.X -= v1.ScaleXStep;
                     }
 
-                    rect.Left = rect.Right = v1.X;
+                    rect.Left = rect.Right = (short) v1.X;
 
                     j = startScaleIndexX;
                     for (i = 0, skip = 0; i < _width; i++)
@@ -509,7 +509,7 @@ namespace NScumm.Scumm.Graphics
                             v1.X += v1.ScaleXStep;
                     }
 
-                    rect.Left = rect.Right = v1.X;
+                    rect.Left = rect.Right = (short) v1.X;
 
                     j = startScaleIndexX;
                     for (i = 0; i < _width; i++)
@@ -541,7 +541,7 @@ namespace NScumm.Scumm.Graphics
                         v1.Y -= step;
                 }
 
-                rect.Top = rect.Bottom = v1.Y;
+                rect.Top = rect.Bottom = (short) v1.Y;
                 startScaleIndexY = scaletableSize - ymoveCur;
                 for (i = 0; i < _height; i++)
                 {
@@ -561,17 +561,17 @@ namespace NScumm.Scumm.Graphics
 
                 if (_mirror)
                 {
-                    rect.Left = v1.X;
-                    rect.Right = v1.X + _width;
+                    rect.Left = (short) v1.X;
+                    rect.Right = (short) (v1.X + _width);
                 }
                 else
                 {
-                    rect.Left = v1.X - _width;
-                    rect.Right = v1.X;
+                    rect.Left = (short) (v1.X - _width);
+                    rect.Right = (short) v1.X;
                 }
 
-                rect.Top = v1.Y;
-                rect.Bottom = rect.Top + _height;
+                rect.Top = (short) v1.Y;
+                rect.Bottom = (short) (rect.Top + _height);
 
                 startScaleIndexX = scaletableSize;
                 startScaleIndexY = scaletableSize;
@@ -672,7 +672,7 @@ namespace NScumm.Scumm.Graphics
             return drawFlag;
         }
 
-        byte Codec5(int xmoveCur, int ymoveCur)
+        private byte Codec5(int xmoveCur, int ymoveCur)
         {
             Rect clip;
             int maxw, maxh;
@@ -684,22 +684,22 @@ namespace NScumm.Scumm.Graphics
 
             if (!_mirror)
             {
-                clip.Left = (ActorX - xmoveCur - _width) + 1;
+                clip.Left = (short) ((ActorX - xmoveCur - _width) + 1);
             }
             else
             {
-                clip.Left = ActorX + xmoveCur - 1;
+                clip.Left = (short) (ActorX + xmoveCur - 1);
             }
 
-            clip.Top = ActorY + ymoveCur;
-            clip.Right = clip.Left + _width;
-            clip.Bottom = clip.Top + _height;
+            clip.Top = (short) (ActorY + ymoveCur);
+            clip.Right = (short) (clip.Left + _width);
+            clip.Bottom = (short) (clip.Top + _height);
             maxw = _vm.MainVirtScreen.Width;
             maxh = _vm.MainVirtScreen.Height;
 
             MarkRectAsDirty(clip);
 
-            clip.Clip(maxw, maxh);
+            clip.Clip((short) maxw, (short) maxh);
 
             if ((clip.Left >= clip.Right) || (clip.Top >= clip.Bottom))
                 return 0;
@@ -748,7 +748,7 @@ namespace NScumm.Scumm.Graphics
             return 0;
         }
 
-        void Codec1GenericDecode(Codec1 v1)
+        private void Codec1GenericDecode(Codec1 v1)
         {
             bool skip_column = false;
 
@@ -865,7 +865,7 @@ namespace NScumm.Scumm.Graphics
             } while (true);
         }
 
-        byte Codec16(int xmoveCur, int ymoveCur)
+        private byte Codec16(int xmoveCur, int ymoveCur)
         {
             Debug.Assert(_vm.MainVirtScreen.BytesPerPixel == 1);
 
@@ -878,16 +878,16 @@ namespace NScumm.Scumm.Graphics
             Rect clip;
             if (!_mirror)
             {
-                clip.Left = (ActorX - xmoveCur - _width) + 1;
+                clip.Left = (short) ((ActorX - xmoveCur - _width) + 1);
             }
             else
             {
-                clip.Left = ActorX + xmoveCur;
+                clip.Left = (short) (ActorX + xmoveCur);
             }
 
-            clip.Top = ActorY + ymoveCur;
-            clip.Right = clip.Left + _width;
-            clip.Bottom = clip.Top + _height;
+            clip.Top = (short) (ActorY + ymoveCur);
+            clip.Right = (short) (clip.Left + _width);
+            clip.Bottom = (short) (clip.Top + _height);
 
             var minx = 0;
             var miny = 0;
@@ -910,7 +910,7 @@ namespace NScumm.Scumm.Graphics
             if (clip.Right > maxw)
             {
                 cur_x -= clip.Right - maxw;
-                clip.Right = maxw;
+                clip.Right = (short) maxw;
             }
 
             if (clip.Top < miny)
@@ -922,7 +922,7 @@ namespace NScumm.Scumm.Graphics
             if (clip.Bottom > maxh)
             {
                 cur_y -= clip.Bottom - maxh;
-                clip.Bottom = maxh;
+                clip.Bottom = (short) maxh;
             }
 
             if ((clip.Left >= clip.Right) || (clip.Top >= clip.Bottom))
@@ -977,7 +977,7 @@ namespace NScumm.Scumm.Graphics
             return 0;
         }
 
-        void Akos16Decompress(PixelNavigator dest, int srcPos, int t_width, int t_height, int dir,
+        private void Akos16Decompress(PixelNavigator dest, int srcPos, int t_width, int t_height, int dir,
                               int numskip_before, int numskip_after, byte transparency, int maskLeft, int maskTop, int zBuf)
         {
             var tmp_buf = _akos16.Buffer;
@@ -1016,7 +1016,7 @@ namespace NScumm.Scumm.Graphics
             }
         }
 
-        void Akos16SetupBitReader(int srcPos)
+        private void Akos16SetupBitReader(int srcPos)
         {
             _akos16.RepeatMode = false;
             _akos16.Numbits = 16;
@@ -1027,12 +1027,12 @@ namespace NScumm.Scumm.Graphics
             _akos16.Dataptr = srcPos + 4;
         }
 
-        void Akos16SkipData(int numbytes)
+        private void Akos16SkipData(int numbytes)
         {
             Akos16DecodeLine(null, 0, numbytes, 0);
         }
 
-        void Akos16DecodeLine(byte[] buf, int bufPos, int numbytes, int dir)
+        private void Akos16DecodeLine(byte[] buf, int bufPos, int numbytes, int dir)
         {
             ushort bits, tmp_bits;
 
@@ -1094,7 +1094,7 @@ namespace NScumm.Scumm.Graphics
             }
         }
 
-        void AKOS16_FILL_BITS()
+        private void AKOS16_FILL_BITS()
         {
             if (_akos16.Numbits <= 8 && _akos16.Dataptr < akcd.Length)
             {
@@ -1103,25 +1103,25 @@ namespace NScumm.Scumm.Graphics
             }
         }
 
-        void AKOS16_EAT_BITS(byte n)
+        private void AKOS16_EAT_BITS(byte n)
         {
             _akos16.Numbits -= n;
             _akos16.Bits >>= n;
         }
 
-        byte Codec32(int xmoveCur, int ymoveCur)
+        private byte Codec32(int xmoveCur, int ymoveCur)
         {
             return 0;
         }
 
-        void MarkRectAsDirty(Rect rect)
+        private void MarkRectAsDirty(Rect rect)
         {
-            rect.Left -= _vm.MainVirtScreen.XStart & 7;
-            rect.Right -= _vm.MainVirtScreen.XStart & 7;
+            rect.Left =(short) (rect.Left  - _vm.MainVirtScreen.XStart & 7);
+            rect.Right =(short) (rect.Right - _vm.MainVirtScreen.XStart & 7);
             _vm.MarkRectAsDirty(_vm.MainVirtScreen, rect, ActorID);
         }
 
-        void Codec1IgnorePakCols(Codec1 v1, int num)
+        private void Codec1IgnorePakCols(Codec1 v1, int num)
         {
             num *= _height;
 
@@ -1142,37 +1142,39 @@ namespace NScumm.Scumm.Graphics
             } while (true);
         }
 
-        ScummEngine _vm;
+        private ScummEngine _vm;
         // Destination
-        PixelNavigator _pixelsNavigator;
+        private PixelNavigator _pixelsNavigator;
         // Source pointer
-        int _srcptr;
-        PixelNavigator startNav;
+        private int _srcptr;
+        private PixelNavigator startNav;
         // current move offset
-        int _xmove, _ymove;
+        private int _xmove;
+        private int _ymove;
         // whether to draw the actor mirrored
-        bool _mirror;
+        private bool _mirror;
         // width and height of cel to decode
-        int _width, _height;
-        bool _useBompPalette;
-        ushort _codec;
-        AkosHeader akhd;
-        byte[] akos;
+        private int _width;
+        private int _height;
+        private bool _useBompPalette;
+        private ushort _codec;
+        private AkosHeader akhd;
+        private byte[] akos;
         // header
-        byte[] akpl;
+        private byte[] akpl;
         // palette data
-        long akci;
+        private long akci;
         // CostumeInfo table
-        byte[] aksq;
+        private byte[] aksq;
         // command sequence
-        long akof;
+        private long akof;
         // offsets into ci and cd table
-        byte[] akcd;
+        private byte[] akcd;
         // costume data (contains the data for the codecs)
         // actor _palette
-        ushort[] _palette = new ushort[256];
+        private ushort[] _palette = new ushort[256];
 
-        static readonly byte[] bigCostumeScaleTable =
+        private static readonly byte[] bigCostumeScaleTable =
             {
                 0x00, 0x80, 0x40, 0xC0, 0x20, 0xA0, 0x60, 0xE0,
                 0x10, 0x90, 0x50, 0xD0, 0x30, 0xB0, 0x70, 0xF0,
@@ -1274,7 +1276,7 @@ namespace NScumm.Scumm.Graphics
                 0x1F, 0x9F, 0x5F, 0xDF, 0x3F, 0xBF, 0x7F, 0xFF,
             };
 
-        class Akos16
+        private class Akos16
         {
             public bool RepeatMode;
             public int RepeatCount;
@@ -1287,7 +1289,7 @@ namespace NScumm.Scumm.Graphics
             public byte[] Buffer = new byte[336];
         }
 
-        Akos16 _akos16 = new Akos16();
+        private Akos16 _akos16 = new Akos16();
     }
 }
 

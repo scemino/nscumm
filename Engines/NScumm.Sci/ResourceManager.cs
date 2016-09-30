@@ -27,13 +27,13 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci
 {
-    struct ResourceIndex
+    internal struct ResourceIndex
     {
         public ushort wOffset;
         public ushort wSize;
     }
 
-    enum ResourceCompression
+    internal enum ResourceCompression
     {
         Unknown = -1,
         None = 0,
@@ -53,7 +53,7 @@ namespace NScumm.Sci
     /// For more information, check here:
     /// http://wiki.scummvm.org/index.php/Sierra_Game_Versions#SCI_Games
     /// </summary>
-    enum SciVersion
+    internal enum SciVersion
     {
         NONE,
         V0_EARLY, // KQ4 early, LSL2 early, XMAS card 1988
@@ -71,7 +71,7 @@ namespace NScumm.Sci
         V3 // LSL7, Lighthouse, RAMA, Phantasmagoria 2
     }
 
-    enum ResVersion
+    internal enum ResVersion
     {
         Unknown,
         Sci0Sci1Early,
@@ -85,7 +85,7 @@ namespace NScumm.Sci
     }
 
     // Game view types, sorted by the number of colors
-    enum ViewType
+    internal enum ViewType
     {
         Unknown, // uninitialized, or non-SCI
         Ega, // EGA SCI0/SCI1 and Amiga SCI0/SCI1 ECS 16 colors
@@ -95,7 +95,7 @@ namespace NScumm.Sci
         Vga11 // VGA SCI1.1 and newer 256 colors
     }
 
-    enum ResourceType
+    internal enum ResourceType
     {
         View = 0,
         Pic,
@@ -144,7 +144,7 @@ namespace NScumm.Sci
 
     /** Resource error codes. Should be in sync with s_errorDescriptions */
 
-    enum ResourceErrorCodes
+    internal enum ResourceErrorCodes
     {
         NONE = 0,
         IO_ERROR = 1,
@@ -264,6 +264,12 @@ namespace NScumm.Sci
             ResourceType.Duck, ResourceType.Clut, ResourceType.TGA, ResourceType.ZZZ // 0x18-0x1B
         };
 
+        // Maximum number of bytes to allow being allocated for resources
+        // Note: maxMemory will not be interpreted as a hard limit, only as a restriction
+        // for resources which are not explicitly locked. However, a warning will be
+        // issued whenever this limit is exceeded.
+        protected int _maxMemoryLRU;
+
         public bool IsSci11Mac
         {
             get { return _volVersion == ResVersion.Sci11Mac; }
@@ -289,17 +295,12 @@ namespace NScumm.Sci
 
             // Read the first song and check if it has a GM track
             bool result = false;
-            var resources = ListResources(ResourceType.Sound, -1);
+            var resources = ListResources(ResourceType.Sound);
             resources.Sort();
             var itr = resources.First();
             int firstSongId = itr.Number;
 
-            SoundResource song1 = new SoundResource((uint)firstSongId, this, soundVersion);
-            if (song1 == null)
-            {
-                Warning("ResourceManager::isGMTrackIncluded: track 1 not found");
-                return false;
-            }
+            var song1 = new SoundResource((uint)firstSongId, this, soundVersion);
 
             var gmTrack = song1.GetTrackByType(0x07);
             if (gmTrack != null)
@@ -371,7 +372,7 @@ namespace NScumm.Sci
                 if ((data[0] == 0 && data[1] == 1) || (data[0] == 0 && data[1] == 0 && data.ToUInt16(29) == 0))
                     return true;
                 // Hardcoded: Laura Bow 2 floppy uses new palette resource, but still palette merging + 16 bit color matching
-                if ((SciEngine.Instance.GameId == SciGameId.LAURABOW2) && (!SciEngine.Instance.IsCD) &&
+                if ((SciEngine.Instance.GameId == SciGameId.LAURABOW2) && (!SciEngine.Instance.IsCd) &&
                     (!SciEngine.Instance.IsDemo))
                     return true;
                 return false;
@@ -396,8 +397,8 @@ namespace NScumm.Sci
                 }
 #if ENABLE_SCI32
 // GK1CD hires content
-                if (Common::File::exists("alt.map") && Common::File::exists("resource.alt"))
-                    AddSource(new VolumeResourceSource("resource.alt", addExternalMap("alt.map", 10), 10));
+                if (Core.Engine.OpenFileRead("alt.map")!=null && Core.Engine.OpenFileRead("resource.alt")!=null)
+                    AddSource(new VolumeResourceSource("resource.alt", AddExternalMap("alt.map", 10), 10));
 #endif
             }
             else if (MacResManager.Exists("Data1"))
@@ -412,38 +413,34 @@ namespace NScumm.Sci
 
 #if ENABLE_SCI32
                 // There can also be a "Patches" resource fork with patches
-                if (Common::MacResManager::exists("Patches"))
-                    addSource(new MacResourceForkResourceSource("Patches", 100));
-            }
-else {
+                if (MacResManager.Exists("Patches"))
+                    AddSource(new MacResourceForkResourceSource("Patches", 100));
+            } else {
         // SCI2.1-SCI3 file naming scheme
-        Common::ArchiveMemberList mapFiles, files;
-        SearchMan.listMatchingMembers(mapFiles, "resmap.0??");
-        SearchMan.listMatchingMembers(files, "ressci.0??");
+                var mapFiles = ServiceLocator.FileStorage.EnumerateFiles(_directory, "resmap.0??").ToList();
+                var files = ServiceLocator.FileStorage.EnumerateFiles(_directory, "ressci.0??").ToList();
 
         // We need to have the same number of maps as resource archives
-        if (mapFiles.empty() || files.empty() || mapFiles.size() != files.size())
-            return 0;
+                if (mapFiles.Count == 0 || files.Count == 0 || mapFiles.Count != files.Count)
+                    return 0;
 
-        for (Common::ArchiveMemberList::const_iterator mapIterator = mapFiles.begin(); mapIterator != mapFiles.end(); ++mapIterator) {
-            Common::String mapName = (*mapIterator)->getName();
-            int mapNumber = atoi(strrchr(mapName.c_str(), '.') + 1);
+        foreach (var mapName in mapFiles) {
+            int mapNumber = int.Parse(ServiceLocator.FileStorage.GetExtension(mapName).Remove(0,1));
 
-            for (Common::ArchiveMemberList::const_iterator fileIterator = files.begin(); fileIterator != files.end(); ++fileIterator) {
-                Common::String resName = (*fileIterator)->getName();
-                int resNumber = atoi(strrchr(resName.c_str(), '.') + 1);
+            foreach (var resName in files) {
+                int resNumber = int.Parse(ServiceLocator.FileStorage.GetExtension(resName).Remove(0, 1));
 
                 if (mapNumber == resNumber) {
-                    addSource(new VolumeResourceSource(resName, addExternalMap(mapName, mapNumber), mapNumber));
+                    AddSource(new VolumeResourceSource(resName, AddExternalMap(mapName, mapNumber), mapNumber));
                     break;
                 }
             }
         }
 
         // SCI2.1 resource patches
-        if (Common::File::exists("resmap.pat") && Common::File::exists("ressci.pat")) {
+        if (Core.Engine.OpenFileRead("resmap.pat")!=null && Core.Engine.OpenFileRead("ressci.pat")!=null) {
             // We add this resource with a map which surely won't exist
-            addSource(new VolumeResourceSource("ressci.pat", addExternalMap("resmap.pat", 100), 100));
+            AddSource(new VolumeResourceSource("ressci.pat", AddExternalMap("resmap.pat", 100), 100));
         }
     }
 #else
@@ -525,6 +522,15 @@ else {
 
             DebugC(1, DebugLevels.ResMan, "resMan: Detected {0}", GetSciVersionDesc(GetSciVersion()));
 
+            // Resources in SCI32 games are significantly larger than SCI16
+            // games and can cause immediate exhaustion of the LRU resource
+            // cache, leading to constant decompression of picture resources
+            // and making the renderer very slow.
+            if (GetSciVersion() >= SciVersion.V2)
+            {
+                _maxMemoryLRU = 2048 * 1024; // 2MiB
+            }
+
             switch (_viewType)
             {
                 case ViewType.Ega:
@@ -543,20 +549,11 @@ else {
                     DebugC(1, DebugLevels.ResMan, "resMan: Detected SCI1.1 VGA graphic resources");
                     break;
                 default:
-#if ENABLE_SCI32
-                    Error("resMan: Couldn't determine view type");
-#else
-                    if (GetSciVersion() >= SciVersion.V2)
-                    {
-                        // SCI support isn't built in, thus the view type won't be determined for
-                        // SCI2+ games. This will be handled further up, so throw no error here
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException("resMan: Couldn't determine view type");
-                    }
+                    // Throw a warning, but do not error out here, because this is called from the
+                    // fallback detector, and the user could be pointing to a folder with a non-SCI
+                    // game, but with SCI-like file names (e.g. Pinball Creep)
+                    Warning("resMan: Couldn't determine view type");
                     break;
-#endif
             }
         }
 
@@ -776,22 +773,19 @@ else {
 # if ENABLE_SCI32
             for (int i = 0; i < 32768; i++)
             {
-                Resource* res = findResource(ResourceId(kResourceTypePic, i), 0);
+                var res = FindResource(new ResourceId(ResourceType.Pic, (ushort) i), false);
 
-                if (res)
+                if (res?.data.ReadSci11EndianUInt16() == 0x0e)
                 {
-                    if (READ_SCI11ENDIAN_UINT16(res.data) == 0x0e)
-                    {
-                        // SCI32 picture
-                        uint16 width = READ_SCI11ENDIAN_UINT16(res.data + 10);
-                        uint16 height = READ_SCI11ENDIAN_UINT16(res.data + 12);
-                        // Surely lowres (e.g. QFG4CD)
-                        if ((width == 320) && ((height == 190) || (height == 200)))
-                            return false;
-                        // Surely hires
-                        if ((width >= 600) || (height >= 400))
-                            return true;
-                    }
+                    // SCI32 picture
+                    ushort width = res.data.ReadSci11EndianUInt16(10);
+                    ushort height = res.data.ReadSci11EndianUInt16(12);
+                    // Surely lowres (e.g. QFG4CD)
+                    if ((width == 320) && ((height == 190) || (height == 200)))
+                        return false;
+                    // Surely hires
+                    if ((width >= 600) || (height >= 400))
+                        return true;
                 }
             }
 
@@ -937,11 +931,11 @@ else {
                     }
                     else {
                         // SCI0 scheme
-                        int resname_len = szResType.Length;
-                        if (string.Compare(name, 0, szResType,0, resname_len, StringComparison.OrdinalIgnoreCase) == 0
-                            && !char.IsLetter(name[resname_len + 1]))
+                        int resnameLen = szResType.Length;
+                        if (string.Compare(name, 0, szResType,0, resnameLen, StringComparison.OrdinalIgnoreCase) == 0
+                            && !char.IsLetter(name[resnameLen + 1]))
                         {
-                            resourceNr = ushort.Parse(name.Substring(resname_len+1));
+                            resourceNr = ushort.Parse(name.Substring(resnameLen+1));
                             bAdd = true;
                         }
                     }
@@ -955,7 +949,7 @@ else {
             }
         }
 
-        private string GetResourceTypeName(ResourceType restype)
+        private static string GetResourceTypeName(ResourceType restype)
         {
             if (restype != ResourceType.Invalid)
                 return s_resourceTypeNames[(int)restype];
@@ -1095,8 +1089,8 @@ else {
         // version-agnostic patch application
         private void ProcessPatch(ResourceSource source, ResourceType resourceType, ushort resourceNr, uint tuple = 0)
         {
-            Stream fileStream = null;
-            ResourceSource.Resource newrsc = null;
+            Stream fileStream;
+            ResourceSource.Resource newrsc;
             ResourceId resId = new ResourceId(resourceType, resourceNr, tuple);
             ResourceType checkForType = resourceType;
 
@@ -1184,7 +1178,7 @@ else {
         public ResourceSource.Resource UpdateResource(ResourceId resId, ResourceSource src, int size)
         {
             // Update a patched resource, whether it exists or not
-            ResourceSource.Resource res = null;
+            ResourceSource.Resource res;
 
             if (_resMap.ContainsKey(resId))
             {
@@ -1401,7 +1395,7 @@ else {
 
             var br = new BinaryReader(fileStream);
             var resMap = new ResourceIndex[32];
-            byte type = 0, prevtype = 0;
+            byte type, prevtype = 0;
             int nEntrySize = _mapVersion == ResVersion.Sci11 ? SCI11_RESMAP_ENTRIES_SIZE : SCI1_RESMAP_ENTRIES_SIZE;
             ResourceId resId;
 
@@ -1419,7 +1413,7 @@ else {
             } while (type != 0x1F); // the last entry is FF
 
             // reading each type's offsets
-            int fileOffset = 0;
+            int fileOffset;
             for (type = 0; type < 32; type++)
             {
                 if (resMap[type].wOffset == 0) // this resource does not exist in map
@@ -1428,7 +1422,7 @@ else {
                 for (int i = 0; i < resMap[type].wSize; i++)
                 {
                     ushort number = br.ReadUInt16();
-                    int volume_nr = 0;
+                    int volumeNr = 0;
                     if (_mapVersion == ResVersion.Sci11)
                     {
                         // offset stored in 3 bytes
@@ -1442,7 +1436,7 @@ else {
                         fileOffset = br.ReadInt32();
                         if (_mapVersion < ResVersion.Sci11)
                         {
-                            volume_nr = (fileOffset >> 28); // most significant 4 bits
+                            volumeNr = (fileOffset >> 28); // most significant 4 bits
                             fileOffset &= 0x0FFFFFFF; // least significant 28 bits
                         }
                         else
@@ -1455,7 +1449,7 @@ else {
                     // for SCI2.1 and SCI3 maps that are not resmap.000. The resmap.* files' numbers
                     // need to be used in concurrence with the volume specified in the map to get
                     // the actual resource file.
-                    int mapVolumeNr = volume_nr + map._volumeNumber;
+                    int mapVolumeNr = volumeNr + map._volumeNumber;
                     ResourceSource source = FindVolume(map, mapVolumeNr);
 
                     System.Diagnostics.Debug.Assert(source != null);
@@ -1491,7 +1485,7 @@ else {
 
         private ResourceErrorCodes ReadResourceMapSCI0(ExtMapResourceSource map)
         {
-            Stream fileStream = null;
+            Stream fileStream;
             ResourceType type = ResourceType.Invalid; // to silence a false positive in MSVC
             ushort number, id;
             uint offset;
@@ -1629,7 +1623,7 @@ else {
             // Test 10 views to see if any are compressed
             for (int i = 0; i < 1000; i++)
             {
-                Stream fileStream = null;
+                Stream fileStream;
                 var res = TestResource(new ResourceId(ResourceType.View, (ushort)i));
 
                 if (res == null)
@@ -1695,7 +1689,7 @@ else {
                 }
             }
 
-            Stream newFile = null;
+            Stream newFile;
             // adding a new file
             path = ScummHelper.LocatePath(_directory, filename);
             if (path != null)
@@ -1721,7 +1715,7 @@ else {
 
             ResourceCompression viewCompression;
 #if ENABLE_SCI32
-            viewCompression = getViewCompression();
+            viewCompression = GetViewCompression();
 #else
             if (_volVersion >= ResVersion.Sci2)
             {
@@ -1760,7 +1754,7 @@ else {
             {
 #if ENABLE_SCI32
 // Otherwise we detect it from a view
-                _viewType = detectViewType();
+                _viewType = DetectViewType();
 #else
                 if (_volVersion == ResVersion.Sci2 && viewCompression == ResourceCompression.Unknown)
                 {
@@ -2166,16 +2160,16 @@ else {
         private void AddScriptChunkSources()
         {
 #if ENABLE_SCI32
-            if (_mapVersion >= kResVersionSci2)
+            if (_mapVersion >= ResVersion.Sci2)
             {
                 // If we have no scripts, but chunk 0 is present, open up the chunk
                 // to try to get to any scripts in there. The Lighthouse SCI2.1 demo
                 // does exactly this.
 
-                Common::List<ResourceId> resources = listResources(kResourceTypeScript);
+                var resources = ListResources(ResourceType.Script);
 
-                if (resources.empty() && testResource(ResourceId(kResourceTypeChunk, 0)))
-                    addResourcesFromChunk(0);
+                if (resources.Count==0 && TestResource(new ResourceId(ResourceType.Chunk, 0))!=null)
+                    AddResourcesFromChunk(0);
             }
 #endif
         }
@@ -2184,6 +2178,12 @@ else {
         {
             //Debug.Assert(s_sciVersion != SciVersion.NONE);
             return s_sciVersion;
+        }
+
+        private void AddResourcesFromChunk(ushort id)
+        {
+            AddSource(new ChunkResourceSource($"Chunk {id}", id));
+            ScanNewSources();
         }
 
         private bool AddAudioSources()
@@ -2302,10 +2302,10 @@ else {
 
             // SCI1 and SCI1.1 maps consist of a fixed 3-byte header, a directory list (3-bytes each) that has one entry
             // of id FFh and points to EOF. The actual entries have 6-bytes on SCI1 and 5-bytes on SCI1.1
-            byte directoryType = 0;
-            ushort directoryOffset = 0;
+            byte directoryType;
+            ushort directoryOffset;
             ushort lastDirectoryOffset = 0;
-            ushort directorySize = 0;
+            ushort directorySize;
             ResVersion mapDetected = ResVersion.Unknown;
             fileStream.Seek(0, SeekOrigin.Begin);
 
@@ -2489,11 +2489,11 @@ else {
             return ResVersion.Unknown;
         }
 
-        private ResourceSource FindVolume(ResourceSource map, int volume_nr)
+        private ResourceSource FindVolume(ResourceSource map, int volumeNr)
         {
             foreach (var it in _sources)
             {
-                ResourceSource src = it.FindVolume(map, volume_nr);
+                ResourceSource src = it.FindVolume(map, volumeNr);
                 if (src != null)
                     return src;
             }
@@ -2519,11 +2519,11 @@ else {
         /// manager's list of sources.
         /// </summary>
         /// <param name="filename">The name of the volume to add</param>
-        /// <param name="volume_nr">The volume number the map starts at, 0 for &lt;SCI2.1</param>
+        /// <param name="volumeNr">The volume number the map starts at, 0 for &lt;SCI2.1</param>
         /// <returns>Added source structure, or null if an error occurred.</returns>
-        private ResourceSource AddExternalMap(string filename, int volume_nr = 0)
+        private ResourceSource AddExternalMap(string filename, int volumeNr = 0)
         {
-            ResourceSource newsrc = new ExtMapResourceSource(filename, volume_nr);
+            ResourceSource newsrc = new ExtMapResourceSource(filename, volumeNr);
             _sources.Add(newsrc);
             return newsrc;
         }
@@ -2560,7 +2560,7 @@ else {
         private int _trackCount;
         private Track[] _tracks;
         private ResourceManager.ResourceSource.Resource _innerResource;
-        private ResourceManager _resMan;
+        private readonly ResourceManager _resMan;
         private byte _soundPriority;
 
         public Track DigitalTrack

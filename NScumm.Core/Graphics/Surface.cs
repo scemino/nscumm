@@ -16,7 +16,6 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using NScumm.Core.Common;
 using System;
 
 namespace NScumm.Core.Graphics
@@ -28,6 +27,39 @@ namespace NScumm.Core.Graphics
         Rgb24
     }
 
+    public static class PixelFormatExtension
+    {
+        public static int GetBytesPerPixel(this PixelFormat pixelFormat)
+        {
+            return Surface.GetBytesPerPixel(pixelFormat);
+        }
+
+        public static int RGBToColor(this PixelFormat format, byte r, byte g, byte b)
+        {
+            int aLoss, aShift;
+            int rLoss, rShift;
+            int gLoss, gShift;
+            int bLoss, bShift;
+            switch (format)
+            {
+                case PixelFormat.Indexed8:
+                    aLoss = rLoss = gLoss = bLoss = 8;
+                    aShift = rShift = gShift = bShift = 0;
+                    break;
+                case PixelFormat.Rgb16:
+                case PixelFormat.Rgb24:
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(format));
+            }
+
+            return
+                ((0xFF >> aLoss) << aShift) |
+                ((r >> rLoss) << rShift) |
+                ((g >> gLoss) << gShift) |
+                ((b >> bLoss) << bShift);
+        }
+    }
+
     public class Surface
     {
         #region Fields
@@ -35,7 +67,7 @@ namespace NScumm.Core.Graphics
         /// <summary>
         /// The surface's pixel data.
         /// </summary>
-        byte[] _buffer;
+        BytePtr _buffer;
 
         #endregion
 
@@ -44,12 +76,12 @@ namespace NScumm.Core.Graphics
         /// <summary>
         /// The width of the surface.
         /// </summary>
-        public int Width { get; private set; }
+        public ushort Width { get; }
 
         /// <summary>
         /// The height of the surface.
         /// </summary>
-        public int Height { get; private set; }
+        public ushort Height { get; }
 
         /// <summary>
         /// The number of bytes a pixel line has.
@@ -62,14 +94,14 @@ namespace NScumm.Core.Graphics
         /// <summary>
         /// Number of bytes used in the pixel format
         /// </summary>
-        public int BytesPerPixel { get; private set; }
+        public int BytesPerPixel { get; }
 
         /// <summary>
         /// The pixel format of the surface.
         /// </summary>
-        public PixelFormat PixelFormat { get; private set; }
+        public PixelFormat PixelFormat { get; }
 
-        public byte[] Pixels { get { return _buffer; } }
+        public BytePtr Pixels => _buffer;
 
         #endregion
 
@@ -81,12 +113,13 @@ namespace NScumm.Core.Graphics
         /// <param name="width">Width of the surface object.</param>
         /// <param name="height">Height of the surface objec.t</param>
         /// <param name="format">The pixel format the surface should use.</param>
-        public Surface(int width, int height, PixelFormat format, bool trick=false)
+        /// <param name="trick"></param>
+        public Surface(ushort width, ushort height, PixelFormat format, bool trick=false)
         {
             if (width < 0)
-                throw new ArgumentOutOfRangeException("width", "Width should be positive");
+                throw new ArgumentOutOfRangeException(nameof(width), "Width should be positive");
             if (height < 0)
-                throw new ArgumentOutOfRangeException("height", "Height should be positive");
+                throw new ArgumentOutOfRangeException(nameof(height), "Height should be positive");
 
             Width = width;
             Height = height;
@@ -105,6 +138,33 @@ namespace NScumm.Core.Graphics
             }
         }
 
+        public Surface(ushort width, ushort height, BytePtr pixels, PixelFormat format)
+        {
+            if (width < 0)
+                throw new ArgumentOutOfRangeException(nameof(width), "Width should be positive");
+            if (height < 0)
+                throw new ArgumentOutOfRangeException(nameof(height), "Height should be positive");
+
+            Width = width;
+            Height = height;
+            PixelFormat = format;
+
+            BytesPerPixel = GetBytesPerPixel(format);
+
+            Pitch = width * BytesPerPixel;
+            _buffer = pixels;
+        }
+
+        /// <summary>
+        /// Sets the pixel data.
+        /// Note that this is a simply a setter. Be careful what you are doing!
+        /// </summary>
+        /// <param name="newPixels">The new pixel data.</param>
+        public void SetPixels(BytePtr newPixels)
+        {
+            _buffer = newPixels;
+        }
+
         public static int GetBytesPerPixel(PixelFormat pixelFormat)
         {
             int bytesPerPixel;
@@ -120,7 +180,7 @@ namespace NScumm.Core.Graphics
                     bytesPerPixel = 3;
                     break;
                 default:
-                    throw new ArgumentException(string.Format("Pixel format {0} is not supported", pixelFormat));
+                    throw new ArgumentException($"Pixel format {pixelFormat} is not supported");
             }
             return bytesPerPixel;
         }
@@ -144,7 +204,7 @@ namespace NScumm.Core.Graphics
                 var srcPos = dstPos - dy * Pitch;
                 for (var y = dy; y < height; y++)
                 {
-                    Buffer.BlockCopy(Pixels, srcPos, Pixels, dstPos, Pitch);
+                    Buffer.BlockCopy(Pixels.Data, Pixels.Offset+ srcPos, Pixels.Data, Pixels.Offset + dstPos, Pitch);
                     srcPos -= Pitch;
                     dstPos -= Pitch;
                 }
@@ -156,7 +216,7 @@ namespace NScumm.Core.Graphics
                 var srcPos = dstPos - dy * Pitch;
                 for (var y = -dy; y < height; y++)
                 {
-                    Buffer.BlockCopy(Pixels, srcPos, Pixels, dstPos, Pitch);
+                    Buffer.BlockCopy(Pixels.Data, Pixels.Offset + srcPos, Pixels.Data, Pixels.Offset + dstPos, Pitch);
                     srcPos += Pitch;
                     dstPos += Pitch;
                 }
@@ -166,25 +226,25 @@ namespace NScumm.Core.Graphics
             if (dx > 0)
             {
                 // move right - copy from right to left
-                var dstPos = (Pitch - BytesPerPixel);
-                var srcPos = dstPos - (dx * BytesPerPixel);
+                var dstPos = Pitch - BytesPerPixel;
+                var srcPos = dstPos - dx * BytesPerPixel;
                 for (var y = 0; y < height; y++)
                 {
                     for (var x = dx; x < Width; x++)
                     {
                         if (BytesPerPixel == 1)
                         {
-                            Pixels[dstPos--] = Pixels[srcPos--];
+                            Pixels.WriteByte(dstPos--, Pixels[srcPos--]);
                         }
                         else if (BytesPerPixel == 2)
                         {
-                            Array.Copy(Pixels, srcPos, Pixels, dstPos, 2);
+                            Array.Copy(Pixels.Data, Pixels.Offset + srcPos, Pixels.Data, Pixels.Offset + dstPos, 2);
                             srcPos -= 2;
                             dstPos -= 2;
                         }
                         else if (BytesPerPixel == 4)
                         {
-                            Array.Copy(Pixels, srcPos, Pixels, dstPos, 4);
+                            Array.Copy(Pixels.Data, Pixels.Offset + srcPos, Pixels.Data, Pixels.Offset + dstPos, 4);
                             srcPos -= 4;
                             dstPos -= 4;
                         }
@@ -197,24 +257,24 @@ namespace NScumm.Core.Graphics
             {
                 // move left - copy from left to right
                 var dstPos = 0;
-                var srcPos = dstPos - (dx * BytesPerPixel);
+                var srcPos = dstPos - dx * BytesPerPixel;
                 for (var y = 0; y < height; y++)
                 {
                     for (var x = -dx; x < Width; x++)
                     {
                         if (BytesPerPixel == 1)
                         {
-                            Pixels[dstPos++] = Pixels[srcPos++];
+                            Pixels.WriteByte(dstPos++, Pixels[srcPos++]);
                         }
                         else if (BytesPerPixel == 2)
                         {
-                            Array.Copy(Pixels, srcPos, Pixels, dstPos, 2);
+                            Array.Copy(Pixels.Data, Pixels.Offset + srcPos, Pixels.Data, Pixels.Offset + dstPos, 2);
                             srcPos += 2;
                             dstPos += 2;
                         }
                         else if (BytesPerPixel == 4)
                         {
-                            Array.Copy(Pixels, srcPos, Pixels, dstPos, 4);
+                            Array.Copy(Pixels.Data, Pixels.Offset + srcPos, Pixels.Data, Pixels.Offset + dstPos, 4);
                             srcPos += 4;
                             dstPos += 4;
                         }
@@ -227,7 +287,7 @@ namespace NScumm.Core.Graphics
 
         public void FillRect(Rect r, uint color)
         {
-            r.Clip(Width, Height);
+            r.Clip((short)Width, (short)Height);
 
             if (!r.IsValidRect)
                 return;
@@ -256,7 +316,7 @@ namespace NScumm.Core.Graphics
             if (useMemset)
             {
                 var ptr = GetBasePtr(r.Left, r.Top);
-                while ((height--) != 0)
+                while (height-- != 0)
                 {
                     ptr.Data.Set(ptr.Offset, (byte)color, lineLen);
                     ptr.Offset += Pitch;
@@ -285,9 +345,9 @@ namespace NScumm.Core.Graphics
             }
         }
 
-        private ByteAccess GetBasePtr(int x, int y)
+        public BytePtr GetBasePtr(int x, int y)
         {
-            return new ByteAccess(Pixels, y * Pitch + x * GetBytesPerPixel(PixelFormat));
+            return new BytePtr(Pixels, y * Pitch + x * GetBytesPerPixel(PixelFormat));
         }
     }
 }

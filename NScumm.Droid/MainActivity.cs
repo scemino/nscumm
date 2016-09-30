@@ -154,7 +154,7 @@ namespace NScumm.Droid
             };
             var audioDriver = new XnaAudioDriver();
             _im.Game = settings.Game;
-            var size = new Rect(settings.Game.Width, settings.Game.Height);
+            var size = new Rect((short)settings.Game.Width, (short)settings.Game.Height);
             // TODO: audioDriver.Play();
             var system = new OSystem(new GfxManager(view, size), _im,
                                      ServiceLocator.SaveFileManager,

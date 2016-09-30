@@ -34,17 +34,15 @@ namespace NScumm.Sci.Sound
 
     class SoundCommandParser
     {
-        public const int MUSIC_VOLUME_DEFAULT = 127;
         public const int MUSIC_VOLUME_MAX = 127;
-        public const int MUSIC_MASTERVOLUME_DEFAULT = 15;
         public const int MUSIC_MASTERVOLUME_MAX = 15;
 
-        private SciVersion _soundVersion;
-        private SegManager _segMan;
-        private AudioPlayer _audio;
-        private ResourceManager _resMan;
-        private bool _useDigitalSFX;
-        private SciMusic _music;
+        private readonly SciVersion _soundVersion;
+        private readonly SegManager _segMan;
+        private readonly AudioPlayer _audio;
+        private readonly ResourceManager _resMan;
+        private readonly bool _useDigitalSfx;
+        private readonly SciMusic _music;
 
         public MusicType MusicType
         {
@@ -71,9 +69,9 @@ namespace NScumm.Sci.Sound
             // resource number, but it's totally unrelated to the menu music).
             // The GK1 demo (very late SCI1.1) does the same thing
             // TODO: Check the QFG4 demo
-            _useDigitalSFX = (ResourceManager.GetSciVersion() >= SciVersion.V2 || SciEngine.Instance.GameId == SciGameId.GK1 || ConfigManager.Instance.Get<bool>("prefer_digitalsfx"));
+            _useDigitalSfx = (ResourceManager.GetSciVersion() >= SciVersion.V2 || SciEngine.Instance.GameId == SciGameId.GK1 || ConfigManager.Instance.Get<bool>("prefer_digitalsfx"));
 
-            _music = new SciMusic(_soundVersion, _useDigitalSFX);
+            _music = new SciMusic(_soundVersion, _useDigitalSfx);
             _music.Init();
         }
 
@@ -161,7 +159,6 @@ namespace NScumm.Sci.Sound
 
             // Set the special hold marker ID where the song should be looped at.
             musicSlot.hold = argv[1].ToInt16();
-            return;
         }
 
         public void kDoSoundSetPriority(int argc, StackPtr argv)
@@ -349,19 +346,18 @@ namespace NScumm.Sci.Sound
                 _music.SoundSetPriority(musicSlot, (byte)objPrio);
         }
 
-        public Register kDoSoundMasterVolume(int argc, StackPtr argv)
+        public Register kDoSoundMasterVolume(int argc, StackPtr argv, ref Register acc)
         {
-            var acc = Register.Make(0, _music.SoundGetMasterVolume());
+            acc.Set(Register.Make(0, _music.SoundGetMasterVolume()));
 
-            if (argc > 0)
-            {
-                DebugC(DebugLevels.Sound, "kDoSound(masterVolume): {0}", argv[0].ToInt16());
-                int vol = (short)ScummHelper.Clip(argv[0].ToInt16(), 0, MUSIC_MASTERVOLUME_MAX);
-                vol = vol * Mixer.MaxMixerVolume / MUSIC_MASTERVOLUME_MAX;
-                ConfigManager.Instance.Set<int>("music_volume", vol);
-                ConfigManager.Instance.Set<int>("sfx_volume", vol);
-                SciEngine.Instance.SyncSoundSettings();
-            }
+            if (argc <= 0) return acc;
+
+            DebugC(DebugLevels.Sound, "kDoSound(masterVolume): {0}", argv[0].ToInt16());
+            int vol = (short)ScummHelper.Clip(argv[0].ToInt16(), 0, MUSIC_MASTERVOLUME_MAX);
+            vol = vol * Mixer.MaxMixerVolume / MUSIC_MASTERVOLUME_MAX;
+            ConfigManager.Instance.Set<int>("music_volume", vol);
+            ConfigManager.Instance.Set<int>("sfx_volume", vol);
+            SciEngine.Instance.SyncSoundSettings();
             return acc;
         }
 
@@ -460,7 +456,6 @@ namespace NScumm.Sci.Sound
             // TODO: this can't be right, this gets called in kq1 - e.g. being in witch house, getting the note
             //  now the point jingle plays and after a messagebox they call this - and would stop the background effects with it
             //  this doesn't make sense, so i disable it for now
-            return;
         }
 
         public void kDoSoundPlay(int argc, StackPtr argv)
@@ -635,7 +630,7 @@ namespace NScumm.Sci.Sound
                 // Found a relevant audio resource, create an audio stream if there is
                 // no associated sound resource, or if both resources exist and the
                 // user wants the digital version.
-                if (_useDigitalSFX || newSound.soundRes == null)
+                if (_useDigitalSfx || newSound.soundRes == null)
                 {
                     int sampleLen;
                     newSound.pStreamAud = _audio.GetAudioStream(newSound.resourceId, 65535, out sampleLen);

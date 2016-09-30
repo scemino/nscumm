@@ -47,7 +47,7 @@ namespace NScumm.Sci.Graphics
         private int _resourceId;
         private byte[] _resourceData;
 
-        struct Charinfo
+        private struct Charinfo
         {
             public byte width;
             public byte height;

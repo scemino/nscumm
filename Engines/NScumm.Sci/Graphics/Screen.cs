@@ -24,7 +24,7 @@ using NScumm.Core.Common;
 
 namespace NScumm.Sci.Graphics
 {
-    enum GfxScreenUpscaledMode
+    internal enum GfxScreenUpscaledMode
     {
         DISABLED = 0,
         S480x300 = 1,
@@ -34,7 +34,7 @@ namespace NScumm.Sci.Graphics
     }
 
     [Flags]
-    enum GfxScreenMasks
+    internal enum GfxScreenMasks
     {
         VISUAL = 1,
         PRIORITY = 2,
@@ -44,21 +44,21 @@ namespace NScumm.Sci.Graphics
         ALL = VISUAL | PRIORITY | CONTROL
     }
 
-    class GfxScreen
+    internal class GfxScreen
     {
         public interface IVectorAdjustCoordinate
         {
             void Execute(ref short x, ref short y);
         }
 
-        class VectorAdjustCoordinateNOP : IVectorAdjustCoordinate
+        private class VectorAdjustCoordinateNOP : IVectorAdjustCoordinate
         {
             public void Execute(ref short x, ref short y)
             {
             }
         }
 
-        class VectorAdjustCoordinate480x300Mac : IVectorAdjustCoordinate
+        private class VectorAdjustCoordinate480x300Mac : IVectorAdjustCoordinate
         {
             private GfxScreen _screen;
 
@@ -79,14 +79,14 @@ namespace NScumm.Sci.Graphics
             void Execute(ref short left, ref short top, ref short right, ref short bottom, GfxScreenMasks drawMask, byte color, byte priority, byte control);
         }
 
-        class VectorAdjustLineCoordinatesNOP : IVectorAdjustLineCoordinates
+        private class VectorAdjustLineCoordinatesNOP : IVectorAdjustLineCoordinates
         {
             public void Execute(ref short left, ref short top, ref short right, ref short bottom, GfxScreenMasks drawMask, byte color, byte priority, byte control)
             {
             }
         }
 
-        class VectorAdjustLineCoordinates480x300Mac : IVectorAdjustLineCoordinates
+        private class VectorAdjustLineCoordinates480x300Mac : IVectorAdjustLineCoordinates
         {
             private GfxScreen _screen;
 
@@ -126,7 +126,7 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        struct UpScaledAdjust
+        private struct UpScaledAdjust
         {
             public GfxScreenUpscaledMode gameHiresMode;
             public Sci32ViewNativeResolution viewNativeRes;
@@ -452,7 +452,7 @@ namespace NScumm.Sci.Graphics
         {
             // TODO this ignores the pitch
             Surface screen = SciEngine.Instance.System.GraphicsManager.Capture();
-            Array.Copy(screen.Pixels, buffer, (int)_displayPixels);
+            Array.Copy(screen.Pixels.Data, screen.Pixels.Offset, buffer, 0, (int)_displayPixels);
         }
 
         private void BitsRestoreScreen(Rect rect, ByteAccess memPtr, byte[] screen, ushort screenWidth)
@@ -509,8 +509,8 @@ namespace NScumm.Sci.Graphics
                 if (SciEngine.Instance.GameId == SciGameId.KQ6)
                     _upscaledHires = GfxScreenUpscaledMode.S640x440;
 #if ENABLE_SCI32
-                if (SciEngine.Instance.getGameId() == GID_GK1)
-                    _upscaledHires = GFX_SCREEN_UPSCALED_640x480;
+                if (SciEngine.Instance.GameId == SciGameId.GK1)
+                    _upscaledHires = GfxScreenUpscaledMode.S640x480;
 #endif
             }
 
@@ -541,17 +541,15 @@ namespace NScumm.Sci.Graphics
                     case SciGameId.SQ1:
                         _scriptHeight = 190;
                         break;
-                    default:
-                        break;
                 }
             }
 
 #if ENABLE_SCI32
             // GK1 Mac uses a 640x480 resolution too
-            if (SciEngine.Instance.getPlatform() == Common::kPlatformMacintosh)
+            if (SciEngine.Instance.Platform == Platform.Macintosh)
             {
-                if (SciEngine.Instance.getGameId() == GID_GK1)
-                    _upscaledHires = GFX_SCREEN_UPSCALED_640x480;
+                if (SciEngine.Instance.GameId == SciGameId.GK1)
+                    _upscaledHires = GfxScreenUpscaledMode.S640x480;
             }
 #endif
 
@@ -564,7 +562,7 @@ namespace NScumm.Sci.Graphics
 #if ENABLE_SCI32
             // Phantasmagoria 1 effectively outputs 630x450
             //  Coordinate translation has to use this resolution as well
-            if (SciEngine.Instance.getGameId() == GID_PHANTASMAGORIA)
+            if (SciEngine.Instance.GameId == SciGameId.PHANTASMAGORIA)
             {
                 _width = 630;
                 _height = 450;
@@ -733,7 +731,7 @@ namespace NScumm.Sci.Graphics
             _displayScreen[offset] = color;
         }
 
-        public void AdjustBackUpscaledCoordinates(ref int y, ref int x, Sci32ViewNativeResolution viewNativeRes = Sci32ViewNativeResolution.NONE)
+        public void AdjustBackUpscaledCoordinates(ref short y, ref short x, Sci32ViewNativeResolution viewNativeRes = Sci32ViewNativeResolution.NONE)
         {
             for (int i = 0; i < s_upscaledAdjustTable.Length; i++)
             {
@@ -748,8 +746,8 @@ namespace NScumm.Sci.Graphics
             switch (_upscaledHires)
             {
                 case GfxScreenUpscaledMode.S480x300:
-                    x = ((x * 4) / 6);
-                    y = ((y * 4) / 6);
+                    x = (short) ((x * 4) / 6);
+                    y = (short) ((y * 4) / 6);
                     break;
                 case GfxScreenUpscaledMode.S640x400:
                     x /= 2;
@@ -757,11 +755,11 @@ namespace NScumm.Sci.Graphics
                     break;
                 case GfxScreenUpscaledMode.S640x440:
                     x /= 2;
-                    y = ((y * 5) / 11);
+                    y = (short) ((y * 5) / 11);
                     break;
                 case GfxScreenUpscaledMode.S640x480:
                     x /= 2;
-                    y = ((y * 5) / 12);
+                    y = (short) ((y * 5) / 12);
                     break;
             }
         }
@@ -1039,7 +1037,7 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        public void AdjustToUpscaledCoordinates(ref int y, ref int x, Sci32ViewNativeResolution viewNativeRes = Sci32ViewNativeResolution.NONE)
+        public void AdjustToUpscaledCoordinates(ref short y, ref short x, Sci32ViewNativeResolution viewNativeRes = Sci32ViewNativeResolution.NONE)
         {
             x = _upscaledWidthMapping[x];
             y = _upscaledHeightMapping[y];
@@ -1049,7 +1047,7 @@ namespace NScumm.Sci.Graphics
                 if (s_upscaledAdjustTable[i].gameHiresMode == _upscaledHires &&
                                 s_upscaledAdjustTable[i].viewNativeRes == viewNativeRes)
                 {
-                    y = (y * s_upscaledAdjustTable[i].numerator) / s_upscaledAdjustTable[i].denominator;
+                    y = (short) ((y * s_upscaledAdjustTable[i].numerator) / s_upscaledAdjustTable[i].denominator);
                     break;
                 }
             }

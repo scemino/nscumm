@@ -23,7 +23,7 @@ namespace NScumm.Scumm.Graphics
     public struct PixelNavigator
     {
         readonly int _startOffset;
-        readonly byte[] _pixels;
+        BytePtr _pixels;
         int _offset;
 
         public int Pitch
@@ -55,7 +55,7 @@ namespace NScumm.Scumm.Graphics
         {
         }
 
-        public PixelNavigator(byte[] pixels, int width, int bytesByPixel)
+        public PixelNavigator(BytePtr pixels, int width, int bytesByPixel)
             : this()
         {
             _startOffset = 0;
@@ -64,7 +64,7 @@ namespace NScumm.Scumm.Graphics
             Pitch = width * bytesByPixel;
             BytesByPixel = bytesByPixel;
             Width = width;
-            Height = pixels.Length / Pitch;
+            Height = (pixels.Data.Length-pixels.Offset) / Pitch;
         }
 
         public PixelNavigator(PixelNavigator navigator)
@@ -111,7 +111,7 @@ namespace NScumm.Scumm.Graphics
 
         public void Set(byte data, int length)
         {
-            _pixels.Set(_offset, data, length);
+            _pixels.Data.Set(_pixels.Offset + _offset, data, length);
         }
 
         public void Set(ushort data, int length)

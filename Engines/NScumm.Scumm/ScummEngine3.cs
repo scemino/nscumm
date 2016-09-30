@@ -1,4 +1,4 @@
-//
+﻿//
 //  ScummEngine3.cs
 //
 //  Author:
@@ -388,8 +388,8 @@ namespace NScumm.Scumm
             }
 
             _cursor.Hotspot = new Point(
-                _cursorHotspots[2 * _currentCursor] * TextSurfaceMultiplier,
-                _cursorHotspots[2 * _currentCursor + 1] * TextSurfaceMultiplier);
+                (short) (_cursorHotspots[2 * _currentCursor] * TextSurfaceMultiplier),
+                (short) (_cursorHotspots[2 * _currentCursor + 1] * TextSurfaceMultiplier));
             _cursor.Width = 16 * TextSurfaceMultiplier;
             _cursor.Height = 16 * TextSurfaceMultiplier;
 

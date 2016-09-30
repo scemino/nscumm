@@ -19,6 +19,7 @@
 using NScumm.Core.Graphics;
 using NScumm.Sci.Engine;
 using System;
+using NScumm.Core;
 
 namespace NScumm.Sci.Graphics
 {
@@ -109,6 +110,58 @@ namespace NScumm.Sci.Graphics
 
         public Window(ushort theId) : base(theId)
         {
+        }
+    }
+
+    internal static class Helpers
+    {
+        /// <summary>
+        /// Multiplies a number by a rational number, rounding up to
+        /// the nearest whole number.
+        /// </summary>
+        /// <param name="value">Value.</param>
+        /// <param name="ratio">Ratio.</param>
+        /// <param name="extra">Extra.</param>
+        public static int Mulru(int value, ref Rational ratio, int extra = 0)
+        {
+            int num = (value + extra) * ratio.Numerator;
+            int result = num / ratio.Denominator;
+            if (num > ratio.Denominator && (num % ratio.Denominator)!=0)
+            {
+                ++result;
+            }
+            return result - extra;
+        }
+
+        /// <summary>
+        /// Multiplies a point by two rational numbers for X and Y,
+        /// rounding up to the nearest whole number.Modifies the
+        /// point directly.
+        /// </summary>
+        /// <param name="point">Point.</param>
+        /// <param name="ratioX">Ratio x.</param>
+        /// <param name="ratioY">Ratio y.</param>
+        public static void Mulru(ref Point point, ref Rational ratioX, ref Rational ratioY)
+        {
+            point.X = (short) Mulru(point.X, ref ratioX);
+            point.Y = (short) Mulru(point.Y, ref ratioY);
+        }
+
+        /// <summary>
+        /// Multiplies a point by two rational numbers for X and Y,
+        /// rounding up to the nearest whole number. Modifies the
+        /// rect directly.
+        /// </summary>
+        /// <param name="rect">Rect.</param>
+        /// <param name="ratioX">Ratio x.</param>
+        /// <param name="ratioY">Ratio y.</param>
+        /// <param name="extra">Extra.</param>
+        public static void Mulru(ref Rect rect, ref Rational ratioX, ref Rational ratioY, int extra)
+        {
+            rect.Left = (short) Mulru(rect.Left, ref ratioX);
+            rect.Top = (short) Mulru(rect.Top, ref ratioY);
+            rect.Right = (short) (Mulru(rect.Right - 1, ref ratioX, extra) + 1);
+            rect.Bottom = (short) (Mulru(rect.Bottom - 1, ref ratioY, extra) + 1);
         }
     }
 }

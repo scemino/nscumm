@@ -69,15 +69,15 @@ namespace NScumm.Scumm
             var bp = GetBoxBase(boxnum);
             var box = new BoxCoords();
 
-            box.UpperLeft.X = bp.Ulx;
-            box.UpperLeft.Y = bp.Uly;
-            box.UpperRight.X = bp.Urx;
-            box.UpperRight.Y = bp.Ury;
+            box.UpperLeft.X = (short) bp.Ulx;
+            box.UpperLeft.Y = (short) bp.Uly;
+            box.UpperRight.X = (short) bp.Urx;
+            box.UpperRight.Y = (short) bp.Ury;
 
-            box.LowerLeft.X = bp.Llx;
-            box.LowerLeft.Y = bp.Lly;
-            box.LowerRight.X = bp.Lrx;
-            box.LowerRight.Y = bp.Lry;
+            box.LowerLeft.X = (short) bp.Llx;
+            box.LowerLeft.Y = (short) bp.Lly;
+            box.LowerRight.X = (short) bp.Lrx;
+            box.LowerRight.Y = (short) bp.Lry;
 
             if (Game.Version == 8)
             {

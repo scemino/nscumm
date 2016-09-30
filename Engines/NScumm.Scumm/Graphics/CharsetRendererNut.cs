@@ -47,13 +47,13 @@ namespace NScumm.Scumm.Graphics
             if (chr == '@')
                 return;
 
-            shadow.Left = Left;
-            shadow.Top = Top;
+            shadow.Left = (short) Left;
+            shadow.Top = (short) Top;
 
             if (FirstChar)
             {
-                Str.Left = (shadow.Left >= 0) ? shadow.Left : 0;
-                Str.Top = (shadow.Top >= 0) ? shadow.Top : 0;
+                Str.Left = (short) ((shadow.Left >= 0) ? shadow.Left : 0);
+                Str.Top = (short) ((shadow.Top >= 0) ? shadow.Top : 0);
                 Str.Right = Str.Left;
                 Str.Bottom = Str.Top;
                 FirstChar = false;
@@ -66,8 +66,8 @@ namespace NScumm.Scumm.Graphics
 //            if (is2byte)
 //                width = _vm._2byteWidth;
 
-            shadow.Right = Left + width;
-            shadow.Bottom = Top + height;
+            shadow.Right = (short) (Left + width);
+            shadow.Bottom = (short) (Top + height);
 
             Surface s;
             if (!ignoreCharsetMask)
@@ -100,7 +100,7 @@ namespace NScumm.Scumm.Graphics
             Vm.MarkRectAsDirty(Vm.MainVirtScreen, shadow);
 
             if (Str.Left > Left)
-                Str.Left = Left;
+                Str.Left = (short) Left;
 
             // Original keeps glyph width and character dimensions separately
 //            if ((_vm._language == Common::ZH_TWN || _vm._language == Common::KO_KOR) && is2byte)

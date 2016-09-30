@@ -381,7 +381,7 @@ namespace NScumm.Scumm.Graphics
                             v1.X -= v1.ScaleXStep;
                     }
 
-                    rect.Left = rect.Right = v1.X;
+                    rect.Left = rect.Right = (short) v1.X;
 
                     _scaleIndexX = startScaleIndexX;
                     for (i = 0; i < _width; i++)
@@ -406,7 +406,7 @@ namespace NScumm.Scumm.Graphics
                             v1.X += v1.ScaleXStep;
                     }
 
-                    rect.Left = rect.Right = v1.X;
+                    rect.Left = rect.Right = (short) v1.X;
 
                     _scaleIndexX = startScaleIndexX;
                     for (i = 0; i < _width; i++)
@@ -439,7 +439,7 @@ namespace NScumm.Scumm.Graphics
                         v1.Y -= step;
                 }
 
-                rect.Top = rect.Bottom = v1.Y;
+                rect.Top = rect.Bottom = (short) v1.Y;
                 _scaleIndexY = (byte)(ScaletableSize - ymoveCur);
                 for (i = 0; i < _height; i++)
                 {
@@ -459,17 +459,17 @@ namespace NScumm.Scumm.Graphics
 
                 if (_mirror)
                 {
-                    rect.Left = v1.X;
-                    rect.Right = v1.X + _width;
+                    rect.Left = (short) v1.X;
+                    rect.Right = (short) (v1.X + _width);
                 }
                 else
                 {
-                    rect.Left = v1.X - _width;
-                    rect.Right = v1.X;
+                    rect.Left = (short) (v1.X - _width);
+                    rect.Right = (short) v1.X;
                 }
 
-                rect.Top = v1.Y;
-                rect.Bottom = rect.Top + _height;
+                rect.Top = (short) v1.Y;
+                rect.Bottom = (short) (rect.Top + _height);
 
             }
 
@@ -553,10 +553,10 @@ namespace NScumm.Scumm.Graphics
                 rect.Top = 0;
 
             if (rect.Top > _h)
-                rect.Top = _h;
+                rect.Top = (short) _h;
 
             if (rect.Bottom > _h)
-                rect.Bottom = _h;
+                rect.Bottom = (short) _h;
 
             if (DrawTop > rect.Top)
                 DrawTop = rect.Top;

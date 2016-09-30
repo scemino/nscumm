@@ -27,15 +27,15 @@ using NScumm.Scumm.IO;
 
 namespace NScumm.Scumm
 {
-    partial class ScummEngine7
+    internal partial class ScummEngine7
     {
-        int _smushFrameRate;
-        byte[] _lastStringTag = new byte[12 + 1];
-        int _subtitleQueuePos;
-        SubtitleText[] _subtitleQueue = new SubtitleText[20];
+        private int _smushFrameRate;
+        private byte[] _lastStringTag = new byte[12 + 1];
+        private int _subtitleQueuePos;
+        private SubtitleText[] _subtitleQueue = new SubtitleText[20];
         protected int _verbLineSpacing;
 
-        struct SubString
+        private struct SubString
         {
             public int pos, w;
         }
@@ -217,13 +217,13 @@ namespace NScumm.Scumm
             {
                 int s;
 
-                String[0].Position = new Point((a.Position.X - MainVirtScreen.XStart), String[0].Position.Y);
+                String[0].Position = new Point((short) (a.Position.X - MainVirtScreen.XStart), String[0].Position.Y);
                 s = a.ScaleX * a.TalkPosition.X / 255;
-                String[0].Position = String[0].Position.Offset(((a.TalkPosition.X - s) / 2 + s), 0);
+                String[0].Position = String[0].Position.Offset((short) ((a.TalkPosition.X - s) / 2 + s), 0);
 
-                String[0].Position = new Point(String[0].Position.X, (a.Position.Y - a.Elevation - ScreenTop));
+                String[0].Position = new Point(String[0].Position.X, (short) (a.Position.Y - a.Elevation - ScreenTop));
                 s = a.ScaleY * a.TalkPosition.Y / 255;
-                String[0].Position = String[0].Position.Offset(0, ((a.TalkPosition.Y - s) / 2 + s));
+                String[0].Position = String[0].Position.Offset(0, (short) ((a.TalkPosition.Y - s) / 2 + s));
             }
 
             _charset.SetColor(_charsetColor);
@@ -689,9 +689,9 @@ namespace NScumm.Scumm
                 {
                     var charWidth = _charset.GetCharWidth(msg[msgPos2]);
                     var charHeight = _charset.GetCharHeight(msg[msgPos2]);
-                    vs.CurRect.Right += charWidth;
+                    vs.CurRect.Right = (short) (vs.CurRect.Right+charWidth);
                     if (vs.CurRect.Bottom < charHeight)
-                        vs.CurRect.Bottom = charHeight;
+                        vs.CurRect.Bottom = (short) charHeight;
                     msgPos2++;
                 }
                 vs.CurRect.Right += vs.CurRect.Left;
@@ -723,7 +723,7 @@ namespace NScumm.Scumm
                         var tmp = new byte[msg.Length - len - 1];
                         Array.Copy(msg, len + 1, tmp, 0, tmp.Length);
                         EnqueueText(tmp, vs.CurRect.Left, vs.CurRect.Top + _verbLineSpacing, color, vs.CharsetNr, vs.Center);
-                        vs.CurRect.Bottom += _verbLineSpacing;
+                        vs.CurRect.Bottom = (short) (vs.CurRect.Bottom+_verbLineSpacing);
                     }
                 }
                 else
@@ -736,7 +736,7 @@ namespace NScumm.Scumm
             }
         }
 
-        void akos_processQueue()
+        private void akos_processQueue()
         {
             byte cmd;
             int actor, param_1, param_2;
@@ -852,7 +852,7 @@ namespace NScumm.Scumm
             _subtitleQueuePos = 0;
         }
 
-        Point ClampCameraPos(Point pt)
+        private Point ClampCameraPos(Point pt)
         {
             int x = pt.X, y = pt.Y;
             if (pt.X < Variables[VariableCameraMinX.Value])
@@ -867,10 +867,10 @@ namespace NScumm.Scumm
             if (pt.Y > Variables[VariableCameraMaxY.Value])
                 y = Variables[VariableCameraMaxY.Value];
 
-            return new Point(x, y);
+            return new Point((short) x, (short) y);
         }
 
-        void PlaySpeech(byte[] ptr)
+        private void PlaySpeech(byte[] ptr)
         {
             if (Game.GameId == GameId.Dig && /*(ConfMan.getBool("speech_mute") ||*/ Variables[VariableVoiceMode.Value] == 2)
                 return;

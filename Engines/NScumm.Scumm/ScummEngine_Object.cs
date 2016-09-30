@@ -397,7 +397,7 @@ namespace NScumm.Scumm
 
                 var x = od.Position.X + od.Hotspots[state].X;
                 var y = od.Position.Y + od.Hotspots[state].Y;
-                p = new Point(x, y);
+                p = new Point((short) x, (short) y);
             }
             else if (Game.Version <= 2)
             {
@@ -410,11 +410,11 @@ namespace NScumm.Scumm
                 // Bus scene in Zak V2, where no actor is present). Refer to bug #3526089.
                 if (od.ActorDir == 0 && Game.Version == 0)
                 {
-                    x = od.Position.X + od.Width / 2;
-                    y = od.Position.Y + od.Height / 2;
+                    x = (short) (od.Position.X + od.Width / 2);
+                    y = (short) (od.Position.Y + od.Height / 2);
                 }
-                x = x >> V12_X_SHIFT;
-                y = y >> V12_Y_SHIFT;
+                x = (short) (x >> V12_X_SHIFT);
+                y = (short) (y >> V12_Y_SHIFT);
                 p = new Point(x, y);
             }
             else

@@ -24,7 +24,7 @@ namespace NScumm.Sci
 {
     // These types are used both as identifiers and as elements of bitfields
     [Flags]
-    enum BreakpointType
+    internal enum BreakpointType
     {
         /// <summary>
         /// Break when a selector is executed. Data contains (char *) selector name
@@ -41,7 +41,7 @@ namespace NScumm.Sci
         BREAK_EXPORT = 1 << 3
     }
 
-    struct Breakpoint
+    internal struct Breakpoint
     {
         public BreakpointType type;
         /// <summary>
@@ -54,7 +54,7 @@ namespace NScumm.Sci
         public string name;
     }
 
-    enum DebugSeeking
+    internal enum DebugSeeking
     {
         Nothing = 0,
         Callk = 1,        // Step forward until callk is found

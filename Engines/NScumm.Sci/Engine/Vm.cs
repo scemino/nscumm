@@ -27,7 +27,7 @@ namespace NScumm.Sci.Engine
     /// <summary>
     /// Types of selectors as returned by lookupSelector() below.
     /// </summary>
-    enum SelectorType
+    internal enum SelectorType
     {
         None = 0,
         Variable,
@@ -44,11 +44,11 @@ namespace NScumm.Sci.Engine
         public StackPtr GetPointer(SegManager segMan)
         {
             SciObject o = segMan.GetObject(obj);
-            return o != null ? o.GetVariableRef(varindex) : StackPtr.Null;
+            return o?.GetVariableRef(varindex) ?? StackPtr.Null;
         }
     }
 
-    enum ExecStackType
+    internal enum ExecStackType
     {
         CALL = 0,
         KERNEL = 1,
@@ -58,7 +58,7 @@ namespace NScumm.Sci.Engine
     internal struct StackPtr : IEquatable<StackPtr>, IComparable<StackPtr>, IComparable
     {
         private int _index;
-        private Register[] _entries;
+        private readonly Register[] _entries;
 
         public static readonly StackPtr Null = new StackPtr(null, -1);
 
@@ -146,7 +146,7 @@ namespace NScumm.Sci.Engine
 
         public override int GetHashCode()
         {
-            return _entries == null ? 0 : _entries.GetHashCode() ^ _index.GetHashCode();
+            return _entries?.GetHashCode() ^ _index.GetHashCode() ?? 0;
         }
 
         public override bool Equals(object obj)
@@ -184,6 +184,16 @@ namespace NScumm.Sci.Engine
         public void IncOffset(int index, short offset)
         {
             _entries[_index + index] = Register.IncOffset(_entries[_index + index], offset);
+        }
+
+        public void SetSegment(int index, ushort segment)
+        {
+            _entries[_index + index] = Register.Make(segment, (ushort)_entries[_index + index].Offset);
+        }
+
+        public void SetOffset(int index, ushort offset)
+        {
+            _entries[_index + index] = Register.Make(_entries[_index + index].Segment, offset);
         }
     }
 
@@ -473,7 +483,7 @@ namespace NScumm.Sci.Engine
         public static void Run(EngineState s)
         {
             int temp;
-            Register r_temp = new Register(); // Temporary register
+            Register r_temp = Register.NULL_REG; // Temporary register
             StackPtr s_temp; // Temporary stack pointer
             short[] opparams = new short[4]; // opcode parameters
 
@@ -920,9 +930,9 @@ namespace NScumm.Sci.Engine
                         if (ResourceManager.GetSciVersion() == SciVersion.V3)
                         {
                             if (extOpcode == 0x4c)
-                                s.r_acc = obj.InfoSelector;
+                                s.r_acc = obj.InfoSelector[0];
                             else if (extOpcode == 0x4d)
-                                PUSH32(obj.InfoSelector);
+                                PUSH32(obj.InfoSelector[0]);
                             else if (extOpcode == 0x4e)
                                 s.r_acc = obj.SuperClassSelector;    // TODO: is this correct?
                                                                      // TODO: There are also opcodes in
@@ -949,7 +959,7 @@ namespace NScumm.Sci.Engine
 
                         s.xs.sp.IncOffset(1, s.r_rest);
                         xs_new = SendSelector(s, s.xs.objp, s.xs.objp,
-                                                s_temp, (int)(opparams[0] >> 1) + (ushort)s.r_rest,
+                                                s_temp, (opparams[0] >> 1) + (ushort)s.r_rest,
                                                 s.xs.sp);
 
                         if (xs_new != null && xs_new != s.xs)
@@ -964,21 +974,18 @@ namespace NScumm.Sci.Engine
 
                         if (!r_temp.IsPointer)
                             throw new InvalidOperationException("[VM]: Invalid superclass in object");
-                        else
-                        {
-                            s_temp = s.xs.sp;
-                            s.xs.sp -= ((opparams[1] >> 1) + s.r_rest); // Adjust stack
+                        s_temp = s.xs.sp;
+                        s.xs.sp -= ((opparams[1] >> 1) + s.r_rest); // Adjust stack
 
-                            s.xs.sp.IncOffset(1, s.r_rest);
-                            xs_new = SendSelector(s, r_temp, s.xs.objp, s_temp,
-                                                    (int)(opparams[1] >> 1) + (ushort)s.r_rest,
-                                                    s.xs.sp);
+                        s.xs.sp.IncOffset(1, s.r_rest);
+                        xs_new = SendSelector(s, r_temp, s.xs.objp, s_temp,
+                            (opparams[1] >> 1) + (ushort)s.r_rest,
+                            s.xs.sp);
 
-                            if (xs_new != null && xs_new != s.xs)
-                                s._executionStackPosChanged = true;
+                        if (xs_new != null && xs_new != s.xs)
+                            s._executionStackPosChanged = true;
 
-                            s.r_rest = 0;
-                        }
+                        s.r_rest = 0;
 
                         break;
 
@@ -998,14 +1005,14 @@ namespace NScumm.Sci.Engine
                         var_number = temp & 0x03; // Get variable type
 
                         // Get variable block offset
-                        r_temp = Register.SetSegment(r_temp, (ushort)(s.variablesSegment[var_number]));
-                        r_temp = Register.SetOffset(r_temp, (ushort)(s.variables[var_number] - s.variablesBase[var_number]));
+                        r_temp = Register.Make((ushort) s.variablesSegment[var_number],
+                            (ushort) (s.variables[var_number] - s.variablesBase[var_number]));
 
                         if ((temp & 0x08) != 0)  // Add accumulator offset if requested
-                            r_temp = Register.IncOffset(r_temp, s.r_acc.RequireInt16());
+                            r_temp=Register.IncOffset(r_temp, s.r_acc.RequireInt16());
 
-                        r_temp = Register.IncOffset(r_temp, opparams[1]);  // Add index
-                        r_temp = Register.SetOffset(r_temp, (ushort)(r_temp.Offset * 2)); // variables are 16 bit
+                        r_temp=Register.IncOffset(r_temp, opparams[1]);  // Add index
+                        r_temp=Register.Make(r_temp.Segment, (ushort)(r_temp.Offset * 2)); // variables are 16 bit
                                                                                           // That's the immediate address now
                         s.r_acc = r_temp;
                         break;
@@ -1074,23 +1081,24 @@ namespace NScumm.Sci.Engine
                     case op_lofsa: // 0x39 (57)
                     case op_lofss: // 0x3a (58)
                                    // Load offset to accumulator or push to stack
-                        r_temp = Register.SetSegment(r_temp, (ushort)s.xs.pc.Segment);
+                        r_temp=Register.Make((ushort)s.xs.pc.Segment, (ushort) r_temp.Offset);
 
                         switch (SciEngine.Instance.Features.DetectLofsType())
                         {
                             case SciVersion.V0_EARLY:
-                                r_temp = Register.SetOffset(r_temp, (ushort)(s.xs.pc.Offset + opparams[0]));
+                                r_temp = Register.Make(r_temp.Segment, (ushort) (s.xs.pc.Offset + opparams[0]));
                                 break;
                             case SciVersion.V1_MIDDLE:
-                                r_temp = Register.SetOffset(r_temp, (ushort)opparams[0]);
+                                r_temp = Register.Make(r_temp.Segment, (ushort) opparams[0]);
                                 break;
                             case SciVersion.V1_1:
-                                r_temp = Register.SetOffset(r_temp, (ushort)(opparams[0] + local_script.ScriptSize));
+                                r_temp = Register.Make(r_temp.Segment, (ushort) (opparams[0] + local_script.ScriptSize));
                                 break;
                             case SciVersion.V3:
                                 // In theory this can break if the variant with a one-byte argument is
                                 // used. For now, assume it doesn't happen.
-                                r_temp = Register.SetOffset(r_temp, (ushort)local_script.RelocateOffsetSci3((uint)(s.xs.pc.Offset - 2)));
+                                r_temp = Register.Make(r_temp.Segment,
+                                    (ushort) local_script.RelocateOffsetSci3((uint) (s.xs.pc.Offset - 2)));
                                 break;
                             default:
                                 throw new InvalidOperationException("Unknown lofs type");
@@ -1360,7 +1368,6 @@ namespace NScumm.Sci.Engine
                     case opcode_format.Script_End:
                         break;
 
-                    case opcode_format.Script_Invalid:
                     default:
                         throw new InvalidOperationException($"opcode {extOpcode:X2}: Invalid");
                 }
@@ -1607,7 +1614,7 @@ namespace NScumm.Sci.Engine
                 //  those parameters are taken from uninitialized stack and afterwards they are copied back into temps
                 //  if we don't remove the segment, we would get false-positive uninitialized reads later
                 if (type == VAR_TEMP && value.Segment == 0xffff)
-                    value = Register.SetSegment(value, 0);
+                    value = Register.Make(value.Segment, 0);
 
                 s.variables[type][index] = value;
 
@@ -1625,7 +1632,7 @@ namespace NScumm.Sci.Engine
                     else
                     {
                         // Update ScummVM's audio options
-                        SciEngine.Instance.UpdateScummVMAudioOptions();
+                        SciEngine.Instance.UpdateScummVmAudioOptions();
                     }
                 }
             }

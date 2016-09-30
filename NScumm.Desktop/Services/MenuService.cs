@@ -17,14 +17,15 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System;
 using System.Linq;
+using NScumm.Desktop;
+using NScumm.Desktop.Screens;
 
 namespace NScumm.Services
 {
     class MenuService : IMenuService
     {
-        private ScummGame _game;
+        private readonly ScummGame _game;
 
         public MenuService(ScummGame game)
         {

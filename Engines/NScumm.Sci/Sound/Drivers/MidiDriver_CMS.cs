@@ -87,7 +87,7 @@ namespace NScumm.Sci.Sound.Drivers
 
         private byte[] _patchData;
 
-        class Channel
+        private class Channel
         {
             public Channel()
             {
@@ -108,7 +108,7 @@ namespace NScumm.Sci.Sound.Drivers
 
         private readonly Channel[] _channel = new Channel[16];
 
-        class Voice
+        private class Voice
         {
             public Voice()
             {
@@ -843,7 +843,7 @@ namespace NScumm.Sci.Sound.Drivers
         }
     }
 
-    class MidiPlayer_CMS : MidiPlayer
+    internal class MidiPlayer_CMS : MidiPlayer
     {
         public MidiPlayer_CMS(SciVersion version) : base(version)
         {

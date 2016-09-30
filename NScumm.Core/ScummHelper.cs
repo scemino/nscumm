@@ -64,28 +64,26 @@ namespace NScumm.Core
         {
             if (value < min)
                 return min;
-            else if (value > max)
+            if (value > max)
                 return max;
-            else
-                return value;
+            return value;
         }
 
         public static T Clip<T>(T value, T min, T max) where T : IComparable
         {
             if (value.CompareTo(min) < 0)
                 return min;
-            else if (value.CompareTo(max) > 0)
+            if (value.CompareTo(max) > 0)
                 return max;
-            else
-                return value;
+            return value;
         }
 
         public static string NormalizePath(string path)
         {
             var dir = ServiceLocator.FileStorage.GetDirectoryName(path);
-            return path = (from file in ServiceLocator.FileStorage.EnumerateFiles(dir)
-                           where string.Equals(file, path, StringComparison.OrdinalIgnoreCase)
-                           select file).FirstOrDefault();
+            return (from file in ServiceLocator.FileStorage.EnumerateFiles(dir)
+                where string.Equals(file, path, StringComparison.OrdinalIgnoreCase)
+                select file).FirstOrDefault();
         }
 
         public static string LocatePath(string directory, string filename)
@@ -98,14 +96,14 @@ namespace NScumm.Core
 
         public static byte[] ToByteArray(this BitArray bits)
         {
-            int numBytes = bits.Length / 8;
+            var numBytes = bits.Length / 8;
             if (bits.Length % 8 != 0)
                 numBytes++;
 
             var bytes = new byte[numBytes];
             int byteIndex = 0, bitIndex = 0;
 
-            for (int i = 0; i < bits.Length; i++)
+            for (var i = 0; i < bits.Length; i++)
             {
                 if (bits[i])
                     bytes[byteIndex] |= (byte)(1 << (7 - bitIndex));
@@ -145,12 +143,12 @@ namespace NScumm.Core
 
         public static int RevBitMask(int x)
         {
-            return (0x80 >> (x));
+            return 0x80 >> x;
         }
 
         public static void Swap<T>(ref T a, ref T b)
         {
-            T tmp = a;
+            var tmp = a;
             a = b;
             b = tmp;
         }
@@ -159,7 +157,7 @@ namespace NScumm.Core
         {
             if (value < min || value > max)
             {
-                throw new ArgumentOutOfRangeException("value", string.Format("{0} {1} is out of bounds ({2},{3})", desc, value, min, max));
+                throw new ArgumentOutOfRangeException(nameof(value), $"{desc} {value} is out of bounds ({min},{max})");
             }
         }
 
@@ -173,22 +171,21 @@ namespace NScumm.Core
         {
             if (dirType != 0)
                 return dir * 45;
-            else
-                return dir * 90;
+            return dir * 90;
         }
 
         public static int OldDirToNewDir(int dir)
         {
             if (dir < 0 && dir > 3)
-                throw new ArgumentOutOfRangeException("dir", "Invalid direction");
-            int[] new_dir_table = { 270, 90, 180, 0 };
-            return new_dir_table[dir];
+                throw new ArgumentOutOfRangeException(nameof(dir), "Invalid direction");
+            int[] newDirTable = { 270, 90, 180, 0 };
+            return newDirTable[dir];
         }
 
         public static uint[] ReadUInt32s(this BinaryReader reader, int count)
         {
-            uint[] values = new uint[count];
-            for (int i = 0; i < count; i++)
+            var values = new uint[count];
+            for (var i = 0; i < count; i++)
             {
                 values[i] = reader.ReadUInt32();
             }
@@ -217,8 +214,8 @@ namespace NScumm.Core
 
         public static int[] ReadInt32s(this BinaryReader reader, int count)
         {
-            int[] values = new int[count];
-            for (int i = 0; i < count; i++)
+            var values = new int[count];
+            for (var i = 0; i < count; i++)
             {
                 values[i] = reader.ReadInt32();
             }
@@ -227,8 +224,8 @@ namespace NScumm.Core
 
         public static sbyte[] ReadSBytes(this BinaryReader reader, int count)
         {
-            sbyte[] values = new sbyte[count];
-            for (int i = 0; i < count; i++)
+            var values = new sbyte[count];
+            for (var i = 0; i < count; i++)
             {
                 values[i] = reader.ReadSByte();
             }
@@ -237,8 +234,8 @@ namespace NScumm.Core
 
         public static short[] ReadInt16s(this BinaryReader reader, int count)
         {
-            short[] values = new short[count];
-            for (int i = 0; i < count; i++)
+            var values = new short[count];
+            for (var i = 0; i < count; i++)
             {
                 values[i] = reader.ReadInt16();
             }
@@ -247,8 +244,8 @@ namespace NScumm.Core
 
         public static ushort[] ReadUInt16s(this BinaryReader reader, int count)
         {
-            ushort[] values = new ushort[count];
-            for (int i = 0; i < count; i++)
+            var values = new ushort[count];
+            for (var i = 0; i < count; i++)
             {
                 values[i] = reader.ReadUInt16();
             }
@@ -257,12 +254,12 @@ namespace NScumm.Core
 
         public static int[][] ReadMatrixUInt16(this BinaryReader reader, int count1, int count2)
         {
-            int[][] values = new int[count2][];
+            var values = new int[count2][];
 
-            for (int i = 0; i < count2; i++)
+            for (var i = 0; i < count2; i++)
             {
                 values[i] = new int[count1];
-                for (int j = 0; j < count1; j++)
+                for (var j = 0; j < count1; j++)
                 {
                     values[i][j] = reader.ReadUInt16();
                 }
@@ -272,12 +269,12 @@ namespace NScumm.Core
 
         public static int[][] ReadMatrixInt32(this BinaryReader reader, int count1, int count2)
         {
-            int[][] values = new int[count2][];
+            var values = new int[count2][];
 
-            for (int i = 0; i < count2; i++)
+            for (var i = 0; i < count2; i++)
             {
                 values[i] = new int[count1];
-                for (int j = 0; j < count1; j++)
+                for (var j = 0; j < count1; j++)
                 {
                     values[i][j] = reader.ReadInt32();
                 }
@@ -287,12 +284,12 @@ namespace NScumm.Core
 
         public static byte[][] ReadMatrixBytes(this BinaryReader reader, int count1, int count2)
         {
-            byte[][] values = new byte[count2][];
+            var values = new byte[count2][];
 
-            for (int i = 0; i < count2; i++)
+            for (var i = 0; i < count2; i++)
             {
                 values[i] = new byte[count1];
-                for (int j = 0; j < count1; j++)
+                for (var j = 0; j < count1; j++)
                 {
                     values[i][j] = reader.ReadByte();
                 }
@@ -302,7 +299,7 @@ namespace NScumm.Core
 
         public static void Write(this BinaryWriter writer, uint[] values, int count)
         {
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 writer.Write(values[i]);
             }
@@ -310,9 +307,9 @@ namespace NScumm.Core
 
         public static void WriteMatrixUInt16(this BinaryWriter writer, int[][] values, int count1, int count2)
         {
-            for (int i = 0; i < count2; i++)
+            for (var i = 0; i < count2; i++)
             {
-                for (int j = 0; j < count1; j++)
+                for (var j = 0; j < count1; j++)
                 {
                     writer.Write((ushort)values[i][j]);
                 }
@@ -321,9 +318,9 @@ namespace NScumm.Core
 
         public static void WriteMatrixInt32(this BinaryWriter writer, int[][] values, int count1, int count2)
         {
-            for (int i = 0; i < count2; i++)
+            for (var i = 0; i < count2; i++)
             {
-                for (int j = 0; j < count1; j++)
+                for (var j = 0; j < count1; j++)
                 {
                     writer.Write(values[i][j]);
                 }
@@ -332,9 +329,9 @@ namespace NScumm.Core
 
         public static void WriteMatrixBytes(this BinaryWriter writer, byte[][] values, int count1, int count2)
         {
-            for (int i = 0; i < count2; i++)
+            for (var i = 0; i < count2; i++)
             {
-                for (int j = 0; j < count1; j++)
+                for (var j = 0; j < count1; j++)
                 {
                     writer.Write(values[i][j]);
                 }
@@ -343,9 +340,9 @@ namespace NScumm.Core
 
         public static void WriteMatrixBytes(this BinaryWriter writer, byte[,] values, int count1, int count2)
         {
-            for (int i = 0; i < count2; i++)
+            for (var i = 0; i < count2; i++)
             {
-                for (int j = 0; j < count1; j++)
+                for (var j = 0; j < count1; j++)
                 {
                     writer.Write(values[i, j]);
                 }
@@ -369,37 +366,37 @@ namespace NScumm.Core
 
         public static void WriteUInt16(this BinaryWriter writer, bool value)
         {
-            ushort value16 = value ? (ushort)1 : (ushort)0;
+            var value16 = value ? (ushort)1 : (ushort)0;
             writer.Write(value16);
         }
 
         public static void WriteUInt16(this BinaryWriter writer, int value)
         {
-            ushort value16 = (ushort)value;
+            var value16 = (ushort)value;
             writer.Write(value16);
         }
 
         public static void WriteUInt16(this BinaryWriter writer, uint value)
         {
-            ushort value16 = (ushort)value;
+            var value16 = (ushort)value;
             writer.Write(value16);
         }
 
         public static void WriteByte(this BinaryWriter writer, bool value)
         {
-            byte value8 = value ? (byte)1 : (byte)0;
+            var value8 = value ? (byte)1 : (byte)0;
             writer.Write(value8);
         }
 
         public static void WriteByte(this BinaryWriter writer, int value)
         {
-            byte value8 = (byte)value;
+            var value8 = (byte)value;
             writer.Write(value8);
         }
 
         public static void WriteBytes(this BinaryWriter writer, byte[] values, int count)
         {
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 writer.Write(values[i]);
             }
@@ -407,7 +404,7 @@ namespace NScumm.Core
 
         public static void WriteBytes(this BinaryWriter writer, ushort[] values, int count)
         {
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 writer.Write((byte)values[i]);
             }
@@ -415,7 +412,7 @@ namespace NScumm.Core
 
         public static void WriteSBytes(this BinaryWriter writer, sbyte[] values, int count)
         {
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 writer.Write(values[i]);
             }
@@ -423,7 +420,7 @@ namespace NScumm.Core
 
         public static void WriteUInt16s(this BinaryWriter writer, ushort[] values, int count)
         {
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 writer.Write(values[i]);
             }
@@ -431,7 +428,7 @@ namespace NScumm.Core
 
         public static void WriteUInt32s(this BinaryWriter writer, uint[] values, int count)
         {
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 writer.Write(values[i]);
             }
@@ -439,7 +436,7 @@ namespace NScumm.Core
 
         public static void WriteInt16s(this BinaryWriter writer, short[] values, int count)
         {
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 writer.Write(values[i]);
             }
@@ -447,7 +444,7 @@ namespace NScumm.Core
 
         public static void WriteInt16s(this BinaryWriter writer, int[] values, int count)
         {
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 writer.Write((short)values[i]);
             }
@@ -455,7 +452,7 @@ namespace NScumm.Core
 
         public static void WriteInt32s(this BinaryWriter writer, int[] values, int count)
         {
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 writer.Write(values[i]);
             }
@@ -493,7 +490,7 @@ namespace NScumm.Core
 
         public static uint MakeTag(char a0, char a1, char a2, char a3)
         {
-            return ((uint)((a3) | ((a2) << 8) | ((a1) << 16) | ((a0) << 24)));
+            return (uint)(a3 | (a2 << 8) | (a1 << 16) | (a0 << 24));
         }
 
         public static ushort ToUInt16(this byte[] value, int startIndex = 0)
@@ -518,7 +515,7 @@ namespace NScumm.Core
 
         public static uint ToUInt24(this byte[] value, int startIndex = 0)
         {
-            return (uint)((value[startIndex + 2] << 16) | (value[startIndex + 1] << 8) | (value[startIndex]));
+            return (uint)((value[startIndex + 2] << 16) | (value[startIndex + 1] << 8) | value[startIndex]);
         }
 
         public static void WriteUInt16(this byte[] array, int startIndex, ushort value)
@@ -562,7 +559,7 @@ namespace NScumm.Core
 
         public static void Set(this byte[] array, int startIndex, byte value, int length)
         {
-            for (int i = startIndex; i < startIndex + length; i++)
+            for (var i = startIndex; i < startIndex + length; i++)
             {
                 array[i] = value;
             }
@@ -570,13 +567,19 @@ namespace NScumm.Core
 
         public static void Set<T>(this T[] array, int startIndex, T value, int length)
         {
-            for (int i = startIndex; i < startIndex + length; i++)
+            for (var i = startIndex; i < startIndex + length; i++)
             {
                 array[i] = value;
             }
         }
 
         public static void WriteUInt32(this byte[] array, int startIndex, uint value)
+        {
+            var data = BitConverter.GetBytes(value);
+            Array.Copy(data, 0, array, startIndex, 4);
+        }
+
+        public static void WriteInt32(this byte[] array, int startIndex, int value)
         {
             var data = BitConverter.GetBytes(value);
             Array.Copy(data, 0, array, startIndex, 4);
@@ -612,7 +615,7 @@ namespace NScumm.Core
         {
             var data = new List<byte>();
             count = count < 0 ? value.Length : count;
-            for (int i = startIndex; i < (startIndex + count) && value[i] != 0; i++)
+            for (var i = startIndex; i < startIndex + count && value[i] != 0; i++)
             {
                 data.Add(value[i]);
             }
@@ -628,7 +631,7 @@ namespace NScumm.Core
         {
             var data = new List<char>();
             count = count < 0 ? value.Length : count;
-            for (int i = startIndex; i < (startIndex + count) && value[i] != 0; i++)
+            for (var i = startIndex; i < startIndex + count && value[i] != 0; i++)
             {
                 data.Add((char)value[i]);
             }
@@ -642,8 +645,8 @@ namespace NScumm.Core
 
         public static int GetTextLength(this byte[] value, int startIndex = 0)
         {
-            int length = 0;
-            for (int i = startIndex; i < value.Length && value[i] != 0; i++)
+            var length = 0;
+            for (var i = startIndex; i < value.Length && value[i] != 0; i++)
             {
                 length++;
             }
@@ -652,7 +655,7 @@ namespace NScumm.Core
 
         public static int GetStringLength(byte[] data, int gameVersion)
         {
-            int length = 0;
+            var length = 0;
             for (var i = 0; i < data.Length; i++)
             {
                 var character = data[i];
@@ -675,7 +678,7 @@ namespace NScumm.Core
 
         public static void ArraySet<T>(T[] array, T value, int index)
         {
-            for (int i = index; i < array.Length; i++)
+            for (var i = index; i < array.Length; i++)
             {
                 array[i] = value;
             }

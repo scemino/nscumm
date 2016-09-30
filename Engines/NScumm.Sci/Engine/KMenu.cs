@@ -21,7 +21,7 @@ using NScumm.Sci.Graphics;
 
 namespace NScumm.Sci.Engine
 {
-    partial class Kernel
+    internal partial class Kernel
     {
         private static Register kAddMenu(EngineState s, int argc, StackPtr argv)
         {

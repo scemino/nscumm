@@ -36,7 +36,7 @@ namespace NScumm.Sci.Engine
     // of the edges starting at indexw1/vertexw1 on the work polygon, and at
     // indexp1/vertexp1 on the polygon being merged.
     // It ends with the point intersection2, being the analogous intersection.
-    struct Patch
+    internal struct Patch
     {
         public int indexw1;
         public int indexp1;
@@ -53,7 +53,7 @@ namespace NScumm.Sci.Engine
         public bool disabled; // If true, this Patch was made superfluous by another Patch
     }
 
-    class Vertex
+    internal class Vertex
     {
         public const uint HUGE_DISTANCE = uint.MaxValue;
 
@@ -83,14 +83,14 @@ namespace NScumm.Sci.Engine
     }
 
     // Error codes
-    enum PathFindingError
+    internal enum PathFindingError
     {
         OK = 0,
         ERROR = -1,
         FATAL = -2
     }
 
-    class CircularVertexList : IEnumerable<Vertex>
+    internal class CircularVertexList : IEnumerable<Vertex>
     {
         public Vertex _head;
 
@@ -163,7 +163,7 @@ namespace NScumm.Sci.Engine
     }
 
     // SCI-defined polygon types
-    enum PolygonType
+    internal enum PolygonType
     {
         TOTAL_ACCESS = 0,
         NEAREST_ACCESS = 1,
@@ -171,7 +171,7 @@ namespace NScumm.Sci.Engine
         CONTAINED_ACCESS = 3
     }
 
-    enum PolygonContainmentType
+    internal enum PolygonContainmentType
     {
         OUTSIDE = 0,
         ON_EDGE = 1,
@@ -179,7 +179,7 @@ namespace NScumm.Sci.Engine
     }
 
     // Floating point struct
-    struct FloatPoint
+    internal struct FloatPoint
     {
         public FloatPoint(float x, float y) : this()
         {
@@ -221,7 +221,7 @@ namespace NScumm.Sci.Engine
         public float X, Y;
     }
 
-    class Polygon
+    internal class Polygon
     {
         // SCI polygon type
         public PolygonType Type;
@@ -236,7 +236,7 @@ namespace NScumm.Sci.Engine
     }
 
     // Pathfinding state
-    class PathfindingState
+    internal class PathfindingState
     {
         // List of all polygons
         public List<Polygon> polygons = new List<Polygon>();
@@ -335,7 +335,7 @@ namespace NScumm.Sci.Engine
             Point p;
 
             // Try nearest point first
-            p = new Point((int)Math.Floor(f.X + 0.5), (int)Math.Floor(f.Y + 0.5));
+            p = new Point((short)Math.Floor(f.X + 0.5), (short)Math.Floor(f.Y + 0.5));
 
             if (Contained(p, polygon) != PolygonContainmentType.INSIDE)
             {
@@ -343,7 +343,7 @@ namespace NScumm.Sci.Engine
                 return PathFindingError.OK;
             }
 
-            p = new Point((int)Math.Floor(f.X), (int)Math.Floor(f.Y));
+            p = new Point((short)Math.Floor(f.X), (short)Math.Floor(f.Y));
 
             // Try (x, y), (x + 1, y), (x , y + 1) and (x + 1, y + 1)
             if (Contained(p, polygon) == PolygonContainmentType.INSIDE)
@@ -428,10 +428,10 @@ namespace NScumm.Sci.Engine
         }
     }
 
-    partial class Kernel
+    internal partial class Kernel
     {
-        const int POLY_LAST_POINT = 0x7777;
-        const int POLY_POINT_SIZE = 4;
+        private const int POLY_LAST_POINT = 0x7777;
+        private const int POLY_POINT_SIZE = 4;
 
         private static Register kMergePoly(EngineState s, int argc, StackPtr argv)
         {
@@ -1074,8 +1074,8 @@ namespace NScumm.Sci.Engine
 
 #if ENABLE_SCI32
             // SCI32 stores the actual points in the data property of points (in a new array)
-            if (segMan.isHeapObject(points))
-                points = readSelector(segMan, points, SELECTOR(data));
+            if (segMan.IsHeapObject(points))
+                points = SciEngine.ReadSelector(segMan, points, o => o.data);
 #endif
 
             if (size == 0)
@@ -1275,8 +1275,8 @@ namespace NScumm.Sci.Engine
             }
             else
             {
-                point.X = list_r.reg.Value[offset * 2].ToUInt16();
-                point.Y = list_r.reg.Value[offset * 2 + 1].ToUInt16();
+                point.X = list_r.reg.Value[offset * 2].ToInt16();
+                point.Y = list_r.reg.Value[offset * 2 + 1].ToInt16();
             }
             return point;
         }
@@ -1291,10 +1291,10 @@ namespace NScumm.Sci.Engine
         {
             System.Diagnostics.Debug.Assert(polygon.Type == PolygonType.CONTAINED_ACCESS);
 
-            return ((Contained(new Point(point.X, point.Y + 1), polygon) != PolygonContainmentType.INSIDE)
-                    || (Contained(new Point(point.X, point.Y - 1), polygon) != PolygonContainmentType.INSIDE)
-                    || (Contained(new Point(point.X + 1, point.Y), polygon) != PolygonContainmentType.INSIDE)
-                    || (Contained(new Point(point.X - 1, point.Y), polygon) != PolygonContainmentType.INSIDE));
+            return (Contained(new Point(point.X, (short) (point.Y + 1)), polygon) != PolygonContainmentType.INSIDE)
+                   || (Contained(new Point(point.X, (short) (point.Y - 1)), polygon) != PolygonContainmentType.INSIDE)
+                   || (Contained(new Point((short) (point.X + 1), point.Y), polygon) != PolygonContainmentType.INSIDE)
+                   || (Contained(new Point((short) (point.X - 1), point.Y), polygon) != PolygonContainmentType.INSIDE);
         }
 
         private static Point? FixupStartPoint(PathfindingState s, Point start)

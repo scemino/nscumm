@@ -31,22 +31,25 @@ namespace NScumm.Sci.Engine
 
     internal class GameFeatures
     {
-        private SegManager _segMan;
-        private Kernel _kernel;
+        private readonly SegManager _segMan;
+        private readonly Kernel _kernel;
 
         private SciVersion _doSoundType, _setCursorType, _lofsType, _gfxFunctionsType, _messageFunctionType;
+#if ENABLE_SCI32
+        private SciVersion _sci21KernelType;
+#endif
+
 
         private MoveCountType _moveCountType;
-        private bool _usesCdTrack;
         private bool _forceDOSTracks;
 
-        public bool UsesCdTrack { get { return _usesCdTrack; } }
+        public bool UsesCdTrack { get; }
 
         public bool UseAltWinGMSound
         {
             get
             {
-                if (SciEngine.Instance != null && SciEngine.Instance.Platform == Core.IO.Platform.Windows && SciEngine.Instance.IsCD && !_forceDOSTracks)
+                if (SciEngine.Instance != null && SciEngine.Instance.Platform == Core.IO.Platform.Windows && SciEngine.Instance.IsCd && !_forceDOSTracks)
                 {
                     SciGameId id = SciEngine.Instance.GameId;
                     return (id == SciGameId.ECOQUEST ||
@@ -62,7 +65,7 @@ namespace NScumm.Sci.Engine
             }
         }
 
-        public bool HandleMoveCount { get { return DetectMoveCountType() == MoveCountType.Increment; } }
+        public bool HandleMoveCount => DetectMoveCountType() == MoveCountType.Increment;
 
         private MoveCountType DetectMoveCountType()
         {
@@ -147,9 +150,9 @@ namespace NScumm.Sci.Engine
                     _doSoundType = SciEngine.Instance.ResMan.DetectEarlySound() ? SciVersion.V0_EARLY : SciVersion.V0_LATE;
 # if ENABLE_SCI32
                 }
-                else if (getSciVersion() >= SciVersion.V2_1)
+                else if (ResourceManager.GetSciVersion() >= SciVersion.V2_1_EARLY)
                 {
-                    _doSoundType = SciVersion.V2_1;
+                    _doSoundType = SciVersion.V2_1_EARLY;
 #endif
                 }
                 else if (SciEngine.Selector(s => s.nodePtr) == -1)
@@ -280,7 +283,6 @@ namespace NScumm.Sci.Engine
             _moveCountType = MoveCountType.Uninitialized;
 #if ENABLE_SCI32
             _sci21KernelType = SciVersion.NONE;
-            _sci2StringFunctionType = kSci2StringFunctionUninitialized;
 #endif
             // TODO:
             //_usesCdTrack = Common::File::exists("cdaudio.map");
@@ -444,7 +446,7 @@ namespace NScumm.Sci.Engine
                 return _messageFunctionType;
             }
 
-            var resources = SciEngine.Instance.ResMan.ListResources(ResourceType.Message, -1);
+            var resources = SciEngine.Instance.ResMan.ListResources(ResourceType.Message);
 
             if (resources.Count == 0)
             {
@@ -656,5 +658,92 @@ namespace NScumm.Sci.Engine
 
             return _setCursorType;
         }
+
+#if ENABLE_SCI32
+        private bool AutoDetectSci21KernelType()
+        {
+            // First, check if the Sound object is loaded
+            var soundObjAddr = _segMan.FindObjectByName("Sound");
+            if (soundObjAddr.IsNull)
+            {
+                // Usually, this means that the Sound object isn't loaded yet.
+                // This case doesn't occur in early SCI2.1 games, and we've only
+                // seen it happen in the RAMA demo, thus we can assume that the
+                // game is using a SCI2.1 table
+
+                // HACK: The Inside the Chest Demo and King's Questions minigame
+                // don't have sounds at all, but they're using a SCI2 kernel
+                if (SciEngine.Instance.GameId == SciGameId.CHEST || SciEngine.Instance.GameId == SciGameId.KQUESTIONS)
+                {
+                    _sci21KernelType = SciVersion.V2;
+                    return true;
+                }
+
+                Warning("autoDetectSci21KernelType(): Sound object not loaded, assuming a SCI2.1 table");
+                _sci21KernelType = SciVersion.V2_1_EARLY;
+                return true;
+            }
+
+            // Look up the script address
+            var addr = GetDetectionAddr("Sound", SciEngine.Selector(o => o.play));
+
+            if (addr.Segment==0)
+                return false;
+
+            var offset = (int)addr.Offset;
+            Script script = _segMan.GetScript(addr.Segment);
+
+            while (true)
+            {
+                short[] opparams=new short[4];
+                byte extOpcode;
+                byte opcode;
+                offset += Vm.ReadPMachineInstruction(script.GetBuf(offset), out extOpcode, opparams);
+                opcode = (byte) (extOpcode >> 1);
+
+                // Check for end of script
+                // We don't check for op_ret here because the Phantasmagoria Mac script
+                // has an op_ret early on in its script (controlled by a branch).
+                if (offset >= script.BufSize)
+                    break;
+
+                if (opcode == Vm.op_callk)
+                {
+                    ushort kFuncNum = (ushort) opparams[0];
+
+                    // Here we check for the kDoSound opcode that's used in SCI2.1.
+                    // Finding 0x40 as kDoSound in the Sound::play() function means the
+                    // game is using the modified SCI2 kernel table found in some older
+                    // SCI2.1 games (GK2 demo, KQ7 v1.4).
+                    // Finding 0x75 as kDoSound means the game is using the regular
+                    // SCI2.1 kernel table.
+                    if (kFuncNum == 0x40)
+                    {
+                        _sci21KernelType = SciVersion.V2;
+                        return true;
+                    }
+                    else if (kFuncNum == 0x75)
+                    {
+                        _sci21KernelType = SciVersion.V2_1_EARLY;
+                        return true;
+                    }
+                }
+            }
+
+            return false; // not found
+        }
+
+
+        public SciVersion DetectSci21KernelType()
+        {
+            if (_sci21KernelType != SciVersion.NONE) return _sci21KernelType;
+
+            if (!AutoDetectSci21KernelType())
+                Error("Could not detect the SCI2.1 kernel table type");
+
+            DebugC(1,  DebugLevels.VM, "Detected SCI2.1 kernel type: {0}", ResourceManager.GetSciVersionDesc(_sci21KernelType));
+            return _sci21KernelType;
+        }
+#endif
     }
 }

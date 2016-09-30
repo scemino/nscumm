@@ -124,8 +124,8 @@ namespace NScumm.Scumm
                     case 5:     // SO_VERB_AT
                         var left = GetVarOrDirectWord(OpCodeParameter.Param1);
                         var top = GetVarOrDirectWord(OpCodeParameter.Param2);
-                        vs.CurRect.Left = left;
-                        vs.CurRect.Top = top;
+                        vs.CurRect.Left = (short) left;
+                        vs.CurRect.Top = (short) top;
                         if (Game.GameId == Scumm.IO.GameId.Loom && Game.Version == 4)
                         {
                             // FIXME: hack loom notes into right spot

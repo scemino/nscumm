@@ -76,6 +76,7 @@ namespace NScumm.Core
             }
         }
 
+        public ISystem OSystem { get; }
         public IMixer Mixer { get; }
 
         public int TotalPlayTime
@@ -100,7 +101,7 @@ namespace NScumm.Core
         }
 
         public bool HasToQuit { get; set; }
-        public GameSettings Settings { get; private set; }
+        public GameSettings Settings { get; }
 
         /// <summary>
         /// The pause level, 0 means 'running', a positive value indicates
@@ -123,9 +124,11 @@ namespace NScumm.Core
         /// All Engine subclasses should consider overloading some or all of the following methods.
         /// </summary>
         /// <param name="system">System.</param>
+        /// <param name="settings"></param>
         protected Engine(ISystem system, GameSettings settings)
         {
             Instance = this;
+            OSystem = system;
             _engineStartTime = Environment.TickCount;
             Settings = settings;
             Mixer = new Mixer(44100);
@@ -207,10 +210,7 @@ namespace NScumm.Core
         protected void ShowMenu()
         {
             var eh = ShowMenuDialogRequested;
-            if (eh != null)
-            {
-                eh(this, EventArgs.Empty);
-            }
+            eh?.Invoke(this, EventArgs.Empty);
         }
 
         protected virtual void PauseEngineIntern(bool pause)

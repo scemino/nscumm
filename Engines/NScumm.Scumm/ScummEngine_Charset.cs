@@ -503,7 +503,7 @@ namespace NScumm.Scumm
                 {
                     // Clear area
                     var screenBuf = vs.Surfaces[0].Pixels;
-                    Array.Clear(screenBuf, 0, screenBuf.Length);
+                    Array.Clear(screenBuf.Data, screenBuf.Offset, screenBuf.Data.Length- screenBuf.Offset);
                 }
 
                 if (vs.HasTwoBuffers)

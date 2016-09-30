@@ -19,6 +19,8 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System;
+
 namespace NScumm.Core
 {
     public struct BytePtr
@@ -144,6 +146,25 @@ namespace NScumm.Core
         }
     }
 
+    public struct DisposablePtr<T>: IDisposable where T: IDisposable
+    {
+        private readonly bool _dispose;
+        private readonly T _value;
+
+        public T Value => _value;
+
+        public DisposablePtr(T value, bool dispose)
+        {
+            _dispose = dispose;
+            _value = value;
+        }
+
+        public void Dispose()
+        {
+            if(_dispose && _value!=null) _value.Dispose();
+        }
+    }
+
     public struct Ptr<T>
     {
         public int Offset;
@@ -199,12 +220,17 @@ namespace NScumm.Core
 
         public override int GetHashCode()
         {
-            return Data == null ? 0 : Data.GetHashCode() ^ Offset;
+            return Data?.GetHashCode() ^ Offset ?? 0;
         }
     }
 
     public static class BytePtrExtension
     {
+        public static void WriteByte(this BytePtr data, int startIndex, byte value)
+        {
+            data.Data[data.Offset + startIndex]= value;
+        }
+
         public static void WriteInt16(this BytePtr data, int startIndex, short value)
         {
             data.Data.WriteInt16(data.Offset + startIndex, value);
@@ -228,6 +254,11 @@ namespace NScumm.Core
         public static void WriteUInt32(this BytePtr data, int startIndex, uint value)
         {
             data.Data.WriteUInt32(data.Offset + startIndex, value);
+        }
+
+        public static void WriteInt32(this BytePtr data, int startIndex, int value)
+        {
+            data.Data.WriteInt32(data.Offset + startIndex, value);
         }
 
         public static short ToInt16BigEndian(this BytePtr value, int startIndex = 0)

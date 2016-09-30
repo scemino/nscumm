@@ -31,11 +31,11 @@ using NScumm.Scumm.Graphics;
 
 namespace NScumm.Scumm.IO
 {
-    class ResourceFile3_16: ResourceFile
+    internal class ResourceFile3_16: ResourceFile
     {
-        const int HeaderSize = 4;
+        private const int HeaderSize = 4;
 
-        GameInfo _game;
+        private GameInfo _game;
 
         public ResourceFile3_16(GameInfo game, Stream stream)
             : base(stream)
@@ -214,7 +214,7 @@ namespace NScumm.Scumm.IO
             return room;
         }
 
-        void ReadLocalScripts(long offset, int size, Room room)
+        private void ReadLocalScripts(long offset, int size, Room room)
         {
             // local script offsets
             byte id;
@@ -247,7 +247,7 @@ namespace NScumm.Scumm.IO
             }
         }
 
-        ObjectData ReadObject(long offset)
+        private ObjectData ReadObject(long offset)
         {
             _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
             var size = (int)_reader.ReadUInt16();
@@ -257,7 +257,7 @@ namespace NScumm.Scumm.IO
             var x = _reader.ReadByte() * 8;
             var tmpY = _reader.ReadByte();
             var y = (tmpY & 0x7F) * 8;
-            var parentState = ((tmpY & 0x80) == 0x80) ? 1 : 0;
+            var parentState = (tmpY & 0x80) == 0x80 ? 1 : 0;
             var width = _reader.ReadByte() * 8;
             var parent = _reader.ReadByte();
             var walkX = _reader.ReadUInt16();
@@ -267,27 +267,27 @@ namespace NScumm.Scumm.IO
             var height = tmpActor & 0xF8;
             var obj = new ObjectData(id)
             {
-                Position = new Point(x, y),
+                Position = new Point((short) x, (short) y),
                 ParentState = (byte)parentState,
                 Width = (ushort)width,
                 Height = (ushort)height,
                 Parent = parent,
-                Walk = new Point(walkX, walkY),
+                Walk = new Point((short) walkX, (short) walkY),
                 ActorDir = actor
             };
             var nameOffset = _reader.ReadByte();
             var read = 17;
             ReadObjectScriptOffsets(obj);
-            read += (3 * obj.ScriptOffsets.Count + 1);
+            read += 3 * obj.ScriptOffsets.Count + 1;
             ReadName(obj);
-            read += (obj.Name.Length + 1);
+            read += obj.Name.Length + 1;
             size -= read;
             obj.Script.Data = _reader.ReadBytes(size);
             obj.Script.Offset = read;
             return obj;
         }
 
-        void ReadObjectScriptOffsets(ObjectData obj)
+        private void ReadObjectScriptOffsets(ObjectData obj)
         {
             byte entry;
             while ((entry = _reader.ReadByte()) != 0)
@@ -296,7 +296,7 @@ namespace NScumm.Scumm.IO
             }
         }
 
-        void ReadName(ObjectData obj)
+        private void ReadName(ObjectData obj)
         {
             byte entry;
             var name = new List<byte>();
@@ -307,13 +307,13 @@ namespace NScumm.Scumm.IO
             obj.Name = name.ToArray();
         }
 
-        byte[] ReadBytes(long offset, int length)
+        private byte[] ReadBytes(long offset, int length)
         {
             _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
             return _reader.ReadBytes(length);
         }
 
-        void ReadBoxes(long offset, int size, Room room)
+        private void ReadBoxes(long offset, int size, Room room)
         {
             _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
             var numBoxes = _reader.ReadByte();
@@ -331,7 +331,7 @@ namespace NScumm.Scumm.IO
             }
         }
 
-        int GetBlockSize(long offset)
+        private int GetBlockSize(long offset)
         {
             _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
             var size = (int)_reader.ReadUInt16();

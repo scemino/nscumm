@@ -54,9 +54,11 @@
     <Compile Include="IEnableTrace.cs" />
     <Compile Include="IEngine.cs" />
     <Compile Include="IFileStorage.cs" />
+    <Compile Include="Image\Codecs\Codec.cs" />
     <Compile Include="IO\GameDetected.cs" />
     <Compile Include="IO\GameDetector.cs" />
     <Compile Include="IO\GameSettings.cs" />
+    <Compile Include="IO\IBinaryReader.cs" />
     <Compile Include="IO\IGameDescriptor.cs" />
     <Compile Include="IO\IMetaEngine.cs" />
     <Compile Include="IO\Platform.cs" />
@@ -158,8 +160,10 @@
     <Compile Include="Rational.cs" />
     <Compile Include="ScummHelper.cs" />
     <Compile Include="ServiceLocator.cs" />
+    <Compile Include="Video\AdvancedVMDDecoder.cs" />
     <Compile Include="Video\AudioTrack.cs" />
     <Compile Include="Video\BigHuffmanTree.cs" />
+    <Compile Include="Video\CoktelDecoder.cs" />
     <Compile Include="Video\FixedRateVideoTrack.cs" />
     <Compile Include="Video\ITrack.cs" />
     <Compile Include="Video\PsxStreamDecoder.cs" />
@@ -216,6 +220,7 @@
     <Compile Include="Audio\SoftSynth\Mt32\LA32WaveGenerator.cs" />
     <Compile Include="Audio\SoftSynth\Mt32\MT32EmuMath.cs" />
     <Compile Include="Common\MacResManager.cs" />
+    <Compile Include="Video\VMDDecoder.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>
@@ -227,5 +232,6 @@
   <ItemGroup>
     <Folder Include="Image\" />
     <Folder Include="Audio\SoftSynth\Mt32\" />
+    <Folder Include="Image\Codecs" />
   </ItemGroup>
 </Project>

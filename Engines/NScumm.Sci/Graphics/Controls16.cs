@@ -23,7 +23,7 @@ using NScumm.Sci.Engine;
 namespace NScumm.Sci.Graphics
 {
     [Flags]
-    enum ControlStateFlags
+    internal enum ControlStateFlags
     {
         ENABLED = 0x0001,  // 0001 - enabled buttons
         DISABLED = 0x0004,  // 0010 - grayed out buttons
@@ -31,7 +31,7 @@ namespace NScumm.Sci.Graphics
     }
 
     // Control types and flags
-    enum ControlType
+    internal enum ControlType
     {
         BUTTON = 1,
         TEXT = 2,
@@ -192,10 +192,10 @@ namespace NScumm.Sci.Graphics
                 {
                     textWidth += _text16._font.GetCharWidth(text[i]);
                 }
-                _texteditCursorRect.Left = rect.Left + textWidth;
+                _texteditCursorRect.Left = (short) (rect.Left + textWidth);
                 _texteditCursorRect.Top = rect.Top;
-                _texteditCursorRect.Bottom = _texteditCursorRect.Top + _text16._font.Height;
-                _texteditCursorRect.Right = _texteditCursorRect.Left + (text.Length == curPos ? 1 : _text16._font.GetCharWidth(text[curPos]));
+                _texteditCursorRect.Bottom = (short) (_texteditCursorRect.Top + _text16._font.Height);
+                _texteditCursorRect.Right = (short) (_texteditCursorRect.Left + (text.Length == curPos ? 1 : _text16._font.GetCharWidth(text[curPos])));
                 _paint16.InvertRect(_texteditCursorRect);
                 _paint16.BitsShow(_texteditCursorRect);
                 _texteditCursorVisible = true;
@@ -265,11 +265,11 @@ namespace NScumm.Sci.Graphics
             if (SciEngine.Instance.GameId != SciGameId.SQ4)
                 workerRect.Top++;
             _text16.Box(controlListUpArrow, false, workerRect, GfxText16.SCI_TEXT16_ALIGNMENT_CENTER, 0);
-            workerRect.Top = workerRect.Bottom - 10;
+            workerRect.Top = (short) (workerRect.Bottom - 10);
             _text16.Box(controlListDownArrow, false, workerRect, GfxText16.SCI_TEXT16_ALIGNMENT_CENTER, 0);
 
             // Draw inner lines
-            workerRect.Top = rect.Top + 9;
+            workerRect.Top = (short) (rect.Top + 9);
             workerRect.Bottom -= 10;
             _paint16.FrameRect(workerRect);
             workerRect.Grow(-1);
@@ -277,7 +277,7 @@ namespace NScumm.Sci.Graphics
             _text16.SetFont(fontId);
             fontSize = (ushort)_ports._curPort.fontHeight;
             _ports.PenColor(_ports._curPort.penClr); _ports.BackColor(_ports._curPort.backClr);
-            workerRect.Bottom = workerRect.Top + fontSize;
+            workerRect.Bottom = (short) (workerRect.Top + fontSize);
             lastYpos = (short)(rect.Bottom - fontSize);
 
             // Write actual text
@@ -295,7 +295,7 @@ namespace NScumm.Sci.Graphics
                         _paint16.InvertRect(workerRect);
                     }
                 }
-                workerRect.Translate(0, fontSize);
+                workerRect.Translate(0, (short) fontSize);
                 if (workerRect.Bottom > lastYpos)
                     break;
             }

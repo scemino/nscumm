@@ -44,7 +44,7 @@ namespace NScumm.Core.Video
 
         public SmackerVideoTrack(uint width, uint height, uint frameCount, Rational frameRate, uint flags, uint signature)
         {
-            _surface = new Surface((int)width, (int)(height * (flags != 0 ? 2 : 1)), PixelFormat.Indexed8, false);
+            _surface = new Surface((ushort)width, (ushort)(height * (flags != 0 ? 2 : 1)), PixelFormat.Indexed8, false);
             _frameCount = frameCount;
             _frameRate = frameRate;
             _flags = flags;
@@ -182,7 +182,7 @@ namespace NScumm.Core.Video
             byte hi, lo;
             uint i;
             int bOut;
-            byte[] pixels = _surface.Pixels;
+            var pixels = _surface.Pixels;
             while (block < blocks)
             {
                 type = _typeTree.GetCode(bs);

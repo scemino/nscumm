@@ -21,6 +21,7 @@
 
 using System;
 using System.Diagnostics;
+using NScumm.Core;
 
 namespace NScumm.Scumm.Smush
 {
@@ -42,7 +43,7 @@ namespace NScumm.Scumm.Smush
             _tableLastIndex = -1;
         }
 
-        public void Decode(byte[] dst, byte[] src)
+        public void Decode(BytePtr dst, byte[] src)
         {
             int bw = (_width + 3) / 4, bh = (_height + 3) / 4;
             int pitch = bw * 4;
@@ -124,7 +125,7 @@ namespace NScumm.Scumm.Smush
             }
             _prevSeqNb = seq_nb;
 
-            Array.Copy(_deltaBuf, _deltaBufs[_curtable], dst, 0, _frameSize);
+            Array.Copy(_deltaBuf, _deltaBufs[_curtable], dst.Data, dst.Offset, _frameSize);
         }
 
         void Proc3WithFDFE(byte[] dst, int dstPos, byte[] src, int srcPos, int next_offs, int bw, int bh, int pitch, short[] _offsetTable)

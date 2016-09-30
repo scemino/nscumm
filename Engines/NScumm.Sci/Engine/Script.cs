@@ -22,7 +22,7 @@ using System.Collections.Generic;
 
 namespace NScumm.Sci.Engine
 {
-    enum ScriptObjectTypes
+    internal enum ScriptObjectTypes
     {
         TERMINATOR,
         OBJECT,
@@ -37,7 +37,7 @@ namespace NScumm.Sci.Engine
         LOCALVARS
     }
 
-    class ObjMap : HashMap<ushort, SciObject>
+    internal class ObjMap : HashMap<ushort, SciObject>
     {
     }
 
@@ -558,7 +558,7 @@ namespace NScumm.Sci.Engine
             {
                 throw new InvalidOperationException($"Attempt to relocate odd variable #{idx}.5e (relative to {block_location:X4})");
             }
-            block[idx] = Register.SetSegment(block[idx], segment); // Perform relocation
+            block[idx] = Register.Make(segment,(ushort) block[idx].Offset); // Perform relocation
             if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
                 block[idx] = Register.IncOffset(block[idx], (short)scriptSize);
 
@@ -927,7 +927,7 @@ namespace NScumm.Sci.Engine
                         throw new InvalidOperationException("Invalid script locals segment while allocating locals");
                 }
                 else
-                    locals = (LocalVariables)segMan.AllocSegment(new LocalVariables(), ref _localsSegment);
+                    locals = (LocalVariables)segMan.AllocSegment(new LocalVariables(), out _localsSegment);
 
                 _localsBlock = locals;
                 locals.script_id = ScriptNumber;
@@ -973,7 +973,7 @@ namespace NScumm.Sci.Engine
 
         public override Register FindCanonicAddress(SegManager segMan, Register addr)
         {
-            addr = Register.SetOffset(addr, 0);
+            addr = Register.Make(addr.Segment, 0);
             return addr;
         }
 
@@ -1001,7 +1001,7 @@ namespace NScumm.Sci.Engine
                 {
                     // TODO: Find out what UINT16 at (seeker + 8) means
                     return (int)(seeker.Data.ReadSci11EndianUInt16((int)(seeker.Offset + offset)) +
-                                 seeker.Data.ReadSci11EndianUInt32((int)(seeker.Offset + 4)));
+                                 seeker.Data.ReadSci11EndianUInt32(seeker.Offset + 4));
                 }
                 seeker.Offset += 10;
             }

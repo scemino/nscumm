@@ -69,7 +69,7 @@ namespace NScumm.Sci.Engine
         // said
         public int claimed; ///< Used generally by the event mechanism
         // value, save, restore, title, button, icon, draw
-        public int delete_; ///< Called by Animate() to dispose a view object
+        public int delete; ///< Called by Animate() to dispose a view object
         public int z;
 
         // SCI1+ static selectors

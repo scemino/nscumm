@@ -23,7 +23,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
 {
-    partial class Kernel
+    internal partial class Kernel
     {
         private static Register kSetJump(EngineState s, int argc, StackPtr argv)
         {

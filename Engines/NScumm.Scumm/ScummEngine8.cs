@@ -254,7 +254,7 @@ namespace NScumm.Scumm
                     {
                         var y = Pop();
                         var x = Pop();
-                        String[m].Position = new Point(x, y);
+                        String[m].Position = new Point((short) x, (short) y);
                         String[m].Overhead = false;
                     }
                     break;
@@ -287,7 +287,7 @@ namespace NScumm.Scumm
                     String[m].Overhead = false;
                     break;
                 default:
-                    throw new NotSupportedException(string.Format("DecodeParseString: default case 0x{0:X}", b));
+                    throw new NotSupportedException($"DecodeParseString: default case 0x{b:X}");
             }
         }
 
@@ -503,7 +503,7 @@ namespace NScumm.Scumm
                     }
                     return;
                 default:
-                    throw new NotSupportedException(string.Format("Wait8: default case 0x{0:X}", subOp));
+                    throw new NotSupportedException($"Wait8: default case 0x{subOp:X}");
             }
 
             CurrentPos += offs;
@@ -564,7 +564,7 @@ namespace NScumm.Scumm
                     NukeArray(array);
                     break;
                 default:
-                    throw new NotSupportedException(string.Format("DimArray8: default case 0x{0:X}", subOp));
+                    throw new NotSupportedException($"DimArray8: default case 0x{subOp:X}");
             }
         }
 
@@ -609,7 +609,7 @@ namespace NScumm.Scumm
                     NukeArray(array);
                     break;
                 default:
-                    throw new NotSupportedException(string.Format("Dim2dimArray8: default case 0x{0:X}", subOp));
+                    throw new NotSupportedException($"Dim2dimArray8: default case 0x{subOp:X}");
             }
         }
 
@@ -668,7 +668,7 @@ namespace NScumm.Scumm
                     }
                     break;
                 default:
-                    throw new InvalidOperationException(string.Format("o8_arrayOps: default case 0x{0:X} (array {1})", subOp, array));
+                    throw new InvalidOperationException($"o8_arrayOps: default case 0x{subOp:X} (array {array})");
             }
         }
 
@@ -923,7 +923,7 @@ namespace NScumm.Scumm
                     }
                     break;
                 default:
-                    throw new InvalidOperationException(string.Format("CursorCommand: default case 0x{0:X}", subOp));
+                    throw new InvalidOperationException($"CursorCommand: default case 0x{subOp:X}");
             }
 
             Variables[VariableCursorState.Value] = _cursor.State;
@@ -1068,7 +1068,7 @@ namespace NScumm.Scumm
                     ResourceManager.SetSoundCounter(resid, 0x7F);
                     break;
                 default:
-                    throw new InvalidOperationException(string.Format("ResourceRoutines8: default case 0x{0:X}", subOp));
+                    throw new InvalidOperationException($"ResourceRoutines8: default case 0x{subOp:X}");
             }
         }
 
@@ -1142,7 +1142,7 @@ namespace NScumm.Scumm
                     DesaturatePalette(a, b, c, d, e);
                     break;
                 default:
-                    throw new InvalidOperationException(string.Format("RoomOps8: default case 0x{0:X}", subOp));
+                    throw new InvalidOperationException($"RoomOps8: default case 0x{subOp:X}");
             }
         }
 
@@ -1248,7 +1248,7 @@ namespace NScumm.Scumm
                     {
                         var y = Pop();
                         var x = Pop();
-                        a.TalkPosition = new Point(x, y);
+                        a.TalkPosition = new Point((short) x, (short) y);
                     }
                     break;
                 //  case 0x7A:      // SO_ACTOR_INIT Set current actor (handled above)
@@ -1301,7 +1301,7 @@ namespace NScumm.Scumm
                     a.TalkPan = Pop();
                     break;
                 default:
-                    throw new InvalidOperationException(string.Format("ActorOps8: default case 0x{0:X}", subOp));
+                    throw new InvalidOperationException($"ActorOps8: default case 0x{subOp:X}");
             }
         }
 
@@ -1319,7 +1319,7 @@ namespace NScumm.Scumm
                     Debug.WriteLine("unfreezeCamera NYI");
                     break;
                 default:
-                    throw new InvalidOperationException(string.Format("CameraOps8: default case 0x{0:X}", subOp));
+                    throw new InvalidOperationException($"CameraOps8: default case 0x{subOp:X}");
             }
         }
 
@@ -1381,8 +1381,8 @@ namespace NScumm.Scumm
                     vs.ImgIndex = 0;
                     break;
                 case 0x9A:      // SO_VERB_AT Set verb (X,Y) placement
-                    vs.CurRect.Top = Pop();
-                    vs.CurRect.Left = Pop();
+                    vs.CurRect.Top = (short) Pop();
+                    vs.CurRect.Left = (short) Pop();
                     break;
                 case 0x9B:      // SO_VERB_ON Turn verb on
                     vs.CurMode = 1;
@@ -1442,7 +1442,7 @@ namespace NScumm.Scumm
                     _verbLineSpacing = Pop();
                     break;
                 default:
-                    throw new InvalidOperationException(string.Format("Verbops8: default case 0x{0:X}", subOp));
+                    throw new InvalidOperationException($"Verbops8: default case 0x{subOp:X}");
             }
         }
 
@@ -1641,7 +1641,8 @@ namespace NScumm.Scumm
                     break;
 
                 default:
-                    throw new InvalidOperationException(string.Format("KernelSetFunctions8: default case 0x{0:X} (len = {1})", args[0], args.Length));
+                    throw new InvalidOperationException(
+                        $"KernelSetFunctions8: default case 0x{args[0]:X} (len = {args.Length})");
             }
         }
 
@@ -1731,10 +1732,10 @@ namespace NScumm.Scumm
             switch (args[0])
             {
                 case 0x73:  // getWalkBoxAt
-                    Push(GetSpecialBox(new Point(args[1], args[2])));
+                    Push(GetSpecialBox(new Point((short) args[1], (short) args[2])));
                     break;
                 case 0x74:  // isPointInBox
-                    Push(CheckXYInBoxBounds(args[3], new Point(args[1], args[2])));
+                    Push(CheckXYInBoxBounds(args[3], new Point((short) args[1], (short) args[2])));
                     break;
                 case 0xD3:      // getKeyState
                     Push(GetKeyState(args[1]));
@@ -1743,7 +1744,7 @@ namespace NScumm.Scumm
                     Push(RemapPaletteColor(args[1], args[2], args[3], -1));
                     break;
                 case 0xD7:      // getBox
-                    Push(CheckXYInBoxBounds(args[3], new Point(args[1], args[2])));
+                    Push(CheckXYInBoxBounds(args[3], new Point((short) args[1], (short) args[2])));
                     break;
                 case 0xD8:
                     {        // findBlastObject
@@ -1767,7 +1768,7 @@ namespace NScumm.Scumm
                     {   // actorHit - used, for example, to detect ship collision
                         // during ship-to-ship combat.
                         var a = Actors[args[1]];
-                        Push(a.ActorHitTest(new Point(args[2], args[3] + ScreenTop)));
+                        Push(a.ActorHitTest(new Point((short) args[2], (short) (args[3] + ScreenTop))));
                         break;
                     }
                 case 0xDA:      // lipSyncWidth
@@ -1823,7 +1824,8 @@ namespace NScumm.Scumm
                     Push(IMuseDigital.GetCurMusicLipSyncHeight(args[1]));
                     break;
                 default:
-                    throw new InvalidOperationException(string.Format("KernelGetFunctions8: default case 0x{0:X} (len = {1})", args[0], args.Length));
+                    throw new InvalidOperationException(
+                        $"KernelGetFunctions8: default case 0x{args[0]:X} (len = {args.Length})");
             }
         }
 

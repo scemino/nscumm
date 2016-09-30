@@ -22,7 +22,6 @@
 using System.Diagnostics;
 using System.Text;
 using NScumm.Core;
-using NScumm.Core.Graphics;
 using NScumm.Scumm.Graphics;
 
 namespace NScumm.Scumm.Smush
@@ -43,7 +42,7 @@ namespace NScumm.Scumm.Smush
             set { _color = value; }
         }
 
-        public void DrawString(string str, byte[] buffer, int dst_width, int dst_height, int x, int y, bool center)
+        public void DrawString(string str, BytePtr buffer, int dst_width, int dst_height, int x, int y, bool center)
         {
 //            Debug.WriteLine("SmushFont::drawString({0}, {1}, {2}, {3})", str, x, y, center);
 
@@ -54,7 +53,7 @@ namespace NScumm.Scumm.Smush
             }
         }
 
-        public void DrawStringWrap(string  str, byte[] buffer, int dst_width, int dst_height, int x, int y, int left, int right, bool center)
+        public void DrawStringWrap(string  str, BytePtr buffer, int dst_width, int dst_height, int x, int y, int left, int right, bool center)
         {
 //            Debug.WriteLine("SmushFont::drawStringWrap({0}, {1}, {2}, {3}, {4}, {5})", str, x, y, left, right, center);
 
@@ -127,7 +126,7 @@ namespace NScumm.Scumm.Smush
             }
         }
 
-        void DrawSubstring(string str, byte[] buffer, int dst_width, int x, int y)
+        void DrawSubstring(string str, BytePtr buffer, int dst_width, int x, int y)
         {
             // This happens in the Full Throttle intro. I don't know if our
             // text-drawing functions are buggy, or if this function is supposed
@@ -141,7 +140,7 @@ namespace NScumm.Scumm.Smush
             }
         }
 
-        int DrawChar(byte[] buffer, int dst_width, int x, int y, char chr)
+        int DrawChar(BytePtr buffer, int dst_width, int x, int y, char chr)
         {
             chr = chr >= _chars.Length ? ' ' : chr;
             int w = _chars[chr].Width;

@@ -1254,7 +1254,7 @@ namespace NScumm.Queen
 
             int height = (pbf.height * bob.scale) / 100;
 
-            Rect focus = new Rect(textX - 96, textY - height - 64, textX + 96, textY + height + 64);
+            Rect focus = new Rect((short) (textX - 96), (short) (textY - height - 64), (short) (textX + 96), (short) (textY + height + 64));
             _vm.Display.SetFocusRect(focus);
 
             //int SF = _vm.grid().findScale(textX, textY);

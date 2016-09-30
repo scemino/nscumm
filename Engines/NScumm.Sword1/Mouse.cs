@@ -239,7 +239,7 @@ namespace NScumm.Sword1
                 var ptrData = MousePtr.Size;
                 ptrData += _frame * _currentPtr.sizeX * _currentPtr.sizeY;
 
-                _system.GraphicsManager.SetCursor(_currentPtr.Data, _currentPtr.Offset + ptrData, _currentPtr.sizeX, _currentPtr.sizeY, new Point(_currentPtr.hotSpotX, _currentPtr.hotSpotY), 255);
+                _system.GraphicsManager.SetCursor(_currentPtr.Data, _currentPtr.Offset + ptrData, _currentPtr.sizeX, _currentPtr.sizeY, new Point((short) _currentPtr.hotSpotX, (short) _currentPtr.hotSpotY), 255);
 
                 _activeFrame = _frame;
             }
@@ -264,8 +264,8 @@ namespace NScumm.Sword1
                 _state &= MOUSE_DOWN_MASK;
             }
 
-            _mouse.X = x;
-            _mouse.Y = y;
+            _mouse.X = (short) x;
+            _mouse.Y = (short) y;
             if ((Logic.ScriptVars[(int)ScriptVariableNames.MOUSE_STATUS] & 1) == 0)
             {  // no human?
                 _numObjs = 0;

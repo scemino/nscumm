@@ -24,7 +24,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Sound
 {
-    enum SciMidiCommands
+    internal enum SciMidiCommands
     {
         SetSignalLoop = 0x7F,
         EndOfTrack = 0xFC,
@@ -55,10 +55,10 @@ namespace NScumm.Sci.Sound
 
         private bool _resetOnPause;
 
-        private bool[] _channelUsed = new bool[16];
-        private short[] _channelRemap = new short[16];
-        private bool[] _channelMuted = new bool[16];
-        private byte[] _channelVolume = new byte[16];
+        private readonly bool[] _channelUsed = new bool[16];
+        private readonly short[] _channelRemap = new short[16];
+        private readonly bool[] _channelMuted = new bool[16];
+        private readonly byte[] _channelVolume = new byte[16];
 
         private class ChannelState
         {
@@ -71,10 +71,10 @@ namespace NScumm.Sci.Sound
             public sbyte _voices;
         }
 
-        private ChannelState[] _channelState;
+        private readonly ChannelState[] _channelState;
 
-        private static readonly int[] nMidiParams = { 2, 2, 2, 2, 1, 1, 2, 0 };
-        private SciMusic _music;
+        private static readonly int[] NMidiParams = { 2, 2, 2, 2, 1, 1, 2, 0 };
+        private readonly SciMusic _music;
 
         public byte SongReverb
         {
@@ -84,9 +84,9 @@ namespace NScumm.Sci.Sound
 
                 if (_soundVersion >= SciVersion.V1_EARLY)
                 {
-                    for (int i = 0; i < _track.channelCount; i++)
+                    for (var i = 0; i < _track.channelCount; i++)
                     {
-                        SoundResource.Channel channel = _track.channels[i];
+                        var channel = _track.channels[i];
                         // Peek ahead in the control channel to get the default reverb setting
                         if (channel.number == 15 && channel.size >= 7)
                             return channel.data[6];
@@ -112,7 +112,7 @@ namespace NScumm.Sci.Sound
             _volume = 127;
 
             _channelState = new ChannelState[16];
-            for (int i = 0; i < _channelState.Length; i++)
+            for (var i = 0; i < _channelState.Length; i++)
             {
                 _channelState[i] = new ChannelState();
             }
@@ -127,7 +127,7 @@ namespace NScumm.Sci.Sound
         /// <param name="midi">Midi.</param>
         public void SendFromScriptToDriver(uint midi)
         {
-            byte midiChannel = (byte)(midi & 0xf);
+            var midiChannel = (byte)(midi & 0xf);
 
             if (!_channelUsed[midiChannel])
             {
@@ -151,12 +151,12 @@ namespace NScumm.Sci.Sound
             //  debug("  restoring state: channel %d on devChannel %d", channel, devChannel);
 
             // restore state
-            ChannelState s = _channelState[channel];
+            var s = _channelState[channel];
 
             int channelVolume = _channelVolume[channel];
             channelVolume = (channelVolume * _volume / 127) & 0xFF;
-            byte pitch1 = (byte)(s._pitchWheel & 0x7F);
-            byte pitch2 = (byte)((s._pitchWheel >> 7) & 0x7F);
+            var pitch1 = (byte)(s._pitchWheel & 0x7F);
+            var pitch2 = (byte)((s._pitchWheel >> 7) & 0x7F);
 
             SendToDriver_raw(0x0040B0 | devChannel); // sustain off
             SendToDriver_raw(0x004BB0 | devChannel | (s._voices << 16));
@@ -214,7 +214,7 @@ namespace NScumm.Sci.Sound
                 case SciVersion.V0_LATE:
                     {
                         // SCI0 adlib driver doesn't support channel volumes, so we need to go this way
-                        short globalVolume = (short)(_volume * _masterVolume / SoundCommandParser.MUSIC_VOLUME_MAX);
+                        var globalVolume = (short)(_volume * _masterVolume / SoundCommandParser.MUSIC_VOLUME_MAX);
                         ((MidiPlayer)MidiDriver).Volume = (byte)globalVolume;
                         break;
                     }
@@ -223,7 +223,7 @@ namespace NScumm.Sci.Sound
                 case SciVersion.V1_LATE:
                 case SciVersion.V2_1_EARLY:
                     // Send previous channel volumes again to actually update the volume
-                    for (int i = 0; i < 15; i++)
+                    for (var i = 0; i < 15; i++)
                         if (_channelRemap[i] != -1)
                             SendToDriver(0xB0 + i, 7, _channelVolume[i]);
                     break;
@@ -260,7 +260,7 @@ namespace NScumm.Sci.Sound
             _pSnd = pSnd;
             _soundVersion = soundVersion;
 
-            for (int i = 0; i < 16; i++)
+            for (var i = 0; i < 16; i++)
             {
                 _channelUsed[i] = false;
                 _channelMuted[i] = false;
@@ -332,22 +332,20 @@ namespace NScumm.Sci.Sound
             {
                 if (_soundVersion <= SciVersion.V0_LATE)
                 {
-                    for (int i = 0; i < 15; ++i)
+                    for (var i = 0; i < 15; ++i)
                     {
-                        byte voiceCount = 0;
-                        if (_channelUsed[i])
-                        {
-                            voiceCount = _pSnd.soundRes.GetInitialVoiceCount(i);
-                            SendToDriver(0xB0 | i, 0x4B, voiceCount);
-                        }
+                        if (!_channelUsed[i]) continue;
+
+                        var voiceCount = _pSnd.soundRes.GetInitialVoiceCount(i);
+                        SendToDriver(0xB0 | i, 0x4B, voiceCount);
                     }
                 }
                 else
                 {
-                    for (int i = 0; i < _track.channelCount; ++i)
+                    for (var i = 0; i < _track.channelCount; ++i)
                     {
-                        byte voiceCount = _track.channels[i].poly;
-                        byte num = _track.channels[i].number;
+                        var voiceCount = _track.channels[i].poly;
+                        var num = _track.channels[i].number;
                         // TODO: Should we skip the control channel?
                         SendToDriver(0xB0 | num, 0x4B, voiceCount);
                     }
@@ -355,16 +353,15 @@ namespace NScumm.Sci.Sound
             }
 
             // Reset all the parameters of the channels used by this song
-            for (int i = 0; i < 16; ++i)
+            for (var i = 0; i < 16; ++i)
             {
-                if (_channelUsed[i])
-                {
-                    SendToDriver(0xB0 | i, 0x07, 127);  // Reset volume to maximum
-                    SendToDriver(0xB0 | i, 0x0A, 64);   // Reset panning to center
-                    SendToDriver(0xB0 | i, 0x40, 0);    // Reset hold pedal to none
-                    SendToDriver(0xB0 | i, 0x4E, 0);    // Reset velocity to none
-                    SendToDriver(0xE0 | i, 0, 64);  // Reset pitch wheel to center
-                }
+                if (!_channelUsed[i]) continue;
+
+                SendToDriver(0xB0 | i, 0x07, 127);  // Reset volume to maximum
+                SendToDriver(0xB0 | i, 0x0A, 64);   // Reset panning to center
+                SendToDriver(0xB0 | i, 0x40, 0);    // Reset hold pedal to none
+                SendToDriver(0xB0 | i, 0x4E, 0);    // Reset velocity to none
+                SendToDriver(0xE0 | i, 0, 64);  // Reset pitch wheel to center
             }
         }
 
@@ -470,7 +467,7 @@ namespace NScumm.Sci.Sound
             if (!fireEvents)
             {
                 // We don't do any processing that should be done while skipping events
-                return base.ProcessEvent(info, fireEvents);
+                return base.ProcessEvent(info, false);
             }
 
             switch (info.Command)
@@ -494,7 +491,7 @@ namespace NScumm.Sci.Sound
                             // of the stream, but at a fixed location a few commands later.
                             // That is probably why this signal isn't triggered
                             // immediately there.
-                            bool skipSignal = false;
+                            var skipSignal = false;
                             if (_soundVersion >= SciVersion.V1_EARLY)
                             {
                                 if (Position.PlayTick == 0)
@@ -573,7 +570,7 @@ namespace NScumm.Sci.Sound
                             case (int)SciMidiCommands.UpdateCue:
                                 if (!_jumpingToTick)
                                 {
-                                    int inc = 0;
+                                    var inc = 0;
                                     switch (_soundVersion)
                                     {
                                         case SciVersion.V0_EARLY:
@@ -660,7 +657,7 @@ namespace NScumm.Sci.Sound
 
 
             // Let parent handle the rest
-            return base.ProcessEvent(info, fireEvents);
+            return base.ProcessEvent(info);
         }
 
         protected override void SendToDriver(int midi)
@@ -678,7 +675,7 @@ namespace NScumm.Sci.Sound
             if ((midi & 0xFFF0) == 0x07B0)
             {
                 // someone trying to set channel volume?
-                int channelVolume = (midi >> 16) & 0xFF;
+                var channelVolume = (midi >> 16) & 0xFF;
                 // Adjust volume accordingly to current local volume
                 channelVolume = channelVolume * _volume / 127;
                 midi = (midi & 0xFFFF) | ((channelVolume & 0xFF) << 16);
@@ -686,8 +683,8 @@ namespace NScumm.Sci.Sound
 
 
             // Channel remapping
-            byte midiChannel = (byte)(midi & 0xf);
-            short realChannel = _channelRemap[midiChannel];
+            var midiChannel = (byte)(midi & 0xf);
+            var realChannel = _channelRemap[midiChannel];
             if (realChannel == -1)
                 return;
 
@@ -717,7 +714,7 @@ namespace NScumm.Sci.Sound
             // Turn off all hanging notes
             for (i = 0; i < HangingNotes.Length; i++)
             {
-                byte midiChannel = (byte)HangingNotes[i].Channel;
+                var midiChannel = (byte)HangingNotes[i].Channel;
                 if ((HangingNotes[i].TimeLeft != 0) && (_channelRemap[midiChannel] != -1))
                 {
                     SendToDriver(0x80 | midiChannel, HangingNotes[i].Note, 0);
@@ -745,9 +742,9 @@ namespace NScumm.Sci.Sound
         private byte MidiGetNextChannel(long ticker)
         {
             byte curr = 0xFF;
-            long closest = ticker + 1000000, next = 0;
+            long closest = ticker + 1000000, next;
 
-            for (int i = 0; i < _track.channelCount; i++)
+            for (var i = 0; i < _track.channelCount; i++)
             {
                 if (_track.channels[i].time == -1) // channel ended
                     continue;
@@ -768,10 +765,10 @@ namespace NScumm.Sci.Sound
             return curr;
         }
 
-        private BytePtr MidiMixChannels()
+        private void MidiMixChannels()
         {
-            int totalSize = 0;
-            int i = 0;
+            var totalSize = 0;
+            int i;
 
             for (i = 0; i < _track.channelCount; i++)
             {
@@ -787,7 +784,7 @@ namespace NScumm.Sci.Sound
             i = 0;
             long ticker = 0;
             byte channelNr, curDelta;
-            byte midiCommand = 0, midiParam, globalPrev = 0;
+            byte midiCommand, midiParam, globalPrev = 0;
             long newDelta;
             SoundResource.Channel channel;
 
@@ -838,13 +835,13 @@ namespace NScumm.Sci.Sound
                         }
 
                         // remember which channel got used for channel remapping
-                        byte midiChannel = (byte)(midiCommand & 0xF);
+                        var midiChannel = (byte)(midiCommand & 0xF);
                         _channelUsed[midiChannel] = true;
 
                         if (midiCommand != globalPrev)
                             outData[i++] = midiCommand;
                         outData[i++] = midiParam;
-                        if (nMidiParams[(midiCommand >> 4) - 8] == 2)
+                        if (NMidiParams[(midiCommand >> 4) - 8] == 2)
                             outData[i++] = channel.data[channel.curPos++];
                         channel.prev = midiCommand;
                         globalPrev = midiCommand;
@@ -857,8 +854,7 @@ namespace NScumm.Sci.Sound
             outData[i++] = 0xFF; // Meta event
             outData[i++] = 0x2F; // End of track (EOT)
             outData[i++] = 0x00;
-            outData[i++] = 0x00;
-            return _mixedData;
+            outData[i] = 0x00;
         }
 
         /// <summary>
@@ -867,16 +863,16 @@ namespace NScumm.Sci.Sound
         /// certain channels from that data.
         /// </summary>
         /// <param name="channelMask"></param>
-        private byte[] MidiFilterChannels(int channelMask)
+        private void MidiFilterChannels(int channelMask)
         {
-            SoundResource.Channel channel = _track.channels[0];
-            BytePtr channelData = new BytePtr(channel.data);
-            BytePtr outData = new BytePtr(new byte[channel.size + 5]);
+            var channel = _track.channels[0];
+            var channelData = new BytePtr(channel.data);
+            var outData = new BytePtr(new byte[channel.size + 5]);
             byte curChannel = 15, curByte, curDelta;
             byte command = 0, lastCommand = 0;
-            int delta = 0;
-            int midiParamCount = 0;
-            bool containsMidiData = false;
+            var delta = 0;
+            var midiParamCount = 0;
+            var containsMidiData = false;
 
             _mixedData = outData.Data;
 
@@ -903,7 +899,7 @@ namespace NScumm.Sci.Sound
                         {
                             command = curByte;
                             curChannel = (byte)(command & 0x0F);
-                            midiParamCount = nMidiParams[(command >> 4) - 8];
+                            midiParamCount = NMidiParams[(command >> 4) - 8];
                         }
                         break;
                 }
@@ -943,7 +939,7 @@ namespace NScumm.Sci.Sound
 
                         default: // MIDI command
                                  // remember which channel got used for channel remapping
-                            byte midiChannel = (byte)(command & 0xF);
+                            var midiChannel = (byte)(command & 0xF);
                             _channelUsed[midiChannel] = true;
 
                             if (lastCommand != command)
@@ -997,15 +993,13 @@ namespace NScumm.Sci.Sound
             // driver (bug #3297881)
             if (!containsMidiData)
                 Warning("MIDI parser: the requested SCI0 sound has no MIDI note data for the currently selected sound driver");
-
-            return _mixedData;
         }
 
         private void ResetStateTracking()
         {
-            for (int i = 0; i < 16; ++i)
+            for (var i = 0; i < 16; ++i)
             {
-                ChannelState s = _channelState[i];
+                var s = _channelState[i];
                 s._modWheel = 0;
                 s._pan = 64;
                 s._patch = 0; // TODO: Initialize properly (from data in LoadMusic?)
@@ -1024,12 +1018,12 @@ namespace NScumm.Sci.Sound
             // at any time reset the device to the current state, even if the
             // channel has been temporarily disabled due to remapping.
 
-            byte command = (byte)(b & 0xf0);
-            byte channel = (byte)(b & 0xf);
-            byte op1 = (byte)((b >> 8) & 0x7f);
-            byte op2 = (byte)((b >> 16) & 0x7f);
+            var command = (byte)(b & 0xf0);
+            var channel = (byte)(b & 0xf);
+            var op1 = (byte)((b >> 8) & 0x7f);
+            var op2 = (byte)((b >> 16) & 0x7f);
 
-            ChannelState s = _channelState[channel];
+            var s = _channelState[channel];
 
             switch (command)
             {
@@ -1069,7 +1063,7 @@ namespace NScumm.Sci.Sound
                                 _music.NeedsRemap();
                             }
                             s._voices = (sbyte)op2;
-                            _pSnd._chan[channel]._voices = (sbyte)op2; // Also sync our MusicEntry
+                            _pSnd._chan[channel].Voices = (sbyte)op2; // Also sync our MusicEntry
                             break;
                         case 0x4E: // mute
                                    // This is channel mute only for sci1.
@@ -1077,10 +1071,10 @@ namespace NScumm.Sci.Sound
                             if (_soundVersion > SciVersion.V1_EARLY)
                             {
                                 // FIXME: mute is a level, not a bool, in some SCI versions
-                                bool m = op2 != 0;
-                                if (_pSnd._chan[channel]._mute != m)
+                                var m = op2 != 0;
+                                if (_pSnd._chan[channel].Mute != m)
                                 {
-                                    _pSnd._chan[channel]._mute = m;
+                                    _pSnd._chan[channel].Mute = m;
                                     // CHECKME: Should we directly call remapChannels() if _mainThreadCalled?
                                     _music.NeedsRemap();
                                     DebugC(2, DebugLevels.Sound, "Dynamic mute change (arg = {0}, mainThread = {1})", m, _mainThreadCalled);

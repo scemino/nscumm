@@ -21,13 +21,14 @@
 
 using System.Diagnostics;
 using System.IO;
+using NScumm.Core;
 using NScumm.Scumm.IO;
 
 namespace NScumm.Scumm.Insane
 {
     partial class Insane
     {
-        public void ProcIACT(byte[] renderBitmap, int codecparam, int setupsan12,
+        public void ProcIACT(BytePtr renderBitmap, int codecparam, int setupsan12,
                              int setupsan13, BinaryReader b, int size, int flags,
                              int par1, int par2, int par3, int par4)
         {
@@ -62,7 +63,7 @@ namespace NScumm.Scumm.Insane
             }
         }
 
-        void IactScene1(byte[] renderBitmap, int codecparam, int setupsan12,
+        void IactScene1(BytePtr renderBitmap, int codecparam, int setupsan12,
                         int setupsan13, BinaryReader b, int size, int flags,
                         int par1, int par2, int par3, int par4)
         {
@@ -190,7 +191,7 @@ namespace NScumm.Scumm.Insane
             }
         }
 
-        void IactScene3(byte[] renderBitmap, int codecparam, int setupsan12,
+        void IactScene3(BytePtr renderBitmap, int codecparam, int setupsan12,
                         int setupsan13, BinaryReader b, int size, int flags,
                         int command, int par1, int tmp1, int tmp2)
         {
@@ -218,7 +219,7 @@ namespace NScumm.Scumm.Insane
             }
         }
 
-        void IactScene4(byte[] renderBitmap, int codecparam, int setupsan12,
+        void IactScene4(BytePtr renderBitmap, int codecparam, int setupsan12,
                         int setupsan13, BinaryReader b, int size, int flags,
                         int par1, int par2, int par3, int par4)
         {
@@ -301,7 +302,7 @@ namespace NScumm.Scumm.Insane
             }
         }
 
-        void IactScene6(byte[] renderBitmap, int codecparam, int setupsan12,
+        void IactScene6(BytePtr renderBitmap, int codecparam, int setupsan12,
             int setupsan13, BinaryReader b, int size, int flags,
             int par1, int par2, int par3, int par4) {
             int par5;
@@ -386,7 +387,7 @@ namespace NScumm.Scumm.Insane
             }
         }
 
-        void IactScene17(byte[] renderBitmap, int codecparam, int setupsan12,
+        void IactScene17(BytePtr renderBitmap, int codecparam, int setupsan12,
             int setupsan13, BinaryReader b, int size, int flags,
             int par1, int par2, int par3, int par4) {
             switch (par1) {
@@ -432,7 +433,7 @@ namespace NScumm.Scumm.Insane
             }
         }
 
-        void IactScene21(byte[] renderBitmap, int codecparam, int setupsan12,
+        void IactScene21(BytePtr renderBitmap, int codecparam, int setupsan12,
             int setupsan13, BinaryReader b, int size, int flags,
             int par1, int par2, int par3, int par4) {
             // void implementation

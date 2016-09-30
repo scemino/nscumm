@@ -34,6 +34,9 @@ namespace NScumm.Core.Video
         Audio
     }
 
+    /// <summary>
+    /// Generic interface for video decoder classes.
+    /// </summary>
     public abstract class VideoDecoder
     {
         private readonly List<ITrack> _tracks = new List<ITrack>();
@@ -177,7 +180,36 @@ namespace NScumm.Core.Video
             return true;
         }
 
+        /**
+         * Load a video from a file with the given name.
+         *
+         * A default implementation using Common::File and loadStream is provided.
+         *
+         * @param filename	the filename to load
+         * @return whether loading the file succeeded
+         */
+
+        public virtual bool LoadFile(string filename)
+        {
+            var file = Engine.OpenFileRead(filename);
+            if (file==null)
+            {
+                return false;
+            }
+
+            return LoadStream(file);
+        }
+
         public abstract bool LoadStream(Stream stream);
+
+        public void SetVolume(byte volume)
+        {
+            _audioVolume = volume;
+
+            foreach (var it in _tracks)
+                if (it.TrackType == TrackType.Audio)
+                    ((AudioTrack)it).SetVolume(_audioVolume);
+        }
 
         public bool HasAudio()
         {

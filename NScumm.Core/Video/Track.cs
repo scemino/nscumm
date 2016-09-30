@@ -20,7 +20,7 @@ using NScumm.Core.Audio;
 
 namespace NScumm.Core.Video
 {
-    internal abstract class Track : ITrack
+    public abstract class Track : ITrack
     {
         private bool _paused;
 

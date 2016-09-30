@@ -48,7 +48,7 @@ namespace NScumm.Sci.Graphics
         private List<Rect> _codeRefRects;
 
         // Has actually punctuation and characters in it, that may not be the first in a line
-        static readonly ushort[] text16_shiftJIS_punctuation = {
+        private static readonly ushort[] text16_shiftJIS_punctuation = {
             0x9F82, 0xA182, 0xA382, 0xA582, 0xA782, 0xC182, 0xE182, 0xE382, 0xE582, 0xEC82, 0x4083, 0x4283,
             0x4483, 0x4683, 0x4883, 0x6283, 0x8383, 0x8583, 0x8783, 0x8E83, 0x9583, 0x9683, 0x5B81, 0x4181,
             0x4281, 0x7681, 0x7881, 0x4981, 0x4881, 0
@@ -181,7 +181,7 @@ namespace NScumm.Sci.Graphics
                 return;
 
             rect.Top = _ports._curPort.curTop;
-            rect.Bottom = rect.Top + _ports._curPort.fontHeight;
+            rect.Bottom = (short) (rect.Top + _ports._curPort.fontHeight);
             foreach (var curChar in text)
             {
                 charWidth = _font.GetCharWidth(curChar);
@@ -218,7 +218,7 @@ namespace NScumm.Sci.Graphics
             else {
                 // rect.right=found widest line with RTextWidth and GetLongest
                 // rect.bottom=num. lines * GetPointSize
-                rect.Right = (maxWidth != 0 ? maxWidth : 192);
+                rect.Right = (short) (maxWidth != 0 ? maxWidth : 192);
                 var curTextPos = 0; // in work position for GetLongest()
                 var curTextLine = 0; // starting point of current line
                 while (curTextPos < text.Length)
@@ -517,8 +517,8 @@ namespace NScumm.Sci.Graphics
                 Rect kanjiRect = rect;
                 _ports.OffsetRect(ref kanjiRect);
                 kanjiRect.Left &= 0xFFC;
-                kanjiRect.Right = kanjiRect.Left + maxTextWidth;
-                kanjiRect.Bottom = kanjiRect.Top + hline;
+                kanjiRect.Right = (short) (kanjiRect.Left + maxTextWidth);
+                kanjiRect.Bottom = (short) (kanjiRect.Top + hline);
                 kanjiRect.Left *= 2; kanjiRect.Right *= 2;
                 kanjiRect.Top *= 2; kanjiRect.Bottom *= 2;
                 _screen.CopyDisplayRectToScreen(kanjiRect);
@@ -530,7 +530,7 @@ namespace NScumm.Sci.Graphics
             Rect rect;
 
             rect.Top = _ports._curPort.curTop;
-            rect.Bottom = rect.Top + _ports.PointSize;
+            rect.Bottom = (short) (rect.Top + _ports.PointSize);
             rect.Left = _ports._curPort.curLeft;
             Draw(text, from, len, orgFontId, orgPenColor);
             rect.Right = _ports._curPort.curLeft;
@@ -547,7 +547,7 @@ namespace NScumm.Sci.Graphics
                 return;
 
             rect.Top = _ports._curPort.curTop;
-            rect.Bottom = rect.Top + _ports._curPort.fontHeight;
+            rect.Bottom = (short) (rect.Top + _ports._curPort.fontHeight);
             var i = from;
             while ((len--) != 0)
             {
@@ -576,7 +576,7 @@ namespace NScumm.Sci.Graphics
                         if (_ports._curPort.penMode == 1)
                         {
                             rect.Left = _ports._curPort.curLeft;
-                            rect.Right = rect.Left + charWidth;
+                            rect.Right = (short) (rect.Left + charWidth);
                             _paint16.EraseRect(rect);
                         }
                         // CharStd
@@ -651,7 +651,7 @@ namespace NScumm.Sci.Graphics
                         }
                         else {
                             // End point reached
-                            _codeRefTempRect.Bottom = _ports._curPort.curTop + _ports._curPort.fontHeight;
+                            _codeRefTempRect.Bottom = (short) (_ports._curPort.curTop + _ports._curPort.fontHeight);
                             _codeRefTempRect.Right = _ports._curPort.curLeft;
                             _codeRefRects.Add(_codeRefTempRect);
                             _codeRefTempRect.Left = _codeRefTempRect.Top = -1;

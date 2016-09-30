@@ -27,7 +27,7 @@ using System.IO;
 
 namespace NScumm.Core
 {
-    interface IQueuingAudioStream : IAudioStream
+    public interface IQueuingAudioStream : IAudioStream
     {
 
         /// <summary>

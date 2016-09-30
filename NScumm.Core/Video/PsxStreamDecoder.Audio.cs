@@ -53,8 +53,6 @@ namespace NScumm.Core.Video
 
             public override IAudioStream AudioStream => _audStream;
 
-            public override IMixer Mixer => _mixer;
-
             public PsxAudioTrack(IMixer mixer, Stream sector)
             {
                 _mixer = mixer;

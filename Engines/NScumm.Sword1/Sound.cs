@@ -383,7 +383,7 @@ namespace NScumm.Sword1
                     var data = UncompressSpeech(index + _cowHeaderSize, (uint)sampleSize, out size);
                     if (data != null)
                     {
-                        stream = new RawStream(SPEECH_FLAGS, 11025, true, new MemoryStream(data.Data, data.Offset, (int)size));
+                        stream = new RawStream(SPEECH_FLAGS, 11025, true, new MemoryStream(data.Data.Data, data.Data.Offset, (int)size));
                         _speechHandle = _mixer.PlayStream(SoundType.Speech, stream, SOUND_SPEECH_ID, speechVol, speechPan);
                     }
                 }
@@ -641,7 +641,7 @@ namespace NScumm.Sword1
                         }
                         else
                         {
-                            Array.Copy(srcData.Data, (int)(srcData.Offset + srcPos * 2), dstData.Data, (int)(dstData.Offset + dstPos * 2), length * 2);
+                            Array.Copy(srcData.Data.Data, (int)(srcData.Data.Offset + srcPos * 2), dstData.Data.Data, (int)(dstData.Data.Offset + dstPos * 2), length * 2);
                             dstPos = (uint)(dstPos + length);
                             srcPos = (uint)(srcPos + length);
                         }
@@ -650,11 +650,11 @@ namespace NScumm.Sword1
                 }
                 if (samplesLeft > 0)
                 {
-                    dstData.Data.Set((int)(dstData.Offset + dstPos), 0, samplesLeft * 2);
+                    dstData.Data.Data.Set((int)(dstData.Data.Offset + dstPos), 0, samplesLeft * 2);
                 }
                 if (_cowMode == CowMode.CowDemo) // demo has wave output size embedded in the compressed data
                 {
-                    dstData.Data.WriteUInt32(dstData.Offset, 0);
+                    dstData.Data.WriteUInt32(dstData.Data.Offset, 0);
                 }
                 size = (uint)(resSize * 2);
                 CalcWaveVolume(dstData, resSize);
@@ -670,7 +670,7 @@ namespace NScumm.Sword1
 
         private void CalcWaveVolume(UShortAccess data, int length)
         {
-            var blkPos = new UShortAccess(data.Data, data.Offset + 918 * 2);
+            var blkPos = new UShortAccess(data.Data, data.Data.Offset + 918 * 2);
             uint cnt;
             for (cnt = 0; cnt < WAVE_VOL_TAB_LENGTH; cnt++)
                 _waveVolume[cnt] = false;
@@ -691,7 +691,7 @@ namespace NScumm.Sword1
                 {
                     short smpDiff = (short)(blkPos[0] - average);
                     diff += (uint)Math.Abs(smpDiff);
-                    blkPos.Offset += 2;
+                    blkPos.Data.Offset += 2;
                 }
                 if (diff > WAVE_VOL_THRESHOLD)
                     _waveVolume[blkCnt - 1] = true;

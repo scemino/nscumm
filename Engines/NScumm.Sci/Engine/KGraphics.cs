@@ -26,10 +26,10 @@ using NScumm.Core.IO;
 
 namespace NScumm.Sci.Engine
 {
-    partial class Kernel
+    internal partial class Kernel
     {
-        const int K_DRAWPIC_FLAGS_MIRRORED = (1 << 14);
-        const int K_DRAWPIC_FLAGS_ANIMATIONBLACKOUT = (1 << 15);
+        private const int K_DRAWPIC_FLAGS_MIRRORED = 1 << 14;
+        private const int K_DRAWPIC_FLAGS_ANIMATIONBLACKOUT = 1 << 15;
 
         private static Register kAddToPic(EngineState s, int argc, StackPtr argv)
         {
@@ -66,8 +66,8 @@ namespace NScumm.Sci.Engine
 
         private static Register kAnimate(EngineState s, int argc, StackPtr argv)
         {
-            Register castListReference = (argc > 0) ? argv[0] : Register.NULL_REG;
-            bool cycle = (argc > 1) && ((argv[1].ToUInt16() != 0));
+            Register castListReference = argc > 0 ? argv[0] : Register.NULL_REG;
+            bool cycle = (argc > 1) && argv[1].ToUInt16() != 0;
 
             SciEngine.Instance._gfxAnimate.KernelAnimate(castListReference, cycle, argc, argv);
 
@@ -86,7 +86,7 @@ namespace NScumm.Sci.Engine
         {
             int paletteId = argv[0].ToUInt16();
 
-            SciEngine.Instance._gfxPalette.KernelAssertPalette(paletteId);
+            SciEngine.Instance._gfxPalette16.KernelAssertPalette(paletteId);
             return s.r_acc;
         }
 
@@ -101,7 +101,7 @@ namespace NScumm.Sci.Engine
         private static Register kCanBeHere(EngineState s, int argc, StackPtr argv)
         {
             Register curObject = argv[0];
-            Register listReference = (argc > 1) ? argv[1] : Register.NULL_REG;
+            Register listReference = argc > 1 ? argv[1] : Register.NULL_REG;
 
             Register canBeHere = SciEngine.Instance._gfxCompare.KernelCanBeHere(curObject, listReference);
             return Register.Make(0, (ushort)(canBeHere.IsNull ? 1 : 0));
@@ -110,7 +110,7 @@ namespace NScumm.Sci.Engine
         private static Register kCantBeHere(EngineState s, int argc, StackPtr argv)
         {
             Register curObject = argv[0];
-            Register listReference = (argc > 1) ? argv[1] : Register.NULL_REG;
+            Register listReference = argc > 1 ? argv[1] : Register.NULL_REG;
 
             Register canBeHere = SciEngine.Instance._gfxCompare.KernelCanBeHere(curObject, listReference);
             return canBeHere;
@@ -122,7 +122,7 @@ namespace NScumm.Sci.Engine
             if (viewId == -1)   // Happens in SCI32
                 return Register.NULL_REG;
             short loopNo = argv[1].ToInt16();
-            var celNo = (short)((argc >= 3) ? argv[2].ToInt16() : 0);
+            var celNo = (short)(argc >= 3 ? argv[2].ToInt16() : 0);
             short celHeight;
 
             celHeight = SciEngine.Instance._gfxCache.KernelViewGetCelHeight(viewId, loopNo, celNo);
@@ -136,7 +136,7 @@ namespace NScumm.Sci.Engine
             if (viewId == -1)   // Happens in SCI32
                 return Register.NULL_REG;
             short loopNo = argv[1].ToInt16();
-            var celNo = (short)((argc >= 3) ? argv[2].ToInt16() : 0);
+            var celNo = (short)(argc >= 3 ? argv[2].ToInt16() : 0);
             short celWidth;
 
             celWidth = SciEngine.Instance._gfxCache.KernelViewGetCelWidth(viewId, loopNo, celNo);
@@ -169,7 +169,7 @@ namespace NScumm.Sci.Engine
         private static Register kDisplay(EngineState s, int argc, StackPtr argv)
         {
             Register textp = argv[0];
-            int index = (argc > 1) ? argv[1].ToUInt16() : 0;
+            int index = argc > 1 ? argv[1].ToUInt16() : 0;
 
             string text;
 
@@ -194,7 +194,7 @@ namespace NScumm.Sci.Engine
         {
             int windowId = argv[0].ToInt16();
             bool reanimate = false;
-            if ((argc != 2) || (argv[1].IsNull))
+            if ((argc != 2) || argv[1].IsNull)
                 reanimate = true;
 
             SciEngine.Instance._gfxPorts.KernelDisposeWindow((ushort)windowId, reanimate);
@@ -208,8 +208,8 @@ namespace NScumm.Sci.Engine
             short celNo = argv[2].ToInt16();
             ushort x = argv[3].ToUInt16();
             ushort y = argv[4].ToUInt16();
-            var priority = (short)((argc > 5) ? argv[5].ToInt16() : -1);
-            var paletteNo = (ushort)((argc > 6) ? argv[6].ToUInt16() : 0);
+            var priority = (short)(argc > 5 ? argv[5].ToInt16() : -1);
+            var paletteNo = (ushort)(argc > 6 ? argv[6].ToUInt16() : 0);
             bool hiresMode = false;
             Register upscaledHiresHandle = Register.NULL_REG;
             ushort scaleX = 128;
@@ -375,8 +375,8 @@ namespace NScumm.Sci.Engine
         private static Register kGraphDrawLine(EngineState s, int argc, StackPtr argv)
         {
             short color = AdjustGraphColor(argv[4].ToInt16());
-            short priority = (argc > 5) ? argv[5].ToInt16() : (short)-1;
-            short control = (argc > 6) ? argv[6].ToInt16() : (short)-1;
+            short priority = argc > 5 ? argv[5].ToInt16() : (short)-1;
+            short control = argc > 6 ? argv[6].ToInt16() : (short)-1;
 
             SciEngine.Instance._gfxPaint16.KernelGraphDrawLine(GetGraphPoint(argv), GetGraphPoint(argv + 2), color, priority, control);
             return s.r_acc;
@@ -410,7 +410,7 @@ namespace NScumm.Sci.Engine
 
         private static Register kGraphGetColorCount(EngineState s, int argc, StackPtr argv)
         {
-            return Register.Make(0, SciEngine.Instance._gfxPalette.TotalColorCount);
+            return Register.Make(0, SciEngine.Instance._gfxPalette16.TotalColorCount);
         }
 
         private static Register kGraphRedrawBox(EngineState s, int argc, StackPtr argv)
@@ -430,7 +430,7 @@ namespace NScumm.Sci.Engine
         private static Register kGraphSaveBox(EngineState s, int argc, StackPtr argv)
         {
             Rect rect = GetGraphRect(argv);
-            var screenMask = (ushort)(argv[4].ToUInt16() & (ushort)(GfxScreenMasks.ALL));
+            var screenMask = (ushort)(argv[4].ToUInt16() & (ushort)GfxScreenMasks.ALL);
             return SciEngine.Instance._gfxPaint16.KernelGraphSaveBox(rect, screenMask);
         }
 
@@ -445,7 +445,7 @@ namespace NScumm.Sci.Engine
             Rect rect = GetGraphRect(argv);
             // argv[4] is the map (1 for visual, etc.)
             // argc == 6 on upscaled hires
-            bool hiresMode = (argc > 5);
+            bool hiresMode = argc > 5;
             SciEngine.Instance._gfxPaint16.KernelGraphUpdateBox(rect, hiresMode);
             return s.r_acc;
         }
@@ -462,7 +462,7 @@ namespace NScumm.Sci.Engine
             int viewId = argv[0].ToInt16();
             short loopNo = argv[1].ToInt16();
             short celNo = argv[2].ToInt16();
-            var position = new Point(argv[4].ToUInt16(), argv[3].ToUInt16());
+            var position = new Point(argv[4].ToInt16(), argv[3].ToInt16());
 
             bool result = SciEngine.Instance._gfxCompare.KernelIsItSkip(viewId, loopNo, celNo, position);
             return Register.Make(0, result);
@@ -480,9 +480,9 @@ namespace NScumm.Sci.Engine
             var rect2 = new Rect();
             int argextra = argc >= 13 ? 4 : 0; // Triggers in PQ3 and SCI1.1 games, argc 13 for DOS argc 15 for mac
             int style = argv[5 + argextra].ToInt16();
-            int priority = (argc > 6 + argextra) ? argv[6 + argextra].ToInt16() : -1;
-            int colorPen = AdjustGraphColor((short)((argc > 7 + argextra) ? argv[7 + argextra].ToInt16() : 0));
-            int colorBack = AdjustGraphColor((short)((argc > 8 + argextra) ? argv[8 + argextra].ToInt16() : 255));
+            int priority = argc > 6 + argextra ? argv[6 + argextra].ToInt16() : -1;
+            int colorPen = AdjustGraphColor((short)(argc > 7 + argextra ? argv[7 + argextra].ToInt16() : 0));
+            int colorBack = AdjustGraphColor((short)(argc > 8 + argextra ? argv[8 + argextra].ToInt16() : 255));
 
             if (argc >= 13)
                 rect2 = new Rect(argv[5].ToInt16(), argv[4].ToInt16(), argv[7].ToInt16(), argv[6].ToInt16());
@@ -548,8 +548,8 @@ namespace NScumm.Sci.Engine
             }
             else
             {
-                rect.Right = rect.Left + 1;
-                rect.Bottom = rect.Top + 1;
+                rect.Right = (short) (rect.Left + 1);
+                rect.Bottom = (short) (rect.Top + 1);
             }
             ushort result = SciEngine.Instance._gfxCompare.KernelOnControl(screenMask, rect);
             return Register.Make(0, result);
@@ -572,10 +572,10 @@ namespace NScumm.Sci.Engine
             // Non-VGA games don't use palette resources.
             // This has been changed to 64 colors because Longbow Amiga does have
             // one palette (palette 999).
-            if (SciEngine.Instance._gfxPalette.TotalColorCount < 64)
+            if (SciEngine.Instance._gfxPalette16.TotalColorCount < 64)
                 return s.r_acc;
 
-            SciEngine.Instance._gfxPalette.KernelSetFromResource(resourceId, force);
+            SciEngine.Instance._gfxPalette16.KernelSetFromResource(resourceId, force);
             return s.r_acc;
         }
 
@@ -584,7 +584,7 @@ namespace NScumm.Sci.Engine
             var fromColor = (ushort)ScummHelper.Clip(argv[0].ToUInt16(), 1, 255);
             var toColor = (ushort)ScummHelper.Clip(argv[1].ToUInt16(), 1, 255);
             ushort flags = argv[2].ToUInt16();
-            SciEngine.Instance._gfxPalette.KernelSetFlag(fromColor, toColor, flags);
+            SciEngine.Instance._gfxPalette16.KernelSetFlag(fromColor, toColor, flags);
             return s.r_acc;
         }
 
@@ -593,7 +593,7 @@ namespace NScumm.Sci.Engine
             var fromColor = (ushort)ScummHelper.Clip(argv[0].ToUInt16(), 1, 255);
             var toColor = (ushort)ScummHelper.Clip(argv[1].ToUInt16(), 1, 255);
             ushort flags = argv[2].ToUInt16();
-            SciEngine.Instance._gfxPalette.KernelUnsetFlag(fromColor, toColor, flags);
+            SciEngine.Instance._gfxPalette16.KernelUnsetFlag(fromColor, toColor, flags);
             return s.r_acc;
         }
 
@@ -602,13 +602,13 @@ namespace NScumm.Sci.Engine
             var fromColor = (ushort)ScummHelper.Clip(argv[0].ToUInt16(), 1, 255);
             var toColor = (ushort)ScummHelper.Clip(argv[1].ToUInt16(), 1, 255);
             ushort intensity = argv[2].ToUInt16();
-            bool setPalette = (argc < 4) ? true : (argv[3].IsNull);
+            bool setPalette = (argc < 4) || argv[3].IsNull;
 
             // Palette intensity in non-VGA SCI1 games has been removed
-            if (SciEngine.Instance._gfxPalette.TotalColorCount < 256)
+            if (SciEngine.Instance._gfxPalette16.TotalColorCount < 256)
                 return s.r_acc;
 
-            SciEngine.Instance._gfxPalette.KernelSetIntensity(fromColor, toColor, intensity, setPalette);
+            SciEngine.Instance._gfxPalette16.KernelSetIntensity(fromColor, toColor, intensity, setPalette);
             return s.r_acc;
         }
 
@@ -617,7 +617,7 @@ namespace NScumm.Sci.Engine
             ushort r = argv[0].ToUInt16();
             ushort g = argv[1].ToUInt16();
             ushort b = argv[2].ToUInt16();
-            return Register.Make(0, (ushort)SciEngine.Instance._gfxPalette.KernelFindColor(r, g, b));
+            return Register.Make(0, (ushort)SciEngine.Instance._gfxPalette16.KernelFindColor(r, g, b));
         }
 
         private static Register kPaletteAnimate(EngineState s, int argc, StackPtr argv)
@@ -626,7 +626,7 @@ namespace NScumm.Sci.Engine
             bool paletteChanged = false;
 
             // Palette animation in non-VGA SCI1 games has been removed
-            if (SciEngine.Instance._gfxPalette.TotalColorCount < 256)
+            if (SciEngine.Instance._gfxPalette16.TotalColorCount < 256)
                 return s.r_acc;
 
             for (argNr = 0; argNr < argc; argNr += 3)
@@ -634,11 +634,11 @@ namespace NScumm.Sci.Engine
                 ushort fromColor = argv[argNr].ToUInt16();
                 ushort toColor = argv[argNr + 1].ToUInt16();
                 short speed = argv[argNr + 2].ToInt16();
-                if (SciEngine.Instance._gfxPalette.KernelAnimate((byte)fromColor, (byte)toColor, speed))
+                if (SciEngine.Instance._gfxPalette16.KernelAnimate((byte)fromColor, (byte)toColor, speed))
                     paletteChanged = true;
             }
             if (paletteChanged)
-                SciEngine.Instance._gfxPalette.KernelAnimateSet();
+                SciEngine.Instance._gfxPalette16.KernelAnimateSet();
 
             // WORKAROUND: The game scripts in SQ4 floppy count the number of elapsed
             // cycles in the intro from the number of successive kAnimate calls during
@@ -651,7 +651,7 @@ namespace NScumm.Sci.Engine
             // palette animation effect slower and visible, and not have the logo screen
             // get skipped because the scripts don't wait between animation steps. Fixes
             // bug #3537232.
-            if (SciEngine.Instance.GameId == SciGameId.SQ4 && !SciEngine.Instance.IsCD && s.CurrentRoomNumber == 1)
+            if (SciEngine.Instance.GameId == SciGameId.SQ4 && !SciEngine.Instance.IsCd && s.CurrentRoomNumber == 1)
                 SciEngine.Instance.Sleep(10);
 
             return s.r_acc;
@@ -659,12 +659,12 @@ namespace NScumm.Sci.Engine
 
         private static Register kPaletteSave(EngineState s, int argc, StackPtr argv)
         {
-            return SciEngine.Instance._gfxPalette.KernelSave();
+            return SciEngine.Instance._gfxPalette16.KernelSave();
         }
 
         private static Register kPaletteRestore(EngineState s, int argc, StackPtr argv)
         {
-            SciEngine.Instance._gfxPalette.KernelRestore(argv[0]);
+            SciEngine.Instance._gfxPalette16.KernelRestore(argv[0]);
             return argv[0];
         }
 
@@ -681,7 +681,7 @@ namespace NScumm.Sci.Engine
             ushort ticks = argv[1].ToUInt16();
             var stepStop = (ushort)(argc >= 3 ? argv[2].ToUInt16() : 64);
             var direction = (ushort)(argc >= 4 ? argv[3].ToUInt16() : 1);
-            if (SciEngine.Instance._gfxPalette.KernelPalVaryInit(paletteId, ticks, stepStop, direction))
+            if (SciEngine.Instance._gfxPalette16.KernelPalVaryInit(paletteId, ticks, stepStop, direction))
                 return Register.SIGNAL_REG;
             return Register.NULL_REG;
         }
@@ -692,44 +692,44 @@ namespace NScumm.Sci.Engine
             var stepStop = (short)(argc >= 2 ? argv[1].ToUInt16() : 0);
             var direction = (short)(argc >= 3 ? argv[2].ToInt16() : -1);
 
-            return Register.Make(0, (ushort)SciEngine.Instance._gfxPalette.KernelPalVaryReverse(ticks, stepStop, direction));
+            return Register.Make(0, (ushort)SciEngine.Instance._gfxPalette16.KernelPalVaryReverse(ticks, stepStop, direction));
         }
 
         private static Register kPalVaryGetCurrentStep(EngineState s, int argc, StackPtr argv)
         {
-            return Register.Make(0, (ushort)SciEngine.Instance._gfxPalette.KernelPalVaryGetCurrentStep());
+            return Register.Make(0, (ushort)SciEngine.Instance._gfxPalette16.KernelPalVaryGetCurrentStep());
         }
 
         private static Register kPalVaryDeinit(EngineState s, int argc, StackPtr argv)
         {
-            SciEngine.Instance._gfxPalette.KernelPalVaryDeinit();
+            SciEngine.Instance._gfxPalette16.KernelPalVaryDeinit();
             return Register.NULL_REG;
         }
 
         private static Register kPalVaryChangeTarget(EngineState s, int argc, StackPtr argv)
         {
             int paletteId = argv[0].ToUInt16();
-            short currentStep = SciEngine.Instance._gfxPalette.KernelPalVaryChangeTarget(paletteId);
+            short currentStep = SciEngine.Instance._gfxPalette16.KernelPalVaryChangeTarget(paletteId);
             return Register.Make(0, (ushort)currentStep);
         }
 
         private static Register kPalVaryChangeTicks(EngineState s, int argc, StackPtr argv)
         {
             ushort ticks = argv[0].ToUInt16();
-            SciEngine.Instance._gfxPalette.KernelPalVaryChangeTicks(ticks);
+            SciEngine.Instance._gfxPalette16.KernelPalVaryChangeTicks(ticks);
             return Register.NULL_REG;
         }
 
         private static Register kPalVaryPauseResume(EngineState s, int argc, StackPtr argv)
         {
             bool pauseState = !argv[0].IsNull;
-            SciEngine.Instance._gfxPalette.KernelPalVaryPause(pauseState);
+            SciEngine.Instance._gfxPalette16.KernelPalVaryPause(pauseState);
             return Register.NULL_REG;
         }
 
         private static Register kPicNotValid(EngineState s, int argc, StackPtr argv)
         {
-            var newPicNotValid = (short)((argc > 0) ? argv[0].ToInt16() : -1);
+            var newPicNotValid = (short)(argc > 0 ? argv[0].ToInt16() : -1);
 
             return Register.Make(0, (ushort)SciEngine.Instance._gfxScreen.KernelPicNotValid(newPicNotValid));
         }
@@ -751,8 +751,8 @@ namespace NScumm.Sci.Engine
                 case 0:
                     { // remap by percent
                         ushort percent = argv[1].ToUInt16();
-                        SciEngine.Instance._gfxPalette.ResetRemapping();
-                        SciEngine.Instance._gfxPalette.SetRemappingPercent(254, (byte)percent);
+                        SciEngine.Instance._gfxRemap16.ResetRemapping();
+                        SciEngine.Instance._gfxRemap16.SetRemappingPercent(254, (byte)percent);
                     }
                     break;
                 case 1:
@@ -760,8 +760,8 @@ namespace NScumm.Sci.Engine
                         ushort from = argv[1].ToUInt16();
                         ushort to = argv[2].ToUInt16();
                         ushort @base = argv[3].ToUInt16();
-                        SciEngine.Instance._gfxPalette.ResetRemapping();
-                        SciEngine.Instance._gfxPalette.SetRemappingRange(254, (byte)from, (byte)to, (byte)@base);
+                        SciEngine.Instance._gfxRemap16.ResetRemapping();
+                        SciEngine.Instance._gfxRemap16.SetRemappingRange(254, (byte)from, (byte)to, (byte)@base);
                     }
                     break;
                 case 2: // turn remapping off (unused)
@@ -891,12 +891,12 @@ namespace NScumm.Sci.Engine
                 case 10:
                     // Freddy pharkas, when using the whiskey glass to read the prescription (bug #3034973)
                     SciEngine.Instance._gfxCursor.KernelSetZoomZone((byte)argv[0].ToUInt16(),
-                        new Rect(argv[1].ToUInt16(), argv[2].ToUInt16(), argv[3].ToUInt16(), argv[4].ToUInt16()),
+                        new Rect(argv[1].ToInt16(), argv[2].ToInt16(), argv[3].ToInt16(), argv[4].ToInt16()),
                         argv[5].ToUInt16(), argv[6].ToUInt16(), argv[7].ToUInt16(),
                         argv[8].ToUInt16(), (byte)argv[9].ToUInt16());
                     break;
                 default:
-                    Error("kSetCursor: Unhandled case: %d arguments given", argc);
+                    Error("kSetCursor: Unhandled case: {0} arguments given", argc);
                     break;
             }
             return s.r_acc;
@@ -956,8 +956,8 @@ namespace NScumm.Sci.Engine
 
         private static Register kShakeScreen(EngineState s, int argc, StackPtr argv)
         {
-            var shakeCount = (short)((argc > 0) ? argv[0].ToUInt16() : 1);
-            var directions = (short)((argc > 1) ? argv[1].ToUInt16() : 1);
+            var shakeCount = (short)(argc > 0 ? argv[0].ToUInt16() : 1);
+            var directions = (short)(argc > 1 ? argv[1].ToUInt16() : 1);
 
             SciEngine.Instance._gfxScreen.KernelShakeScreen(shakeCount, directions);
             return s.r_acc;
@@ -1013,44 +1013,42 @@ namespace NScumm.Sci.Engine
         {
             short textWidth, textHeight;
             string text = s._segMan.GetString(argv[1]);
-            StackPtr dest = (StackPtr)s._segMan.DerefRegPtr(argv[0], 4);
-            int maxwidth = (argc > 3) ? argv[3].ToUInt16() : 0;
-            int font_nr = argv[2].ToUInt16();
+            var dest = s._segMan.DerefRegPtr(argv[0], 4);
+            int maxwidth = argc > 3 ? argv[3].ToUInt16() : 0;
+            int fontNr = argv[2].ToUInt16();
 
-            if (dest == StackPtr.Null)
+            if (!dest.HasValue)
             {
                 DebugC(DebugLevels.Strings, "GetTextSize: Empty destination");
                 return s.r_acc;
             }
 
-            string sep_str;
             string sep = null;
-            if ((argc > 4) && (argv[4].Segment != 0))
+            if ((argc > 4) && (argv[4].Segment!=0))
             {
-                sep_str = s._segMan.GetString(argv[4]);
-                sep = sep_str;
+                var sepStr = s._segMan.GetString(argv[4]);
+                sep = sepStr;
             }
 
-            dest[0] = dest[1] = Register.NULL_REG;
+            var d = dest.Value;
+            d[0] = d[1] = Register.NULL_REG;
 
-            if (string.IsNullOrEmpty(text))
-            { // Empty text
-                dest[2] = dest[3] = Register.Make(0, 0);
+            if (text.Length==0)
+            {
+                // Empty text
+                d[2] = d[3] = Register.Make(0, 0);
                 DebugC(DebugLevels.Strings, "GetTextSize: Empty string");
                 return s.r_acc;
             }
 
-            textWidth = dest[3].ToInt16(); textHeight = dest[2].ToInt16();
+            textWidth = d[3].ToInt16();
+            textHeight = d[2].ToInt16();
 
             ushort languageSplitter = 0;
             string splitText = SciEngine.Instance.StrSplitLanguage(text, languageSplitter, sep);
 
-#if ENABLE_SCI32
-            if (SciEngine.Instance._gfxText32)
-                SciEngine.Instance._gfxText32.kernelTextSize(splitText, font_nr, maxwidth, &textWidth, &textHeight);
-            else
-#endif
-            SciEngine.Instance._gfxText16.KernelTextSize(splitText, languageSplitter, (short)font_nr, (short)maxwidth, out textWidth, out textHeight);
+            SciEngine.Instance._gfxText16.KernelTextSize(splitText, languageSplitter, (short) fontNr,
+                (short) maxwidth, out textWidth, out textHeight);
 
             // One of the game texts in LB2 German contains loads of spaces in
             // its end. We trim the text here, otherwise the graphics code will
@@ -1061,27 +1059,28 @@ namespace NScumm.Sci.Engine
                 textHeight >= SciEngine.Instance._gfxScreen.DisplayHeight)
             {
                 // TODO: Is this needed for SCI32 as well?
-                if (SciEngine.Instance._gfxText16 != null)
+                if (SciEngine.Instance._gfxText16!=null)
                 {
                     Warning("kTextSize: string would be too big to fit on screen. Trimming it");
                     text = text.Trim();
                     // Copy over the trimmed string...
                     s._segMan.Strcpy(argv[1], text);
                     // ...and recalculate bounding box dimensions
-                    SciEngine.Instance._gfxText16.KernelTextSize(splitText, languageSplitter, (short)font_nr, (short)maxwidth, out textWidth, out textHeight);
+                    SciEngine.Instance._gfxText16.KernelTextSize(splitText, languageSplitter, (short) fontNr,
+                        (short) maxwidth, out textWidth, out textHeight);
                 }
             }
 
             DebugC(DebugLevels.Strings, "GetTextSize '{0}' . {1}x{2}", text, textWidth, textHeight);
             if (ResourceManager.GetSciVersion() <= SciVersion.V1_1)
             {
-                dest[2] = Register.Make(0, (ushort)textHeight);
-                dest[3] = Register.Make(0, (ushort)textWidth);
+                d[2] = Register.Make(0, (ushort) textHeight);
+                d[3] = Register.Make(0, (ushort) textWidth);
             }
             else
             {
-                dest[2] = Register.Make(0, (ushort)textWidth);
-                dest[3] = Register.Make(0, (ushort)textHeight);
+                d[2] = Register.Make(0, (ushort) textWidth);
+                d[3] = Register.Make(0, (ushort) textHeight);
             }
 
             return s.r_acc;
@@ -1254,9 +1253,9 @@ namespace NScumm.Sci.Engine
                     viewId = (int)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.view);
                     {
                         var l = (int)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.loop);
-                        loopNo = (short)(((l & 0x80) != 0) ? l - 256 : l);
+                        loopNo = (short)((l & 0x80) != 0 ? l - 256 : l);
                         var c = (int)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.cel);
-                        celNo = (short)(((c & 0x80) != 0) ? c - 256 : c);
+                        celNo = (short)((c & 0x80) != 0 ? c - 256 : c);
                         // Check if the control object specifies a priority selector (like in Jones)
                         Register tmp;
                         if (SciEngine.LookupSelector(s._segMan, controlObject, o => o.priority, null, out tmp) == SelectorType.Variable)
@@ -1343,5 +1342,72 @@ namespace NScumm.Sci.Engine
             if (y > y1) y1 = y;
             return new Rect(x, y, x1, y1);
         }
+
+        private static Register kPalVarySetVary(EngineState s, int argc, StackPtr argv) {
+            int paletteId = argv[0].ToUInt16();
+            int time = argc > 1 ? argv[1].ToInt16() * 60 : 0;
+            short percent = (short) (argc > 2 ? argv[2].ToInt16() : 100);
+            short fromColor;
+            short toColor;
+
+            if (argc > 4) {
+                fromColor = argv[3].ToInt16();
+                toColor = argv[4].ToInt16();
+            } else {
+                fromColor = toColor = -1;
+            }
+
+            SciEngine.Instance._gfxPalette32.KernelPalVarySet(paletteId, percent, time, fromColor, toColor);
+            return s.r_acc;
+        }
+
+        private static Register kPalVarySetPercent(EngineState s, int argc, StackPtr argv)
+        {
+            int time = argc > 0 ? argv[0].ToInt16() * 60 : 0;
+            short percent = (short) (argc > 1 ? argv[1].ToInt16() : 0);
+            SciEngine.Instance._gfxPalette32.SetVaryPercent(percent, time, -1, -1);
+            return s.r_acc;
+        }
+
+        private static Register kPalVaryGetPercent(EngineState s, int argc, StackPtr argv)
+        {
+            return Register.Make(0, (ushort) SciEngine.Instance._gfxPalette32.GetVaryPercent());
+        }
+
+        private static Register kPalVaryOff(EngineState s, int argc, StackPtr argv) {
+            SciEngine.Instance._gfxPalette32.VaryOff();
+            return s.r_acc;
+        }
+
+        private static Register kPalVaryMergeTarget(EngineState s, int argc, StackPtr argv) {
+            int paletteId = argv[0].ToUInt16();
+            SciEngine.Instance._gfxPalette32.KernelPalVaryMergeTarget(paletteId);
+            return Register.Make(0, (ushort) SciEngine.Instance._gfxPalette32.GetVaryPercent());
+        }
+
+        private static Register kPalVarySetTime(EngineState s, int argc, StackPtr argv) {
+            int time = argv[0].ToInt16() * 60;
+            SciEngine.Instance._gfxPalette32.SetVaryTime(time);
+            return s.r_acc;
+        }
+
+        private static Register kPalVarySetTarget(EngineState s, int argc, StackPtr argv) {
+            int paletteId = argv[0].ToUInt16();
+            SciEngine.Instance._gfxPalette32.KernelPalVarySetTarget(paletteId);
+            return Register.Make(0, (ushort) SciEngine.Instance._gfxPalette32.GetVaryPercent());
+        }
+
+        private static Register kPalVarySetStart(EngineState s, int argc, StackPtr argv) {
+            int paletteId = argv[0].ToUInt16();
+            SciEngine.Instance._gfxPalette32.KernelPalVarySetStart(paletteId);
+            return Register.Make(0, (ushort) SciEngine.Instance._gfxPalette32.GetVaryPercent());
+        }
+
+        private static Register kPalVaryMergeStart(EngineState s, int argc, StackPtr argv) {
+            int paletteId = argv[0].ToUInt16();
+            SciEngine.Instance._gfxPalette32.KernelPalVaryMergeStart(paletteId);
+            return Register.Make(0, (ushort) SciEngine.Instance._gfxPalette32.GetVaryPercent());
+        }
+
     }
 }

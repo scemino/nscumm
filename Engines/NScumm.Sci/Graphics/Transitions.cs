@@ -23,7 +23,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Graphics
 {
-    enum SciTransition
+    internal enum SciTransition
     {
         VERTICALROLL_FROMCENTER = 0,
         HORIZONTALROLL_FROMCENTER = 1,
@@ -47,7 +47,7 @@ namespace NScumm.Sci.Graphics
         HORIZONTALROLL_TOCENTER = 301
     }
 
-    class GfxTransitionTranslateEntry
+    internal class GfxTransitionTranslateEntry
     {
         public short orgId;
         public SciTransition newId;
@@ -97,7 +97,7 @@ namespace NScumm.Sci.Graphics
         };
 
         // this table defines the blackout-transition that needs to be done prior doing the actual transition
-        static GfxTransitionTranslateEntry[] blackoutTransitionIDs = {
+        private static GfxTransitionTranslateEntry[] blackoutTransitionIDs = {
             new GfxTransitionTranslateEntry { orgId = (short)SciTransition.VERTICALROLL_FROMCENTER,          newId = SciTransition.VERTICALROLL_TOCENTER,      blackoutFlag = true },
             new GfxTransitionTranslateEntry { orgId = (short)SciTransition.HORIZONTALROLL_FROMCENTER,        newId = SciTransition.HORIZONTALROLL_TOCENTER,    blackoutFlag = true },
             new GfxTransitionTranslateEntry { orgId = (short)SciTransition.STRAIGHT_FROM_RIGHT,              newId = SciTransition.STRAIGHT_FROM_LEFT,         blackoutFlag = true },
@@ -361,7 +361,7 @@ namespace NScumm.Sci.Graphics
             SciEngine.Instance.System.GraphicsManager.UpdateScreen();
         }
 
-        private void ScrollCopyOldToScreen(Rect screenRect, int x, int y)
+        private void ScrollCopyOldToScreen(Rect screenRect, short x, short y)
         {
             var oldScreenPtr = new ByteAccess(_oldScreen);
             short screenWidth = (short)_screen.DisplayWidth;
@@ -454,8 +454,8 @@ namespace NScumm.Sci.Graphics
                 mask = (ushort)((mask & 1) != 0 ? (mask >> 1) ^ 0x240 : mask >> 1);
                 if (mask >= 40 * 25)
                     continue;
-                blockRect.Left = (mask % 40) << 3; blockRect.Right = blockRect.Left + 8;
-                blockRect.Top = (mask / 40) << 3; blockRect.Bottom = blockRect.Top + 8;
+                blockRect.Left = (short) ((mask % 40) << 3); blockRect.Right = (short) (blockRect.Left + 8);
+                blockRect.Top = (short) ((mask / 40) << 3); blockRect.Bottom = (short) (blockRect.Top + 8);
                 blockRect.Clip(_picRect);
                 if (!blockRect.IsEmpty)
                     CopyRectToScreen(blockRect, blackoutFlag);
@@ -481,8 +481,8 @@ namespace NScumm.Sci.Graphics
                 mask = (ushort)((mask & 1) != 0 ? (mask >> 1) ^ 0xB400 : mask >> 1);
                 if (mask >= _screen.ScriptWidth * _screen.ScriptHeight)
                     continue;
-                pixelRect.Left = mask % _screen.ScriptWidth; pixelRect.Right = pixelRect.Left + 1;
-                pixelRect.Top = mask / _screen.ScriptWidth; pixelRect.Bottom = pixelRect.Top + 1;
+                pixelRect.Left = (short) (mask % _screen.ScriptWidth); pixelRect.Right = (short) (pixelRect.Left + 1);
+                pixelRect.Top = (short) (mask / _screen.ScriptWidth); pixelRect.Bottom = (short) (pixelRect.Top + 1);
                 pixelRect.Clip(_picRect);
                 if (!pixelRect.IsEmpty)
                     CopyRectToScreen(pixelRect, blackoutFlag);
@@ -506,7 +506,7 @@ namespace NScumm.Sci.Graphics
             switch ((SciTransition)number)
             {
                 case SciTransition.STRAIGHT_FROM_RIGHT:
-                    newScreenRect.Left = newScreenRect.Right - 1;
+                    newScreenRect.Left = (short) (newScreenRect.Right - 1);
                     while (newScreenRect.Left >= _picRect.Left)
                     {
                         CopyRectToScreen(newScreenRect, blackoutFlag);
@@ -521,7 +521,7 @@ namespace NScumm.Sci.Graphics
                     break;
 
                 case SciTransition.STRAIGHT_FROM_LEFT:
-                    newScreenRect.Right = newScreenRect.Left + 1;
+                    newScreenRect.Right = (short) (newScreenRect.Left + 1);
                     while (newScreenRect.Right <= _picRect.Right)
                     {
                         CopyRectToScreen(newScreenRect, blackoutFlag);
@@ -536,7 +536,7 @@ namespace NScumm.Sci.Graphics
                     break;
 
                 case SciTransition.STRAIGHT_FROM_BOTTOM:
-                    newScreenRect.Top = newScreenRect.Bottom - 1;
+                    newScreenRect.Top = (short) (newScreenRect.Bottom - 1);
                     while (newScreenRect.Top >= _picRect.Top)
                     {
                         CopyRectToScreen(newScreenRect, blackoutFlag);
@@ -548,7 +548,7 @@ namespace NScumm.Sci.Graphics
                     break;
 
                 case SciTransition.STRAIGHT_FROM_TOP:
-                    newScreenRect.Bottom = newScreenRect.Top + 1;
+                    newScreenRect.Bottom = (short) (newScreenRect.Top + 1);
                     while (newScreenRect.Bottom <= _picRect.Bottom)
                     {
                         CopyRectToScreen(newScreenRect, blackoutFlag);
@@ -566,10 +566,10 @@ namespace NScumm.Sci.Graphics
         private void DiagonalRollFromCenter(bool blackoutFlag)
         {
             short halfHeight = (short)(_picRect.Height / 2);
-            Rect upperRect = new Rect(_picRect.Left + halfHeight - 2, _picRect.Top + halfHeight, _picRect.Right - halfHeight + 1, _picRect.Top + halfHeight + 1);
+            Rect upperRect = new Rect((short) (_picRect.Left + halfHeight - 2), (short) (_picRect.Top + halfHeight), (short) (_picRect.Right - halfHeight + 1), (short) (_picRect.Top + halfHeight + 1));
             Rect lowerRect = new Rect(upperRect.Left, upperRect.Top, upperRect.Right, upperRect.Bottom);
-            Rect leftRect = new Rect(upperRect.Left, upperRect.Top, upperRect.Left + 1, lowerRect.Bottom);
-            Rect rightRect = new Rect(upperRect.Right, upperRect.Top, upperRect.Right + 1, lowerRect.Bottom);
+            Rect leftRect = new Rect(upperRect.Left, upperRect.Top, (short) (upperRect.Left + 1), lowerRect.Bottom);
+            Rect rightRect = new Rect(upperRect.Right, upperRect.Top, (short) (upperRect.Right + 1), lowerRect.Bottom);
             int msecCount = 0;
 
             while ((upperRect.Top >= _picRect.Top) || (lowerRect.Bottom <= _picRect.Bottom))
@@ -603,10 +603,10 @@ namespace NScumm.Sci.Graphics
         // only. Assumes that height of rect is larger than width.
         private void DiagonalRollToCenter(bool blackoutFlag)
         {
-            Rect upperRect = new Rect(_picRect.Left, _picRect.Top, _picRect.Right, _picRect.Top + 1);
-            Rect lowerRect = new Rect(_picRect.Left, _picRect.Bottom - 1, _picRect.Right, _picRect.Bottom);
-            Rect leftRect = new Rect(_picRect.Left, _picRect.Top, _picRect.Left + 1, _picRect.Bottom);
-            Rect rightRect = new Rect(_picRect.Right - 1, _picRect.Top, _picRect.Right, _picRect.Bottom);
+            Rect upperRect = new Rect(_picRect.Left, _picRect.Top, _picRect.Right, (short) (_picRect.Top + 1));
+            Rect lowerRect = new Rect(_picRect.Left, (short) (_picRect.Bottom - 1), _picRect.Right, _picRect.Bottom);
+            Rect leftRect = new Rect(_picRect.Left, _picRect.Top, (short) (_picRect.Left + 1), _picRect.Bottom);
+            Rect rightRect = new Rect((short) (_picRect.Right - 1), _picRect.Top, _picRect.Right, _picRect.Bottom);
             int msecCount = 0;
 
             while (upperRect.Top < lowerRect.Bottom)
@@ -659,8 +659,8 @@ namespace NScumm.Sci.Graphics
         // on _picRect area only
         private void HorizontalRollToCenter(bool blackoutFlag)
         {
-            Rect upperRect = new Rect(_picRect.Left, _picRect.Top, _picRect.Right, _picRect.Top + 1);
-            Rect lowerRect = new Rect(upperRect.Left, _picRect.Bottom - 1, upperRect.Right, _picRect.Bottom);
+            Rect upperRect = new Rect(_picRect.Left, _picRect.Top, _picRect.Right, (short) (_picRect.Top + 1));
+            Rect lowerRect = new Rect(upperRect.Left, (short) (_picRect.Bottom - 1), upperRect.Right, _picRect.Bottom);
             var msecCount = 0;
 
             while (upperRect.Top < lowerRect.Bottom)
@@ -676,8 +676,8 @@ namespace NScumm.Sci.Graphics
         // area only
         private void HorizontalRollFromCenter(bool blackoutFlag)
         {
-            Rect upperRect = new Rect(_picRect.Left, _picRect.Top + (_picRect.Height / 2) - 1, _picRect.Right, _picRect.Top + (_picRect.Height / 2));
-            Rect lowerRect = new Rect(upperRect.Left, upperRect.Bottom, upperRect.Right, upperRect.Bottom + 1);
+            Rect upperRect = new Rect(_picRect.Left, (short) (_picRect.Top + (_picRect.Height / 2) - 1), _picRect.Right, (short) (_picRect.Top + (_picRect.Height / 2)));
+            Rect lowerRect = new Rect(upperRect.Left, upperRect.Bottom, upperRect.Right, (short) (upperRect.Bottom + 1));
             var msecCount = 0;
 
             while ((upperRect.Top >= _picRect.Top) || (lowerRect.Bottom <= _picRect.Bottom))
@@ -697,8 +697,8 @@ namespace NScumm.Sci.Graphics
         // only
         private void VerticalRollToCenter(bool blackoutFlag)
         {
-            Rect leftRect = new Rect(_picRect.Left, _picRect.Top, _picRect.Left + 1, _picRect.Bottom);
-            Rect rightRect = new Rect(_picRect.Right - 1, _picRect.Top, _picRect.Right, _picRect.Bottom);
+            Rect leftRect = new Rect(_picRect.Left, _picRect.Top, (short) (_picRect.Left + 1), _picRect.Bottom);
+            Rect rightRect = new Rect((short) (_picRect.Right - 1), _picRect.Top, _picRect.Right, _picRect.Bottom);
             var msecCount = 0;
 
             while (leftRect.Left < rightRect.Right)
@@ -714,8 +714,8 @@ namespace NScumm.Sci.Graphics
         // only
         private void VerticalRollFromCenter(bool blackoutFlag)
         {
-            Rect leftRect = new Rect(_picRect.Left + (_picRect.Width / 2) - 1, _picRect.Top, _picRect.Left + (_picRect.Width / 2), _picRect.Bottom);
-            Rect rightRect = new Rect(leftRect.Right, _picRect.Top, leftRect.Right + 1, _picRect.Bottom);
+            Rect leftRect = new Rect((short) (_picRect.Left + (_picRect.Width / 2) - 1), _picRect.Top, (short) (_picRect.Left + (_picRect.Width / 2)), _picRect.Bottom);
+            Rect rightRect = new Rect(leftRect.Right, _picRect.Top, (short) (leftRect.Right + 1), _picRect.Bottom);
             var msecCount = 0;
 
             while ((leftRect.Left >= _picRect.Left) || (rightRect.Right <= _picRect.Right))

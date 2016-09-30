@@ -20,7 +20,7 @@ using NScumm.Core.Graphics;
 
 namespace NScumm.Core.Video
 {
-    internal abstract class VideoTrack : Track
+    public abstract class VideoTrack : Track
     {
         public override TrackType TrackType => TrackType.Video;
 
@@ -54,6 +54,7 @@ namespace NScumm.Core.Video
         //    // Default implementation: Return an invalid (negative) number
         //    return new Timestamp().AddFrames(-1);
         //}
+
         public bool SetReverse(bool reverse)
         {
             return !reverse;

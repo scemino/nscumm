@@ -1620,11 +1620,11 @@ namespace NScumm.Scumm
             {
                 int tmpX = (_position.X << 16) + _walkdata.XFrac + (_walkdata.DeltaXFactor >> 8) * ScaleX;
                 _walkdata.XFrac = (ushort)tmpX;
-                _position.X = (tmpX >> 16);
+                _position.X = (short) (tmpX >> 16);
 
                 int tmpY = (_position.Y << 16) + _walkdata.YFrac + (_walkdata.DeltaYFactor >> 8) * ScaleY;
                 _walkdata.YFrac = (ushort)tmpY;
-                _position.Y = (tmpY >> 16);
+                _position.Y = (short) (tmpY >> 16);
             }
 
             if (Math.Abs(_position.X - _walkdata.Cur.X) > distX)
@@ -1929,7 +1929,7 @@ namespace NScumm.Scumm
                                 q = box1.UpperRight.Y;
                             if (q == pos && box2nr == box3nr)
                                 return true;
-                            foundPath.Y = q;
+                            foundPath.Y = (short) q;
                             foundPath.X = box1.UpperLeft.X;
                             return false;
                         }
@@ -1990,7 +1990,7 @@ namespace NScumm.Scumm
                                 q = box1.UpperRight.X;
                             if (q == pos && box2nr == box3nr)
                                 return true;
-                            foundPath.X = q;
+                            foundPath.X = (short) q;
                             foundPath.Y = box1.UpperLeft.Y;
                             return false;
                         }

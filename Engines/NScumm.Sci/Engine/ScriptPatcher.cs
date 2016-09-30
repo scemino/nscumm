@@ -23,14 +23,14 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
 {
-    struct SciScriptPatcherRuntimeEntry
+    internal struct SciScriptPatcherRuntimeEntry
     {
         public bool active;
         public uint magicDWord;
         public int magicOffset;
     }
 
-    struct SciScriptPatcherEntry
+    internal struct SciScriptPatcherEntry
     {
         public bool defaultActive;
         public ushort scriptNr;
@@ -53,10 +53,10 @@ namespace NScumm.Sci.Engine
     /// <summary>
     /// ScriptPatcher class, handles on-the-fly patching of script data.
     /// </summary>
-    class ScriptPatcher
+    internal class ScriptPatcher
     {
         // defines maximum scratch area for getting original bytes from unpatched script data
-        const int PATCH_VALUELIMIT = 4096;
+        private const int PATCH_VALUELIMIT = 4096;
 
         private int[] _selectorIdTable;
         private SciScriptPatcherRuntimeEntry[] _runtimeTable;
@@ -111,7 +111,7 @@ namespace NScumm.Sci.Engine
         // We fix the script by patching in a jump to the proper code inside fawaz::doit.
         // Responsible method: fawaz::handleEvent
         // Fixes bug: #6402
-        static readonly ushort[] camelotSignaturePeepingTom = {
+        private static readonly ushort[] camelotSignaturePeepingTom = {
             0x72, Workarounds.SIG_MAGICDWORD, Workarounds.SIG_UINT16_1(0x077e),Workarounds.SIG_UINT16_2(0x077e), // lofsa fawaz <-- start of proper initializion code
             0xa1, 0xb9,                      // sag b9h
             Workarounds.SIG_ADDTOOFFSET(+571),           // skip 571 bytes
@@ -128,13 +128,13 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] camelotPatchPeepingTom = {
+        private static readonly ushort[] camelotPatchPeepingTom = {
             Workarounds.PATCH_ADDTOOFFSET(+576),
             0x32, Workarounds.PATCH_UINT16_1(0xfdbd), Workarounds.PATCH_UINT16_2(0xfdbd),      // jmp to fawaz::doit / properly init peepingTom code
             Workarounds.PATCH_END
         };
 
-        static readonly SciScriptPatcherEntry[] camelotSignatures = {
+        private static readonly SciScriptPatcherEntry[] camelotSignatures = {
             new SciScriptPatcherEntry(true, 62, "fix peepingTom Sierra bug", 1, camelotSignaturePeepingTom, camelotPatchPeepingTom)        };
 
         // ===========================================================================
@@ -146,7 +146,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: PC-CD
         // Responsible method: stayAndHelp::changeState
         // Fixes bug: #5107
-        static readonly ushort[] ecoquest1SignatureStayAndHelp = {
+        private static readonly ushort[] ecoquest1SignatureStayAndHelp = {
             0x3f, 0x01,                      // link 01
             0x87, 0x01,                      // lap param[1]
             0x65, 0x14,                      // aTop state
@@ -175,7 +175,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] ecoquest1PatchStayAndHelp = {
+        private static readonly ushort[] ecoquest1PatchStayAndHelp = {
             0x87, 0x01,                      // lap param[1]
             0x65, 0x14,                      // aTop state
             0x36,                            // push
@@ -200,7 +200,7 @@ namespace NScumm.Sci.Engine
             Workarounds.PATCH_END
         };
 
-        static readonly SciScriptPatcherEntry[] ecoquest1Signatures = {
+        private static readonly SciScriptPatcherEntry[] ecoquest1Signatures = {
             new SciScriptPatcherEntry(  true,   660, "CD: bad messagebox and freeze",               1, ecoquest1SignatureStayAndHelp, ecoquest1PatchStayAndHelp),
         };
 
@@ -211,7 +211,7 @@ namespace NScumm.Sci.Engine
         //  is resetted every time, which means the previous text isn't available
         //  anymore. We have to patch the code because of that.
         // Fixes bug: #4993
-        static readonly ushort[] ecoquest2SignatureEcorder = {
+        private static readonly ushort[] ecoquest2SignatureEcorder = {
             0x31, 0x22,                      // bnt [next state]
             0x39, 0x0a,                      // pushi 0a
             0x5b, 0x04, 0x1e,                // lea temp[1e]
@@ -238,7 +238,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] ecoquest2PatchEcorder = {
+        private static readonly ushort[] ecoquest2PatchEcorder = {
             0x2f, 0x02,                      // bt [to pushi 07]
             0x3a,                            // toss
             0x48,                            // ret
@@ -267,7 +267,7 @@ namespace NScumm.Sci.Engine
         // kGraphFillBoxAny and kGraphUpdateBox), as there isn't enough space to patch
         // the function otherwise.
         // Fixes bug: #6467
-        static readonly ushort[] ecoquest2SignatureEcorderTutorial = {
+        private static readonly ushort[] ecoquest2SignatureEcorderTutorial = {
             0x30, Workarounds.SIG_UINT16_1(0x0023), Workarounds.SIG_UINT16_2(0x0023),        // bnt [next state]
             0x39, 0x0a,                      // pushi 0a
             0x5b, 0x04, 0x1f,                // lea temp[1f]
@@ -290,7 +290,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] ecoquest2PatchEcorderTutorial = {
+        private static readonly ushort[] ecoquest2PatchEcorderTutorial = {
             0x31, 0x23,                      // bnt [next state] (save 1 byte)
             // The parameter count below should be 7, but we're out of bytes
             // to patch! A workaround has been added because of this
@@ -324,7 +324,7 @@ namespace NScumm.Sci.Engine
         };
 
         //          script, description,                                       signature                          patch
-        static readonly SciScriptPatcherEntry[] ecoquest2Signatures = {
+        private static readonly SciScriptPatcherEntry[] ecoquest2Signatures = {
             new SciScriptPatcherEntry(  true,    50, "initial text not removed on ecorder",          1, ecoquest2SignatureEcorder,         ecoquest2PatchEcorder),
             new SciScriptPatcherEntry(  true,   333, "initial text not removed on ecorder tutorial", 1, ecoquest2SignatureEcorderTutorial, ecoquest2PatchEcorderTutorial),
         };
@@ -344,7 +344,7 @@ namespace NScumm.Sci.Engine
         //
         // Responsible method: CascadeQuest::autosave
         // Fixes bug: #7007
-        static readonly ushort[] fanmadeSignatureCascadeQuestFixAutoSaving = {
+        private static readonly ushort[] fanmadeSignatureCascadeQuestFixAutoSaving = {
             Workarounds.SIG_MAGICDWORD,
             0x38, Workarounds.SIG_UINT16_1(0x03e7), Workarounds.SIG_UINT16_2(0x03e7),        // pushi 3E7 (999d) -> save game slot 999
             0x74, Workarounds.SIG_UINT16_1(0x06f8), Workarounds.SIG_UINT16_2(0x06f8),        // lofss "AutoSave"
@@ -353,7 +353,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] fanmadePatchCascadeQuestFixAutoSaving = {
+        private static readonly ushort[] fanmadePatchCascadeQuestFixAutoSaving = {
             0x38, Workarounds.PATCH_UINT16_1(Workarounds.SAVEGAMEID_OFFICIALRANGE_START - 1), Workarounds.PATCH_UINT16_2(Workarounds.SAVEGAMEID_OFFICIALRANGE_START - 1), // fix slot
             Workarounds.PATCH_END
         };
@@ -363,7 +363,7 @@ namespace NScumm.Sci.Engine
         // infinite loop. This script bug was not apparent in SSCI, probably because
         // event handling was slightly different there, so it was never discovered.
         // Fixes bug: #5120
-        static readonly ushort[] fanmadeSignatureDemoQuestInfiniteLoop = {
+        private static readonly ushort[] fanmadeSignatureDemoQuestInfiniteLoop = {
             0x38, Workarounds.SIG_UINT16_1(0x004c), Workarounds.SIG_UINT16_2(0x004c),        // pushi 004c
             0x39, 0x00,                      // pushi 00
             0x87, 0x01,                      // lap 01
@@ -374,14 +374,14 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] fanmadePatchDemoQuestInfiniteLoop = {
+        private static readonly ushort[] fanmadePatchDemoQuestInfiniteLoop = {
             Workarounds.PATCH_ADDTOOFFSET(+10),
             0x30, Workarounds.PATCH_UINT16_1(0x0032), Workarounds.PATCH_UINT16_2(0x0032),      // bnt 0032  [06a8] --> pushi 004c
             Workarounds.PATCH_END
         };
 
         //          script, description,                                      signature                                  patch
-        static readonly SciScriptPatcherEntry[] fanmadeSignatures = {
+        private static readonly SciScriptPatcherEntry[] fanmadeSignatures = {
             new SciScriptPatcherEntry(  true,   994, "Cascade Quest: fix auto-saving",              1, fanmadeSignatureCascadeQuestFixAutoSaving, fanmadePatchCascadeQuestFixAutoSaving ),
             new SciScriptPatcherEntry(  true,   999, "Demo Quest: infinite loop on typo",           1, fanmadeSignatureDemoQuestInfiniteLoop,     fanmadePatchDemoQuestInfiniteLoop ),
         };
@@ -396,7 +396,7 @@ namespace NScumm.Sci.Engine
         // This patch fixes this and makes it work.
         // Applies to at least: English PC-CD
         // Responsible method: sTownScript::changeState(1), sTownScript::changeState(3) (script 110)
-        static readonly ushort[] freddypharkasSignatureIntroScaling = {
+        private static readonly ushort[] freddypharkasSignatureIntroScaling = {
             0x38, Workarounds.SIG_ADDTOOFFSET(+2),       // pushi (setLoop) (009b for PC CD)
             0x78,                            // push1
             Workarounds.PATCH_ADDTOOFFSET(1),            // push0 for first code, push1 for second code
@@ -417,7 +417,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] freddypharkasPatchIntroScaling = {
+        private static readonly ushort[] freddypharkasPatchIntroScaling = {
             // remove setLoop(), objects in heap are already prepared, saves 5 bytes
             0x38,
             Workarounds.PATCH_GETORIGINALBYTE(+6),
@@ -448,7 +448,7 @@ namespace NScumm.Sci.Engine
         //   The "score" code is already buggy and sets volume to 0 when playing
         // Applies to at least: English PC-CD
         // Responsible method: unknown
-        static readonly ushort[] freddypharkasSignatureScoreDisposal = {
+        private static readonly ushort[] freddypharkasSignatureScoreDisposal = {
             0x67, 0x32,                      // pTos 32 (selector theAudCount)
             0x78,                            // push1
             Workarounds.SIG_MAGICDWORD,
@@ -459,7 +459,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] freddypharkasPatchScoreDisposal = {
+        private static readonly ushort[] freddypharkasPatchScoreDisposal = {
             0x34, Workarounds.PATCH_UINT16_1(0x0000), Workarounds.PATCH_UINT16_2(0x0000),      // ldi 0000
             0x34, Workarounds.PATCH_UINT16_1(0x0000), Workarounds.PATCH_UINT16_2(0x0000),     // ldi 0000
             0x34, Workarounds.PATCH_UINT16_1(0x0000), Workarounds.PATCH_UINT16_2(0x0000),     // ldi 0000
@@ -474,7 +474,7 @@ namespace NScumm.Sci.Engine
         //   this fixes the issue.
         // Applies to at least: English PC-CD
         // Responsible method: rm235::init and sEnterFrom500::changeState
-        static readonly ushort[] freddypharkasSignatureCanisterHang = {
+        private static readonly ushort[] freddypharkasSignatureCanisterHang = {
             0x38, Workarounds.SIG_SELECTOR16(ScriptPatcherSelectors.SELECTOR_disable),   // pushi disable
             0x7a,                            // push2
             Workarounds.SIG_MAGICDWORD,
@@ -485,7 +485,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] freddypharkasPatchCanisterHang = {
+        private static readonly ushort[] freddypharkasPatchCanisterHang = {
             Workarounds.PATCH_ADDTOOFFSET(+3),
             0x78,                            // push1
             Workarounds.PATCH_ADDTOOFFSET(+2),
@@ -505,7 +505,7 @@ namespace NScumm.Sci.Engine
         //   We just reuse the active event, thus removing the duplicate kGetEvent call.
         // Applies to at least: English PC-CD, German Floppy, English Mac
         // Responsible method: lowerLadder::doit and highLadder::doit
-        static readonly ushort[] freddypharkasSignatureLadderEvent = {
+        private static readonly ushort[] freddypharkasSignatureLadderEvent = {
             0x39, Workarounds.SIG_MAGICDWORD,
             Workarounds.SIG_SELECTOR8(ScriptPatcherSelectors.SELECTOR_new),              // pushi new
             0x76,                            // push0
@@ -521,7 +521,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] freddypharkasPatchLadderEvent = {
+        private static readonly ushort[] freddypharkasPatchLadderEvent = {
             0x34, 0x00, 0x00,                // ldi 0000 (waste 3 bytes, overwrites first 2 pushes)
             Workarounds.PATCH_ADDTOOFFSET(+8),
             0xa5, 0x00,                      // sat temp[0] (waste 2 bytes, overwrites 2nd send)
@@ -536,7 +536,7 @@ namespace NScumm.Sci.Engine
         // so we revert the script back to using the values of the DOS script.
         // Applies to at least: English Mac
         // Responsible method: unknown
-        static readonly ushort[] freddypharkasSignatureMacInventory = {
+        private static readonly ushort[] freddypharkasSignatureMacInventory = {
             Workarounds.SIG_MAGICDWORD,
             0x39, 0x23,                      // pushi 23
             0x39, 0x74,                      // pushi 74
@@ -546,7 +546,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] freddypharkasPatchMacInventory = {
+        private static readonly ushort[] freddypharkasPatchMacInventory = {
             0x39, 0x02,                      // pushi 02 (now matches the DOS version)
             Workarounds.PATCH_ADDTOOFFSET(+23),
             0x39, 0x04,                      // pushi 04 (now matches the DOS version)
@@ -554,7 +554,7 @@ namespace NScumm.Sci.Engine
         };
 
         //          script, description,                                      signature                            patch
-        static readonly SciScriptPatcherEntry[] freddypharkasSignatures = {
+        private static readonly SciScriptPatcherEntry[] freddypharkasSignatures = {
             new SciScriptPatcherEntry(  true,     0, "CD: score early disposal",                    1, freddypharkasSignatureScoreDisposal, freddypharkasPatchScoreDisposal ),
             new SciScriptPatcherEntry(  true,    15, "Mac: broken inventory",                       1, freddypharkasSignatureMacInventory,  freddypharkasPatchMacInventory ),
             new SciScriptPatcherEntry(  true,   110, "intro scaling workaround",                    2, freddypharkasSignatureIntroScaling,  freddypharkasPatchIntroScaling ),
@@ -567,7 +567,7 @@ namespace NScumm.Sci.Engine
         //  this is not enough time to get to the door, so we patch that to 23 seconds
         // Applies to at least: English PC-CD, German PC-CD, English Mac
         // Responsible method: daySixBeignet::changeState
-        static readonly ushort[] gk1SignatureDay6PoliceBeignet = {
+        private static readonly ushort[] gk1SignatureDay6PoliceBeignet = {
             0x35, 0x04,                         // ldi 04
             0x1a,                               // eq?
             0x30, Workarounds.SIG_ADDTOOFFSET(+2),          // bnt [next state check]
@@ -582,7 +582,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] gk1PatchDay6PoliceBeignet = {
+        private static readonly ushort[] gk1PatchDay6PoliceBeignet = {
             Workarounds.PATCH_ADDTOOFFSET(+16),
             0x34, Workarounds.PATCH_UINT16_1(0x0017), Workarounds.PATCH_UINT16_2(0x0017),         // ldi 23
             0x65, Workarounds.PATCH_GETORIGINALBYTEADJUST_1(+20), Workarounds.PATCH_GETORIGINALBYTEADJUST_1(+2), // aTop seconds (1c for PC, 1e for Mac)
@@ -593,7 +593,7 @@ namespace NScumm.Sci.Engine
         //  this is not enough time to get to the door, so we patch it to 42 seconds
         // Applies to at least: English PC-CD, German PC-CD, English Mac
         // Responsible method: sargSleeping::changeState
-        static readonly ushort[] gk1SignatureDay6PoliceSleep = {
+        private static readonly ushort[] gk1SignatureDay6PoliceSleep = {
             0x35, 0x08,                         // ldi 08
             0x1a,                               // eq?
             0x31, Workarounds.SIG_ADDTOOFFSET(+1),          // bnt [next state check]
@@ -604,7 +604,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] gk1PatchDay6PoliceSleep = {
+        private static readonly ushort[] gk1PatchDay6PoliceSleep = {
             Workarounds.PATCH_ADDTOOFFSET(+5),
             0x34, Workarounds.PATCH_UINT16_1(0x002a), Workarounds.PATCH_UINT16_2(0x002a),         // ldi 42
             0x65, Workarounds.PATCH_GETORIGINALBYTEADJUST_1(+9), Workarounds.PATCH_GETORIGINALBYTEADJUST_2(+2), // aTop seconds (1c for PC, 1e for Mac)
@@ -614,7 +614,7 @@ namespace NScumm.Sci.Engine
         // startOfDay5::changeState (20h) - when gabriel goes to the phone the script will hang
         // Applies to at least: English PC-CD, German PC-CD, English Mac
         // Responsible method: startOfDay5::changeState
-        static readonly ushort[] gk1SignatureDay5PhoneFreeze = {
+        private static readonly ushort[] gk1SignatureDay5PhoneFreeze = {
             0x4a,
             Workarounds.SIG_MAGICDWORD, Workarounds.SIG_UINT16_1(0x000c), Workarounds.SIG_UINT16_2(0x000c), // send 0c
             0x35, 0x03,                         // ldi 03
@@ -625,7 +625,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] gk1PatchDay5PhoneFreeze = {
+        private static readonly ushort[] gk1PatchDay5PhoneFreeze = {
             Workarounds.PATCH_ADDTOOFFSET(+3),
             0x35, 0x06,                         // ldi 01
             0x65, Workarounds.PATCH_GETORIGINALBYTEADJUST_1(+6), Workarounds.PATCH_GETORIGINALBYTEADJUST_2(+6), // aTop ticks
@@ -643,7 +643,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English Floppy
         // Responsible method: Interrogation::dispose
         // TODO: Check, if English Mac is affected too and if this patch applies
-        static readonly ushort[] gk1SignatureInterrogationBug = {
+        private static readonly ushort[] gk1SignatureInterrogationBug = {
             Workarounds.SIG_MAGICDWORD,
             0x65, 0x4c,                      // aTop 4c
             0x67, 0x50,                      // pTos 50
@@ -669,7 +669,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] gk1PatchInterrogationBug = {
+        private static readonly ushort[] gk1PatchInterrogationBug = {
             0x65, 0x4c,                      // aTop 4c
             0x63, 0x50,                      // pToa 50
             0x31, 0x15,                      // bnt 15  [05b9]
@@ -695,7 +695,7 @@ namespace NScumm.Sci.Engine
         };
 
         //          script, description,                                      signature                     patch
-        static readonly SciScriptPatcherEntry[] gk1Signatures = {
+        private static readonly SciScriptPatcherEntry[] gk1Signatures = {
             new SciScriptPatcherEntry(  true,    51, "interrogation bug",                           1, gk1SignatureInterrogationBug, gk1PatchInterrogationBug ),
             new SciScriptPatcherEntry(  true,   212, "day 5 phone freeze",                          1, gk1SignatureDay5PhoneFreeze, gk1PatchDay5PhoneFreeze ),
             new SciScriptPatcherEntry(  true,   230, "day 6 police beignet timer issue",            1, gk1SignatureDay6PoliceBeignet, gk1PatchDay6PoliceBeignet ),
@@ -708,7 +708,7 @@ namespace NScumm.Sci.Engine
         //  is later used to set master volume. This issue makes sierra sci set
         //  the volume to max. We fix the export, so volume won't get modified in
         //  those cases.
-        static readonly ushort[] kq5SignatureCdHarpyVolume = {
+        private static readonly ushort[] kq5SignatureCdHarpyVolume = {
             Workarounds.SIG_MAGICDWORD,
             0x80, Workarounds.SIG_UINT16_1(0x0191), Workarounds.SIG_UINT16_2(0x0191),        // lag global[191h]
             0x18,                            // not
@@ -730,7 +730,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq5PatchCdHarpyVolume = {
+        private static readonly ushort[] kq5PatchCdHarpyVolume = {
             0x38, Workarounds.PATCH_UINT16_1(0x022f), Workarounds.PATCH_UINT16_2(0x022f),      // pushi 022f (selector theVol) (3 new bytes)
             0x76,                            // push0 (1 new byte)
             0x51, 0x88,                      // class SpeakTimer (2 new bytes)
@@ -768,7 +768,7 @@ namespace NScumm.Sci.Engine
         // See also the warning+comment in Object::initBaseObject
         //
         // Fixes bug: #4964
-        static readonly ushort[] kq5SignatureWitchCageInit = {
+        private static readonly ushort[] kq5SignatureWitchCageInit = {
             Workarounds.SIG_UINT16_1(0x0000), Workarounds.SIG_UINT16_2(0x0000),         // top
             Workarounds.SIG_UINT16_1(0x0000), Workarounds.SIG_UINT16_2(0x0000),         // left
             Workarounds.SIG_UINT16_1(0x0000), Workarounds.SIG_UINT16_2(0x0000),         // bottom
@@ -781,7 +781,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq5PatchWitchCageInit = {
+        private static readonly ushort[] kq5PatchWitchCageInit = {
             Workarounds.PATCH_UINT16_1(0x0000), Workarounds.PATCH_UINT16_2(0x0000),       // top
             Workarounds.PATCH_UINT16_1(0x007a), Workarounds.PATCH_UINT16_2(0x007a),       // left
             Workarounds.PATCH_UINT16_1(0x00c8), Workarounds.PATCH_UINT16_2(0x00c8),       // bottom
@@ -797,7 +797,7 @@ namespace NScumm.Sci.Engine
 
         // Applies to at least: French PC floppy, German PC floppy, Spanish PC floppy
         // Responsible method: stingScript::changeState, dragonScript::changeState, snakeScript::changeState
-        static readonly ushort[] kq5SignatureMultilingualEndingGlitch = {
+        private static readonly ushort[] kq5SignatureMultilingualEndingGlitch = {
             Workarounds.SIG_MAGICDWORD,
             0x89, 0x57,                      // lsg global[57h]
             0x35, 0x00,                      // ldi 0
@@ -810,7 +810,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq5PatchMultilingualEndingGlitch = {
+        private static readonly ushort[] kq5PatchMultilingualEndingGlitch = {
             Workarounds.PATCH_ADDTOOFFSET(+6),
             0x32,                            // change BNT into JMP
             Workarounds.PATCH_END
@@ -829,7 +829,7 @@ namespace NScumm.Sci.Engine
         // changes to GameFeatures::detectsetCursorType() ) and breaking savegame
         // compatibilty between the DOS and Windows CD versions of KQ5.
         // TODO: Investigate these side effects more closely.
-        static readonly ushort[] kq5SignatureWinGMSignals = {
+        private static readonly ushort[] kq5SignatureWinGMSignals = {
             Workarounds.SIG_MAGICDWORD,
             0x80, Workarounds.SIG_UINT16_1(0x0190), Workarounds.SIG_UINT16_2(0x0190),        // lag 0x190
             0x18,                            // not
@@ -838,13 +838,13 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq5PatchWinGMSignals = {
+        private static readonly ushort[] kq5PatchWinGMSignals = {
             0x34, Workarounds.PATCH_UINT16_1(0x0001), Workarounds.PATCH_UINT16_2(0x0001),      // ldi 0x0001
             Workarounds.PATCH_END
         };
 
         //          script, description,                                      signature                  patch
-        static readonly SciScriptPatcherEntry[] kq5Signatures = {
+        private static readonly SciScriptPatcherEntry[] kq5Signatures = {
             new SciScriptPatcherEntry(  true,     0, "CD: harpy volume change",                     1, kq5SignatureCdHarpyVolume,            kq5PatchCdHarpyVolume ),
             new SciScriptPatcherEntry(  true,   200, "CD: witch cage init",                         1, kq5SignatureWitchCageInit,            kq5PatchWitchCageInit ),
             new SciScriptPatcherEntry(  true,   124, "Multilingual: Ending glitching out",          3, kq5SignatureMultilingualEndingGlitch, kq5PatchMultilingualEndingGlitch ),
@@ -861,7 +861,7 @@ namespace NScumm.Sci.Engine
         // constantly restarting (since it's being looped anyway), thus the normal
         // game speech can work while the baby cry sound is heard.
         // Fixes bug: #4955
-        static readonly ushort[] kq6SignatureDuplicateBabyCry = {
+        private static readonly ushort[] kq6SignatureDuplicateBabyCry = {
             Workarounds.SIG_MAGICDWORD,
             0x83, 0x00,                      // lal 00
             0x31, 0x1e,                      // bnt 1e  [07f4]
@@ -871,7 +871,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq6PatchDuplicateBabyCry = {
+        private static readonly ushort[] kq6PatchDuplicateBabyCry = {
             0x48,                            // ret
             Workarounds.PATCH_END
         };
@@ -884,7 +884,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: PC-CD, English PC floppy, German PC floppy, English Mac
         // Responsible method: KqInv::showSelf
         // Fixes bug: #5681
-        static readonly ushort[] kq6SignatureInventoryStackFix = {
+        private static readonly ushort[] kq6SignatureInventoryStackFix = {
             0x67, 0x30,                         // pTos state
             0x34, Workarounds.SIG_UINT16_1(0x2000), Workarounds.SIG_UINT16_2(0x2000),           // ldi 2000
             0x12,                               // and
@@ -913,7 +913,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END                             // followed by jmp (0x32 for PC, 0x33 for mac)
         };
 
-        static readonly ushort[] kq6PatchInventoryStackFix = {
+        private static readonly ushort[] kq6PatchInventoryStackFix = {
             0x67, 0x30,                         // pTos state
             0x3c,                               // dup (1 more byte, needed for patch)
             0x3c,                               // dup (1 more byte, saves 1 byte later)
@@ -954,7 +954,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: PC-CD, English PC floppy, German PC floppy, English Mac
         // Responsible method: drinkMeScript::changeState
         // Fixes bug: #5252
-        static readonly ushort[] kq6SignatureDrinkMeFix = {
+        private static readonly ushort[] kq6SignatureDrinkMeFix = {
             Workarounds.SIG_MAGICDWORD,
             0x3c,                               // dup
             0x35, 0x0f,                         // ldi 0f
@@ -980,7 +980,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq6PatchDrinkMeFix = {
+        private static readonly ushort[] kq6PatchDrinkMeFix = {
             Workarounds.PATCH_ADDTOOFFSET(+5),              // skip to bnt 
             Workarounds.PATCH_GETORIGINALBYTEADJUST_1(+5), Workarounds.PATCH_GETORIGINALBYTEADJUST_2(+13), // adjust jump to [check for 11h code]
             Workarounds.PATCH_ADDTOOFFSET(+162),
@@ -1004,7 +1004,7 @@ namespace NScumm.Sci.Engine
         //  We currently use global 98d to hold a kMemory pointer.
         // Applies to at least: KQ6 PC-CD, LB2 PC-CD
         // Patched method: Messager::sayNext / lb2Messager::sayNext (always use text branch)
-        static readonly ushort[] kq6laurabow2CDSignatureAudioTextSupport1 = {
+        private static readonly ushort[] kq6laurabow2CDSignatureAudioTextSupport1 = {
             0x89, 0x5a,                         // lsg global[5a]
             0x35, 0x02,                         // ldi 02
             0x12,                               // and
@@ -1014,7 +1014,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq6laurabow2CDPatchAudioTextSupport1 = {
+        private static readonly ushort[] kq6laurabow2CDPatchAudioTextSupport1 = {
             Workarounds.PATCH_ADDTOOFFSET(+5),
             0x33, 0x13,                         // jmp [audio call]
             Workarounds.PATCH_END
@@ -1022,7 +1022,7 @@ namespace NScumm.Sci.Engine
 
         // Applies to at least: KQ6 PC-CD, LB2 PC-CD
         // Patched method: Messager::sayNext / lb2Messager::sayNext (allocate audio memory)
-        static readonly ushort[] kq6laurabow2CDSignatureAudioTextSupport2 = {
+        private static readonly ushort[] kq6laurabow2CDSignatureAudioTextSupport2 = {
             0x7a,                               // push2
             0x78,                               // push1
             0x39, 0x0c,                         // pushi 0c
@@ -1031,7 +1031,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq6laurabow2CDPatchAudioTextSupport2 = {
+        private static readonly ushort[] kq6laurabow2CDPatchAudioTextSupport2 = {
             Workarounds.PATCH_ADDTOOFFSET(+7),
             0xa1, 98,                           // sag global[98d]
             Workarounds.PATCH_END
@@ -1039,7 +1039,7 @@ namespace NScumm.Sci.Engine
 
         // Applies to at least: KQ6 PC-CD, LB2 PC-CD
         // Patched method: Messager::sayNext / lb2Messager::sayNext (release audio memory)
-        static readonly ushort[] kq6laurabow2CDSignatureAudioTextSupport3 = {
+        private static readonly ushort[] kq6laurabow2CDSignatureAudioTextSupport3 = {
             0x7a,                               // push2
             0x39, 0x03,                         // pushi 03
             Workarounds.SIG_MAGICDWORD,
@@ -1048,7 +1048,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq6laurabow2CDPatchAudioTextSupport3 = {
+        private static readonly ushort[] kq6laurabow2CDPatchAudioTextSupport3 = {
             Workarounds.PATCH_ADDTOOFFSET(+3),
             0x89, 98,                           // lsg global[98d]
             Workarounds.PATCH_END
@@ -1057,7 +1057,7 @@ namespace NScumm.Sci.Engine
         // startText call gets acc = 0 for text-only and acc = 2 for audio+text
         // Applies to at least: KQ6 PC-CD, LB2 PC-CD
         // Patched method: Narrator::say (use audio memory)
-        static readonly ushort[] kq6laurabow2CDSignatureAudioTextSupport4 = {
+        private static readonly ushort[] kq6laurabow2CDSignatureAudioTextSupport4 = {
             // set caller property code
             0x31, 0x08,                         // bnt [set acc to 0 for caller]
             0x87, 0x02,                         // lap param[2]
@@ -1087,7 +1087,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq6laurabow2CDPatchAudioTextSupport4 = {
+        private static readonly ushort[] kq6laurabow2CDPatchAudioTextSupport4 = {
             0x31, 0x02,                         // bnt [set caller]
             0x87, 0x02,                         // lap param[2]
             0x65, 0x68,                         // aTop caller
@@ -1107,14 +1107,14 @@ namespace NScumm.Sci.Engine
         // Applies to at least: KQ6 PC-CD, LB2 PC-CD
         // Patched method: Talker::display/Narrator::say (remove reset saved mouse cursor code)
         //  code would screw over mouse cursor
-        static readonly ushort[] kq6laurabow2CDSignatureAudioTextSupport5 = {
+        private static readonly ushort[] kq6laurabow2CDSignatureAudioTextSupport5 = {
             Workarounds.SIG_MAGICDWORD,
             0x35, 0x00,                         // ldi 00
             0x65, 0x82,                         // aTop saveCursor
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq6laurabow2CDPatchAudioTextSupport5 = {
+        private static readonly ushort[] kq6laurabow2CDPatchAudioTextSupport5 = {
             0x18, 0x18, 0x18, 0x18,             // waste bytes, do nothing
             Workarounds.PATCH_END
         };
@@ -1123,7 +1123,7 @@ namespace NScumm.Sci.Engine
         //  Fixes text window placement, when in "dual" mode
         // Applies to at least: PC-CD
         // Patched method: Kq6Talker::init
-        static readonly ushort[] kq6CDSignatureAudioTextSupport1 = {
+        private static readonly ushort[] kq6CDSignatureAudioTextSupport1 = {
             Workarounds.SIG_MAGICDWORD,
             0x89, 0x5a,                         // lsg global[5a]
             0x35, 0x02,                         // ldi 02
@@ -1133,7 +1133,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq6CDPatchAudioTextSupport1 = {
+        private static readonly ushort[] kq6CDPatchAudioTextSupport1 = {
             Workarounds.PATCH_ADDTOOFFSET(+4),
             0x12,                               // and
             Workarounds.PATCH_END
@@ -1144,7 +1144,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: PC-CD
         // Patched method: Talker::startText
         //  this method is called by Narrator::say and acc is 0 for text-only and 2 for dual mode (audio+text)
-        static readonly ushort[] kq6CDSignatureAudioTextSupport2 = {
+        private static readonly ushort[] kq6CDSignatureAudioTextSupport2 = {
             Workarounds.SIG_MAGICDWORD,
             0x3f, 0x01,                         // link 01
             0x63, 0x8a,                         // pToa viewInPrint
@@ -1156,7 +1156,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq6CDPatchAudioTextSupport2 = {
+        private static readonly ushort[] kq6CDPatchAudioTextSupport2 = {
             Workarounds.PATCH_ADDTOOFFSET(+2),
             0x67, 0x8a,                         // pTos viewInPrint
             0x14,                               // or
@@ -1175,7 +1175,7 @@ namespace NScumm.Sci.Engine
         //   for audio mode, otherwise the user would have to click to get those windows disposed.
         // Applies to at least: PC-CD
         // Patched method: KQ6Print::say
-        static readonly ushort[] kq6CDSignatureAudioTextSupport3 = {
+        private static readonly ushort[] kq6CDSignatureAudioTextSupport3 = {
             0x31, 0x6e,                         // bnt [to text code]
             Workarounds.SIG_ADDTOOFFSET(+85),
             Workarounds.SIG_MAGICDWORD,
@@ -1192,7 +1192,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq6CDPatchAudioTextSupport3 = {
+        private static readonly ushort[] kq6CDPatchAudioTextSupport3 = {
             0x31, 0x5c,                         // adjust jump to reuse audio mode addText-calling code
             Workarounds.PATCH_ADDTOOFFSET(102),
             0x48,                               // ret
@@ -1208,7 +1208,7 @@ namespace NScumm.Sci.Engine
         //   Otherwise at least at the end some text-windows will be way too small
         // Applies to at least: PC-CD
         // Patched method: Talker::init
-        static readonly ushort[] kq6CDSignatureAudioTextSupport4 = {
+        private static readonly ushort[] kq6CDSignatureAudioTextSupport4 = {
             Workarounds.SIG_MAGICDWORD,
             0x63, 0x94,                         // pToa raving
             0x31, 0x0a,                         // bnt [no rave code]
@@ -1218,7 +1218,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq6CDPatchAudioTextSupport4 = {
+        private static readonly ushort[] kq6CDPatchAudioTextSupport4 = {
             Workarounds.PATCH_ADDTOOFFSET(+12),
             0x33, Workarounds.PATCH_GETORIGINALBYTEADJUST_1(+13), Workarounds.PATCH_GETORIGINALBYTEADJUST_2(-6), // adjust jump to also include setSize call
             Workarounds.PATCH_END
@@ -1227,7 +1227,7 @@ namespace NScumm.Sci.Engine
         //  Fixes text window placement, when dual mode is active (Guards in room 220)
         // Applies to at least: PC-CD
         // Patched method: tlkGateGuard1::init & tlkGateGuard2::init
-        static readonly ushort[] kq6CDSignatureAudioTextSupportGuards = {
+        private static readonly ushort[] kq6CDSignatureAudioTextSupportGuards = {
             Workarounds.SIG_MAGICDWORD,
             0x89, 0x5a,                         // lsg global[5a]
             0x35, 0x01,                         // ldi 01
@@ -1235,7 +1235,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END                             // followed by bnt for Guard1 and bt for Guard2
         };
 
-        static readonly ushort[] kq6CDPatchAudioTextSupportGuards = {
+        private static readonly ushort[] kq6CDPatchAudioTextSupportGuards = {
             Workarounds.PATCH_ADDTOOFFSET(+2),
             0x35, 0x02,                         // ldi 02
             0x1c,                               // ne?
@@ -1245,7 +1245,7 @@ namespace NScumm.Sci.Engine
         //  Fixes text window placement, when portrait+text is shown (Stepmother in room 250)
         // Applies to at least: PC-CD
         // Patched method: tlkStepmother::init
-        static readonly ushort[] kq6CDSignatureAudioTextSupportStepmother = {
+        private static readonly ushort[] kq6CDSignatureAudioTextSupportStepmother = {
             Workarounds.SIG_MAGICDWORD,
             0x89, 0x5a,                         // lsg global[5a]
             0x35, 0x02,                         // ldi 02
@@ -1254,7 +1254,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq6CDPatchAudioTextSupportJumpAlways = {
+        private static readonly ushort[] kq6CDPatchAudioTextSupportJumpAlways = {
             Workarounds.PATCH_ADDTOOFFSET(+4),
             0x1a,                               // eq?
             Workarounds.PATCH_END
@@ -1265,7 +1265,7 @@ namespace NScumm.Sci.Engine
         //
         // Applies to at least: PC-CD
         // Patched method: rm740::cue (script 740), sCredits::init (script 52)
-        static readonly ushort[] kq6CDSignatureAudioTextSupportGirlInTheTower = {
+        private static readonly ushort[] kq6CDSignatureAudioTextSupportGirlInTheTower = {
             Workarounds.SIG_MAGICDWORD,
             0x89, 0x5a,                         // lsg global[5a]
             0x35, 0x02,                         // ldi 02
@@ -1274,7 +1274,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq6CDPatchAudioTextSupportGirlInTheTower = {
+        private static readonly ushort[] kq6CDPatchAudioTextSupportGirlInTheTower = {
             Workarounds.PATCH_ADDTOOFFSET(+4),
             0x12,                               // and
             Workarounds.PATCH_END
@@ -1285,7 +1285,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: PC-CD
         // Patched methods: rm370::init, caughtAtGateCD::changeState, caughtAtGateTXT::changeState, toLabyrinth::changeState
         // Fixes bug: #6750
-        static readonly ushort[] kq6CDSignatureAudioTextSupportAzureAriel = {
+        private static readonly ushort[] kq6CDSignatureAudioTextSupportAzureAriel = {
             Workarounds.SIG_MAGICDWORD,
             0x89, 0x5a,                         // lsg global[5a]
             0x35, 0x02,                         // ldi 02
@@ -1294,7 +1294,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq6CDPatchAudioTextSupportAzureAriel = {
+        private static readonly ushort[] kq6CDPatchAudioTextSupportAzureAriel = {
             Workarounds.PATCH_ADDTOOFFSET(+4),
             0x12,                               // and
             Workarounds.PATCH_END
@@ -1307,7 +1307,7 @@ namespace NScumm.Sci.Engine
         // View 947, loop 12, cel 0+1 -> "dual" (this view is injected by us into the game)
         // Applies to at least: PC-CD
         // Patched method: iconTextSwitch::show, iconTextSwitch::doit
-        static readonly ushort[] kq6CDSignatureAudioTextMenuSupport = {
+        private static readonly ushort[] kq6CDSignatureAudioTextMenuSupport = {
             Workarounds.SIG_MAGICDWORD,
             0x89, 0x5a,                         // lsg global[5a]
             0x35, 0x02,                         // ldi 02
@@ -1345,7 +1345,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq6CDPatchAudioTextMenuSupport = {
+        private static readonly ushort[] kq6CDPatchAudioTextMenuSupport = {
             Workarounds.PATCH_ADDTOOFFSET(+13),
             0x33, 0x79,                         // jmp to new text+dual code
             Workarounds.PATCH_ADDTOOFFSET(+104),            // seek to iconTextSwitch::doit
@@ -1374,7 +1374,7 @@ namespace NScumm.Sci.Engine
         };
 
         //          script, description,                                      signature                                 patch
-        static readonly SciScriptPatcherEntry[] kq6Signatures = {
+        private static readonly SciScriptPatcherEntry[] kq6Signatures = {
             new SciScriptPatcherEntry(  true,   481, "duplicate baby cry",                          1, kq6SignatureDuplicateBabyCry,             kq6PatchDuplicateBabyCry ),
             new SciScriptPatcherEntry(  true,   907, "inventory stack fix",                         1, kq6SignatureInventoryStackFix,            kq6PatchInventoryStackFix ),
             new SciScriptPatcherEntry(  true,    87, "Drink Me bottle fix",                         1, kq6SignatureDrinkMeFix,                   kq6PatchDrinkMeFix ),
@@ -1432,7 +1432,7 @@ namespace NScumm.Sci.Engine
         //
         // Applies to at least: PC CD 1.4 English, 1.51 English, 1.51 German, 2.00 English
         // Patched method: KQNarrator::init (script 31)
-        static readonly ushort[] kq7SignatureSubtitleFix1 = {
+        private static readonly ushort[] kq7SignatureSubtitleFix1 = {
             Workarounds.SIG_MAGICDWORD,
             0x39, 0x25,                         // pushi 25h (fore)
             0x78,                               // push1
@@ -1450,14 +1450,14 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq7PatchSubtitleFix1 = {
+        private static readonly ushort[] kq7PatchSubtitleFix1 = {
             0x33, 0x12,                         // jmp [skip special init code]
             Workarounds.PATCH_END
         };
 
         // Applies to at least: PC CD 1.51 English, 1.51 German, 2.00 English
         // Patched method: Narrator::init (script 64928)
-        static readonly ushort[] kq7SignatureSubtitleFix2 = {
+        private static readonly ushort[] kq7SignatureSubtitleFix2 = {
             Workarounds.SIG_MAGICDWORD,
             0x89, 0x5a,                         // lsg global[5a]
             0x35, 0x02,                         // ldi 02
@@ -1485,7 +1485,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq7PatchSubtitleFix2 = {
+        private static readonly ushort[] kq7PatchSubtitleFix2 = {
             Workarounds.PATCH_ADDTOOFFSET(+5),              // skip to bnt
             0x31, 0x1b,                         // bnt [skip audio volume code]
             Workarounds.PATCH_ADDTOOFFSET(+15),             // right after "aTop curVolume / pushi masterVolume / push1"
@@ -1507,7 +1507,7 @@ namespace NScumm.Sci.Engine
 
         // Applies to at least: PC CD 1.51 English, 1.51 German, 2.00 English
         // Patched method: Narrator::say (script 64928)
-        static readonly ushort[] kq7SignatureSubtitleFix3 = {
+        private static readonly ushort[] kq7SignatureSubtitleFix3 = {
             Workarounds.SIG_MAGICDWORD,
             0x63, 0x28,                         // pToa initialized
             0x18,                               // not
@@ -1529,7 +1529,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] kq7PatchSubtitleFix3 = {
+        private static readonly ushort[] kq7PatchSubtitleFix3 = {
             Workarounds.PATCH_ADDTOOFFSET(+2),              // skip over "pToa initialized code"
             0x2f, 0x0c,                         // bt [skip init code] - saved 1 byte
             0x38,
@@ -1551,7 +1551,7 @@ namespace NScumm.Sci.Engine
         };
 
         //          script, description,                                      signature                                 patch
-        static readonly SciScriptPatcherEntry[] kq7Signatures = {
+        private static readonly SciScriptPatcherEntry[] kq7Signatures = {
             new SciScriptPatcherEntry(  true,    31, "subtitle fix 1/3",                            1, kq7SignatureSubtitleFix1,                 kq7PatchSubtitleFix1 ),
             new SciScriptPatcherEntry(  true, 64928, "subtitle fix 2/3",                            1, kq7SignatureSubtitleFix2,                 kq7PatchSubtitleFix2 ),
             new SciScriptPatcherEntry(  true, 64928, "subtitle fix 3/3",                            1, kq7SignatureSubtitleFix3,                 kq7PatchSubtitleFix3 ),
@@ -1573,7 +1573,7 @@ namespace NScumm.Sci.Engine
 
         // Applies to at least: English PC Floppy
         // Responsible method: room4::init
-        static readonly ushort[] laurabow1SignatureEasterEggViewFix = {
+        private static readonly ushort[] laurabow1SignatureEasterEggViewFix = {
             0x78,                               // push1
             0x76,                               // push0
             Workarounds.SIG_MAGICDWORD,
@@ -1583,7 +1583,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] laurabow1PatchEasterEggViewFix = {
+        private static readonly ushort[] laurabow1PatchEasterEggViewFix = {
             Workarounds.PATCH_ADDTOOFFSET(+7),
             0x02,                            // change loop to 2
             Workarounds.PATCH_END
@@ -1610,7 +1610,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English PC Floppy
         // Responsible method: openVisor::changeState (script 37)
         // Fixes bug: #7119
-        static readonly ushort[] laurabow1SignatureArmorOpenVisorFix = {
+        private static readonly ushort[] laurabow1SignatureArmorOpenVisorFix = {
             0x39, 0x04,                         // pushi 04
             Workarounds.SIG_MAGICDWORD,
             0x39, 0x6a,                         // pushi 6a (106d)
@@ -1620,7 +1620,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] laurabow1PatchArmorOpenVisorFix = {
+        private static readonly ushort[] laurabow1PatchArmorOpenVisorFix = {
             Workarounds.PATCH_ADDTOOFFSET(+2),
             0x39, 0x68,                         // pushi 68 (104d)   (-2)
             0x38, Workarounds.SIG_UINT16_1(0x94), Workarounds.SIG_UINT16_2(0x94),             // pushi 0094 (148d) (-2)
@@ -1634,7 +1634,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English PC Floppy, English Atari ST Floppy, English Amiga Floppy
         // Responsible method: openVisor::changeState, oiling::changeState (script 37)
         // Fixes bug: #7119
-        static readonly ushort[] laurabow1SignatureArmorMoveToFix = {
+        private static readonly ushort[] laurabow1SignatureArmorMoveToFix = {
             Workarounds.SIG_MAGICDWORD,
             0x36,                               // push
             0x39, 0x6b,                         // pushi 6B (107d)
@@ -1644,7 +1644,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] laurabow1PatchArmorMoveToFix = {
+        private static readonly ushort[] laurabow1PatchArmorMoveToFix = {
             Workarounds.PATCH_ADDTOOFFSET(+1),
             0x39, 0x6e,                         // pushi 6E (110d) - adjust x, so that no collision can occur anymore
             Workarounds.PATCH_END
@@ -1661,7 +1661,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English PC Floppy
         // Responsible method: 2nd subroutine in script 37, called by oiling::changeState(7)
         // Fixes bug: #7154
-        static readonly ushort[] laurabow1SignatureArmorOilingArmFix = {
+        private static readonly ushort[] laurabow1SignatureArmorOilingArmFix = {
             0x38, Workarounds.SIG_UINT16_1(0x0089), Workarounds.SIG_UINT16_2(0x0089),           // pushi 89h
             0x76,                               // push0
             Workarounds.SIG_MAGICDWORD,
@@ -1695,7 +1695,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] laurabow1PatchArmorOilingArmFix = {
+        private static readonly ushort[] laurabow1PatchArmorOilingArmFix = {
             Workarounds.PATCH_ADDTOOFFSET(+3),              // skip over pushi 89h
             0x3c,                               // dup
             0x3c,                               // dup
@@ -1738,7 +1738,7 @@ namespace NScumm.Sci.Engine
         };
 
         //          script, description,                                      signature                           patch
-        static readonly SciScriptPatcherEntry[] laurabow1Signatures = {
+        private static readonly SciScriptPatcherEntry[] laurabow1Signatures = {
             new SciScriptPatcherEntry(  true,     4, "easter egg view fix",                         1, laurabow1SignatureEasterEggViewFix,  laurabow1PatchEasterEggViewFix ),
             new SciScriptPatcherEntry(  true,    37, "armor open visor fix",                        1, laurabow1SignatureArmorOpenVisorFix, laurabow1PatchArmorOpenVisorFix ),
             new SciScriptPatcherEntry(  true,    37, "armor move to fix",                           2, laurabow1SignatureArmorMoveToFix,    laurabow1PatchArmorMoveToFix ),
@@ -1772,7 +1772,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English PC-CD
         // Responsible method: rm560::doit
         // Fixes bug: #6460
-        static readonly ushort[] laurabow2CDSignaturePaintingClosing = {
+        private static readonly ushort[] laurabow2CDSignaturePaintingClosing = {
             0x39, 0x04,                         // pushi 04 (cel)
             0x76,                               // push0
             Workarounds.SIG_MAGICDWORD,
@@ -1799,7 +1799,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] laurabow2CDPatchPaintingClosing = {
+        private static readonly ushort[] laurabow2CDPatchPaintingClosing = {
             Workarounds.PATCH_ADDTOOFFSET(+2),
             0x3c,                               // dup (1 additional byte)
             0x76,                               // push0
@@ -1845,7 +1845,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English PC-CD
         // Responsible method: LB2::newRoom, LB2::handsOff, LB2::handsOn
         // Fixes bug: #6440
-        static readonly ushort[] laurabow2CDSignatureFixProblematicIconBar = {
+        private static readonly ushort[] laurabow2CDSignatureFixProblematicIconBar = {
             Workarounds.SIG_MAGICDWORD,
             0x38, Workarounds.SIG_UINT16_1(0x00f1), Workarounds.SIG_UINT16_2(0x00f1),           // pushi 00f1 (disable) - hardcoded, we only want to patch the CD version
             0x76,                               // push0
@@ -1854,7 +1854,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] laurabow2CDPatchFixProblematicIconBar = {
+        private static readonly ushort[] laurabow2CDPatchFixProblematicIconBar = {
             0x35, 0x00,                      // ldi 00
             0xa1, 0x74,                      // sag 74h
             0x35, 0x00,                      // ldi 00 (waste bytes)
@@ -1876,7 +1876,7 @@ namespace NScumm.Sci.Engine
         // Responsible method (CD): eastDoor::doVerb
         // Responsible method (Floppy): eastDoor::<noname300>
         // Fixes bug: #6458 (partly, see additional patch below)
-        static readonly ushort[] laurabow2CDSignatureFixWiredEastDoor = {
+        private static readonly ushort[] laurabow2CDSignatureFixWiredEastDoor = {
             0x30, Workarounds.SIG_UINT16_1(0x0022), Workarounds.SIG_UINT16_2(0x0022),           // bnt [skip hand action]
             0x67, Workarounds.SIG_ADDTOOFFSET(+1),          // pTos CD: doorState, Floppy: state
             0x35, 0x00,                         // ldi 00
@@ -1899,7 +1899,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] laurabow2CDPatchFixWiredEastDoor = {
+        private static readonly ushort[] laurabow2CDPatchFixWiredEastDoor = {
             0x31, 0x23,                         // bnt [skip hand action] (saves 1 byte)
             0x81,   97,                         // lag 97d (get our eastDoor-wired-global)
             0x31, 0x04,                         // bnt [skip setting locked property]
@@ -1925,7 +1925,7 @@ namespace NScumm.Sci.Engine
         // Responsible method (CD): sWireItShut::changeState
         // Responsible method (Floppy): sWireItShut::<noname144>
         // Fixes bug: #6458 (partly, see additional patch above)
-        static readonly ushort[] laurabow2SignatureRememberWiredEastDoor = {
+        private static readonly ushort[] laurabow2SignatureRememberWiredEastDoor = {
             Workarounds.SIG_MAGICDWORD,
             0x33, 0x27,                         // jmp [ret]
             0x3c,                               // dup
@@ -1935,7 +1935,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] laurabow2PatchRememberWiredEastDoor = {
+        private static readonly ushort[] laurabow2PatchRememberWiredEastDoor = {
             Workarounds.PATCH_ADDTOOFFSET(+2),              // skip jmp [ret]
             0x34, Workarounds.PATCH_UINT16_1(0x0001), Workarounds.PATCH_UINT16_2(0x0001),         // ldi 0001
             0xa1, Workarounds.PATCH_UINT16_1(97), Workarounds.PATCH_UINT16_2(97),             // sag 97d (set our eastDoor-wired-global)
@@ -1947,14 +1947,14 @@ namespace NScumm.Sci.Engine
         //  and this script code would make it impossible to see the intro using "dual" mode w/o using debugger command
         //  That's why we remove the corresponding code
         // Patched method: LB2::init, rm100::init
-        static readonly ushort[] laurabow2CDSignatureAudioTextSupportModeReset = {
+        private static readonly ushort[] laurabow2CDSignatureAudioTextSupportModeReset = {
             Workarounds.SIG_MAGICDWORD,
             0x35, 0x02,                         // ldi 02
             0xa1, 0x5a,                         // sag global[5a]
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] laurabow2CDPatchAudioTextSupportModeReset = {
+        private static readonly ushort[] laurabow2CDPatchAudioTextSupportModeReset = {
             0x34, Workarounds.PATCH_UINT16_1(0x0001), Workarounds.PATCH_UINT16_2(0x0001),         // ldi 0001 (waste bytes)
             0x18,                               // not (waste bytes)
             Workarounds.PATCH_END
@@ -1966,7 +1966,7 @@ namespace NScumm.Sci.Engine
         // View 995, loop 13, cel 1 -> "speech"
         // View 995, loop 13, cel 2 -> "dual"  (this view is injected by us into the game)
         // Patched method: gcWin::open
-        static readonly ushort[] laurabow2CDSignatureAudioTextMenuSupport1 = {
+        private static readonly ushort[] laurabow2CDSignatureAudioTextMenuSupport1 = {
             Workarounds.SIG_MAGICDWORD,
             0x89, 0x5a,                         // lsg global[5a]
             0x35, 0x02,                         // ldi 02
@@ -1975,7 +1975,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] laurabow2CDPatchAudioTextMenuSupport1 = {
+        private static readonly ushort[] laurabow2CDPatchAudioTextMenuSupport1 = {
             Workarounds.PATCH_ADDTOOFFSET(+2),
             0x35, 0x01,                         // ldi 01
             0x04,                               // sub
@@ -1984,7 +1984,7 @@ namespace NScumm.Sci.Engine
 
         //  Adds another button state for the text/audio button. We currently use the "speech" view for "dual" mode.
         // Patched method: iconMode::doit
-        static readonly ushort[] laurabow2CDSignatureAudioTextMenuSupport2 = {
+        private static readonly ushort[] laurabow2CDSignatureAudioTextMenuSupport2 = {
             Workarounds.SIG_MAGICDWORD,
             0x89, 0x5a,                         // lsg global[5a]
             0x3c,                               // dup
@@ -2007,7 +2007,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] laurabow2CDPatchAudioTextMenuSupport2 = {
+        private static readonly ushort[] laurabow2CDPatchAudioTextMenuSupport2 = {
             0x81, 0x5a,                         // lag global[5a]
             0x78,                               // push1
             0x02,                               // add
@@ -2027,7 +2027,7 @@ namespace NScumm.Sci.Engine
         };
 
         //          script, description,                                      signature                                      patch
-        static readonly SciScriptPatcherEntry[] laurabow2Signatures = {
+        private static readonly SciScriptPatcherEntry[] laurabow2Signatures = {
             new SciScriptPatcherEntry(  true,   560, "CD: painting closing immediately",            1, laurabow2CDSignaturePaintingClosing,           laurabow2CDPatchPaintingClosing ),
             new SciScriptPatcherEntry(  true,     0, "CD: fix problematic icon bar",                1, laurabow2CDSignatureFixProblematicIconBar,     laurabow2CDPatchFixProblematicIconBar ),
             new SciScriptPatcherEntry(  true,   430, "CD/Floppy: make wired east door persistent",  1, laurabow2SignatureRememberWiredEastDoor,       laurabow2PatchRememberWiredEastDoor ),
@@ -2058,7 +2058,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: German floppy
         // Responsible method: unknown
         // Fixes bug: #5264
-        static readonly ushort[] longbowSignatureShowHandCode = {
+        private static readonly ushort[] longbowSignatureShowHandCode = {
             0x78,                            // push1
             0x78,                            // push1
             0x72, Workarounds.SIG_ADDTOOFFSET(+2),       // lofsa (letter, that was typed)
@@ -2075,7 +2075,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] longbowPatchShowHandCode = {
+        private static readonly ushort[] longbowPatchShowHandCode = {
             0x39, 0x01,                      // pushi 1 (combine the two push1's in one, like in the English version)
             Workarounds.PATCH_ADDTOOFFSET(+3),           // leave the lofsa call untouched
             // The following will remove the duplicate call
@@ -2102,7 +2102,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English PC floppy, German PC floppy, English Amiga floppy
         // Responsible method: export 2 of script 225
         // Fixes bug: #6751
-        static readonly ushort[] longbowSignatureBerryBushFix = {
+        private static readonly ushort[] longbowSignatureBerryBushFix = {
             0x89, 0x70,                      // lsg global[70h]
             0x35, 0x03,                      // ldi 03h
             0x1a,                            // eq?
@@ -2141,7 +2141,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] longbowPatchBerryBushFix = {
+        private static readonly ushort[] longbowPatchBerryBushFix = {
             Workarounds.PATCH_ADDTOOFFSET(+4),           // keep: lsg global[70h], ldi 03h
             0x22,                            // lt? (global < 03h)
             0x2f, 0x42,                      // bt [skip over all the code directly]
@@ -2185,7 +2185,7 @@ namespace NScumm.Sci.Engine
         };
 
         //          script, description,                                      signature                     patch
-        static readonly SciScriptPatcherEntry[] longbowSignatures = {
+        private static readonly SciScriptPatcherEntry[] longbowSignatures = {
             new SciScriptPatcherEntry(  true,   210, "hand code crash",                             5, longbowSignatureShowHandCode, longbowPatchShowHandCode),
             new SciScriptPatcherEntry(  true,   225, "arithmetic berry bush fix",                   1, longbowSignatureBerryBushFix, longbowPatchBerryBushFix),
         };
@@ -2207,7 +2207,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English floppy
         // Responsible method: rm63Script::handleEvent
         // Fixes bug: #6346
-        static readonly ushort[] larry2SignatureWearParachutePoints = {
+        private static readonly ushort[] larry2SignatureWearParachutePoints = {
             0x35, 0x01,                      // ldi 01
                     0xa1, Workarounds.SIG_MAGICDWORD, 0x8e,      // sag 8e
             0x80, Workarounds.SIG_UINT16_1(0x01e0), Workarounds.SIG_UINT16_2(0x01e0),        // lag 1e0
@@ -2218,7 +2218,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] larry2PatchWearParachutePoints = {
+        private static readonly ushort[] larry2PatchWearParachutePoints = {
             Workarounds.PATCH_ADDTOOFFSET(+4),
             0x80, Workarounds.PATCH_UINT16_1(0x005a), Workarounds.PATCH_UINT16_2(0x005a),      // lag 5a (global 90)
             Workarounds.PATCH_ADDTOOFFSET(+6),
@@ -2227,7 +2227,7 @@ namespace NScumm.Sci.Engine
         };
 
         //          script, description,                                      signature                           patch
-        static readonly SciScriptPatcherEntry[] larry2Signatures = {
+        private static readonly SciScriptPatcherEntry[] larry2Signatures = {
             new SciScriptPatcherEntry(  true,    63, "plane: no points for wearing plane",          1, larry2SignatureWearParachutePoints, larry2PatchWearParachutePoints),
         };
 
@@ -2245,7 +2245,7 @@ namespace NScumm.Sci.Engine
         //
         // Applies to at least: English PC floppy (1.000)
         // Responsible method: sPhone::changeState(40)
-        static readonly ushort[] larry5SignatureGreenCardLimoBug = {
+        private static readonly ushort[] larry5SignatureGreenCardLimoBug = {
             0x7a,                               // push2
             Workarounds.SIG_MAGICDWORD,
             0x39, 0x07,                         // pushi 07
@@ -2257,7 +2257,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] larry5PatchGreenCardLimoBug = {
+        private static readonly ushort[] larry5PatchGreenCardLimoBug = {
             Workarounds.PATCH_ADDTOOFFSET(+8),
             0x34, Workarounds.PATCH_UINT16_1(0), Workarounds.PATCH_UINT16_2(0),              // ldi 0000 (dummy)
             0x34, Workarounds.PATCH_UINT16_1(0),  Workarounds.PATCH_UINT16_2(0),             // ldi 0000 (dummy)
@@ -2270,7 +2270,7 @@ namespace NScumm.Sci.Engine
         // Because of that the talking head of Patti is drawn over the textbox. A translation oversight.
         // Applies to at least: German floppy
         // Responsible method: none, position of talker object on screen needs to get modified
-        static readonly ushort[] larry5SignatureGermanEndingPattiTalker = {
+        private static readonly ushort[] larry5SignatureGermanEndingPattiTalker = {
             Workarounds.SIG_MAGICDWORD,
             Workarounds.SIG_UINT16_1(0x006e), Workarounds.SIG_UINT16_2(0x006e),                 // object pattiTalker::x (110)
             Workarounds.SIG_UINT16_1(0x00b4), Workarounds.SIG_UINT16_2(0x00b4),                 // object pattiTalker::y (180)
@@ -2280,13 +2280,13 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] larry5PatchGermanEndingPattiTalker = {
+        private static readonly ushort[] larry5PatchGermanEndingPattiTalker = {
             Workarounds.PATCH_UINT16_1(0x005a), Workarounds.PATCH_UINT16_2(0x005a),               // change pattiTalker::x to 90
             Workarounds.PATCH_END
         };
 
         //          script, description,                                      signature                               patch
-        static readonly SciScriptPatcherEntry[] larry5Signatures = {
+        private static readonly SciScriptPatcherEntry[] larry5Signatures = {
             new SciScriptPatcherEntry(  true,   280, "English-only: fix green card limo bug",       1, larry5SignatureGreenCardLimoBug,        larry5PatchGreenCardLimoBug),
             new SciScriptPatcherEntry(  true,   380, "German-only: Enlarge Patti Textbox",          1, larry5SignatureGermanEndingPattiTalker, larry5PatchGermanEndingPattiTalker),
         };
@@ -2301,7 +2301,7 @@ namespace NScumm.Sci.Engine
         //  in sierra sci)
         // Applies to at least: German PC-CD
         // Responsible method: unknown
-        static readonly ushort[] larry6SignatureDeathDialog = {
+        private static readonly ushort[] larry6SignatureDeathDialog = {
             Workarounds.SIG_MAGICDWORD,
             0x3e, Workarounds.SIG_UINT16_1(0x0133), Workarounds.SIG_UINT16_2(0x0133),        // link 0133 (offset 0x20)
             0x35, 0xff,                      // ldi ff
@@ -2325,7 +2325,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] larry6PatchDeathDialog = {
+        private static readonly ushort[] larry6PatchDeathDialog = {
             0x3e, 0x00, 0x02,                // link 0200
             Workarounds.PATCH_ADDTOOFFSET(+687),
             0x5a, Workarounds.PATCH_UINT16_1(0x0004), Workarounds.PATCH_UINT16_2(0x0004), Workarounds.PATCH_UINT16_1(0x0140), Workarounds.PATCH_UINT16_2(0x0140), // lea 0004 0140
@@ -2337,7 +2337,7 @@ namespace NScumm.Sci.Engine
         };
 
         //          script, description,                                      signature                   patch
-        static readonly SciScriptPatcherEntry[] larry6Signatures = {
+        private static readonly SciScriptPatcherEntry[] larry6Signatures = {
             new SciScriptPatcherEntry(  true,    82, "death dialog memory corruption",              1, larry6SignatureDeathDialog, larry6PatchDeathDialog),
         };
 
@@ -2353,7 +2353,7 @@ namespace NScumm.Sci.Engine
         //
         // Applies to at least: English SCI1 CD, English SCI1.1 floppy, Japanese FM-Towns
         // Responsible method: MG::replay (script 0)
-        static readonly ushort[] mothergoose256SignatureReplay = {
+        private static readonly ushort[] mothergoose256SignatureReplay = {
             0x7a,                            // push2
             0x78,                            // push1
             0x5b, 0x00, 0xbe,                // lea global[BEh]
@@ -2403,7 +2403,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] mothergoose256PatchReplay = {
+        private static readonly ushort[] mothergoose256PatchReplay = {
             0x39, 0x06,                      // pushi 06
             0x76,                            // push0
             0x76,                            // push0
@@ -2453,21 +2453,21 @@ namespace NScumm.Sci.Engine
         //
         // Applies to at least: English SCI1 CD, English SCI1.1 floppy, Japanese FM-Towns
         // Responsible method: Game::save (script 994 for SCI1), MG::save (script 0 for SCI1.1)
-        static readonly ushort[] mothergoose256SignatureSaveLimit = {
+        private static readonly ushort[] mothergoose256SignatureSaveLimit = {
             0x89, Workarounds.SIG_MAGICDWORD, 0xb3,      // lsg global[b3]
             0x35, 0x0d,                      // ldi 0d
             0x20,                            // ge?
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] mothergoose256PatchSaveLimit = {
+        private static readonly ushort[] mothergoose256PatchSaveLimit = {
             Workarounds.PATCH_ADDTOOFFSET(+2),
             0x35, 0x0d + Workarounds.SAVEGAMEID_OFFICIALRANGE_START, // ldi 113d
             Workarounds.PATCH_END
         };
 
         //          script, description,                                      signature                         patch
-        static readonly SciScriptPatcherEntry[] mothergoose256Signatures = {
+        private static readonly SciScriptPatcherEntry[] mothergoose256Signatures = {
             new SciScriptPatcherEntry(  true,     0, "replay save issue",                           1, mothergoose256SignatureReplay,    mothergoose256PatchReplay ),
             new SciScriptPatcherEntry(  true,     0, "save limit dialog (SCI1.1)",                  1, mothergoose256SignatureSaveLimit, mothergoose256PatchSaveLimit ),
             new SciScriptPatcherEntry(  true,   994, "save limit dialog (SCI1)",                    1, mothergoose256SignatureSaveLimit, mothergoose256PatchSaveLimit ),
@@ -2500,7 +2500,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English floppy
         // Responsible method: gab::changeState (script 152)
         // Fixes bug: #5865
-        static readonly ushort[] pq1vgaSignatureBriefingGettingStuck = {
+        private static readonly ushort[] pq1vgaSignatureBriefingGettingStuck = {
             0x76,                                // push0
             0x45, 0x02, 0x00,                    // call export 2 of script 0 (disable control)
             0x38, Workarounds.SIG_ADDTOOFFSET(+2),           // pushi notify
@@ -2514,7 +2514,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] pq1vgaPatchBriefingGettingStuck = {
+        private static readonly ushort[] pq1vgaPatchBriefingGettingStuck = {
             0x33, 0x0a,                      // jmp to lsl local[2], skip over export 2 and ::notify
             Workarounds.PATCH_END                        // rm015::notify would try to make ego walk to the chair
         };
@@ -2530,7 +2530,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English floppy
         // Responsible method: putGun::changeState (script 341)
         // Fixes bug: #5705 / #6400
-        static readonly ushort[] pq1vgaSignaturePutGunInLockerBug = {
+        private static readonly ushort[] pq1vgaSignaturePutGunInLockerBug = {
             0x35, 0x00,                      // ldi 00
             0x1a,                            // eq?
             0x31, 0x25,                      // bnt [next state check]
@@ -2555,7 +2555,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] pq1vgaPatchPutGunInLockerBug = {
+        private static readonly ushort[] pq1vgaPatchPutGunInLockerBug = {
             Workarounds.PATCH_ADDTOOFFSET(+3),
             0x31, 0x1c,                      // bnt [next state check]
             Workarounds.PATCH_ADDTOOFFSET(+22),
@@ -2584,7 +2584,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English floppy
         // Responsible method: rm500::init, changeOverlay::changeState (script 500)
         // Fixes bug: #5016
-        static readonly ushort[] pq1vgaSignatureMapSaveRestoreBug = {
+        private static readonly ushort[] pq1vgaSignatureMapSaveRestoreBug = {
             0x39, 0x04,                          // pushi 04
             Workarounds.SIG_ADDTOOFFSET(+2),                 // skip either lsg global[f9] or pTos register
             Workarounds.SIG_MAGICDWORD,
@@ -2595,7 +2595,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] pq1vgaPatchMapSaveRestoreBug = {
+        private static readonly ushort[] pq1vgaPatchMapSaveRestoreBug = {
             0x38, Workarounds.PATCH_SELECTOR16(ScriptPatcherSelectors.SELECTOR_overlay), // pushi "overlay"
             0x7a,                            // push2
             0x89, 0xf9,                      // lsg global[f9]
@@ -2607,7 +2607,7 @@ namespace NScumm.Sci.Engine
         };
 
         //          script, description,                                         signature                            patch
-        static readonly SciScriptPatcherEntry[] pq1vgaSignatures = {
+        private static readonly SciScriptPatcherEntry[] pq1vgaSignatures = {
             new SciScriptPatcherEntry(  true,   152, "getting stuck while briefing is about to start", 1, pq1vgaSignatureBriefingGettingStuck, pq1vgaPatchBriefingGettingStuck ),
             new SciScriptPatcherEntry(  true,   341, "put gun in locker bug",                          1, pq1vgaSignaturePutGunInLockerBug,    pq1vgaPatchPutGunInLockerBug ),
             new SciScriptPatcherEntry(  true,   500, "map save/restore bug",                           2, pq1vgaSignatureMapSaveRestoreBug,    pq1vgaPatchMapSaveRestoreBug ),
@@ -2628,7 +2628,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English floppy (1.000, 1.012)
         // Responsible method: pickItUp::changeState (script 54)
         // Fixes bug: #6407
-        static readonly ushort[] qfg1egaSignatureThrowRockAtNest = {
+        private static readonly ushort[] qfg1egaSignatureThrowRockAtNest = {
             0x4a, 0x04,                         // send 04 (nest::x)
             0x36,                               // push
             Workarounds.SIG_MAGICDWORD,
@@ -2638,14 +2638,14 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg1egaPatchThrowRockAtNest = {
+        private static readonly ushort[] qfg1egaPatchThrowRockAtNest = {
             Workarounds.PATCH_ADDTOOFFSET(+3),
             0x35, 0x12,                         // ldi 12 (18d)
             Workarounds.PATCH_END
         };
 
         //          script, description,                                      signature                            patch
-        static readonly SciScriptPatcherEntry[] qfg1egaSignatures = {
+        private static readonly SciScriptPatcherEntry[] qfg1egaSignatures = {
             new SciScriptPatcherEntry(  true,    54, "throw rock at nest while running",            1, qfg1egaSignatureThrowRockAtNest,     qfg1egaPatchThrowRockAtNest ),
         };
 
@@ -2660,7 +2660,7 @@ namespace NScumm.Sci.Engine
         //   We just reuse the active event, thus removing the duplicate kGetEvent call.
         // Applies to at least: English floppy
         // Responsible method: pointBox::doit
-        static readonly ushort[] qfg1vgaSignatureFightEvents = {
+        private static readonly ushort[] qfg1vgaSignatureFightEvents = {
             0x39, Workarounds.SIG_MAGICDWORD,
             Workarounds.SIG_SELECTOR8(ScriptPatcherSelectors.SELECTOR_new),                 // pushi "new"
             0x76,                               // push0
@@ -2681,7 +2681,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg1vgaPatchFightEvents = {
+        private static readonly ushort[] qfg1vgaPatchFightEvents = {
             0x38, Workarounds.PATCH_SELECTOR16(ScriptPatcherSelectors.SELECTOR_curEvent), // pushi 15a (selector curEvent)
             0x76,                            // push0
             0x81, 0x50,                      // lag global[50]
@@ -2710,27 +2710,27 @@ namespace NScumm.Sci.Engine
         // Fixes bug: #6139.
 
         // Patch 1: Increase temp space
-        static readonly ushort[] qfg1vgaSignatureTempSpace = {
+        private static readonly ushort[] qfg1vgaSignatureTempSpace = {
             Workarounds.SIG_MAGICDWORD,
             0x3f, 0xba,                         // link 0xba
             0x87, 0x00,                         // lap 0
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg1vgaPatchTempSpace = {
+        private static readonly ushort[] qfg1vgaPatchTempSpace = {
             0x3f, 0xca,                         // link 0xca
             Workarounds.PATCH_END
         };
 
         // Patch 2: Move the pointer used for the window header a little bit
-        static readonly ushort[] qfg1vgaSignatureDialogHeader = {
+        private static readonly ushort[] qfg1vgaSignatureDialogHeader = {
             Workarounds.SIG_MAGICDWORD,
             0x5b, 0x04, 0x80,                   // lea temp[0x80]
             0x36,                               // push
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg1vgaPatchDialogHeader = {
+        private static readonly ushort[] qfg1vgaPatchDialogHeader = {
             0x5b, 0x04, 0x90,                   // lea temp[0x90]
             Workarounds.PATCH_END
         };
@@ -2744,7 +2744,7 @@ namespace NScumm.Sci.Engine
         // the crusher, ego is supposed to move close to position 79, 165. We change it
         // to 85, 165, which is not an edge case thus the freeze is avoided.
         // Fixes bug: #6180
-        static readonly ushort[] qfg1vgaSignatureMoveToCrusher = {
+        private static readonly ushort[] qfg1vgaSignatureMoveToCrusher = {
             Workarounds.SIG_MAGICDWORD,
             0x51, 0x1f,                         // class Motion
             0x36,                               // push
@@ -2754,7 +2754,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg1vgaPatchMoveToCrusher = {
+        private static readonly ushort[] qfg1vgaPatchMoveToCrusher = {
             Workarounds.PATCH_ADDTOOFFSET(+3),
             0x39, 0x55,                         // pushi 55 (85 - x)
             Workarounds.PATCH_END
@@ -2773,7 +2773,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English PC floppy
         // Responsible method: GuardsTrumpet::changeState(8)
         // Fixes bug: #6248
-        static readonly ushort[] qfg1vgaSignatureMoveToCastleGate = {
+        private static readonly ushort[] qfg1vgaSignatureMoveToCastleGate = {
             0x51, Workarounds.SIG_ADDTOOFFSET(+1),          // class MoveTo
             Workarounds.SIG_MAGICDWORD,
             0x36,                               // push
@@ -2783,7 +2783,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg1vgaPatchMoveToCastleGate = {
+        private static readonly ushort[] qfg1vgaPatchMoveToCastleGate = {
             Workarounds.PATCH_ADDTOOFFSET(+3),
             0x39, 0x74,                         // pushi 74 (116d), changes coordinates to 116, 116
             Workarounds.PATCH_END
@@ -2795,7 +2795,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English floppy
         // Responsible method: smallMonster::doVerb
         // Fixes bug #6249
-        static readonly ushort[] qfg1vgaSignatureCheetaurDescription = {
+        private static readonly ushort[] qfg1vgaSignatureCheetaurDescription = {
             Workarounds.SIG_MAGICDWORD,
             0x34, Workarounds.SIG_UINT16_1(0x01b8), Workarounds.SIG_UINT16_2(0x01b8),           // ldi 01b8
             0x1a,                               // eq?
@@ -2808,7 +2808,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg1vgaPatchCheetaurDescription = {
+        private static readonly ushort[] qfg1vgaPatchCheetaurDescription = {
             Workarounds.PATCH_ADDTOOFFSET(+14),
             0x39, 0x11,                         // pushi 11 -> monster type cheetaur
             Workarounds.PATCH_END
@@ -2828,7 +2828,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English floppy
         // Responsible method: happyFace::changeState, door11::doit
         // Fixes bug #6181
-        static readonly ushort[] qfg1vgaSignatureFunnyRoomFix = {
+        private static readonly ushort[] qfg1vgaSignatureFunnyRoomFix = {
             0x65, 0x14,                         // aTop 14 (state)
             0x36,                               // push
             0x3c,                               // dup
@@ -2841,7 +2841,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg1vgaPatchFunnyRoomFix = {
+        private static readonly ushort[] qfg1vgaPatchFunnyRoomFix = {
             Workarounds.PATCH_ADDTOOFFSET(+3),
             0x2e, Workarounds.PATCH_UINT16_1(0x0029), Workarounds.PATCH_UINT16_2(0x0029),         // bt 0029 [-> next state] - saves 4 bytes
             0x35, 0x01,                         // ldi 01
@@ -2863,7 +2863,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English floppy
         // Responsible method: cueItScript::changeState
         // Fixes bug #6706
-        static readonly ushort[] qfg1vgaSignatureHealerHutNoDelay = {
+        private static readonly ushort[] qfg1vgaSignatureHealerHutNoDelay = {
             0x65, 0x14,                         // aTop 14 (state)
             0x36,                               // push
             0x3c,                               // dup
@@ -2877,7 +2877,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg1vgaPatchHealerHutNoDelay = {
+        private static readonly ushort[] qfg1vgaPatchHealerHutNoDelay = {
             Workarounds.PATCH_ADDTOOFFSET(+9),
             0x35, 0x01,                         // ldi 01 (1 tick only, so that execution will resume as soon as dialog box is closed)
             Workarounds.PATCH_END
@@ -2890,7 +2890,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English floppy, Mac floppy
         // Responsible method: stagHurt::changeState
         // Fixes bug #6135
-        static readonly ushort[] qfg1vgaSignatureWhiteStagDagger = {
+        private static readonly ushort[] qfg1vgaSignatureWhiteStagDagger = {
             0x87, 0x01,                         // lap param[1]
             0x65, 0x14,                         // aTop state
             0x36,                               // push
@@ -2922,7 +2922,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg1vgaPatchWhiteStagDagger = {
+        private static readonly ushort[] qfg1vgaPatchWhiteStagDagger = {
             Workarounds.PATCH_ADDTOOFFSET(+4),
             0x2f, 0x05,                         // bt [next check] (state != 0)
             // state = 0 code
@@ -2953,7 +2953,7 @@ namespace NScumm.Sci.Engine
         };
 
         //          script, description,                                      signature                            patch
-        static readonly SciScriptPatcherEntry[] qfg1vgaSignatures = {
+        private static readonly SciScriptPatcherEntry[] qfg1vgaSignatures = {
             new SciScriptPatcherEntry(  true,    41, "moving to castle gate",                       1, qfg1vgaSignatureMoveToCastleGate,    qfg1vgaPatchMoveToCastleGate ),
             new SciScriptPatcherEntry(  true,    55, "healer's hut, no delay for buy/steal",        1, qfg1vgaSignatureHealerHutNoDelay,    qfg1vgaPatchHealerHutNoDelay ),
             new SciScriptPatcherEntry(  true,    77, "white stag dagger throw animation glitch",    1, qfg1vgaSignatureWhiteStagDagger,     qfg1vgaPatchWhiteStagDagger ),
@@ -2995,7 +2995,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English PC Floppy, English Amiga Floppy
         // Responsible method: mountSaurus::changeState(), mountSaurus::init(), mountSaurus::dispose()
         // Fixes bug: #5156
-        static readonly ushort[] qfg2SignatureSaurusFreeze = {
+        private static readonly ushort[] qfg2SignatureSaurusFreeze = {
             0x3c,                               // dup
             0x35, 0x02,                         // ldi 5
             Workarounds.SIG_MAGICDWORD,
@@ -3009,7 +3009,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg2PatchSaurusFreeze = {
+        private static readonly ushort[] qfg2PatchSaurusFreeze = {
             0x81, 0x66,                         // lag 66h
             0x2e, Workarounds.SIG_UINT16_1(0x0040), Workarounds.SIG_UINT16_2(0x0040),           // bt [to dispose code]
             0x35, 0x00,                         // ldi 0 (waste 2 bytes)
@@ -3029,7 +3029,7 @@ namespace NScumm.Sci.Engine
         // and text entry refreshes whenever a button is pressed, and prevent possible
         // crashes because of these constant quick object reallocations.
         // Fixes bug: #5096
-        static readonly ushort[] qfg2SignatureImportDialog = {
+        private static readonly ushort[] qfg2SignatureImportDialog = {
             0x63, Workarounds.SIG_MAGICDWORD, 0x20,         // pToa text
             0x30, Workarounds.SIG_UINT16_1(0x000b), Workarounds.SIG_UINT16_2(0x000b),           // bnt [next state]
             0x7a,                               // push2
@@ -3041,7 +3041,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg2PatchImportDialog = {
+        private static readonly ushort[] qfg2PatchImportDialog = {
             Workarounds.PATCH_ADDTOOFFSET(+5),
             0x48,                               // ret
             Workarounds.PATCH_END
@@ -3059,7 +3059,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English Floppy
         // Responsible method: importHero::changeState
         // Fixes bug: inside versions 1.102 and below
-        static readonly ushort[] qfg2SignatureImportCharType = {
+        private static readonly ushort[] qfg2SignatureImportCharType = {
             0x35, 0x04,                         // ldi 04
             0x90, Workarounds.SIG_UINT16_1(0x023b), Workarounds.SIG_UINT16_2(0x023b),           // lagi global[23Bh]
             0x02,                               // add
@@ -3077,7 +3077,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg2PatchImportCharType = {
+        private static readonly ushort[] qfg2PatchImportCharType = {
             0x80, Workarounds.PATCH_UINT16_1(0x023f), Workarounds.PATCH_UINT16_2(0x023f),         // lag global[23Fh] <-- patched to save 2 bytes
             0x02,                               // add
             0x36,                               // push
@@ -3095,7 +3095,7 @@ namespace NScumm.Sci.Engine
         };
 
         //          script, description,                                      signature                    patch
-        static readonly SciScriptPatcherEntry[] qfg2Signatures = {
+        private static readonly SciScriptPatcherEntry[] qfg2Signatures = {
             new SciScriptPatcherEntry(  true,   665, "getting back on saurus freeze fix",           1, qfg2SignatureSaurusFreeze,   qfg2PatchSaurusFreeze ),
             new SciScriptPatcherEntry(  true,   805, "import character type fix",                   1, qfg2SignatureImportCharType, qfg2PatchImportCharType ),
             new SciScriptPatcherEntry(  true,   944, "import dialog continuous calls",              1, qfg2SignatureImportDialog,   qfg2PatchImportDialog ),
@@ -3103,7 +3103,7 @@ namespace NScumm.Sci.Engine
 
         // ===========================================================================
         // Patch for the import screen in QFG3, same as the one for QFG2 above
-        static readonly ushort[] qfg3SignatureImportDialog = {
+        private static readonly ushort[] qfg3SignatureImportDialog = {
             0x63, Workarounds.SIG_MAGICDWORD, 0x2a,         // pToa text
             0x31, 0x0b,                         // bnt [next state]
             0x7a,                               // push2
@@ -3115,7 +3115,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg3PatchImportDialog = {
+        private static readonly ushort[] qfg3PatchImportDialog = {
             Workarounds.PATCH_ADDTOOFFSET(+4),
             0x48,                               // ret
             Workarounds.PATCH_END
@@ -3138,7 +3138,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English, German, Italian, French, Spanish Floppy
         // Responsible method: uhuraTell::doChild
         // Fixes bug: #5172
-        static readonly ushort[] qfg3SignatureWooDialog = {
+        private static readonly ushort[] qfg3SignatureWooDialog = {
             Workarounds.SIG_MAGICDWORD,
             0x67, 0x12,                         // pTos 12 (query)
             0x35, 0xb6,                         // ldi b6
@@ -3159,14 +3159,14 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg3PatchWooDialog = {
+        private static readonly ushort[] qfg3PatchWooDialog = {
             Workarounds.PATCH_ADDTOOFFSET(+0x29),
             0x33, 0x11,                         // jmp to 0x6a2, the call to hero::solvePuzzle for 0xFFFC
             Workarounds.PATCH_END
         };
 
         // Alternative version, with uint16 offsets, for GOG release of QfG3.
-        static readonly ushort[] qfg3SignatureWooDialogAlt = {
+        private static readonly ushort[] qfg3SignatureWooDialogAlt = {
             Workarounds.SIG_MAGICDWORD,
             0x67, 0x12,                         // pTos 12 (query)
             0x35, 0xb6,                         // ldi b6
@@ -3187,7 +3187,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg3PatchWooDialogAlt = {
+        private static readonly ushort[] qfg3PatchWooDialogAlt = {
             Workarounds.PATCH_ADDTOOFFSET(+0x2C),
             0x33, 0x12,                         // jmp to 0x708, the call to hero::solvePuzzle for 0xFFFC
             Workarounds.PATCH_END
@@ -3205,7 +3205,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English, French, German, Italian, Spanish floppy
         // Responsible method: saveHero::changeState
         // Fixes bug #6807
-        static readonly ushort[] qfg3SignatureExportChar = {
+        private static readonly ushort[] qfg3SignatureExportChar = {
             0x35, Workarounds.SIG_ADDTOOFFSET(+1),          // ldi  00 / ldi 01 (2 loops, we patch both)
             0xa5, 0x00,                         // sat  temp[0] [contains index to data]
             0x8d, 0x00,                         // lst  temp[0]
@@ -3238,7 +3238,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg3PatchExportChar = {
+        private static readonly ushort[] qfg3PatchExportChar = {
             Workarounds.PATCH_ADDTOOFFSET(+11),
             0x85, 0x00,                         // lat  temp[0]
             0x9b, 0x01,                         // lsli local[0] + 1 ------ load local[ ACC + 1] onto stack
@@ -3265,7 +3265,7 @@ namespace NScumm.Sci.Engine
         //
         // Applies to at least: English, French, German, Italian, Spanish floppy
         // Responsible method: importHero::changeState(4)
-        static readonly ushort[] qfg3SignatureImportQfG1Char = {
+        private static readonly ushort[] qfg3SignatureImportQfG1Char = {
             Workarounds.SIG_MAGICDWORD,
             0x82, Workarounds.SIG_UINT16_1(0x0238), Workarounds.SIG_UINT16_2(0x0238),           // lal local[0x0238]
             0xa0, Workarounds.SIG_UINT16_1(0x016a), Workarounds.SIG_UINT16_2(0x016a),           // sag global[0x016a]
@@ -3275,7 +3275,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg3PatchImportQfG1Char = {
+        private static readonly ushort[] qfg3PatchImportQfG1Char = {
             Workarounds.PATCH_ADDTOOFFSET(+8),
             0xa3, 0x01,                         // sal 01           -> also set local[01]
             0x89, 0xfc,                         // lsg global[0xFD] -> save 2 bytes
@@ -3289,7 +3289,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English, French, German, Italian, Spanish floppy
         // Responsible method: heap in script 640
         // Fixes bug #5173
-        static readonly ushort[] qfg3SignatureChiefPriority = {
+        private static readonly ushort[] qfg3SignatureChiefPriority = {
             Workarounds.SIG_MAGICDWORD,
             Workarounds.SIG_UINT16_1(0x0002), Workarounds.SIG_UINT16_2(0x0002),                 // yStep     0x0002
             Workarounds.SIG_UINT16_1(0x0281), Workarounds.SIG_UINT16_2(0x0281),                 // view      0x0281
@@ -3301,7 +3301,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg3PatchChiefPriority = {
+        private static readonly ushort[] qfg3PatchChiefPriority = {
             Workarounds.PATCH_ADDTOOFFSET(+8),
             Workarounds.PATCH_UINT16_1(0x000A), Workarounds.PATCH_UINT16_2(0x000A),               // new priority 0x000A (10d)
             Workarounds.PATCH_ADDTOOFFSET(+2),
@@ -3329,7 +3329,7 @@ namespace NScumm.Sci.Engine
         // Applies to: English, French, German, Italian, Spanish and the GOG release.
         // Responsible method: heap in script 285
         // Fixes bug #7086
-        static readonly ushort[] qfg3SignatureMissingPoints1 = {
+        private static readonly ushort[] qfg3SignatureMissingPoints1 = {
             // local[$9c] = [0 -41 -76 1 -30 -77 -33 -34 -35 -36 -37 -42 -80 999]
             // local[$aa] = [0 0 0 0]
             Workarounds.SIG_UINT16_1(0x0000), Workarounds.SIG_UINT16_2(0x0000),                 //   0 START MARKER
@@ -3351,7 +3351,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg3PatchMissingPoints1 = {
+        private static readonly ushort[] qfg3PatchMissingPoints1 = {
             Workarounds.PATCH_ADDTOOFFSET(+14),
             Workarounds.PATCH_UINT16_1(0xFFE1), Workarounds.PATCH_UINT16_2(0xFFE1),               // -31 "Tell about Initiation"
             Workarounds.PATCH_UINT16_1(0xFFDE), Workarounds.PATCH_UINT16_2(0xFFDE),               // -34 "Tell about Leopard Lady"
@@ -3366,21 +3366,21 @@ namespace NScumm.Sci.Engine
             Workarounds.PATCH_END
         };
 
-        static readonly ushort[] qfg3SignatureMissingPoints2a = {
+        private static readonly ushort[] qfg3SignatureMissingPoints2a = {
             Workarounds.SIG_MAGICDWORD,
             0x35, 0x00,                         // ldi 0
             0xb3, 0xaa,                         // sali local[$aa]
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg3SignatureMissingPoints2b = {
+        private static readonly ushort[] qfg3SignatureMissingPoints2b = {
             Workarounds.SIG_MAGICDWORD,
             0x36,                               // push
             0x5b, 0x02, 0xaa,                   // lea local[$aa]
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg3PatchMissingPoints2 = {
+        private static readonly ushort[] qfg3PatchMissingPoints2 = {
             Workarounds.PATCH_ADDTOOFFSET(+3),
             0xab,                               // local[$aa] ==> local[$ab]
             Workarounds.PATCH_END
@@ -3400,7 +3400,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English, French, German, Italian, Spanish PC floppy
         // Responsible method: combatControls::dispatchEvent (script 550) + WarriorObj in heap
         // Fixes bug #6247
-        static readonly ushort[] qfg3SignatureCombatSpeedThrottling1 = {
+        private static readonly ushort[] qfg3SignatureCombatSpeedThrottling1 = {
             0x31, 0x0d,                         // bnt [skip code]
             Workarounds.SIG_MAGICDWORD,
             0x89, 0xd2,                         // lsg global[D2h]
@@ -3413,7 +3413,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg3PatchCombatSpeedThrottling1 = {
+        private static readonly ushort[] qfg3PatchCombatSpeedThrottling1 = {
             0x80, 0xd2,                         // lsg global[D2h]
             0x14,                               // or
             0x31, 0x06,                         // bnt [skip code] - saves 4 bytes
@@ -3426,7 +3426,7 @@ namespace NScumm.Sci.Engine
             Workarounds.PATCH_END
         };
 
-        static readonly ushort[] qfg3SignatureCombatSpeedThrottling2 = {
+        private static readonly ushort[] qfg3SignatureCombatSpeedThrottling2 = {
             Workarounds.SIG_MAGICDWORD,
             Workarounds.SIG_UINT16_1(12), Workarounds.SIG_UINT16_2(12),                     // priority 12
             Workarounds.SIG_UINT16_1(0), Workarounds.SIG_UINT16_2(0),                      // underbits 0
@@ -3440,7 +3440,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg3PatchCombatSpeedThrottling2 = {
+        private static readonly ushort[] qfg3PatchCombatSpeedThrottling2 = {
             Workarounds.PATCH_ADDTOOFFSET(+32),
             Workarounds.PATCH_UINT16_1(5), Workarounds.PATCH_UINT16_2(5),                    // set cycleSpeed to 5
             Workarounds.PATCH_END
@@ -3459,7 +3459,7 @@ namespace NScumm.Sci.Engine
         // Applies to: English, French, German, Italian, Spanish and the GOG release.
         // Responsible method: enterEast::changeState (script 750)
         // Fixes bug #6693
-        static readonly ushort[] qfg3SignatureRoom750Bounds1 = {
+        private static readonly ushort[] qfg3SignatureRoom750Bounds1 = {
             // (if (< (ego y?) 42)
             0x76,                               // push0 ("y")
             0x76,                               // push0
@@ -3472,14 +3472,14 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg3PatchRoom750Bounds1 = {
+        private static readonly ushort[] qfg3PatchRoom750Bounds1 = {
             // (if (< (ego y?) 50)
             Workarounds.PATCH_ADDTOOFFSET(+8),
             50,                                 // 42 --> 50
             Workarounds.PATCH_END
         };
 
-        static readonly ushort[] qfg3SignatureRoom750Bounds2 = {
+        private static readonly ushort[] qfg3SignatureRoom750Bounds2 = {
             // (ego x: 294 y: 39)
             0x78,                               // push1 ("x")
             0x78,                               // push1 
@@ -3493,7 +3493,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg3PatchRoom750Bounds2 = {
+        private static readonly ushort[] qfg3PatchRoom750Bounds2 = {
             // (ego x: 320 y: 39)
             Workarounds.PATCH_ADDTOOFFSET(+3),
             Workarounds.PATCH_UINT16_1(320), Workarounds.PATCH_UINT16_2(320),                  // 294 --> 320
@@ -3502,7 +3502,7 @@ namespace NScumm.Sci.Engine
             Workarounds.PATCH_END
         };
 
-        static readonly ushort[] qfg3SignatureRoom750Bounds3 = {
+        private static readonly ushort[] qfg3SignatureRoom750Bounds3 = {
             // (ego setMotion: MoveTo 282 29 self)
             0x38, Workarounds.SIG_SELECTOR16(ScriptPatcherSelectors.SELECTOR_setMotion),    // pushi "setMotion" 0x133 in QfG3
             0x39, 0x04,                         // pushi 4
@@ -3517,7 +3517,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] qfg3PatchRoom750Bounds3 = {
+        private static readonly ushort[] qfg3PatchRoom750Bounds3 = {
             // (ego setMotion: MoveTo 309 35 self)
             Workarounds.PATCH_ADDTOOFFSET(+9),
             Workarounds.PATCH_UINT16_1(309), Workarounds.PATCH_UINT16_2(309),                 // 282 --> 309
@@ -3527,7 +3527,7 @@ namespace NScumm.Sci.Engine
         };
 
         //          script, description,                                      signature                    patch
-        static readonly SciScriptPatcherEntry[] qfg3Signatures = {
+        private static readonly SciScriptPatcherEntry[] qfg3Signatures = {
             new SciScriptPatcherEntry(  true,   944, "import dialog continuous calls",                     1, qfg3SignatureImportDialog,           qfg3PatchImportDialog ),
             new SciScriptPatcherEntry(  true,   440, "dialog crash when asking about Woo",                 1, qfg3SignatureWooDialog,              qfg3PatchWooDialog ),
             new SciScriptPatcherEntry(  true,   440, "dialog crash when asking about Woo",                 1, qfg3SignatureWooDialogAlt,           qfg3PatchWooDialogAlt ),
@@ -3555,7 +3555,7 @@ namespace NScumm.Sci.Engine
         //  The same issue happens in Sierra SCI.
         // We simply set the correct starting cel number to fix the bug.
         // Responsible method: robotIntoShip::changeState(9)
-        static readonly ushort[] sq1vgaSignatureUlenceFlatsTimepodGfxGlitch = {
+        private static readonly ushort[] sq1vgaSignatureUlenceFlatsTimepodGfxGlitch = {
             0x39,
             Workarounds.SIG_MAGICDWORD, Workarounds.SIG_SELECTOR8(ScriptPatcherSelectors.SELECTOR_cel), // pushi "cel"
             0x78,                               // push1
@@ -3564,7 +3564,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] sq1vgaPatchUlenceFlatsTimepodGfxGlitch = {
+        private static readonly ushort[] sq1vgaPatchUlenceFlatsTimepodGfxGlitch = {
             Workarounds.PATCH_ADDTOOFFSET(+3),
             0x39, 0x09,                         // pushi 0x09 (set ship::cel to 9)
             Workarounds.PATCH_END
@@ -3580,20 +3580,20 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English Floppy
         // Responsible method: radar1::doVerb
         // Fixes bug: #6816
-        static readonly ushort[] sq1vgaSignatureUlenceFlatsGeneratorGlitch = {
+        private static readonly ushort[] sq1vgaSignatureUlenceFlatsGeneratorGlitch = {
             Workarounds.SIG_MAGICDWORD, 0x1a,               // eq?
             0x30, Workarounds.SIG_UINT16_1(0xcdf4), Workarounds.SIG_UINT16_2(0xcdf4),           // bnt absolute 0xf000
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] sq1vgaPatchUlenceFlatsGeneratorGlitch = {
+        private static readonly ushort[] sq1vgaPatchUlenceFlatsGeneratorGlitch = {
             Workarounds.PATCH_ADDTOOFFSET(+1),
             0x32, Workarounds.PATCH_UINT16_1(0x0000), Workarounds.PATCH_UINT16_2(0x0000),         // jmp 0x0000 (waste bytes)
             Workarounds.PATCH_END
         };
 
         // No documentation for this patch (TODO)
-        static readonly ushort[] sq1vgaSignatureEgoShowsCard = {
+        private static readonly ushort[] sq1vgaSignatureEgoShowsCard = {
             Workarounds.SIG_MAGICDWORD,
             0x38, Workarounds.SIG_SELECTOR16(ScriptPatcherSelectors.SELECTOR_timesShownID), // push "timesShownID"
             0x78,                               // push1
@@ -3615,7 +3615,7 @@ namespace NScumm.Sci.Engine
 
         // Note that this script patch is merely a reordering of the
         // instructions in the original script.
-        static readonly ushort[] sq1vgaPatchEgoShowsCard = {
+        private static readonly ushort[] sq1vgaPatchEgoShowsCard = {
             0x38, Workarounds.PATCH_SELECTOR16(ScriptPatcherSelectors.SELECTOR_timesShownID), // push "timesShownID"
             0x76,                               // push0
             0x51, 0x7c,                         // class DeltaurRegion
@@ -3643,7 +3643,7 @@ namespace NScumm.Sci.Engine
         //
         // Applies to at least: English PC floppy
         // Responsible method: spider::doit
-        static readonly ushort[] sq1vgaSignatureSpiderDroidTiming = {
+        private static readonly ushort[] sq1vgaSignatureSpiderDroidTiming = {
             Workarounds.SIG_MAGICDWORD,
             0x63, 0x4e,                         // pToa script
             0x30, Workarounds.SIG_UINT16_1(0x0005), Workarounds.SIG_UINT16_2(0x0005),           // bnt [further method code]
@@ -3685,7 +3685,7 @@ namespace NScumm.Sci.Engine
         //  Global B5h = 0 -> set PChase
         //  Global B5h <> 0 -> set moveToPath
 
-        static readonly ushort[] sq1vgaPatchSpiderDroidTiming = {
+        private static readonly ushort[] sq1vgaPatchSpiderDroidTiming = {
             0x63, 0x4e,                         // pToa script
             0x2f, 0x68,                         // bt [super-call]
             0x38, Workarounds.PATCH_UINT16_1(0x0088), Workarounds.PATCH_UINT16_2(0x0088),         // pushi 0088 (script)
@@ -3726,7 +3726,7 @@ namespace NScumm.Sci.Engine
         };
 
         //          script, description,                                      signature                                   patch
-        static readonly SciScriptPatcherEntry[] sq1vgaSignatures = {
+        private static readonly SciScriptPatcherEntry[] sq1vgaSignatures = {
             new SciScriptPatcherEntry(  true,    45, "Ulence Flats: timepod graphic glitch",        1, sq1vgaSignatureUlenceFlatsTimepodGfxGlitch, sq1vgaPatchUlenceFlatsTimepodGfxGlitch ),
             new SciScriptPatcherEntry(  true,    45, "Ulence Flats: force field generator glitch",  1, sq1vgaSignatureUlenceFlatsGeneratorGlitch,  sq1vgaPatchUlenceFlatsGeneratorGlitch ),
             new SciScriptPatcherEntry(  true,    58, "Sarien armory droid zapping ego first time",  1, sq1vgaSignatureEgoShowsCard,                sq1vgaPatchEgoShowsCard ),
@@ -3741,7 +3741,7 @@ namespace NScumm.Sci.Engine
         //   we could either calculate property count differently somehow fixing this
         //   but I think just patching it out is cleaner.
         // Fixes bug: #5093
-        static readonly ushort[] sq4FloppySignatureEndlessFlight = {
+        private static readonly ushort[] sq4FloppySignatureEndlessFlight = {
             0x39, 0x04,                         // pushi 04 (selector x)
             Workarounds.SIG_MAGICDWORD,
             0x78,                               // push1
@@ -3751,7 +3751,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] sq4FloppyPatchEndlessFlight = {
+        private static readonly ushort[] sq4FloppyPatchEndlessFlight = {
             Workarounds.PATCH_ADDTOOFFSET(+5),
             0x35, 0x03,                         // ldi 03 (which would be the content of the property)
             Workarounds.PATCH_END
@@ -3774,7 +3774,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English Floppy
         // Responsible method: sp1::doVerb
         // Fixes bug: found by SCI developer
-        static readonly ushort[] sq4FloppySignatureThrowStuffAtSequelPoliceBug = {
+        private static readonly ushort[] sq4FloppySignatureThrowStuffAtSequelPoliceBug = {
             0x47, 0xff, 0x00, 0x02,             // call export 255_0, 2
             0x3a,                               // toss
             Workarounds.SIG_MAGICDWORD,
@@ -3783,7 +3783,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] sq4FloppyPatchThrowStuffAtSequelPoliceBug = {
+        private static readonly ushort[] sq4FloppyPatchThrowStuffAtSequelPoliceBug = {
             Workarounds.PATCH_ADDTOOFFSET(+5),
             0x48,                            // ret
             Workarounds.PATCH_END
@@ -3804,7 +3804,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English PC CD
         // Responsible method: rm045::doit
         // Fixes bug: #5468
-        static readonly ushort[] sq4CdSignatureWalkInFromBelowRoom45 = {
+        private static readonly ushort[] sq4CdSignatureWalkInFromBelowRoom45 = {
             0x76,                               // push0
             Workarounds.SIG_MAGICDWORD,
             0x78,                               // push1
@@ -3822,7 +3822,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] sq4CdPatchWalkInFromBelowRoom45 = {
+        private static readonly ushort[] sq4CdPatchWalkInFromBelowRoom45 = {
             Workarounds.PATCH_ADDTOOFFSET(+2),
             0x38, Workarounds.PATCH_UINT16_1(0x00bc), Workarounds.PATCH_UINT16_2(0x00bc),         // pushi 00BCh
             Workarounds.PATCH_ADDTOOFFSET(+15),
@@ -3850,7 +3850,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English PC CD
         // Responsible method: but2Script::changeState(2)
         // Fixes bug: #6866
-        static readonly ushort[] sq4CdSignatureGetPointsForChangingBackClothes = {
+        private static readonly ushort[] sq4CdSignatureGetPointsForChangingBackClothes = {
             0x35, 0x02,                         // ldi 02
             Workarounds.SIG_MAGICDWORD,
             0x1a,                               // eq?
@@ -3869,7 +3869,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] sq4CdPatchGetPointsForChangingBackClothes = {
+        private static readonly ushort[] sq4CdPatchGetPointsForChangingBackClothes = {
             Workarounds.PATCH_ADDTOOFFSET(+3),
             0x30, Workarounds.PATCH_UINT16_1(0x0070), Workarounds.PATCH_UINT16_2(0x0070),         // bnt [state 3]
             Workarounds.PATCH_ADDTOOFFSET(+47),             // "withdraw funds" code
@@ -3897,7 +3897,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English PC CD
         // Responsible method: droidShoots::changeState(3)
         // Fixes bug: #6076
-        static readonly ushort[] sq4CdSignatureGettingShotWhileGettingRope = {
+        private static readonly ushort[] sq4CdSignatureGettingShotWhileGettingRope = {
             0x35, 0x02,                         // ldi 02
             0x65, 0x1a,                         // aTop cycles
             0x32, Workarounds.SIG_UINT16_1(0x02fa), Workarounds.SIG_UINT16_2(0x02fa),           // jmp [end]
@@ -3925,7 +3925,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] sq4CdPatchGettingShotWhileGettingRope = {
+        private static readonly ushort[] sq4CdPatchGettingShotWhileGettingRope = {
             Workarounds.PATCH_ADDTOOFFSET(+11),
             // this makes state 2 only do the 2 cycles wait, controls should always be disabled already at this point
             0x2f, 0xf3,                         // bt [previous state aTop cycles code]
@@ -3951,7 +3951,7 @@ namespace NScumm.Sci.Engine
         // Patch 1: iconTextSwitch::show, called when the text options button is shown.
         // This is patched to add the "Both" text resource (i.e. we end up with
         // "Speech", "Text" and "Both")
-        static readonly ushort[] sq4CdSignatureTextOptionsButton = {
+        private static readonly ushort[] sq4CdSignatureTextOptionsButton = {
             Workarounds.SIG_MAGICDWORD,
             0x35, 0x01,                         // ldi 0x01
             0xa1, 0x53,                         // sag 0x53
@@ -3962,7 +3962,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] sq4CdPatchTextOptionsButton = {
+        private static readonly ushort[] sq4CdPatchTextOptionsButton = {
             Workarounds.PATCH_ADDTOOFFSET(+7),
             0x39, 0x0b,                         // pushi 0x0b
             Workarounds.PATCH_END
@@ -3971,7 +3971,7 @@ namespace NScumm.Sci.Engine
         // Patch 2: Adjust a check in babbleIcon::init, which handles the babble icon
         // (e.g. the two guys from Andromeda) shown when dying/quitting.
         // Fixes bug: #6068
-        static readonly ushort[] sq4CdSignatureBabbleIcon = {
+        private static readonly ushort[] sq4CdSignatureBabbleIcon = {
             Workarounds.SIG_MAGICDWORD,
             0x89, 0x5a,                         // lsg 5a
             0x35, 0x02,                         // ldi 02
@@ -3980,7 +3980,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] sq4CdPatchBabbleIcon = {
+        private static readonly ushort[] sq4CdPatchBabbleIcon = {
             0x89, 0x5a,                         // lsg 5a
             0x35, 0x01,                         // ldi 01
             0x1a,                               // eq?
@@ -3992,7 +3992,7 @@ namespace NScumm.Sci.Engine
         // when the text options button is clicked: "Speech", "Text" and "Both".
         // Refer to the patch above for additional details.
         // iconTextSwitch::doit (called when the text options button is clicked)
-        static readonly ushort[] sq4CdSignatureTextOptions = {
+        private static readonly ushort[] sq4CdSignatureTextOptions = {
             Workarounds.SIG_MAGICDWORD,
             0x89, 0x5a,                         // lsg 0x5a (load global 90 to stack)
             0x3c,                               // dup
@@ -4016,7 +4016,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] sq4CdPatchTextOptions = {
+        private static readonly ushort[] sq4CdPatchTextOptions = {
             0x89, 0x5a,                         // lsg 0x5a (load global 90 to stack)
             0x3c,                               // dup
             0x35, 0x03,                         // ldi 0x03 (acc = 3)
@@ -4036,7 +4036,7 @@ namespace NScumm.Sci.Engine
         };
 
         //          script, description,                                      signature                                      patch
-        static readonly SciScriptPatcherEntry[] sq4Signatures = {
+        private static readonly SciScriptPatcherEntry[] sq4Signatures = {
             new SciScriptPatcherEntry(  true,   298, "Floppy: endless flight",                      1, sq4FloppySignatureEndlessFlight,               sq4FloppyPatchEndlessFlight ),
             new SciScriptPatcherEntry(  true,   700, "Floppy: throw stuff at sequel police bug",    1, sq4FloppySignatureThrowStuffAtSequelPoliceBug, sq4FloppyPatchThrowStuffAtSequelPoliceBug ),
             new SciScriptPatcherEntry(  true,    45, "CD: walk in from below for room 45 fix",      1, sq4CdSignatureWalkInFromBelowRoom45,           sq4CdPatchWalkInFromBelowRoom45 ),
@@ -4069,7 +4069,7 @@ namespace NScumm.Sci.Engine
         // Applies to at least: English/German/French PC floppy
         // Responsible method: takeTool::changeState
         // Fixes bug: #6457
-        static readonly ushort[] sq5SignatureToolboxFix = {
+        private static readonly ushort[] sq5SignatureToolboxFix = {
             0x31, 0x13,                    // bnt [check for state 1]
             Workarounds.SIG_MAGICDWORD,
             0x38, Workarounds.SIG_UINT16_1(0x00aa), Workarounds.SIG_UINT16_2(0x00aa),      // pushi 00aa
@@ -4089,7 +4089,7 @@ namespace NScumm.Sci.Engine
             Workarounds.SIG_END
         };
 
-        static readonly ushort[] sq5PatchToolboxFix = {
+        private static readonly ushort[] sq5PatchToolboxFix = {
             0x31, 0x41,                    // bnt [check for state 2]
             Workarounds.PATCH_ADDTOOFFSET(+16),        // skip to jmp offset
             0x35, 0x01,                    // ldi 01
@@ -4100,7 +4100,7 @@ namespace NScumm.Sci.Engine
         };
 
         //          script, description,                                      signature                        patch
-        static readonly SciScriptPatcherEntry[] sq5Signatures = {
+        private static readonly SciScriptPatcherEntry[] sq5Signatures = {
             new SciScriptPatcherEntry(  true,   226, "toolbox fix",                                 1, sq5SignatureToolboxFix,          sq5PatchToolboxFix ),
         };
 
@@ -4217,14 +4217,14 @@ namespace NScumm.Sci.Engine
                             }
                             break;
                         case SciGameId.KQ6:
-                            if (SciEngine.Instance.IsCD)
+                            if (SciEngine.Instance.IsCd)
                             {
                                 // Enables Dual mode patches (audio + subtitles at the same time) for King's Quest 6
                                 EnablePatch(signatureTable, "CD: audio + text support");
                             }
                             break;
                         case SciGameId.LAURABOW2:
-                            if (SciEngine.Instance.IsCD)
+                            if (SciEngine.Instance.IsCd)
                             {
                                 // Enables Dual mode patches (audio + subtitles at the same time) for Laura Bow 2
                                 EnablePatch(signatureTable, "CD: audio + text support");

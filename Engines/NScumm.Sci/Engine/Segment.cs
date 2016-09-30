@@ -24,7 +24,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
 {
-    enum SegmentType
+    internal enum SegmentType
     {
         INVALID = 0,
         SCRIPT = 1,
@@ -277,14 +277,13 @@ namespace NScumm.Sci.Engine
                 _table[oldff].next_free = oldff;
                 return oldff;
             }
-            else {
-                int newIdx = _table.Length;
-                Array.Resize(ref _table, _table.Length + 1);
-                _table[newIdx] = new Entry();
-                _table[newIdx].Item = new T();
-                _table[newIdx].next_free = newIdx;  // Tag as 'valid'
-                return newIdx;
-            }
+
+            int newIdx = _table.Length;
+            Array.Resize(ref _table, _table.Length + 1);
+            _table[newIdx] = new Entry();
+            _table[newIdx].Item = new T();
+            _table[newIdx].next_free = newIdx;  // Tag as 'valid'
+            return newIdx;
         }
 
         private void InitTable()
@@ -292,6 +291,12 @@ namespace NScumm.Sci.Engine
             entries_used = 0;
             first_free = HEAPENTRY_INVALID;
             _table = new Entry[0];
+        }
+
+        public T this[int index]
+        {
+            get { return _table[index].Item; }
+            set { _table[index].Item = value; }
         }
     }
 

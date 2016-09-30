@@ -154,10 +154,10 @@ namespace NScumm.Scumm.Graphics
 
             if (FirstChar)
             {
-                Str.Left = Left;
-                Str.Top = Top;
-                Str.Right = Left;
-                Str.Bottom = Top;
+                Str.Left = (short) Left;
+                Str.Top = (short) Top;
+                Str.Right = (short) Left;
+                Str.Bottom = (short) Top;
                 FirstChar = false;
             }
 
@@ -182,19 +182,19 @@ namespace NScumm.Scumm.Graphics
 //    }
 
             if (Str.Left > Left)
-                Str.Left = Left;
+                Str.Left = (short) Left;
 
             Left += origWidth;
 
             if (Str.Right < Left)
             {
-                Str.Right = Left;
+                Str.Right = (short) Left;
                 if (_shadowMode)
                     Str.Right++;
             }
 
             if (Str.Bottom < Top + height)
-                Str.Bottom = Top + height;
+                Str.Bottom = (short) (Top + height);
         }
 
         public override void DrawChar(int chr, Surface s, int x, int y)

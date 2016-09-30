@@ -17,8 +17,9 @@
 
 using Microsoft.Xna.Framework;
 using NScumm.Core.IO;
+using NScumm.Desktop.Screens;
 
-namespace NScumm
+namespace NScumm.Desktop
 {
     /// <summary>
     /// This is the main type for your game

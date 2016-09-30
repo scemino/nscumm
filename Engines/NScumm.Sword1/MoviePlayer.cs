@@ -371,7 +371,7 @@ namespace NScumm.Sword1
 
         private uint GetBlackColor()
         {
-            return (SystemVars.Platform == Core.IO.Platform.PSX/* || _decoderType == kVideoDecoderMP2*/) ? ColorHelper.RGBToColor(0x00, 0x00, 0x00) : _black;
+            return SystemVars.Platform == Core.IO.Platform.PSX ? ColorHelper.RGBToColor(0x00, 0x00, 0x00) : _black;
         }
 
         private uint FindTextColor()
@@ -411,10 +411,10 @@ namespace NScumm.Sword1
         private void DrawFramePSX(Surface frame)
         {
             // The PSX videos have half resolution
-            var scaledFrame = new Surface(frame.Width, frame.Height * 2, frame.PixelFormat, false);
+            var scaledFrame = new Surface(frame.Width, (ushort) (frame.Height * 2), frame.PixelFormat, false);
             for (int y = 0; y < scaledFrame.Height; y++)
             {
-                Array.Copy(frame.Pixels, (y / 2) * frame.Pitch, scaledFrame.Pixels, y * frame.Pitch, scaledFrame.Width * scaledFrame.BytesPerPixel);
+                Array.Copy(frame.Pixels.Data, frame.Pixels.Offset + y / 2 * frame.Pitch, scaledFrame.Pixels.Data, scaledFrame.Pixels.Offset+y * frame.Pitch, scaledFrame.Width * scaledFrame.BytesPerPixel);
             }
 
             {

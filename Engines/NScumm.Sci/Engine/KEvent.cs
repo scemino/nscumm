@@ -22,7 +22,7 @@ using System.Collections.Generic;
 
 namespace NScumm.Sci.Engine
 {
-    partial class Kernel
+    internal partial class Kernel
     {
         private static int g_debug_simulated_key = 0;
 
@@ -56,8 +56,8 @@ namespace NScumm.Sci.Engine
                 // In case we use a simulated event we query the current mouse position
                 mousePos = SciEngine.Instance._gfxCursor.Position;
 # if ENABLE_SCI32
-                if (getSciVersion() >= SCI_VERSION_2_1)
-                    SciEngine.Instance._gfxCoordAdjuster.fromDisplayToScript(mousePos.y, mousePos.x);
+                if (ResourceManager.GetSciVersion() >= SciVersion.V2_1_EARLY)
+                    SciEngine.Instance._gfxCoordAdjuster.FromDisplayToScript(ref mousePos.Y, ref mousePos.X);
 #endif
                 // Limit the mouse cursor position, if necessary
                 SciEngine.Instance._gfxCursor.RefreshPosition();
@@ -74,11 +74,13 @@ namespace NScumm.Sci.Engine
             curEvent = SciEngine.Instance.EventManager.GetSciEvent(mask);
 
             // For a real event we use its associated mouse position
-            mousePos = curEvent.mousePos;
 # if ENABLE_SCI32
-            if (getSciVersion() >= SCI_VERSION_2_1)
-                SciEngine.Instance._gfxCoordAdjuster.fromDisplayToScript(mousePos.y, mousePos.x);
+            if (ResourceManager.GetSciVersion() >= SciVersion.V2)
+                mousePos = curEvent.mousePosSci;
+            else
 #endif
+            mousePos = curEvent.mousePos;
+
             // Limit the mouse cursor position, if necessary
             SciEngine.Instance._gfxCursor.RefreshPosition();
 

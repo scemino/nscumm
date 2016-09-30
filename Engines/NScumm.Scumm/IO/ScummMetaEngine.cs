@@ -8,14 +8,8 @@ namespace NScumm.Scumm.IO
 {
     public class ScummMetaEngine : MetaEngine
     {
-        public override string OriginalCopyright
-        {
-            get
-            {
-                return "LucasArts SCUMM Games (C) LucasArts\n"
-                       + "Humongous SCUMM Games (C) Humongous";
-            }
-        }
+        public override string OriginalCopyright => "LucasArts SCUMM Games (C) LucasArts\n"
+                                                    + "Humongous SCUMM Games (C) Humongous";
 
         private readonly GameManager _gm;
 
@@ -98,7 +92,8 @@ namespace NScumm.Scumm.IO
 
         private string MakeSavegameName(string target, int slot, bool temporary)
         {
-            return $"{target}.{temporary ? 'c':'s'}{slot:D2}";
+            var tmp = temporary ? 'c' : 's';
+            return $"{target}.{tmp}{slot:D2}";
         }
 
         private bool LoadAndCheckSaveGameHeader(Stream @in, int heversion, out SaveGameHeader hdr, out string error)

@@ -97,7 +97,7 @@ namespace NScumm.Scumm
                     break;
 
                 default:
-                    throw new NotSupportedException(string.Format("Unknown screen effect {0}", effect));
+                    throw new NotSupportedException($"Unknown screen effect {effect}");
             }
             _screenEffectFlag = true;
         }
@@ -111,8 +111,8 @@ namespace NScumm.Scumm
 
             if (Game.Version == 3 && _game.Platform == Platform.FMTowns)
                 Gdi.Fill(TextSurface,
-                    new Rect(0, MainVirtScreen.TopLine * _textSurfaceMultiplier,
-                        _textSurface.Pitch, (MainVirtScreen.TopLine + MainVirtScreen.Height) * _textSurfaceMultiplier), 0);
+                    new Rect(0, (short) (MainVirtScreen.TopLine * _textSurfaceMultiplier),
+                        (short) _textSurface.Pitch, (short) ((MainVirtScreen.TopLine + MainVirtScreen.Height) * _textSurfaceMultiplier)), 0);
 
             if ((Game.Version == 7 || _screenEffectFlag) && effect != 0)
             {
@@ -145,7 +145,7 @@ namespace NScumm.Scumm
                         break;
 
                     default:
-                        throw new NotImplementedException(string.Format("fadeOut: case {0}", effect));
+                        throw new NotImplementedException($"fadeOut: case {effect}");
                 }
             }
 

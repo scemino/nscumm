@@ -64,17 +64,22 @@ namespace NScumm
                 "SaveGames");
         }
 
-        public void RemoveSavefile(string name)
+        public bool RemoveSavefile(string name)
         {
             var savePathName = GetSavePath();
             var saveFilename = Path.Combine(savePathName, name);
-            File.Delete(saveFilename);
+            var fileExists = ServiceLocator.FileStorage.FileExists(saveFilename);
+            if(fileExists)
+                File.Delete(saveFilename);
+            return fileExists;
         }
 
         public bool RenameSavefile(string oldName, string newName)
         {
-            File.Copy(oldName, newName);
-            return true;
+            var fileExists = ServiceLocator.FileStorage.FileExists(oldName);
+            if(fileExists)
+                File.Copy(oldName, newName);
+            return fileExists;
         }
     }
 }

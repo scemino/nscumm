@@ -40,7 +40,7 @@ namespace NScumm.Scumm.Graphics
 
         public int NumChars { get { return _numChars; } }
 
-        public void DrawFrame(byte[] dst, int c, int x, int y)
+        public void DrawFrame(BytePtr dst, int c, int x, int y)
         {
             var width = Math.Min((int)_chars[c].Width, _vm.ScreenWidth - x);
             var height = Math.Min((int)_chars[c].Height, _vm.ScreenHeight - y);

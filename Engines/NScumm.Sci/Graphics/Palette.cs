@@ -96,18 +96,18 @@ namespace NScumm.Sci.Graphics
             {
                 _sysPalette.colors[color] = new Color();
                 _sysPalette.colors[color].used = 0;
-                _sysPalette.colors[color].r = 0;
-                _sysPalette.colors[color].g = 0;
-                _sysPalette.colors[color].b = 0;
+                _sysPalette.colors[color].R = 0;
+                _sysPalette.colors[color].G = 0;
+                _sysPalette.colors[color].B = 0;
                 _sysPalette.intensity[color] = 100;
                 _sysPalette.mapping[color] = (byte)color;
             }
             // Black and white are hardcoded
             _sysPalette.colors[0].used = 1;
             _sysPalette.colors[255].used = 1;
-            _sysPalette.colors[255].r = 255;
-            _sysPalette.colors[255].g = 255;
-            _sysPalette.colors[255].b = 255;
+            _sysPalette.colors[255].R = 255;
+            _sysPalette.colors[255].G = 255;
+            _sysPalette.colors[255].B = 255;
 
             _sysPaletteChanged = false;
 
@@ -243,12 +243,12 @@ namespace NScumm.Sci.Graphics
             for (int colorNr = 1; colorNr < 255; colorNr++)
             {
                 inbetween.used = _sysPalette.colors[colorNr].used;
-                color = (short)(_palVaryTargetPalette.colors[colorNr].r - _palVaryOriginPalette.colors[colorNr].r);
-                inbetween.r = (byte)(((color * _palVaryStep) / 64) + _palVaryOriginPalette.colors[colorNr].r);
-                color = (short)(_palVaryTargetPalette.colors[colorNr].g - _palVaryOriginPalette.colors[colorNr].g);
-                inbetween.g = (byte)(((color * _palVaryStep) / 64) + _palVaryOriginPalette.colors[colorNr].g);
-                color = (short)(_palVaryTargetPalette.colors[colorNr].b - _palVaryOriginPalette.colors[colorNr].b);
-                inbetween.b = (byte)(((color * _palVaryStep) / 64) + _palVaryOriginPalette.colors[colorNr].b);
+                color = (short)(_palVaryTargetPalette.colors[colorNr].R - _palVaryOriginPalette.colors[colorNr].R);
+                inbetween.R = (byte)(((color * _palVaryStep) / 64) + _palVaryOriginPalette.colors[colorNr].R);
+                color = (short)(_palVaryTargetPalette.colors[colorNr].G - _palVaryOriginPalette.colors[colorNr].G);
+                inbetween.G = (byte)(((color * _palVaryStep) / 64) + _palVaryOriginPalette.colors[colorNr].G);
+                color = (short)(_palVaryTargetPalette.colors[colorNr].B - _palVaryOriginPalette.colors[colorNr].B);
+                inbetween.B = (byte)(((color * _palVaryStep) / 64) + _palVaryOriginPalette.colors[colorNr].B);
 
                 if (inbetween != _sysPalette.colors[colorNr])
                 {
@@ -285,13 +285,13 @@ namespace NScumm.Sci.Graphics
             {
                 if (newPalette.colors[i].used!=0)
                 {
-                    if ((newPalette.colors[i].r != destPalette.colors[i].r) ||
-                        (newPalette.colors[i].g != destPalette.colors[i].g) ||
-                        (newPalette.colors[i].b != destPalette.colors[i].b))
+                    if ((newPalette.colors[i].R != destPalette.colors[i].R) ||
+                        (newPalette.colors[i].G != destPalette.colors[i].G) ||
+                        (newPalette.colors[i].B != destPalette.colors[i].B))
                     {
-                        destPalette.colors[i].r = newPalette.colors[i].r;
-                        destPalette.colors[i].g = newPalette.colors[i].g;
-                        destPalette.colors[i].b = newPalette.colors[i].b;
+                        destPalette.colors[i].R = newPalette.colors[i].R;
+                        destPalette.colors[i].G = newPalette.colors[i].G;
+                        destPalette.colors[i].B = newPalette.colors[i].B;
                         paletteChanged = true;
                     }
                     destPalette.colors[i].used = newPalette.colors[i].used;
@@ -318,13 +318,13 @@ namespace NScumm.Sci.Graphics
                 if (force || (_sysPalette.colors[i].used == 0))
                 {
                     _sysPalette.colors[i].used = newPalette.colors[i].used;
-                    if ((newPalette.colors[i].r != _sysPalette.colors[i].r) ||
-                        (newPalette.colors[i].g != _sysPalette.colors[i].g) ||
-                        (newPalette.colors[i].b != _sysPalette.colors[i].b))
+                    if ((newPalette.colors[i].R != _sysPalette.colors[i].R) ||
+                        (newPalette.colors[i].G != _sysPalette.colors[i].G) ||
+                        (newPalette.colors[i].B != _sysPalette.colors[i].B))
                     {
-                        _sysPalette.colors[i].r = newPalette.colors[i].r;
-                        _sysPalette.colors[i].g = newPalette.colors[i].g;
-                        _sysPalette.colors[i].b = newPalette.colors[i].b;
+                        _sysPalette.colors[i].R = newPalette.colors[i].R;
+                        _sysPalette.colors[i].G = newPalette.colors[i].G;
+                        _sysPalette.colors[i].B = newPalette.colors[i].B;
                         paletteChanged = true;
                     }
                     newPalette.mapping[i] = (byte)i;
@@ -334,16 +334,16 @@ namespace NScumm.Sci.Graphics
                 // is the same color already at the same position? . match it directly w/o lookup
                 //  this fixes games like lsl1demo/sq5 where the same rgb color exists multiple times and where we would
                 //  otherwise match the wrong one (which would result into the pixels affected (or not) by palette changes)
-                if ((_sysPalette.colors[i].r == newPalette.colors[i].r) &&
-                    (_sysPalette.colors[i].g == newPalette.colors[i].g) &&
-                    (_sysPalette.colors[i].b == newPalette.colors[i].b))
+                if ((_sysPalette.colors[i].R == newPalette.colors[i].R) &&
+                    (_sysPalette.colors[i].G == newPalette.colors[i].G) &&
+                    (_sysPalette.colors[i].B == newPalette.colors[i].B))
                 {
                     newPalette.mapping[i] = (byte)i;
                     continue;
                 }
 
                 // check if exact color could be matched
-                res = MatchColor(newPalette.colors[i].r, newPalette.colors[i].g, newPalette.colors[i].b);
+                res = MatchColor(newPalette.colors[i].R, newPalette.colors[i].G, newPalette.colors[i].B);
                 if ((res & SCI_PALETTE_MATCH_PERFECT) != 0)
                 { // exact match was found
                     newPalette.mapping[i] = (byte)(res & SCI_PALETTE_MATCH_COLORMASK);
@@ -358,9 +358,9 @@ namespace NScumm.Sci.Graphics
                     if (_sysPalette.colors[j].used == 0)
                     {
                         _sysPalette.colors[j].used = newPalette.colors[i].used;
-                        _sysPalette.colors[j].r = newPalette.colors[i].r;
-                        _sysPalette.colors[j].g = newPalette.colors[i].g;
-                        _sysPalette.colors[j].b = newPalette.colors[i].b;
+                        _sysPalette.colors[j].R = newPalette.colors[i].R;
+                        _sysPalette.colors[j].G = newPalette.colors[i].G;
+                        _sysPalette.colors[j].B = newPalette.colors[i].B;
                         newPalette.mapping[i] = (byte)j;
                         paletteChanged = true;
                         break;
@@ -482,9 +482,9 @@ namespace NScumm.Sci.Graphics
                     for (colorNo = palColorStart; colorNo < palColorStart + palColorCount; colorNo++)
                     {
                         paletteOut.colors[colorNo].used = 1;
-                        paletteOut.colors[colorNo].r = data[palOffset++];
-                        paletteOut.colors[colorNo].g = data[palOffset++];
-                        paletteOut.colors[colorNo].b = data[palOffset++];
+                        paletteOut.colors[colorNo].R = data[palOffset++];
+                        paletteOut.colors[colorNo].G = data[palOffset++];
+                        paletteOut.colors[colorNo].B = data[palOffset++];
                     }
                     break;
                 case SCI_PAL_FORMAT_VARIABLE:
@@ -497,9 +497,9 @@ namespace NScumm.Sci.Graphics
                     for (colorNo = palColorStart; colorNo < palColorStart + palColorCount; colorNo++)
                     {
                         paletteOut.colors[colorNo].used = data[palOffset++];
-                        paletteOut.colors[colorNo].r = data[palOffset++];
-                        paletteOut.colors[colorNo].g = data[palOffset++];
-                        paletteOut.colors[colorNo].b = data[palOffset++];
+                        paletteOut.colors[colorNo].R = data[palOffset++];
+                        paletteOut.colors[colorNo].G = data[palOffset++];
+                        paletteOut.colors[colorNo].B = data[palOffset++];
                     }
                     break;
             }
@@ -613,17 +613,17 @@ namespace NScumm.Sci.Graphics
                     byte byte2 = br.ReadByte();
 
                     _sysPalette.colors[curColor].used = 1;
-                    _sysPalette.colors[curColor].r = (byte)((byte1 & 0x0F) * 0x11);
-                    _sysPalette.colors[curColor].g = (byte)(((byte2 & 0xF0) >> 4) * 0x11);
-                    _sysPalette.colors[curColor].b = (byte)((byte2 & 0x0F) * 0x11);
+                    _sysPalette.colors[curColor].R = (byte)((byte1 & 0x0F) * 0x11);
+                    _sysPalette.colors[curColor].G = (byte)(((byte2 & 0xF0) >> 4) * 0x11);
+                    _sysPalette.colors[curColor].B = (byte)((byte2 & 0x0F) * 0x11);
 
                     if (_totalScreenColors == 64)
                     {
                         // Set the associated color from the Amiga halfbrite colors
                         _sysPalette.colors[curColor + 32].used = 1;
-                        _sysPalette.colors[curColor + 32].r = (byte)(_sysPalette.colors[curColor].r >> 1);
-                        _sysPalette.colors[curColor + 32].g = (byte)(_sysPalette.colors[curColor].g >> 1);
-                        _sysPalette.colors[curColor + 32].b = (byte)(_sysPalette.colors[curColor].b >> 1);
+                        _sysPalette.colors[curColor + 32].R = (byte)(_sysPalette.colors[curColor].R >> 1);
+                        _sysPalette.colors[curColor + 32].G = (byte)(_sysPalette.colors[curColor].G >> 1);
+                        _sysPalette.colors[curColor + 32].B = (byte)(_sysPalette.colors[curColor].B >> 1);
                     }
                 }
 
@@ -640,21 +640,21 @@ namespace NScumm.Sci.Graphics
             int curColor;
             byte color1, color2;
 
-            _sysPalette.colors[1].r = 0x000; _sysPalette.colors[1].g = 0x000; _sysPalette.colors[1].b = 0x0AA;
-            _sysPalette.colors[2].r = 0x000; _sysPalette.colors[2].g = 0x0AA; _sysPalette.colors[2].b = 0x000;
-            _sysPalette.colors[3].r = 0x000; _sysPalette.colors[3].g = 0x0AA; _sysPalette.colors[3].b = 0x0AA;
-            _sysPalette.colors[4].r = 0x0AA; _sysPalette.colors[4].g = 0x000; _sysPalette.colors[4].b = 0x000;
-            _sysPalette.colors[5].r = 0x0AA; _sysPalette.colors[5].g = 0x000; _sysPalette.colors[5].b = 0x0AA;
-            _sysPalette.colors[6].r = 0x0AA; _sysPalette.colors[6].g = 0x055; _sysPalette.colors[6].b = 0x000;
-            _sysPalette.colors[7].r = 0x0AA; _sysPalette.colors[7].g = 0x0AA; _sysPalette.colors[7].b = 0x0AA;
-            _sysPalette.colors[8].r = 0x055; _sysPalette.colors[8].g = 0x055; _sysPalette.colors[8].b = 0x055;
-            _sysPalette.colors[9].r = 0x055; _sysPalette.colors[9].g = 0x055; _sysPalette.colors[9].b = 0x0FF;
-            _sysPalette.colors[10].r = 0x055; _sysPalette.colors[10].g = 0x0FF; _sysPalette.colors[10].b = 0x055;
-            _sysPalette.colors[11].r = 0x055; _sysPalette.colors[11].g = 0x0FF; _sysPalette.colors[11].b = 0x0FF;
-            _sysPalette.colors[12].r = 0x0FF; _sysPalette.colors[12].g = 0x055; _sysPalette.colors[12].b = 0x055;
-            _sysPalette.colors[13].r = 0x0FF; _sysPalette.colors[13].g = 0x055; _sysPalette.colors[13].b = 0x0FF;
-            _sysPalette.colors[14].r = 0x0FF; _sysPalette.colors[14].g = 0x0FF; _sysPalette.colors[14].b = 0x055;
-            _sysPalette.colors[15].r = 0x0FF; _sysPalette.colors[15].g = 0x0FF; _sysPalette.colors[15].b = 0x0FF;
+            _sysPalette.colors[1].R = 0x000; _sysPalette.colors[1].G = 0x000; _sysPalette.colors[1].B = 0x0AA;
+            _sysPalette.colors[2].R = 0x000; _sysPalette.colors[2].G = 0x0AA; _sysPalette.colors[2].B = 0x000;
+            _sysPalette.colors[3].R = 0x000; _sysPalette.colors[3].G = 0x0AA; _sysPalette.colors[3].B = 0x0AA;
+            _sysPalette.colors[4].R = 0x0AA; _sysPalette.colors[4].G = 0x000; _sysPalette.colors[4].B = 0x000;
+            _sysPalette.colors[5].R = 0x0AA; _sysPalette.colors[5].G = 0x000; _sysPalette.colors[5].B = 0x0AA;
+            _sysPalette.colors[6].R = 0x0AA; _sysPalette.colors[6].G = 0x055; _sysPalette.colors[6].B = 0x000;
+            _sysPalette.colors[7].R = 0x0AA; _sysPalette.colors[7].G = 0x0AA; _sysPalette.colors[7].B = 0x0AA;
+            _sysPalette.colors[8].R = 0x055; _sysPalette.colors[8].G = 0x055; _sysPalette.colors[8].B = 0x055;
+            _sysPalette.colors[9].R = 0x055; _sysPalette.colors[9].G = 0x055; _sysPalette.colors[9].B = 0x0FF;
+            _sysPalette.colors[10].R = 0x055; _sysPalette.colors[10].G = 0x0FF; _sysPalette.colors[10].B = 0x055;
+            _sysPalette.colors[11].R = 0x055; _sysPalette.colors[11].G = 0x0FF; _sysPalette.colors[11].B = 0x0FF;
+            _sysPalette.colors[12].R = 0x0FF; _sysPalette.colors[12].G = 0x055; _sysPalette.colors[12].B = 0x055;
+            _sysPalette.colors[13].R = 0x0FF; _sysPalette.colors[13].G = 0x055; _sysPalette.colors[13].B = 0x0FF;
+            _sysPalette.colors[14].R = 0x0FF; _sysPalette.colors[14].G = 0x0FF; _sysPalette.colors[14].B = 0x055;
+            _sysPalette.colors[15].R = 0x0FF; _sysPalette.colors[15].G = 0x0FF; _sysPalette.colors[15].B = 0x0FF;
             for (curColor = 0; curColor <= 15; curColor++)
             {
                 _sysPalette.colors[curColor].used = 1;
@@ -666,9 +666,9 @@ namespace NScumm.Sci.Graphics
                 _sysPalette.colors[curColor].used = 1;
                 color1 = (byte)(curColor & 0x0F); color2 = (byte)(curColor >> 4);
 
-                _sysPalette.colors[curColor].r = BlendColors(_sysPalette.colors[color1].r, _sysPalette.colors[color2].r);
-                _sysPalette.colors[curColor].g = BlendColors(_sysPalette.colors[color1].g, _sysPalette.colors[color2].g);
-                _sysPalette.colors[curColor].b = BlendColors(_sysPalette.colors[color1].b, _sysPalette.colors[color2].b);
+                _sysPalette.colors[curColor].R = BlendColors(_sysPalette.colors[color1].R, _sysPalette.colors[color2].R);
+                _sysPalette.colors[curColor].G = BlendColors(_sysPalette.colors[color1].G, _sysPalette.colors[color2].G);
+                _sysPalette.colors[curColor].B = BlendColors(_sysPalette.colors[color1].B, _sysPalette.colors[color2].B);
             }
             _sysPalette.timestamp = 1;
             SetOnScreen();
@@ -893,9 +893,9 @@ namespace NScumm.Sci.Graphics
                 for (int colorNr = 0; colorNr < 256; colorNr++)
                 {
                     memoryPtr[colorNr * 4] = _sysPalette.colors[colorNr].used;
-                    memoryPtr[colorNr * 4 + 1] = _sysPalette.colors[colorNr].r;
-                    memoryPtr[colorNr * 4 + 2] = _sysPalette.colors[colorNr].g;
-                    memoryPtr[colorNr * 4 + 3] = _sysPalette.colors[colorNr].b;
+                    memoryPtr[colorNr * 4 + 1] = _sysPalette.colors[colorNr].R;
+                    memoryPtr[colorNr * 4 + 2] = _sysPalette.colors[colorNr].G;
+                    memoryPtr[colorNr * 4 + 3] = _sysPalette.colors[colorNr].B;
                 }
             }
             return memoryId;
@@ -916,9 +916,9 @@ namespace NScumm.Sci.Graphics
                 for (int colorNr = 0; colorNr < 256; colorNr++)
                 {
                     restoredPalette.colors[colorNr].used = memoryPtr[colorNr * 4];
-                    restoredPalette.colors[colorNr].r = memoryPtr[colorNr * 4 + 1];
-                    restoredPalette.colors[colorNr].g = memoryPtr[colorNr * 4 + 2];
-                    restoredPalette.colors[colorNr].b = memoryPtr[colorNr * 4 + 3];
+                    restoredPalette.colors[colorNr].R = memoryPtr[colorNr * 4 + 1];
+                    restoredPalette.colors[colorNr].G = memoryPtr[colorNr * 4 + 2];
+                    restoredPalette.colors[colorNr].B = memoryPtr[colorNr * 4 + 3];
                 }
 
                 Set(restoredPalette, true);
@@ -973,9 +973,9 @@ namespace NScumm.Sci.Graphics
 
             for (int i = 0; i < 256; i++)
             {
-                byte r = (byte)(_sysPalette.colors[i].r * _remappingPercentToSet / 100);
-                byte g = (byte)(_sysPalette.colors[i].g * _remappingPercentToSet / 100);
-                byte b = (byte)(_sysPalette.colors[i].b * _remappingPercentToSet / 100);
+                byte r = (byte)(_sysPalette.colors[i].R * _remappingPercentToSet / 100);
+                byte g = (byte)(_sysPalette.colors[i].G * _remappingPercentToSet / 100);
+                byte b = (byte)(_sysPalette.colors[i].B * _remappingPercentToSet / 100);
                 _remappingByPercent[i] = (byte)KernelFindColor(r, g, b);
             }
 
@@ -1038,16 +1038,16 @@ namespace NScumm.Sci.Graphics
             {
                 byte byte1 = data[curPos++];
                 byte byte2 = data[curPos++];
-                _sysPalette.colors[curColor].r = (byte)((byte1 & 0x0F) * 0x11);
-                _sysPalette.colors[curColor].g = (byte)(((byte2 & 0xF0) >> 4) * 0x11);
-                _sysPalette.colors[curColor].b = (byte)((byte2 & 0x0F) * 0x11);
+                _sysPalette.colors[curColor].R = (byte)((byte1 & 0x0F) * 0x11);
+                _sysPalette.colors[curColor].G = (byte)(((byte2 & 0xF0) >> 4) * 0x11);
+                _sysPalette.colors[curColor].B = (byte)((byte2 & 0x0F) * 0x11);
 
                 if (_totalScreenColors == 64)
                 {
                     // Set the associated color from the Amiga halfbrite colors
-                    _sysPalette.colors[curColor + 32].r = (byte)(_sysPalette.colors[curColor].r >> 1);
-                    _sysPalette.colors[curColor + 32].g = (byte)(_sysPalette.colors[curColor].g >> 1);
-                    _sysPalette.colors[curColor + 32].b = (byte)(_sysPalette.colors[curColor].b >> 1);
+                    _sysPalette.colors[curColor + 32].R = (byte)(_sysPalette.colors[curColor].R >> 1);
+                    _sysPalette.colors[curColor + 32].G = (byte)(_sysPalette.colors[curColor].G >> 1);
+                    _sysPalette.colors[curColor + 32].B = (byte)(_sysPalette.colors[curColor].B >> 1);
                 }
             }
 
@@ -1074,9 +1074,9 @@ namespace NScumm.Sci.Graphics
                 else if (_sysPalette.colors[i].used != 0)
                 {
                     // Otherwise, copy to the screen
-                    bpal[i] = Core.Graphics.Color.FromRgb((byte)ScummHelper.Clip(_sysPalette.colors[i].r * _sysPalette.intensity[i] / 100, 0, 255),
-                        (byte)ScummHelper.Clip(_sysPalette.colors[i].g * _sysPalette.intensity[i] / 100, 0, 255),
-                        (byte)ScummHelper.Clip(_sysPalette.colors[i].b * _sysPalette.intensity[i] / 100, 0, 255));
+                    bpal[i] = Core.Graphics.Color.FromRgb((byte)ScummHelper.Clip(_sysPalette.colors[i].R * _sysPalette.intensity[i] / 100, 0, 255),
+                        (byte)ScummHelper.Clip(_sysPalette.colors[i].G * _sysPalette.intensity[i] / 100, 0, 255),
+                        (byte)ScummHelper.Clip(_sysPalette.colors[i].B * _sysPalette.intensity[i] / 100, 0, 255));
                 }
             }
 
@@ -1085,9 +1085,9 @@ namespace NScumm.Sci.Graphics
             {
                 for (int i = 0; i < 256; i++)
                 {
-                    byte r = (byte)(_sysPalette.colors[i].r * _remappingPercentToSet / 100);
-                    byte g = (byte)(_sysPalette.colors[i].g * _remappingPercentToSet / 100);
-                    byte b = (byte)(_sysPalette.colors[i].b * _remappingPercentToSet / 100);
+                    byte r = (byte)(_sysPalette.colors[i].R * _remappingPercentToSet / 100);
+                    byte g = (byte)(_sysPalette.colors[i].G * _remappingPercentToSet / 100);
+                    byte b = (byte)(_sysPalette.colors[i].B * _remappingPercentToSet / 100);
                     _remappingByPercent[i] = (byte)KernelFindColor(r, g, b);
                 }
             }
@@ -1115,9 +1115,9 @@ namespace NScumm.Sci.Graphics
                 {
                     if (_sysPalette.colors[colorNr].used == 0)
                         continue;
-                    differenceRed = (short)Math.Abs(_sysPalette.colors[colorNr].r - matchRed);
-                    differenceGreen = (short)Math.Abs(_sysPalette.colors[colorNr].g - matchGreen);
-                    differenceBlue = (short)Math.Abs(_sysPalette.colors[colorNr].b - matchBlue);
+                    differenceRed = (short)Math.Abs(_sysPalette.colors[colorNr].R - matchRed);
+                    differenceGreen = (short)Math.Abs(_sysPalette.colors[colorNr].G - matchGreen);
+                    differenceBlue = (short)Math.Abs(_sysPalette.colors[colorNr].B - matchBlue);
                     differenceTotal = (short)(differenceRed + differenceGreen + differenceBlue);
                     if (differenceTotal <= bestDifference)
                     {
@@ -1135,9 +1135,9 @@ namespace NScumm.Sci.Graphics
                 {
                     if (_sysPalette.colors[colorNr].used == 0)
                         continue;
-                    differenceRed = (byte)Math.Abs((sbyte)(_sysPalette.colors[colorNr].r - matchRed));
-                    differenceGreen = (byte)Math.Abs((sbyte)(_sysPalette.colors[colorNr].g - matchGreen));
-                    differenceBlue = (byte)Math.Abs((sbyte)(_sysPalette.colors[colorNr].b - matchBlue));
+                    differenceRed = (byte)Math.Abs((sbyte)(_sysPalette.colors[colorNr].R - matchRed));
+                    differenceGreen = (byte)Math.Abs((sbyte)(_sysPalette.colors[colorNr].G - matchGreen));
+                    differenceBlue = (byte)Math.Abs((sbyte)(_sysPalette.colors[colorNr].B - matchBlue));
                     differenceTotal = (short)(differenceRed + differenceGreen + differenceBlue);
                     if (differenceTotal <= bestDifference)
                     {

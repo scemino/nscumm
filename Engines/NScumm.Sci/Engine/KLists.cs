@@ -122,21 +122,23 @@ namespace NScumm.Sci.Engine
                 newnode.key = argv[3];
 
             if (firstnode != null)
-            { // We're really appending after
+            {
+                // We're really appending after
                 Register oldnext = firstnode.succ;
 
                 newnode.pred = argv[1];
                 firstnode.succ = argv[2];
                 newnode.succ = oldnext;
 
-                if (oldnext.IsNull)  // Appended after last node?
-                                     // Set new node as last list node
+                if (oldnext.IsNull) // Appended after last node?
+                    // Set new node as last list node
                     list.last = argv[2];
                 else
                     s._segMan.LookupNode(oldnext).pred = argv[2];
-
             }
-            else { // !firstnode
+            else
+            {
+                // !firstnode
                 AddToFront(s, argv[0], argv[2]); // Set as initial list node
             }
 
@@ -177,7 +179,8 @@ namespace NScumm.Sci.Engine
 #endif
                 return list.first;
             }
-            else {
+            else
+            {
                 return Register.NULL_REG;
             }
         }
@@ -196,7 +199,8 @@ namespace NScumm.Sci.Engine
 #endif
                 return list.last;
             }
-            else {
+            else
+            {
                 return Register.NULL_REG;
             }
         }
@@ -282,7 +286,7 @@ namespace NScumm.Sci.Engine
             Register dest = argv[1];
             Register order_func = argv[2];
 
-            int input_size = (short)SciEngine.ReadSelectorValue(segMan, source, o => o.size);
+            int input_size = (short) SciEngine.ReadSelectorValue(segMan, source, o => o.size);
             Register input_data = SciEngine.ReadSelector(segMan, source, o => o.elements);
             Register output_data = SciEngine.ReadSelector(segMan, dest, o => o.elements);
 
@@ -299,7 +303,7 @@ namespace NScumm.Sci.Engine
                 SciEngine.WriteSelector(segMan, dest, o => o.elements, output_data);
             }
 
-            SciEngine.WriteSelectorValue(segMan, dest, o => o.size, (ushort)input_size);
+            SciEngine.WriteSelectorValue(segMan, dest, o => o.size, (ushort) input_size);
 
             list = s._segMan.LookupList(input_data);
             node = s._segMan.LookupNode(list.first);
@@ -309,7 +313,7 @@ namespace NScumm.Sci.Engine
             int i = 0;
             while (node != null)
             {
-                Register[] @params = { node.value };
+                Register[] @params = {node.value};
 
                 SciEngine.InvokeSelector(s, order_func, o => o.doit, argc, argv, 1, new StackPtr(@params, 0));
                 temp_array[i].key = node.key;
@@ -335,12 +339,12 @@ namespace NScumm.Sci.Engine
         {
             if (st1.order.Segment < st2.order.Segment ||
                 (st1.order.Segment == st2.order.Segment &&
-                st1.order.Offset < st2.order.Offset))
+                 st1.order.Offset < st2.order.Offset))
                 return -1;
 
             if (st1.order.Segment > st2.order.Segment ||
                 (st1.order.Segment == st2.order.Segment &&
-                st1.order.Offset > st2.order.Offset))
+                 st1.order.Offset > st2.order.Offset))
                 return 1;
 
             return 0;
@@ -366,7 +370,8 @@ namespace NScumm.Sci.Engine
             // Set node to be the first and last node if it's the only node of the list
             if (list.first.IsNull)
                 list.last = nodeRef;
-            else {
+            else
+            {
                 Node oldNode = s._segMan.LookupNode(list.first);
                 oldNode.pred = nodeRef;
             }
@@ -393,11 +398,340 @@ namespace NScumm.Sci.Engine
             // Set node to be the first and last node if it's the only node of the list
             if (list.last.IsNull)
                 list.first = nodeRef;
-            else {
+            else
+            {
                 Node old_n = s._segMan.LookupNode(list.last);
                 old_n.succ = nodeRef;
             }
             list.last = nodeRef;
         }
+
+#if ENABLE_SCI32
+        private static Register kArray(EngineState s, int argc, StackPtr argv)
+        {
+            if (s == null)
+                return Register.Make(0, (ushort) ResourceManager.GetSciVersion());
+            Error("not supposed to call this");
+            return Register.NULL_REG;
+        }
+
+        private static Register kArrayNew(EngineState s, int argc, StackPtr argv)
+        {
+            ushort size = argv[0].ToUInt16();
+            SciArrayType type = (SciArrayType) argv[1].ToUInt16();
+
+            if (type == SciArrayType.String)
+            {
+                ++size;
+            }
+
+            Register arrayHandle;
+            s._segMan.AllocateArray(type, size, out arrayHandle);
+            return arrayHandle;
+        }
+
+        private static Register kArrayGetSize(EngineState s, int argc, StackPtr argv)
+        {
+            SciArray array = s._segMan.LookupArray(argv[0]);
+            return Register.Make(0, (ushort) array.Size);
+        }
+
+        private static Register kStringGetChar(EngineState s, int argc, StackPtr argv)
+        {
+            ushort index = argv[1].ToUInt16();
+
+            // Game scripts may contain static raw string data
+            if (!s._segMan.IsArray(argv[0]))
+            {
+                string @string = s._segMan.GetString(argv[0]);
+                if (index >= @string.Length)
+                {
+                    return Register.Make(0, 0);
+                }
+
+                return Register.Make(0, (byte) @string[index]);
+            }
+
+            SciArray array = s._segMan.LookupArray(argv[0]);
+
+            if (index >= array.Size)
+            {
+                return Register.Make(0, 0);
+            }
+
+            return array.GetAsID(index);
+        }
+
+        private static Register kArraySetElements(EngineState s, int argc, StackPtr argv)
+        {
+            SciArray array = s._segMan.LookupArray(argv[0]);
+            array.SetElements(argv[1].ToUInt16(), (ushort) (argc - 2), argv + 2);
+            return argv[0];
+        }
+
+        private static Register kArrayFill(EngineState s, int argc, StackPtr argv)
+        {
+            SciArray array = s._segMan.LookupArray(argv[0]);
+            array.Fill(argv[1].ToUInt16(), argv[2].ToUInt16(), argv[3]);
+            return argv[0];
+        }
+
+        private static Register kArrayCopy(EngineState s, int argc, StackPtr argv)
+        {
+            SciArray target = s._segMan.LookupArray(argv[0]);
+            ushort targetIndex = argv[1].ToUInt16();
+
+            SciArray source = new SciArray();
+            // String copies may be made from static script data
+            if (!s._segMan.IsArray(argv[2]))
+            {
+                source.SetType(SciArrayType.String);
+                source.FromString(s._segMan.GetString(argv[2]));
+            }
+            else
+            {
+                source = s._segMan.LookupArray(argv[2]);
+            }
+            ushort sourceIndex = argv[3].ToUInt16();
+            ushort count = argv[4].ToUInt16();
+
+            target.Copy(source, sourceIndex, targetIndex, count);
+            return argv[0];
+        }
+
+        private static Register kArrayDuplicate(EngineState s, int argc, StackPtr argv)
+        {
+            Register targetHandle;
+
+            // String duplicates may be made from static script data
+            if (!s._segMan.IsArray(argv[0]))
+            {
+                string source = s._segMan.GetString(argv[0]);
+                SciArray target = s._segMan.AllocateArray(SciArrayType.String, (ushort) source.Length, out targetHandle);
+                target.FromString(source);
+            }
+            else
+            {
+                SciArray source = s._segMan.LookupArray(argv[0]);
+                SciArray target = s._segMan.AllocateArray(source.Type, (ushort) source.Size, out targetHandle);
+                target.Assign(source);
+            }
+
+            return targetHandle;
+        }
+
+
+        private static Register kListAt(EngineState s, int argc, StackPtr argv)
+        {
+            if (argc != 2)
+            {
+                Error("kListAt called with {0} parameters", argc);
+                return Register.NULL_REG;
+            }
+
+            List list = s._segMan.LookupList(argv[0]);
+            Register curAddress = list.first;
+            if (list.first.IsNull)
+            {
+                Error("kListAt tried to reference empty list ({0})", argv[0]);
+                return Register.NULL_REG;
+            }
+            Node curNode = s._segMan.LookupNode(curAddress);
+            Register curObject = curNode.value;
+            short listIndex = (short) argv[1].ToUInt16();
+            int curIndex = 0;
+
+            while (curIndex != listIndex)
+            {
+                if (curNode.succ.IsNull)
+                {
+                    // end of the list?
+                    return Register.NULL_REG;
+                }
+
+                curAddress = curNode.succ;
+                curNode = s._segMan.LookupNode(curAddress);
+                curObject = curNode.value;
+
+                curIndex++;
+            }
+
+            // Update the virtual file selected in the character import screen of QFG4.
+            // For the SCI0-SCI1.1 version of this, check kDrawControl().
+            if (SciEngine.Instance.InQfGImportRoom != 0 &&
+                string.Equals(s._segMan.GetObjectName(curObject), "SelectorDText"))
+                s._chosenQfGImportItem = listIndex;
+
+            return curObject;
+        }
+
+        private static Register kListEachElementDo(EngineState s, int argc, StackPtr argv)
+        {
+            List list = s._segMan.LookupList(argv[0]);
+
+            Node curNode = s._segMan.LookupNode(list.first);
+            Register curObject;
+            int slc = argv[1].ToUInt16();
+
+            ObjVarRef address = new ObjVarRef();
+
+            while (curNode != null)
+            {
+                // We get the next node here as the current node might be gone after the invoke
+                Register nextNode = curNode.succ;
+                curObject = curNode.value;
+
+                // First, check if the target selector is a variable
+                if (SciEngine.LookupSelector(s._segMan, curObject, slc, address) == SelectorType.Variable)
+                {
+                    // This can only happen with 3 params (list, target selector, variable)
+                    if (argc != 3)
+                    {
+                        Error("kListEachElementDo: Attempted to modify a variable selector with {0} params", argc);
+                    }
+                    else
+                    {
+                        SciEngine.WriteSelector(s._segMan, curObject, slc, argv[2]);
+                    }
+                }
+                else
+                {
+                    SciEngine.InvokeSelector(s, curObject, slc, argc, argv, argc - 2, argv + 2);
+                }
+
+                curNode = s._segMan.LookupNode(nextNode);
+            }
+
+            return s.r_acc;
+        }
+
+        private static Register kListFirstTrue(EngineState s, int argc, StackPtr argv)
+        {
+            List list = s._segMan.LookupList(argv[0]);
+
+            Node curNode = s._segMan.LookupNode(list.first);
+            Register curObject;
+            int slc = argv[1].ToUInt16();
+
+            ObjVarRef address = new ObjVarRef();
+
+            s.r_acc = Register.NULL_REG; // reset the accumulator
+
+            while (curNode != null)
+            {
+                Register nextNode = curNode.succ;
+                curObject = curNode.value;
+
+                // First, check if the target selector is a variable
+                if (SciEngine.LookupSelector(s._segMan, curObject, slc, address) == SelectorType.Variable)
+                {
+                    // If it's a variable selector, check its value.
+                    // Example: script 64893 in Torin, MenuHandler::isHilited checks
+                    // all children for variable selector 0x03ba (bHilited).
+                    if (!SciEngine.ReadSelector(s._segMan, curObject, slc).IsNull)
+                        return curObject;
+                }
+                else
+                {
+                    SciEngine.InvokeSelector(s, curObject, slc, argc, argv, argc - 2, argv + 2);
+
+                    // Check if the result is true
+                    if (!s.r_acc.IsNull)
+                        return curObject;
+                }
+
+                curNode = s._segMan.LookupNode(nextNode);
+            }
+
+            // No selector returned true
+            return Register.NULL_REG;
+        }
+
+        private static Register kListIndexOf(EngineState s, int argc, StackPtr argv)
+        {
+            List list = s._segMan.LookupList(argv[0]);
+
+            Register curAddress = list.first;
+            Node curNode = s._segMan.LookupNode(curAddress);
+            ushort curIndex = 0;
+
+            while (curNode != null)
+            {
+                var curObject = curNode.value;
+                if (curObject == argv[1])
+                    return Register.Make(0, curIndex);
+
+                curAddress = curNode.succ;
+                curNode = s._segMan.LookupNode(curAddress);
+                curIndex++;
+            }
+
+            return Register.SIGNAL_REG;
+        }
+
+
+        private static Register kListAllTrue(EngineState s, int argc, StackPtr argv)
+        {
+            List list = s._segMan.LookupList(argv[0]);
+
+            Node curNode = s._segMan.LookupNode(list.first);
+            int slc = argv[1].ToUInt16();
+
+            ObjVarRef address = new ObjVarRef();
+
+            s.r_acc = Register.Make(0, 1); // reset the accumulator
+
+            while (curNode != null)
+            {
+                Register nextNode = curNode.succ;
+                var curObject = curNode.value;
+
+                // First, check if the target selector is a variable
+                if (SciEngine.LookupSelector(s._segMan, curObject, slc, address) == SelectorType.Variable)
+                {
+                    // If it's a variable selector, check its value
+                    s.r_acc = SciEngine.ReadSelector(s._segMan, curObject, slc);
+                }
+                else
+                {
+                    SciEngine.InvokeSelector(s, curObject, slc, argc, argv, argc - 2, argv + 2);
+                }
+
+                // Check if the result isn't true
+                if (s.r_acc.IsNull)
+                    break;
+
+                curNode = s._segMan.LookupNode(nextNode);
+            }
+
+            return s.r_acc;
+        }
+
+        private static Register kList(EngineState s, int argc, StackPtr argv)
+        {
+            if (s == null)
+                return Register.Make(0, (ushort) ResourceManager.GetSciVersion());
+            Error("not supposed to call this");
+            return Register.NULL_REG;
+        }
+
+        private static Register kAddBefore(EngineState s, int argc, StackPtr argv)
+        {
+            Error("Unimplemented function kAddBefore called");
+            return s.r_acc;
+        }
+
+        private static Register kMoveToFront(EngineState s, int argc, StackPtr argv)
+        {
+            Error("Unimplemented function kMoveToFront called");
+            return s.r_acc;
+        }
+
+        private static Register kMoveToEnd(EngineState s, int argc, StackPtr argv)
+        {
+            Error("Unimplemented function kMoveToEnd called");
+            return s.r_acc;
+        }
+#endif
     }
 }

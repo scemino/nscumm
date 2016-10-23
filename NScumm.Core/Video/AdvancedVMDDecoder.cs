@@ -111,7 +111,7 @@ namespace NScumm.Core.Video
             _decoder.Close();
         }
 
-        private void SetSurfaceMemory(byte[] mem, ushort width, ushort height, byte bpp)
+        public void SetSurfaceMemory(BytePtr mem, ushort width, ushort height, byte bpp)
         {
             _decoder.SetSurfaceMemory(mem, width, height, bpp);
         }

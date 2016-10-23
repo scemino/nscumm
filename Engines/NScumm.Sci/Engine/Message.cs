@@ -249,24 +249,8 @@ namespace NScumm.Sci.Engine
 #if ENABLE_SCI32
             if (ResourceManager.GetSciVersion() >= SciVersion.V2)
             {
-                if (_segMan.GetSegmentType(buf.Segment) == SegmentType.STRING)
-                {
-                    var sciString = _segMan.LookupString(buf);
-                    sciString.SetSize(str.Length + 1);
-                    for (var i = 0; i < str.Length; i++)
-                        sciString.SetValue((ushort) i, (byte) str[i]);
-                    sciString.SetValue((ushort) str.Length, 0);
-                }
-                else if (_segMan.GetSegmentType(buf.Segment) == SegmentType.ARRAY)
-                {
-                    // Happens in the intro of LSL6, we are asked to write the string
-                    // into an array
-                    var sciString = _segMan.LookupArray(buf);
-                    sciString.SetSize(str.Length + 1);
-                    for (var i = 0; i < str.Length; i++)
-                        sciString.SetValue((ushort) i, Register.Make(0, str[i]));
-                    sciString.SetValue((ushort) str.Length, Register.NULL_REG);
-                }
+                SciArray sciString = _segMan.LookupArray(buf);
+                sciString.FromString(str);
             }
             else
             {

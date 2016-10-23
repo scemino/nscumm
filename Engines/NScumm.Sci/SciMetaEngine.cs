@@ -20,9 +20,25 @@ using NScumm.Core;
 using NScumm.Core.Graphics;
 using NScumm.Core.IO;
 using System.Collections.Generic;
+using System.Linq;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci
 {
+    struct OldNewIdTableEntry
+    {
+        public string oldId;
+        public string newId;
+        public SciVersion version;
+
+        public OldNewIdTableEntry(string oldId, string newId, SciVersion version)
+        {
+            this.oldId = oldId;
+            this.newId = newId;
+            this.version = version;
+        }
+    }
+
     internal class SciGameDescriptor : IGameDescriptor
     {
         public ADGameDescription GameDescription { get; private set; }
@@ -137,14 +153,16 @@ namespace NScumm.Sci
         PQ2,
         PQ3,
         PQ4,
-        PQ4DEMO,	// We have a separate ID for PQ4 demo, because it's actually a completely different game (SCI1.1 vs SCI2/SCI2.1)
+        PQ4DEMO,
+        // We have a separate ID for PQ4 demo, because it's actually a completely different game (SCI1.1 vs SCI2/SCI2.1)
         PQSWAT,
         QFG1,
         QFG1VGA,
         QFG2,
         QFG3,
         QFG4,
-        QFG4DEMO,	// We have a separate ID for QFG4 demo, because it's actually a completely different game (SCI1.1 vs SCI2/SCI2.1)
+        QFG4DEMO,
+        // We have a separate ID for QFG4 demo, because it's actually a completely different game (SCI1.1 vs SCI2/SCI2.1)
         RAMA,
         SHIVERS,
         //SHIVERS2,	// Not SCI
@@ -204,7 +222,92 @@ namespace NScumm.Sci
             GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI;
 
         private const GuiOptions GUIO_GK1_MAC = GUIO_GK1_FLOPPY;
+
+        private const GuiOptions GUIO_PHANTASMAGORIA_DEMO = GAMEOPTION_ENABLE_BLACK_LINED_VIDEO |
+                                                            GuiOptions.NOSPEECH |
+                                                            GuiOptions.NOASPECT |
+                                                            GAMEOPTION_PREFER_DIGITAL_SFX |
+                                                            GAMEOPTION_ORIGINAL_SAVELOAD |
+                                                            GAMEOPTION_FB01_MIDI;
+
+        private const GuiOptions GUIO_PHANTASMAGORIA = GUIO_PHANTASMAGORIA_DEMO;
 #endif
+
+        private static readonly OldNewIdTableEntry[] s_oldNewTable =
+        {
+            new OldNewIdTableEntry("archive", "chest", SciVersion.NONE),
+            new OldNewIdTableEntry("arthur", "camelot", SciVersion.NONE),
+            new OldNewIdTableEntry("brain", "castlebrain", SciVersion.V1_MIDDLE), // Amiga
+            new OldNewIdTableEntry("brain", "castlebrain", SciVersion.V1_LATE),
+            new OldNewIdTableEntry("demo", "christmas1988", SciVersion.NONE),
+            new OldNewIdTableEntry("card", "christmas1990", SciVersion.V1_EARLY),
+            new OldNewIdTableEntry("card", "christmas1992", SciVersion.V1_1),
+            new OldNewIdTableEntry("RH Budget", "cnick-longbow", SciVersion.NONE),
+            // iceman is the same
+            new OldNewIdTableEntry("icedemo", "iceman", SciVersion.NONE),
+            // longbow is the same
+            new OldNewIdTableEntry("eco", "ecoquest", SciVersion.NONE),
+            new OldNewIdTableEntry("eco2", "ecoquest2", SciVersion.NONE), // EcoQuest 2 demo
+            new OldNewIdTableEntry("rain", "ecoquest2", SciVersion.NONE), // EcoQuest 2 full
+            new OldNewIdTableEntry("tales", "fairytales", SciVersion.NONE),
+            new OldNewIdTableEntry("fp", "freddypharkas", SciVersion.NONE),
+            new OldNewIdTableEntry("emc", "funseeker", SciVersion.NONE),
+            new OldNewIdTableEntry("gk", "gk1", SciVersion.NONE),
+            // gk2 is the same
+            new OldNewIdTableEntry("gk2demo", "gk2", SciVersion.NONE),
+            new OldNewIdTableEntry("hoyledemo", "hoyle1", SciVersion.NONE),
+            new OldNewIdTableEntry("cardgames", "hoyle1", SciVersion.NONE),
+            new OldNewIdTableEntry("solitare", "hoyle2", SciVersion.NONE),
+            // hoyle3 is the same
+            // hoyle4 is the same
+            new OldNewIdTableEntry("brain", "islandbrain", SciVersion.V1_1),
+            new OldNewIdTableEntry("demo000", "kq1sci", SciVersion.NONE),
+            new OldNewIdTableEntry("kq1", "kq1sci", SciVersion.NONE),
+            new OldNewIdTableEntry("kq4", "kq4sci", SciVersion.NONE),
+            // kq5 is the same
+            // kq6 is the same
+            new OldNewIdTableEntry("kq7cd", "kq7", SciVersion.NONE),
+            new OldNewIdTableEntry("quizgame-demo", "kquestions", SciVersion.NONE),
+            new OldNewIdTableEntry("mm1", "laurabow", SciVersion.NONE),
+            new OldNewIdTableEntry("cb1", "laurabow", SciVersion.NONE),
+            new OldNewIdTableEntry("lb2", "laurabow2", SciVersion.NONE),
+            new OldNewIdTableEntry("rh", "longbow", SciVersion.NONE),
+            new OldNewIdTableEntry("ll1", "lsl1sci", SciVersion.NONE),
+            new OldNewIdTableEntry("lsl1", "lsl1sci", SciVersion.NONE),
+            // lsl2 is the same
+            new OldNewIdTableEntry("lsl3", "lsl3", SciVersion.NONE),
+            new OldNewIdTableEntry("ll5", "lsl5", SciVersion.NONE),
+            // lsl5 is the same
+            // lsl6 is the same
+            new OldNewIdTableEntry("mg", "mothergoose", SciVersion.NONE),
+            new OldNewIdTableEntry("twisty", "pepper", SciVersion.NONE),
+            new OldNewIdTableEntry("scary", "phantasmagoria", SciVersion.NONE),
+            // TODO: distinguish the full version of Phantasmagoria from the demo
+            new OldNewIdTableEntry("pq1", "pq1sci", SciVersion.NONE),
+            new OldNewIdTableEntry("pq", "pq2", SciVersion.NONE),
+            // pq3 is the same
+            // pq4 is the same
+            new OldNewIdTableEntry("hq", "qfg1", SciVersion.NONE), // QFG1 SCI0/EGA
+            new OldNewIdTableEntry("glory", "qfg1", SciVersion.V0_LATE), // QFG1 SCI0/EGA
+            new OldNewIdTableEntry("trial", "qfg2", SciVersion.NONE),
+            new OldNewIdTableEntry("hq2demo", "qfg2", SciVersion.NONE),
+            // rama is the same
+            // TODO: distinguish the full version of rama from the demo
+            new OldNewIdTableEntry("thegame", "slater", SciVersion.NONE),
+            new OldNewIdTableEntry("sq1demo", "sq1sci", SciVersion.NONE),
+            new OldNewIdTableEntry("sq1", "sq1sci", SciVersion.NONE),
+            // sq3 is the same
+            // sq4 is the same
+            // sq5 is the same
+            // sq6 is the same
+            // TODO: distinguish the full version of SQ6 from the demo
+            // torin is the same
+
+
+            // TODO: SCI3 IDs
+
+            new OldNewIdTableEntry("", "", SciVersion.NONE)
+        };
 
         public SciMetaEngine()
             : base(SciGameDescriptions, Options)
@@ -547,7 +650,8 @@ namespace NScumm.Sci
 #if ENABLE_SCI32
 // Inside the Chest / Behind the Developer's Shield
 // SCI interpreter version 2.000.000
-            new ADGameDescription("chest", "", new [] {
+            new ADGameDescription("chest", "", new[]
+            {
                 new ADGameFileDescription("resource.map", 0, "9dd015e79cac4f91e7de805448f39775", 1912),
                 new ADGameFileDescription("resource.000", 0, "e4efcd042f86679dd4e1834bb3a38edb", 3770943),
             }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.UNSTABLE),
@@ -1302,65 +1406,65 @@ namespace NScumm.Sci
             // Gabriel Knight 2 - English Windows Non-Interactive Demo
             // Executable scanning reports "2.100.002"
             new ADGameDescription("gk2", "Demo", new[]
-                {
-                    new ADGameFileDescription("resource.map", 0, "e0effce11c4908f4b91838741716c83d", 1351),
-                    new ADGameFileDescription("resource.000", 0, "d04cfc7f04b6f74d13025378be49ec2b", 4640330),
-                }, Core.Language.EN_ANY, Platform.Windows, ADGameFlags.DEMO | ADGameFlags.UNSTABLE, GUIO_GK2_DEMO),
+            {
+                new ADGameFileDescription("resource.map", 0, "e0effce11c4908f4b91838741716c83d", 1351),
+                new ADGameFileDescription("resource.000", 0, "d04cfc7f04b6f74d13025378be49ec2b", 4640330),
+            }, Core.Language.EN_ANY, Platform.Windows, ADGameFlags.DEMO | ADGameFlags.UNSTABLE, GUIO_GK2_DEMO),
 
-        // using Enrico Rolfi's HD/DVD installer: http://gkpatches.vogons.zetafleet.com/
+            // using Enrico Rolfi's HD/DVD installer: http://gkpatches.vogons.zetafleet.com/
             new ADGameDescription("gk2", "", new[]
-                {
-                    new ADGameFileDescription("resmap.000", 0, "b996fa1e57389a1e179a00a0049de1f4", 8110),
-                    new ADGameFileDescription("ressci.000", 0, "a19fc3604c6e5407abcf03d59ee87217", 168522221),
-                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.UNSTABLE, GUIO_GK2),
+            {
+                new ADGameFileDescription("resmap.000", 0, "b996fa1e57389a1e179a00a0049de1f4", 8110),
+                new ADGameFileDescription("ressci.000", 0, "a19fc3604c6e5407abcf03d59ee87217", 168522221),
+            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.UNSTABLE, GUIO_GK2),
 
             // Gabriel Knight 2 - English DOS (from jvprat)
             // Executable scanning reports "2.100.002", VERSION file reports "1.1"
             new ADGameDescription("gk2", "", new[]
-                {
-                    new ADGameFileDescription("resmap.001", 0, "1b8bf6a23b37ed67358eb825fc687260", 2776),
-                    new ADGameFileDescription("ressci.001", 0, "24463ae235b1afbbc4ff5e2ed1b8e3b2", 50496082),
-                    new ADGameFileDescription("resmap.002", 0, "2028230674bb54cd24370e0745e7a9f4", 1975),
-                    new ADGameFileDescription("ressci.002", 0, "f0edc1dcd704bd99e598c5a742dc7150", 42015676),
-                    new ADGameFileDescription("resmap.003", 0, "51f3372a2133c406719dafad86369be3", 1687),
-                    new ADGameFileDescription("ressci.003", 0, "86cb3f3d176994e7f8a9ad663a4b907e", 35313750),
-                    new ADGameFileDescription("resmap.004", 0, "0f6e48f3e84e867f7d4a5215fcff8d5c", 2719),
-                    new ADGameFileDescription("ressci.004", 0, "4f30aa6e6f895132402c8652f9e1d741", 58317316),
-                    new ADGameFileDescription("resmap.005", 0, "2dac0e232262b4a51271fd28559b3e70", 2065),
-                    new ADGameFileDescription("ressci.005", 0, "14b62d4a3bddee57a03cb1495a798a0f", 38075705),
-                    new ADGameFileDescription("resmap.006", 0, "ce9359037277b7d7976da185c2fa0aad", 2977),
-                    new ADGameFileDescription("ressci.006", 0, "8e44e03890205a7be12f45aaba9644b4", 60659424),
-                }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.UNSTABLE, GUIO_GK2),
+            {
+                new ADGameFileDescription("resmap.001", 0, "1b8bf6a23b37ed67358eb825fc687260", 2776),
+                new ADGameFileDescription("ressci.001", 0, "24463ae235b1afbbc4ff5e2ed1b8e3b2", 50496082),
+                new ADGameFileDescription("resmap.002", 0, "2028230674bb54cd24370e0745e7a9f4", 1975),
+                new ADGameFileDescription("ressci.002", 0, "f0edc1dcd704bd99e598c5a742dc7150", 42015676),
+                new ADGameFileDescription("resmap.003", 0, "51f3372a2133c406719dafad86369be3", 1687),
+                new ADGameFileDescription("ressci.003", 0, "86cb3f3d176994e7f8a9ad663a4b907e", 35313750),
+                new ADGameFileDescription("resmap.004", 0, "0f6e48f3e84e867f7d4a5215fcff8d5c", 2719),
+                new ADGameFileDescription("ressci.004", 0, "4f30aa6e6f895132402c8652f9e1d741", 58317316),
+                new ADGameFileDescription("resmap.005", 0, "2dac0e232262b4a51271fd28559b3e70", 2065),
+                new ADGameFileDescription("ressci.005", 0, "14b62d4a3bddee57a03cb1495a798a0f", 38075705),
+                new ADGameFileDescription("resmap.006", 0, "ce9359037277b7d7976da185c2fa0aad", 2977),
+                new ADGameFileDescription("ressci.006", 0, "8e44e03890205a7be12f45aaba9644b4", 60659424),
+            }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.UNSTABLE, GUIO_GK2),
 
             // Gabriel Knight 2 - French DOS (6-CDs Sierra Originals reedition)
             // Executable scanning reports "2.100.002", VERSION file reports "1.0"
             new ADGameDescription("gk2", "", new[]
-                {
-                    new ADGameFileDescription("resmap.001", 0, "5752eb78e0dffd6ad1d6ada75fe1222e", 2800),
-                    new ADGameFileDescription("ressci.001", 0, "37d2df0e1ec0603b605d0c87f1c09ce5", 50810410),
-                    new ADGameFileDescription("resmap.002", 0, "1ca433e4bc26383ff134a817386b723e", 1987),
-                    new ADGameFileDescription("ressci.002", 0, "5d07e6b51afaa3a5850b17a3dbd800a0", 41367424),
-                    new ADGameFileDescription("resmap.003", 0, "27b15dea1f9c73e1f5b57467c2d98b80", 1699),
-                    new ADGameFileDescription("ressci.003", 0, "93c561e5d49a804deed4ea4c2eda7386", 35200452),
-                    new ADGameFileDescription("resmap.004", 0, "9e5aaa053785d1ea61b1448df930db1a", 2743),
-                    new ADGameFileDescription("ressci.004", 0, "5d07e6b51afaa3a5850b17a3dbd800a0", 58988750),
-                    new ADGameFileDescription("resmap.005", 0, "6b1f4b59a7af58e1aff21259cc457851", 2077),
-                    new ADGameFileDescription("ressci.005", 0, "1eb5a72744799f5a5518543f5b4c3c79", 37882126),
-                    new ADGameFileDescription("resmap.006", 0, "11b2e722170b8c93fdaa5428e2c7676f", 3001),
-                    new ADGameFileDescription("ressci.006", 0, "4037d941aec39d2e654e20960429aefc", 60568486),
-                }, Core.Language.FR_FRA, Platform.DOS, ADGameFlags.UNSTABLE, GUIO_GK2),
+            {
+                new ADGameFileDescription("resmap.001", 0, "5752eb78e0dffd6ad1d6ada75fe1222e", 2800),
+                new ADGameFileDescription("ressci.001", 0, "37d2df0e1ec0603b605d0c87f1c09ce5", 50810410),
+                new ADGameFileDescription("resmap.002", 0, "1ca433e4bc26383ff134a817386b723e", 1987),
+                new ADGameFileDescription("ressci.002", 0, "5d07e6b51afaa3a5850b17a3dbd800a0", 41367424),
+                new ADGameFileDescription("resmap.003", 0, "27b15dea1f9c73e1f5b57467c2d98b80", 1699),
+                new ADGameFileDescription("ressci.003", 0, "93c561e5d49a804deed4ea4c2eda7386", 35200452),
+                new ADGameFileDescription("resmap.004", 0, "9e5aaa053785d1ea61b1448df930db1a", 2743),
+                new ADGameFileDescription("ressci.004", 0, "5d07e6b51afaa3a5850b17a3dbd800a0", 58988750),
+                new ADGameFileDescription("resmap.005", 0, "6b1f4b59a7af58e1aff21259cc457851", 2077),
+                new ADGameFileDescription("ressci.005", 0, "1eb5a72744799f5a5518543f5b4c3c79", 37882126),
+                new ADGameFileDescription("resmap.006", 0, "11b2e722170b8c93fdaa5428e2c7676f", 3001),
+                new ADGameFileDescription("ressci.006", 0, "4037d941aec39d2e654e20960429aefc", 60568486),
+            }, Core.Language.FR_FRA, Platform.DOS, ADGameFlags.UNSTABLE, GUIO_GK2),
 
             // Gabriel Knight 2 - English Macintosh
             // NOTE: This only contains disc 1 files (as well as the persistent file:
             // Data1. Other discs have conflicting names :(
             new ADGameDescription("gk2", "", new[]
-                {
-                    new ADGameFileDescription("Data1", 0, "81cb3b4461af845efc59450a74b49fe6", 693041),
-                    new ADGameFileDescription("Data2", 0, "69a05445a7c8c2da06d8f5a70200974d", 16774575),
-                    new ADGameFileDescription("Data3", 0, "256309284f6447aaa5028103753e7e78", 15451830),
-                    new ADGameFileDescription("Data4", 0, "8b843c62eb53136a855d6e0087e3cb0d", 5889553),
-                    new ADGameFileDescription("Data5", 0, "f9fcf9ab2eb13b2125c33a1cda03a093", 14349984),
-                }, Core.Language.EN_ANY, Platform.Macintosh, ADGameFlags.MACRESFORK|ADGameFlags.UNSTABLE, GUIO_GK2_MAC),
+            {
+                new ADGameFileDescription("Data1", 0, "81cb3b4461af845efc59450a74b49fe6", 693041),
+                new ADGameFileDescription("Data2", 0, "69a05445a7c8c2da06d8f5a70200974d", 16774575),
+                new ADGameFileDescription("Data3", 0, "256309284f6447aaa5028103753e7e78", 15451830),
+                new ADGameFileDescription("Data4", 0, "8b843c62eb53136a855d6e0087e3cb0d", 5889553),
+                new ADGameFileDescription("Data5", 0, "f9fcf9ab2eb13b2125c33a1cda03a093", 14349984),
+            }, Core.Language.EN_ANY, Platform.Macintosh, ADGameFlags.MACRESFORK | ADGameFlags.UNSTABLE, GUIO_GK2_MAC),
 #endif // ENABLE_SCI32
 
             // Hoyle 1 - English DOS (supplied by ssburnout in bug report #3049193)
@@ -2440,7 +2544,6 @@ namespace NScumm.Sci
                     new ADGameFileDescription("resource.map", 0, "93a2251fa64e729d7a7d2fe56b217c8e", 502),
                 }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.UNSTABLE,
                 GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_FB01_MIDI),
-
 #endif // ENABLE_SCI32
 
             // Laura Bow - English Amiga
@@ -2894,8 +2997,325 @@ namespace NScumm.Sci
                 }, Core.Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS,
                 GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX |
                 GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI),
+#if ENABLE_SCI32
+            // Phantasmagoria - French DOS
+            // Supplied by Kervala in bug #6574
+            new ADGameDescription("phantasmagoria", "", new[]
+            {
+                new ADGameFileDescription("resmap.001", 0, "4da82dd336d4b9cd8c16f3cc11f0c615", 11524),
+                new ADGameFileDescription("ressci.001", 0, "3aae6559aa1df273bc542d5ac6330d75", 69963685),
+                new ADGameFileDescription("resmap.002", 0, "4f40f43f2b60bf765864433069752bb9", 12064),
+                new ADGameFileDescription("ressci.002", 0, "3aae6559aa1df273bc542d5ac6330d75", 78362841),
+                new ADGameFileDescription("resmap.003", 0, "6a392a86f14b6ddb4422978ee71e54ac", 12340),
+                new ADGameFileDescription("ressci.003", 0, "3aae6559aa1df273bc542d5ac6330d75", 80431189),
+                new ADGameFileDescription("resmap.004", 0, "df2e9462c41202de5f3843908c95a715", 12562),
+                new ADGameFileDescription("ressci.004", 0, "3aae6559aa1df273bc542d5ac6330d75", 82542844),
+                new ADGameFileDescription("resmap.005", 0, "43efd3fe834286c70a2c8b4cd747c1e2", 12616),
+                new ADGameFileDescription("ressci.005", 0, "3aae6559aa1df273bc542d5ac6330d75", 83790486),
+                new ADGameFileDescription("resmap.006", 0, "b3065e54a00190752a06dacd201b5058", 12538),
+                new ADGameFileDescription("ressci.006", 0, "3aae6559aa1df273bc542d5ac6330d75", 85415107),
+                new ADGameFileDescription("resmap.007", 0, "5633960bc106c39ca91d2d8fce18fd2d", 7984),
+            }, Core.Language.FR_FRA, Platform.DOS, ADGameFlags.CD | ADGameFlags.UNSTABLE, GUIO_PHANTASMAGORIA),
+#endif
         };
 
         public override string OriginalCopyright => "Sierra's Creative Interpreter (C) Sierra Online";
+
+        protected override ADGameDescription FallbackDetect(string directory, Dictionary<string, string> allFiles)
+        {
+            bool foundResMap = false;
+            bool foundRes000 = false;
+
+            Debug("fallbackDetect\n");
+
+            // Set some defaults
+            var gameId = "sci";
+            var extra = string.Empty;
+            var language = Core.Language.EN_ANY;
+            var platform = Platform.DOS;
+            var guiOptions = GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD | GAMEOPTION_FB01_MIDI;
+            ADGameFlags flags = 0;
+
+            if (allFiles.ContainsKey("resource.map") || allFiles.ContainsKey("Data1")
+                || allFiles.ContainsKey("resmap.001") || allFiles.ContainsKey("resmap.001"))
+            {
+                foundResMap = true;
+            }
+
+            // Determine if we got a CD version and set the CD flag accordingly, by checking for
+            // resource.aud for SCI1.1 CD games, or audio001.002 for SCI1 CD games. We assume that
+            // the file should be over 10MB, as it contains all the game speech and is usually
+            // around 450MB+. The size check is for some floppy game versions like KQ6 floppy, which
+            // also have a small resource.aud file
+            if (allFiles.ContainsKey("resource.aud") || allFiles.ContainsKey("resaud.001") ||
+                allFiles.ContainsKey("audio001.002"))
+            {
+                var file = allFiles.ContainsKey("resource.aud")
+                    ? allFiles["resource.aud"]
+                    : (allFiles.ContainsKey("resaud.001") ? allFiles["resaud.001"] : allFiles["audio001.002"]);
+                using (var tmpStream = ServiceLocator.FileStorage.OpenFileRead(file))
+                {
+                    if (tmpStream.Length > 10 * 1024 * 1024)
+                    {
+                        // We got a CD version, so set the CD flag accordingly
+                        flags |= ADGameFlags.CD;
+                    }
+                }
+            }
+
+            if (allFiles.ContainsKey("resource.000") || allFiles.ContainsKey("resource.001")
+                || allFiles.ContainsKey("ressci.000") || allFiles.ContainsKey("ressci.001"))
+                foundRes000 = true;
+
+            // Data1 contains both map and volume for SCI1.1+ Mac games
+            if (allFiles.ContainsKey("Data1"))
+            {
+                foundResMap = foundRes000 = true;
+                platform = Platform.Macintosh;
+            }
+
+            // Determine the game platform
+            // The existence of any of these files indicates an Amiga game
+            if (allFiles.ContainsKey("9.pat") || allFiles.ContainsKey("spal") ||
+                allFiles.ContainsKey("patch.005") || allFiles.ContainsKey("bank.001"))
+                platform = Platform.Amiga;
+
+            // The existence of 7.pat or patch.200 indicates a Mac game
+            if (allFiles.ContainsKey("7.pat") || allFiles.ContainsKey("patch.200"))
+                platform = Platform.Macintosh;
+
+            // The data files for Atari ST versions are the same as their DOS counterparts
+
+
+            // If these files aren't found, it can't be SCI
+            if (!foundResMap && !foundRes000)
+                return null;
+
+            ResourceManager resMan = new ResourceManager(directory);
+            resMan.AddAppropriateSourcesForDetection(allFiles.Values.ToList());
+            resMan.Init();
+            // TODO: Add error handling.
+
+#if !ENABLE_SCI32
+// Is SCI32 compiled in? If not, and this is a SCI32 game,
+// stop here
+            if (GetSciVersionForDetection() >= SCI_VERSION_2)
+                return 0;
+#endif
+
+            ViewType gameViews = resMan.ViewType;
+
+            // Have we identified the game views? If not, stop here
+            // Can't be SCI (or unsupported SCI views). Pinball Creep by Sierra also uses resource.map/resource.000 files
+            // but doesn't share SCI format at all
+            if (gameViews == ViewType.Unknown)
+                return null;
+
+            // Set the platform to Amiga if the game is using Amiga views
+            if (gameViews == ViewType.Amiga)
+                platform = Platform.Amiga;
+
+            // Determine the game id
+            string sierraGameId = resMan.FindSierraGameId();
+
+            // If we don't have a game id, the game is not SCI
+            if (string.IsNullOrEmpty(sierraGameId))
+                return null;
+
+            string gId = ConvertSierraGameId(sierraGameId, ref flags, resMan);
+            gameId = gId;
+
+            // Try to determine the game language
+            // Load up text 0 and start looking for "#" characters
+            // Non-English versions contain strings like XXXX#YZZZZ
+            // Where XXXX is the English string, #Y a separator indicating the language
+            // (e.g. #G for German) and ZZZZ is the translated text
+            // NOTE: This doesn't work for games which use message instead of text resources
+            // (like, for example, Eco Quest 1 and all SCI1.1 games and newer, e.g. Freddy Pharkas).
+            // As far as we know, these games store the messages of each language in separate
+            // resources, and it's not possible to detect that easily
+            // Also look for "%J" which is used in japanese games
+            var text = resMan.FindResource(new ResourceId(ResourceType.Text, 0), false);
+            uint seeker = 0;
+            if (text != null)
+            {
+                while (seeker < text.size)
+                {
+                    if (text.data[seeker] == '#')
+                    {
+                        if (seeker + 1 < text.size)
+                            language = CharToScummVMLanguage(text.data[seeker + 1]);
+                        break;
+                    }
+                    if (text.data[seeker] == '%')
+                    {
+                        if ((seeker + 1 < text.size) && (text.data[seeker + 1] == 'J'))
+                        {
+                            language = CharToScummVMLanguage(text.data[seeker + 1]);
+                            break;
+                        }
+                    }
+                    seeker++;
+                }
+            }
+
+
+            // Fill in "extra" field
+
+            // Is this an EGA version that might have a VGA pendant? Then we want
+            // to mark it as such in the "extra" field.
+            bool markAsEGA = (gameViews == ViewType.Ega && platform != Platform.Amiga
+                              && ResourceManager.GetSciVersion() > SciVersion.V1_EGA_ONLY);
+
+            bool isDemo = flags.HasFlag(ADGameFlags.DEMO);
+            bool isCD = flags.HasFlag(ADGameFlags.CD);
+
+            if (!isCD)
+                guiOptions = GuiOptions.NOSPEECH | GAMEOPTION_PREFER_DIGITAL_SFX | GAMEOPTION_ORIGINAL_SAVELOAD |
+                             GAMEOPTION_FB01_MIDI;
+
+            if (gameId.EndsWith("sci"))
+            {
+                extra = "SCI";
+
+                // Differentiate EGA versions from the VGA ones, where needed
+                if (markAsEGA)
+                    extra = "SCI/EGA";
+
+                // Mark as demo.
+                // Note: This overwrites the 'EGA' info, if it was previously set.
+                if (isDemo)
+                    extra = "SCI/Demo";
+            }
+            else
+            {
+                if (markAsEGA)
+                    extra = "EGA";
+
+                // Set "CD" and "Demo" as appropriate.
+                // Note: This overwrites the 'EGA' info, if it was previously set.
+                if (isDemo && isCD)
+                    extra = "CD Demo";
+                else if (isDemo)
+                    extra = "Demo";
+                else if (isCD)
+                    extra = "CD";
+            }
+
+            var s_fallbackDesc = new ADGameDescription(gameId, extra,
+                platform: platform,
+                language: language,
+                guiOptions: guiOptions, flags: flags);
+            return s_fallbackDesc;
+        }
+
+        private Core.Language CharToScummVMLanguage(byte c)
+        {
+            switch ((char) c)
+            {
+                case 'F':
+                    return Core.Language.FR_FRA;
+                case 'S':
+                    return Core.Language.ES_ESP;
+                case 'I':
+                    return Core.Language.IT_ITA;
+                case 'G':
+                    return Core.Language.DE_DEU;
+                case 'J':
+                case 'j':
+                    return Core.Language.JA_JPN;
+                case 'P':
+                    return Core.Language.PT_BRA;
+                default:
+                    return Core.Language.UNK_LANG;
+            }
+        }
+
+        /**
+         * Converts the builtin Sierra game IDs to the ones we use in ScummVM
+         * @param[in] gameId		The internal game ID
+         * @param[in] gameFlags     The game's flags, which are adjusted accordingly for demos
+         * @return					The equivalent ScummVM game id
+         */
+
+        private string ConvertSierraGameId(string sierraId, ref ADGameFlags gameFlags, ResourceManager resMan)
+        {
+            // Convert the id to lower case, so that we match all upper/lower case variants.
+            sierraId = sierraId.ToLowerInvariant();
+
+            // If the game has less than the expected scripts, it's a demo
+            uint demoThreshold = 100;
+            // ...but there are some exceptions
+            if (sierraId == "brain" || sierraId == "lsl1" ||
+                sierraId == "mg" || sierraId == "pq" ||
+                sierraId == "jones" ||
+                sierraId == "cardgames" || sierraId == "solitare" ||
+                sierraId == "hoyle4")
+                demoThreshold = 40;
+            if (sierraId == "hoyle3")
+                demoThreshold = 45; // cnick-kq has 42 scripts. The actual hoyle 3 demo has 27.
+            if (sierraId == "fp" || sierraId == "gk" || sierraId == "pq4")
+                demoThreshold = 150;
+
+            List<ResourceId> resources = resMan.ListResources(ResourceType.Script, -1);
+            if (resources.Count < demoThreshold)
+            {
+                gameFlags |= ADGameFlags.DEMO;
+
+                // Crazy Nick's Picks
+                if (sierraId == "lsl1" && resources.Count == 34)
+                    return "cnick-lsl";
+                if (sierraId == "sq4" && resources.Count == 34)
+                    return "cnick-sq";
+                if (sierraId == "hoyle3" && resources.Count == 42)
+                    return "cnick-kq";
+                if (sierraId == "rh budget" && resources.Count == 39)
+                    return "cnick-longbow";
+                // TODO: cnick-laurabow (the name of the game object contains junk)
+
+                // Handle Astrochicken 1 (SQ3) and 2 (SQ4)
+                if (sierraId == "sq3" && resources.Count == 20)
+                    return "astrochicken";
+                if (sierraId == "sq4")
+                    return "msastrochicken";
+            }
+
+            if (sierraId == "torin" && resources.Count == 226) // Torin's Passage demo
+                gameFlags |= ADGameFlags.DEMO;
+
+            foreach (var cur in s_oldNewTable)
+            {
+                if (sierraId == cur.oldId)
+                {
+                    // Distinguish same IDs via the SCI version
+                    if (cur.version != SciVersion.NONE && cur.version != ResourceManager.GetSciVersion())
+                        continue;
+
+                    return cur.newId;
+                }
+            }
+
+            if (sierraId == "glory")
+            {
+                // This could either be qfg1 VGA, qfg3 or qfg4 demo (all SCI1.1),
+                // or qfg4 full (SCI2)
+                // qfg1 VGA doesn't have view 1
+                if (resMan.TestResource(new ResourceId(ResourceType.View, 1)) == null)
+                    return "qfg1vga";
+
+                // qfg4 full is SCI2
+                if (ResourceManager.GetSciVersion() == SciVersion.V2)
+                    return "qfg4";
+
+                // qfg4 demo has less than 50 scripts
+                if (resources.Count < 50)
+                    return "qfg4demo";
+
+                // Otherwise it's qfg3
+                return "qfg3";
+            }
+
+            return sierraId;
+        }
     }
 }

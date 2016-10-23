@@ -18,6 +18,7 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -28,7 +29,6 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
 {
-
     // Structure describing an "extension" to the work polygon following edges
     // of the polygon being merged.
 
@@ -61,8 +61,8 @@ namespace NScumm.Sci.Engine
         public Point v;
 
         // Vertex circular list entry
-        public Vertex _next;  // next element
-        public Vertex _prev;  // previous element
+        public Vertex _next; // next element
+        public Vertex _prev; // previous element
 
         // A* cost variables
         public uint costF;
@@ -159,7 +159,10 @@ namespace NScumm.Sci.Engine
             return GetEnumerator();
         }
 
-        public bool IsEmpty { get { return _head == null; } }
+        public bool IsEmpty
+        {
+            get { return _head == null; }
+        }
     }
 
     // SCI-defined polygon types
@@ -195,7 +198,7 @@ namespace NScumm.Sci.Engine
 
         public Point ToPoint()
         {
-            return new Point((short)(X + 0.5), (short)(Y + 0.5));
+            return new Point((short) (X + 0.5), (short) (Y + 0.5));
         }
 
         public static float operator *(FloatPoint p1, FloatPoint p2)
@@ -283,8 +286,8 @@ namespace NScumm.Sci.Engine
         public bool EdgeOnScreenBorder(Point p, Point q)
         {
             return ((p.X == 0 && q.X == 0) || (p.Y == 0 && q.Y == 0)
-                || ((p.X == _width - 1) && (q.X == _width - 1))
-                || ((p.Y == _height - 1) && (q.Y == _height - 1)));
+                    || ((p.X == _width - 1) && (q.X == _width - 1))
+                    || ((p.Y == _height - 1) && (q.Y == _height - 1)));
         }
 
         public PathFindingError FindNearPoint(Point p, Polygon polygon, out Point? ret)
@@ -305,7 +308,7 @@ namespace NScumm.Sci.Engine
                     continue;
 
                 // Compute near point
-                u = ((p.X - p1.X) * (p2.X - p1.X) + (p.Y - p1.Y) * (p2.Y - p1.Y)) / (float)p1.SquareDistance(p2);
+                u = ((p.X - p1.X) * (p2.X - p1.X) + (p.Y - p1.Y) * (p2.Y - p1.Y)) / (float) p1.SquareDistance(p2);
 
                 // Clip to edge
                 if (u < 0.0f)
@@ -335,7 +338,7 @@ namespace NScumm.Sci.Engine
             Point p;
 
             // Try nearest point first
-            p = new Point((short)Math.Floor(f.X + 0.5), (short)Math.Floor(f.Y + 0.5));
+            p = new Point((short) Math.Floor(f.X + 0.5), (short) Math.Floor(f.Y + 0.5));
 
             if (Contained(p, polygon) != PolygonContainmentType.INSIDE)
             {
@@ -343,7 +346,7 @@ namespace NScumm.Sci.Engine
                 return PathFindingError.OK;
             }
 
-            p = new Point((short)Math.Floor(f.X), (short)Math.Floor(f.Y));
+            p = new Point((short) Math.Floor(f.X), (short) Math.Floor(f.Y));
 
             // Try (x, y), (x + 1, y), (x , y + 1) and (x + 1, y + 1)
             if (Contained(p, polygon) == PolygonContainmentType.INSIDE)
@@ -476,7 +479,7 @@ namespace NScumm.Sci.Engine
             // The work polygon which we're going to merge with the polygons in list
             Polygon work = new Polygon(0);
 
-            for (int i = 0; ; ++i)
+            for (int i = 0;; ++i)
             {
                 Point p = ReadPoint(pointList, i);
                 if (p.X == POLY_LAST_POINT)
@@ -508,7 +511,7 @@ namespace NScumm.Sci.Engine
                     if (intersected)
                     {
                         SciEngine.WriteSelectorValue(s._segMan, node.value,
-                                           o => o.type, (ushort)(polygon.Type + 0x10));
+                            o => o.type, (ushort) (polygon.Type + 0x10));
 # if DEBUG_MERGEPOLY
                         debugN("Merged polygon: ");
                         // Iterate over edges
@@ -636,7 +639,6 @@ namespace NScumm.Sci.Engine
                     int pi2, wi2 = 0;
                     for (pi2 = 0; pi2 < polygonSize; ++pi2, polyv2 = polyv2._next)
                     {
-
                         int newAngle = EdgeDir(polyv2);
 
                         int relAngle = newAngle - baseAngle;
@@ -663,12 +665,10 @@ namespace NScumm.Sci.Engine
 #endif
                                 break; // found re-entry point
                             }
-
                         }
 
                         if (intersects)
                             break;
-
                     }
 
                     if (!intersects || angle < 0)
@@ -744,7 +744,6 @@ namespace NScumm.Sci.Engine
             workv = work.Vertices._head;
             for (int wi = 0; wi < workSize; ++wi, workv = workv._next)
             {
-
                 bool covered = false;
                 for (int p = 0; p < patchCount; ++p)
                 {
@@ -769,7 +768,6 @@ namespace NScumm.Sci.Engine
 
                 for (int p = 0; p < patchCount; ++p)
                 {
-
                     var patch = patchList[p];
                     if (patch.disabled) continue;
                     if (patch.indexw1 != wi) continue;
@@ -832,7 +830,8 @@ namespace NScumm.Sci.Engine
                     if ((a.X <= c.X && c.X <= b.X) || (b.X <= c.X && c.X <= a.X))
                         return true;
                 }
-                else {
+                else
+                {
                     if ((a.Y <= c.Y && c.Y <= b.Y) || (b.Y <= c.Y && c.Y <= a.Y))
                         return true;
                 }
@@ -848,13 +847,14 @@ namespace NScumm.Sci.Engine
                     if ((a.X <= d.X && d.X <= b.X) || (b.X <= d.X && d.X <= a.X))
                         return false;
                 }
-                else {
+                else
+                {
                     if ((a.Y <= d.Y && d.Y <= b.Y) || (b.Y <= d.Y && d.Y <= a.Y))
                         return false;
                 }
             }
 
-            int len_dc = (int)c.SquareDistance(d);
+            int len_dc = (int) c.SquareDistance(d);
 
             if (len_dc == 0) Error("zero length edge in polygon");
 
@@ -902,7 +902,8 @@ namespace NScumm.Sci.Engine
 
                 return linedist;
             }
-            else {
+            else
+            {
                 // If no, return the (squared) distance to either a or b, whichever
                 // is closest.
 
@@ -918,7 +919,6 @@ namespace NScumm.Sci.Engine
         // Check if the given vertex on the work polygon is bypassed by this patch.
         private static bool IsVertexCovered(Patch p, int wi)
         {
-
             //         /             v       (outside)
             //  ---w1--1----p----w2--2----
             //         ^             \       (inside)
@@ -944,7 +944,6 @@ namespace NScumm.Sci.Engine
         // Check if patch p1 makes patch p2 superfluous.
         private static bool IsPatchCovered(Patch p1, Patch p2)
         {
-
             // Same exit and entry points
             if (p1.intersection1 == p2.intersection1 && p1.intersection2 == p2.intersection2)
                 return true;
@@ -987,7 +986,6 @@ namespace NScumm.Sci.Engine
 
             if (p1.indexw1 != p1.indexw2)
             {
-
                 //            /    *              v       (outside)
                 //  ---p1w1--11---21--------p1w2--2----
                 //     p2w1   ^    *              \       (inside)
@@ -1041,7 +1039,7 @@ namespace NScumm.Sci.Engine
         // * p1 lies after p2: positive return value
         private static int LiesBefore(Vertex v, Point p1, Point p2)
         {
-            return (int)(v.v.SquareDistance(p1) - v.v.SquareDistance(p2));
+            return (int) (v.v.SquareDistance(p1) - v.v.SquareDistance(p2));
         }
 
         // For intersecting polygon segments, determine if
@@ -1059,7 +1057,7 @@ namespace NScumm.Sci.Engine
         private static int EdgeDir(Vertex v)
         {
             Point p = v._next.v - v.v;
-            int deg = (int)MathHelper.Rad2Deg((float)Math.Atan2((double)p.Y, (double)p.X));
+            int deg = (int) MathHelper.Rad2Deg((float) Math.Atan2((double) p.Y, (double) p.X));
             if (deg < -180) deg += 360;
             if (deg > 180) deg -= 360;
             return deg;
@@ -1109,14 +1107,14 @@ namespace NScumm.Sci.Engine
             if ((size == 19) && SciEngine.Instance.GameId == SciGameId.LSL1)
             {
                 if ((s.CurrentRoomNumber == 350)
-                && (ReadPoint(pointList, 18) == new Point(108, 137)))
+                    && (ReadPoint(pointList, 18) == new Point(108, 137)))
                 {
                     Debug(1, "Applying fix for broken polygon in lsl1sci, room 350");
                     size = 17;
                 }
             }
 
-            Polygon poly = new Polygon((PolygonType)SciEngine.ReadSelectorValue(segMan, polygon, o => o.type));
+            Polygon poly = new Polygon((PolygonType) SciEngine.ReadSelectorValue(segMan, polygon, o => o.type));
 
             for (i = skip; i < size; i++)
             {
@@ -1145,7 +1143,6 @@ namespace NScumm.Sci.Engine
             if (((area > 0) && (polygon.Type == PolygonType.CONTAINED_ACCESS))
                 || ((area < 0) && (polygon.Type != PolygonType.CONTAINED_ACCESS)))
             {
-
                 polygon.Vertices.Reverse();
             }
         }
@@ -1269,14 +1266,15 @@ namespace NScumm.Sci.Engine
             Point point = new Point();
 
             if (list_r.isRaw)
-            { // dynmem blocks are raw
-                point.X = (short)list_r.raw.Data.ReadSciEndianUInt16(list_r.raw.Offset + offset * POLY_POINT_SIZE);
-                point.Y = (short)list_r.raw.Data.ReadSciEndianUInt16(list_r.raw.Offset + offset * POLY_POINT_SIZE + 2);
+            {
+                // dynmem blocks are raw
+                point.X = (short) list_r.raw.Data.ReadSciEndianUInt16(list_r.raw.Offset + offset * POLY_POINT_SIZE);
+                point.Y = (short) list_r.raw.Data.ReadSciEndianUInt16(list_r.raw.Offset + offset * POLY_POINT_SIZE + 2);
             }
             else
             {
-                point.X = list_r.reg.Value[offset * 2].ToInt16();
-                point.Y = list_r.reg.Value[offset * 2 + 1].ToInt16();
+                point.X = list_r.reg[offset * 2].ToInt16();
+                point.Y = list_r.reg[offset * 2 + 1].ToInt16();
             }
             return point;
         }
@@ -1418,7 +1416,8 @@ namespace NScumm.Sci.Engine
         }
 
 
-        private static PathfindingState ConvertPolygonSet(EngineState s, Register poly_list, Point start, Point end, int width, int height, int opt)
+        private static PathfindingState ConvertPolygonSet(EngineState s, Register poly_list, Point start, Point end,
+            int width, int height, int opt)
         {
             SegManager segMan = s._segMan;
             Polygon polygon;
@@ -1440,7 +1439,7 @@ namespace NScumm.Sci.Engine
                     if (polygon != null)
                     {
                         pf_s.polygons.Add(polygon);
-                        count = (int)(count + SciEngine.ReadSelectorValue(segMan, node.value, o => o.size));
+                        count = (int) (count + SciEngine.ReadSelectorValue(segMan, node.value, o => o.size));
                     }
 
                     node = s._segMan.LookupNode(node.succ);
@@ -1497,7 +1496,8 @@ namespace NScumm.Sci.Engine
             {
                 // WORKAROUND LSL5 room 660. Priority glitch due to us choosing a different path
                 // than SSCI. Happens when Patti walks to the control room.
-                if (SciEngine.Instance.GameId == SciGameId.LSL5 && (s.CurrentRoomNumber == 660) && (new Point(67, 131) == new_start.Value) && (new Point(229, 101) == new_end.Value))
+                if (SciEngine.Instance.GameId == SciGameId.LSL5 && (s.CurrentRoomNumber == 660) &&
+                    (new Point(67, 131) == new_start.Value) && (new Point(229, 101) == new_end.Value))
                 {
                     Debug(1, "[avoidpath] Applying fix for priority problem in LSL5, room 660");
                     pf_s._prependPoint = new_start.Value;
@@ -1533,7 +1533,7 @@ namespace NScumm.Sci.Engine
         /// are ignored as are improper intersections which do not obstruct
         /// visibility
         /// </summary>
-        /// <returns>PF_OK on success, PF_ERROR when no intersections were 
+        /// <returns>PF_OK on success, PF_ERROR when no intersections were
         /// found, PF_FATAL otherwise.</returns>
         /// <param name="s">The pathfinding state.</param>
         /// <param name="p">p, q: The line segment (p, q).</param>
@@ -1606,18 +1606,18 @@ namespace NScumm.Sci.Engine
             Point c = vertex.v;
             Point d = vertex._next.v;
 
-            denom = a.X * (float)(d.Y - c.Y) + b.X * (float)(c.Y - d.Y) +
-                d.X * (float)(b.Y - a.Y) + c.X * (float)(a.Y - b.Y);
+            denom = a.X * (float) (d.Y - c.Y) + b.X * (float) (c.Y - d.Y) +
+                    d.X * (float) (b.Y - a.Y) + c.X * (float) (a.Y - b.Y);
 
             if (denom == 0.0)
                 // Segments are parallel, no intersection
                 return PathFindingError.ERROR;
 
-            num = a.X * (float)(d.Y - c.Y) + c.X * (float)(a.Y - d.Y) + d.X * (float)(c.Y - a.Y);
+            num = a.X * (float) (d.Y - c.Y) + c.X * (float) (a.Y - d.Y) + d.X * (float) (c.Y - a.Y);
 
             s = num / denom;
 
-            num = -(a.X * (float)(c.Y - b.Y) + b.X * (float)(a.Y - c.Y) + c.X * (float)(b.Y - a.Y));
+            num = -(a.X * (float) (c.Y - b.Y) + b.X * (float) (a.Y - c.Y) + c.X * (float) (b.Y - a.Y));
 
             t = num / denom;
 
@@ -1752,6 +1752,15 @@ namespace NScumm.Sci.Engine
         {
             return v != v._next;
         }
+
+#if ENABLE_SCI32
+
+        private static Register kInPolygon(EngineState s, int argc, StackPtr argv)
+        {
+            // kAvoidPath already implements this
+            return kAvoidPath(s, argc, argv);
+        }
+
+#endif
     }
 }
-

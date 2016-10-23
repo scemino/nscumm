@@ -54,6 +54,7 @@ namespace NScumm.Core.Video
         private uint _pauseStartTime;
         private bool _endTimeSet;
         private Timestamp _endTime;
+        private Point _pos;
 
         public bool IsPaused => _pauseLevel != 0;
 
@@ -73,7 +74,7 @@ namespace NScumm.Core.Video
                 {
                     if (!track.EndOfTrack &&
                         (!IsPlaying || track.TrackType != TrackType.Video || !_endTimeSet ||
-                         ((VideoTrack)track).GetNextFrameStartTime() < (uint)_endTime.Milliseconds))
+                         ((VideoTrack) track).GetNextFrameStartTime() < (uint) _endTime.Milliseconds))
                         return false;
                 }
                 return true;
@@ -83,6 +84,8 @@ namespace NScumm.Core.Video
         public bool NeedsUpdate => HasFramesLeft() && GetTimeToNextFrame() == 0;
 
         public byte[] Palette { get; private set; }
+
+        public Point Pos { get { return _pos; } set { _pos = value; } }
 
         public bool IsRewindable
         {
@@ -115,16 +118,107 @@ namespace NScumm.Core.Video
                 SetRate(new Rational(1));
         }
 
+        public void PauseVideo(bool pause)
+        {
+            if (pause)
+            {
+                _pauseLevel++;
+
+                // We can't go negative
+            }
+            else if (_pauseLevel != 0)
+            {
+                _pauseLevel--;
+
+                // Do nothing
+            }
+            else
+            {
+                return;
+            }
+
+            if (_pauseLevel == 1 && pause)
+            {
+                _pauseStartTime = (uint) ServiceLocator.Platform.GetMilliseconds();
+                    // Store the starting time from pausing to keep it for later
+                foreach (var track in _tracks)
+                {
+                    track.Pause(true);
+                }
+            }
+            else if (_pauseLevel == 0)
+            {
+                foreach (var track in _tracks)
+                {
+                    track.Pause(false);
+                }
+
+                _startTime = (int) (_startTime + (ServiceLocator.Platform.GetMilliseconds() - _pauseStartTime));
+            }
+        }
+
+        public int GetFrameCount()
+        {
+            var count = 0;
+            foreach (var videoTrack in _tracks.OfType<VideoTrack>())
+            {
+                count += videoTrack.FrameCount;
+            }
+
+            return count;
+        }
+
+        public void SetEndFrame(uint frame)
+        {
+            VideoTrack track = _tracks.OfType<VideoTrack>().FirstOrDefault();
+            // If we didn't find a video track, we can't set the final frame (of course)
+            if (track == null)
+                return;
+
+            Timestamp time = track.GetFrameTime(frame + 1);
+
+            if (time < new Timestamp(0))
+                return;
+
+            SetEndTime(time);
+        }
+
+        public void SetEndTime(Timestamp endTime)
+        {
+            Timestamp startTime = new Timestamp(0);
+
+            if (IsPlaying)
+            {
+                startTime = new Timestamp((int) GetTime());
+                StopAudio();
+            }
+
+            _endTime = endTime;
+            _endTimeSet = true;
+
+            if (startTime > endTime)
+                return;
+
+            if (IsPlaying)
+            {
+                // We'll assume the audio track is going to start up at the same time it just was
+                // and therefore not do any seeking.
+                // Might want to set it anyway if we're seekable.
+                StartAudioLimit(new Timestamp(_endTime.Milliseconds - startTime.Milliseconds));
+                _lastTimeChange = startTime;
+            }
+        }
+
         public ushort GetWidth()
         {
             var track = _tracks.OfType<VideoTrack>().FirstOrDefault();
-            return (ushort)(track == null ? 0 : track.Width);
+            return track?.Width ?? 0;
         }
 
         public ushort GetHeight()
         {
             var track = _tracks.OfType<VideoTrack>().FirstOrDefault();
-            return (ushort)(track == null ? 0 : track.Height);
+            return track?.Height ?? 0;
         }
 
         public virtual void Close()
@@ -192,7 +286,7 @@ namespace NScumm.Core.Video
         public virtual bool LoadFile(string filename)
         {
             var file = Engine.OpenFileRead(filename);
-            if (file==null)
+            if (file == null)
             {
                 return false;
             }
@@ -208,7 +302,7 @@ namespace NScumm.Core.Video
 
             foreach (var it in _tracks)
                 if (it.TrackType == TrackType.Audio)
-                    ((AudioTrack)it).SetVolume(_audioVolume);
+                    ((AudioTrack) it).SetVolume(_audioVolume);
         }
 
         public bool HasAudio()
@@ -245,7 +339,7 @@ namespace NScumm.Core.Video
         protected void ResetPauseStartTime()
         {
             if (IsPaused)
-                _pauseStartTime = (uint)Environment.TickCount;
+                _pauseStartTime = (uint) Environment.TickCount;
         }
 
         protected ITrack GetTrack(int track)
@@ -268,20 +362,20 @@ namespace NScumm.Core.Video
             if (track.TrackType == TrackType.Audio)
             {
                 // Update volume settings if it's an audio track
-                ((AudioTrack)track).Volume = _audioVolume;
-                ((AudioTrack)track).Balance = _audioBalance;
+                ((AudioTrack) track).Volume = _audioVolume;
+                ((AudioTrack) track).Balance = _audioBalance;
 
                 if (!isExternal && SupportsAudioTrackSwitching())
                 {
                     if (_mainAudioTrack != null)
                     {
                         // The main audio track has already been found
-                        ((AudioTrack)track).Mute = true;
+                        ((AudioTrack) track).Mute = true;
                     }
                     else
                     {
                         // First audio track found . now the main one
-                        _mainAudioTrack = (AudioTrack)track;
+                        _mainAudioTrack = (AudioTrack) track;
                         _mainAudioTrack.Mute = false;
                     }
                 }
@@ -289,8 +383,9 @@ namespace NScumm.Core.Video
             else if (track.TrackType == TrackType.Video)
             {
                 // If this track has a better time, update _nextVideoTrack
-                if (_nextVideoTrack == null || ((VideoTrack)track).GetNextFrameStartTime() < _nextVideoTrack.GetNextFrameStartTime())
-                    _nextVideoTrack = (VideoTrack)track;
+                if (_nextVideoTrack == null ||
+                    ((VideoTrack) track).GetNextFrameStartTime() < _nextVideoTrack.GetNextFrameStartTime())
+                    _nextVideoTrack = (VideoTrack) track;
             }
 
             // Keep the track paused if we're paused
@@ -299,7 +394,7 @@ namespace NScumm.Core.Video
 
             // Start the track if we're playing
             if (IsPlaying && track.TrackType == TrackType.Audio)
-                ((AudioTrack)track).Start();
+                ((AudioTrack) track).Start();
         }
 
         protected virtual bool SupportsAudioTrackSwitching()
@@ -307,9 +402,11 @@ namespace NScumm.Core.Video
             return false;
         }
 
-        protected virtual void ReadNextPacket() { }
+        protected virtual void ReadNextPacket()
+        {
+        }
 
-        private uint GetTimeToNextFrame()
+        public uint GetTimeToNextFrame()
         {
             if (EndOfVideo || _needsUpdate || _nextVideoTrack == null)
                 return 0;
@@ -342,14 +439,14 @@ namespace NScumm.Core.Video
             {
                 if ((track).TrackType == TrackType.Video && !(track).EndOfTrack &&
                     (!IsPlaying || !_endTimeSet ||
-                     ((VideoTrack)track).GetNextFrameStartTime() < (uint)_endTime.Milliseconds))
+                     ((VideoTrack) track).GetNextFrameStartTime() < (uint) _endTime.Milliseconds))
                     return true;
             }
 
             return false;
         }
 
-        private bool SetReverse(bool reverse)
+        public bool SetReverse(bool reverse)
         {
             // Can only reverse video-only videos
             if (reverse && HasAudio())
@@ -358,9 +455,9 @@ namespace NScumm.Core.Video
             // Attempt to make sure all the tracks are in the requested direction
             foreach (var t in _tracks)
             {
-                if (t.TrackType == TrackType.Video && ((VideoTrack)t).IsReversed != reverse)
+                if (t.TrackType == TrackType.Video && ((VideoTrack) t).IsReversed != reverse)
                 {
-                    if (!((VideoTrack)t).SetReverse(reverse))
+                    if (!((VideoTrack) t).SetReverse(reverse))
                         return false;
 
                     _needsUpdate = true; // force an update
@@ -401,7 +498,7 @@ namespace NScumm.Core.Video
             }
 
             if (_playbackRate != 0)
-                _lastTimeChange = new Timestamp((int)GetTime(), 1);
+                _lastTimeChange = new Timestamp((int) GetTime(), 1);
 
             _playbackRate = targetRate;
             _startTime = Environment.TickCount;
@@ -449,7 +546,7 @@ namespace NScumm.Core.Video
             // We do this before _playbackRate is set so we don't get
             // _lastTimeChange returned, but before _pauseLevel is
             // reset.
-            _lastTimeChange = new Timestamp((int)GetTime());
+            _lastTimeChange = new Timestamp((int) GetTime());
 
             _playbackRate = new Rational(0);
             _startTime = 0;
@@ -478,10 +575,10 @@ namespace NScumm.Core.Video
         private uint GetTime()
         {
             if (!IsPlaying)
-                return (uint)_lastTimeChange.Milliseconds;
+                return (uint) _lastTimeChange.Milliseconds;
 
             if (IsPaused)
-                return (uint)Math.Max((int)(_playbackRate * (_pauseStartTime - _startTime)), 0);
+                return (uint) Math.Max((int) (_playbackRate * (_pauseStartTime - _startTime)), 0);
 
             if (UseAudioSync)
             {
@@ -492,12 +589,12 @@ namespace NScumm.Core.Video
                         uint time = t.RunningTime;
 
                         if (time != 0)
-                            return (uint)(time + _lastTimeChange.Milliseconds);
+                            return (uint) (time + _lastTimeChange.Milliseconds);
                     }
                 }
             }
 
-            return (uint)Math.Max(_playbackRate * (Environment.TickCount - _startTime), 0);
+            return (uint) Math.Max(_playbackRate * (Environment.TickCount - _startTime), 0);
         }
 
         private VideoTrack FindNextVideoTrack()
@@ -509,7 +606,7 @@ namespace NScumm.Core.Video
             {
                 if (t.TrackType == TrackType.Video && !t.EndOfTrack)
                 {
-                    VideoTrack track = (VideoTrack)t;
+                    VideoTrack track = (VideoTrack) t;
                     uint time = track.GetNextFrameStartTime();
 
                     if (time < bestTime)

@@ -36,7 +36,7 @@ namespace NScumm.Core.Video
             return (uint)GetFrameTime((uint)(CurrentFrame + 1)).Milliseconds;
         }
 
-        public Timestamp GetFrameTime(uint frame)
+        public override Timestamp GetFrameTime(uint frame)
         {
             // Try to get as accurate as possible, considering we have a fractional frame rate
             // (which Audio::Timestamp doesn't support).

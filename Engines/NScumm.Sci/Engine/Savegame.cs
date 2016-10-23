@@ -35,6 +35,13 @@ namespace NScumm.Sci.Engine
 		public int playTime;
 		public ushort gameObjectOffset;
 		public ushort script0Size;
+
+	    // Used by Shivers 1
+	    public ushort lowScore;
+	    public ushort highScore;
+
+	    // Used by MGDX
+	    public byte avatarId;
 	}
 
 	/*
@@ -159,6 +166,11 @@ namespace NScumm.Sci.Engine
 		{
 			throw new NotImplementedException ();
 		}
+
+	    public static void gamestate_afterRestoreFixUp(EngineState engineState, short saveNo)
+	    {
+	        throw new NotImplementedException();
+	    }
 	}
 
 	public class Serializer

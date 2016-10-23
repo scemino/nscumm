@@ -20,152 +20,398 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using NScumm.Core;
 using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
 {
-    internal class SciArray<T> {
+    internal enum SciArrayType
+    {
+        Int16 = 0,
+        ID = 1,
+        Byte = 2,
+        String = 3,
+        // Type 4 was for 32-bit integers; never used
+        Invalid = 5
+    }
+
+    internal class SciArray
+    {
         public SciArray()
         {
-            _type = -1;
+            _type = SciArrayType.Invalid;
         }
 
-        public SciArray(SciArray<T> array) {
+        public SciArray(SciArray array)
+        {
             _type = array._type;
             _size = array._size;
-            _actualSize = array._actualSize;
-            _data = new T[_actualSize];
+            _elementSize = array._elementSize;
+            _data = new byte[_size * _elementSize];
             Array.Copy(array._data, _data, _size);
         }
 
-        public SciArray<T> Assign(SciArray<T> array)
+        public SciArray Assign(SciArray array)
         {
             if (this == array)
                 return this;
 
             _type = array._type;
             _size = array._size;
-            _actualSize = array._actualSize;
-            _data = new T[_actualSize];
-            Array.Copy(array._data, _data, _size);
+            _elementSize = array._elementSize;
+            _data = new byte[_elementSize * _size];
+            Array.Copy(array._data, _data, _elementSize * _size);
 
             return this;
         }
 
-        public void SetType(sbyte type) {
-            if (_type >= 0)
-                Error("SciArray::setType(): Type already set");
+        /// <summary>
+        /// Copies values from the source array. Both arrays will be grown if needed
+        /// to prevent out-of-bounds reads/writes.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="sourceIndex"></param>
+        /// <param name="targetIndex"></param>
+        /// <param name="count"></param>
+        public void Copy(SciArray source, ushort sourceIndex, ushort targetIndex, ushort count)
+        {
+            if (count == 65535 /* -1 */)
+            {
+                count = (ushort) (source.Size - sourceIndex);
+            }
 
+            if (count == 0)
+            {
+                return;
+            }
+
+            Resize((ushort) (targetIndex + count));
+            source.Resize((ushort) (sourceIndex + count));
+
+            System.Diagnostics.Debug.Assert(source._elementSize == _elementSize);
+
+            BytePtr sourceData = new BytePtr(source._data, sourceIndex * source._elementSize);
+            BytePtr targetData = new BytePtr(_data, targetIndex * _elementSize);
+            Array.Copy(sourceData.Data, sourceData.Offset, targetData.Data, targetData.Offset, count * _elementSize);
+        }
+
+        /// <summary>
+        /// Fills the array with the given value. Existing values will be
+        /// overwritten. The array will be grown if needed to store all values.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="count"></param>
+        /// <param name="value"></param>
+        public void Fill(ushort index, ushort count, Register value)
+        {
+            if (count == 65535 /* -1 */)
+            {
+                count = (ushort) (Size - index);
+            }
+
+            if (count == 0)
+            {
+                return;
+            }
+
+            Resize((ushort) (index + count));
+
+            switch (_type)
+            {
+                case SciArrayType.Int16:
+                {
+                    short fillValue = value.ToInt16();
+                    var target = new UShortAccess(_data, index * 2);
+                    while (count-- != 0)
+                    {
+                        target.Value = (ushort) fillValue;
+                        target.Offset += 2;
+                    }
+                    break;
+                }
+                case SciArrayType.ID:
+                {
+                    var target = new RegisterBytePtr(new BytePtr(_data, index * Register.Size));
+                    for (int i = 0; i < count; i++)
+                    {
+                        target[i] = value;
+                    }
+                    break;
+                }
+                case SciArrayType.Byte:
+                case SciArrayType.String:
+                {
+                    BytePtr target = new BytePtr(_data, index);
+                    byte fillValue = (byte) value.Offset;
+                    while (count-- != 0)
+                    {
+                        target.Value = fillValue;
+                        target.Offset++;
+                    }
+                    break;
+                }
+                case SciArrayType.Invalid:
+                    Error("Attempted write to uninitialized SciArray");
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Copies the string from the given Common::String into this array.
+        /// </summary>
+        /// <param name="string"></param>
+        public void FromString(string @string)
+        {
+            // At least LSL6hires uses a byte-type array to hold string data
+            System.Diagnostics.Debug.Assert(_type == SciArrayType.String || _type == SciArrayType.Byte);
+            Array.Resize(ref _data, @string.Length + 1);
+            Array.Copy(@string.GetBytes(), _data, @string.Length);
+            _data[@string.Length] = 0;
+        }
+
+        /// <summary>
+        /// Sets the type of this array. The type of the array may only be set once.
+        /// </summary>
+        /// <param name="type"></param>
+        public void SetType(SciArrayType type)
+        {
+            System.Diagnostics.Debug.Assert(_type == SciArrayType.Invalid);
+            switch (type)
+            {
+                case SciArrayType.ID:
+                    _elementSize = Register.Size;
+                    break;
+                case SciArrayType.Int16:
+                    _elementSize = sizeof(short);
+                    break;
+                case SciArrayType.String:
+                    _elementSize = sizeof(char);
+                    break;
+                case SciArrayType.Byte:
+                    _elementSize = sizeof(byte);
+                    break;
+                default:
+                    Error("Invalid array type {0}", type);
+                    break;
+            }
             _type = type;
         }
 
-        public void SetSize(int size) {
-            if (_type < 0)
-                Error("SciArray::setSize(): No type set");
+        /// <summary>
+        /// Ensures the array is large enough to store at least the given number of
+        /// values given in `newSize`. If `force` is true, the array will be resized
+        /// to store exactly `newSize` values. New values are initialized to zero.
+        /// </summary>
+        /// <param name="newSize"></param>
+        /// <param name="force"></param>
+        public void Resize(ushort newSize, bool force = false)
+        {
+            if (force || newSize > _size)
+            {
+                Array.Resize(ref _data, _elementSize * newSize);
+                _size = newSize;
+            }
+        }
 
-            // Check if we don't have to do anything
-            if (_size == size)
-                return;
+        /// <summary>
+        /// Shrinks a string array to its optimal size.
+        /// </summary>
+        public void Snug()
+        {
+            System.Diagnostics.Debug.Assert(_type == SciArrayType.String || _type == SciArrayType.Byte);
+            Resize((ushort) (_data.GetTextLength() + 1), true);
+        }
 
-            // Check if we don't have to expand the array
-            if (size <= _actualSize) {
-                _size = size;
-                return;
+        /// <summary>
+        /// Gets the value at the given index as a Register.
+        /// </summary>
+        /// <returns></returns>
+        public Register GetAsID(ushort index)
+        {
+            if (ResourceManager.GetSciVersion() >= SciVersion.V3)
+            {
+                Resize(index);
+            }
+            else
+            {
+                System.Diagnostics.Debug.Assert(index < _size);
             }
 
-            // So, we're going to have to create an array of some sort
-            var newArray = new T[size];
-            Array.Clear(newArray, 0, size);
+            switch (_type)
+            {
+                case SciArrayType.Int16:
+                    return Register.Make(0, (ushort) _data.ToInt16(2 * index));
+                case SciArrayType.Byte:
+                case SciArrayType.String:
+                    return Register.Make(0, _data[index]);
+                case SciArrayType.ID:
+                    return new RegisterBytePtr(_data)[index];
+                default:
+                    Error("Invalid array type {0}", _type);
+                    return Register.NULL_REG;
+            }
+        }
 
-            // Check if we never created an array before
-            if (_data==null) {
-                _size = _actualSize = size;
-                _data = newArray;
-                return;
+        /// <summary>
+        /// Sets the value at the given index from a Register.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="value"></param>
+        public void SetFromID(ushort index, Register value)
+        {
+            if (ResourceManager.GetSciVersion() >= SciVersion.V3)
+            {
+                Resize(index);
+            }
+            else
+            {
+                System.Diagnostics.Debug.Assert(index < _size);
             }
 
-            // Copy data from the old array to the new
-            Array.Copy(_data, newArray,_size);
-
-            // Now set the new array to the old and set the sizes
-            _data = newArray;
-            _size = _actualSize = size;
+            switch (_type)
+            {
+                case SciArrayType.Int16:
+                    _data.WriteInt16(index * 2, value.ToInt16());
+                    break;
+                case SciArrayType.Byte:
+                case SciArrayType.String:
+                    _data[index] = (byte) value.ToInt16();
+                    break;
+                case SciArrayType.ID:
+                    new RegisterBytePtr(_data)[index] = value;
+                    break;
+                default:
+                    Error("Invalid array type {0}", _type);
+                    break;
+            }
         }
 
-        public T GetValue(ushort index) {
-            if (index >= _size)
-                Error("SciArray::getValue(): {0} is out of bounds ({1})", index, _size);
+        /// <summary>
+        /// Returns a reference to the byte at the given index. Only valid for
+        /// string and byte arrays.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public BytePtr ByteAt(ushort index)
+        {
+            System.Diagnostics.Debug.Assert(_type == SciArrayType.String || _type == SciArrayType.Byte);
 
-            return _data[index];
+            if (ResourceManager.GetSciVersion() >= SciVersion.V3)
+            {
+                Resize(index);
+            }
+            else
+            {
+                System.Diagnostics.Debug.Assert(index < _size);
+            }
+
+            return new BytePtr(_data, index);
         }
 
-        public void SetValue(ushort index, T value) {
-            if (index >= _size)
-                Error("SciArray::setValue(): {0} is out of bounds ({1})", index, _size);
-
-            _data[index] = value;
+        public byte this[ushort index]
+        {
+            get { return ByteAt(index)[0]; }
+            set
+            {
+                var ptr = ByteAt(index);
+                ptr[0] = value;
+            }
         }
-
-        public sbyte Type =>_type;
-        public int Size=>_size;
-        public T[] RawData => _data;
-
-        protected sbyte _type;
-        protected  T[] _data;
-        protected int _size; // _size holds the number of entries that the scripts have requested
-        protected int _actualSize; // _actualSize is the actual numbers of entries allocated
 
         public virtual void Destroy()
         {
             _data = null;
-            _type = -1;
-            _size = _actualSize = 0;
+            _type = SciArrayType.Invalid;
+            _size = _elementSize = 0;
         }
+
+        /// <summary>
+        /// Reads values from the given reg_t pointer and sets them in the array,
+        /// growing the array if needed to store all values.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="count"></param>
+        /// <param name="values"></param>
+        public void SetElements(ushort index, ushort count, StackPtr values)
+        {
+            Resize((ushort) (index + count));
+
+            switch (_type)
+            {
+                case SciArrayType.Int16:
+                {
+                    StackPtr source = values;
+                    var target = new UShortAccess(_data, index);
+                    while (count-- != 0)
+                    {
+                        if (!source[0].IsNumber)
+                        {
+                            Error("Non-number {0} sent to int16 array", source[0]);
+                        }
+                        target.Value = (ushort) source[0].ToInt16();
+                        target.Offset++;
+                        ++source;
+                    }
+                    break;
+                }
+                case SciArrayType.ID:
+                {
+                    StackPtr source = values;
+                    RegisterBytePtr target = new RegisterBytePtr(new BytePtr(_data, index * Register.Size));
+                    for (int i = 0; i < count; i++)
+                    {
+                        target[i] = source[0];
+                        source++;
+                    }
+                    break;
+                }
+                case SciArrayType.Byte:
+                case SciArrayType.String:
+                {
+                    StackPtr source = values;
+                    var target = new BytePtr(_data, index);
+                    while (count-- != 0)
+                    {
+                        if (!source[0].IsNumber)
+                        {
+                            Error("Non-number {0} sent to byte or string array", source[0]);
+                        }
+                        target.Value = (byte) source[0].Offset;
+                        target.Offset++;
+                        ++source;
+                    }
+                    break;
+                }
+                default:
+                    Error("Attempted write to SciArray with invalid type {0}", _type);
+                    break;
+            }
+        }
+
+        public SciArrayType Type => _type;
+
+        /// <summary>
+        /// Returns the size of the array, in elements.
+        /// </summary>
+        public int Size => _size;
+
+        /// <summary>
+        /// Returns the size of the array, in bytes.
+        /// </summary>
+        public int ByteSize => _size * _elementSize;
+
+        /// <summary>
+        /// Returns a pointer to the array's raw data storage.
+        /// </summary>
+        public byte[] RawData => _data;
+
+        protected byte[] _data;
+        protected SciArrayType _type;
+        protected int _size; // _size holds the number of entries that the scripts have requested
+        protected byte _elementSize;
     }
 
-    internal class SciString : SciArray<byte>
-    {
-        public SciString()
-        {
-            SetType(3);
-        }
-
-        // We overload destroy to ensure the string type is 3 after destroying
-        public override void Destroy()
-        {
-            base.Destroy();
-            _type = 3;
-        }
-
-        public override string ToString()
-        {
-            if (_type != 3)
-                Error("SciString::toString(): Array is not a string");
-
-            var @string=new StringBuilder();
-            for (var i = 0; i < _size && _data[i] != 0; i++)
-                @string.Append((char)_data[i]);
-
-            return @string.ToString();
-        }
-
-        public void FromString(string @string)
-        {
-            if (_type != 3)
-                Error("SciString::fromString(): Array is not a string");
-
-            SetSize(@string.Length + 1);
-
-            for (var i = 0; i < @string.Length; i++)
-                _data[i] = (byte)@string[i];
-
-            _data[@string.Length] = 0x0;
-        }
-    }
-
-    internal sealed class ArrayTable : SegmentObjTable<SciArray<Register>>
+    internal sealed class ArrayTable : SegmentObjTable<SciArray>
     {
         public ArrayTable() : base(SegmentType.ARRAY)
         {
@@ -179,56 +425,44 @@ namespace NScumm.Sci.Engine
 
         public override List<Register> ListAllOutgoingReferences(Register addr)
         {
-            var tmp=new List<Register>();
+            var refs = new List<Register>();
             if (!IsValidEntry((int) addr.Offset))
             {
+                // explicitly freed; ignore these references
                 Error("Invalid array referenced for outgoing references: {0}", addr);
             }
 
             var array = this[(int) addr.Offset];
-
-            for (var i = 0; i < array.Size; i++)
+            if (array.Type == SciArrayType.ID)
             {
-                var value = array.GetValue((ushort) i);
-                if (value.Segment != 0)
-                    tmp.Add(value);
+                for (var i = 0; i < array.Size; i++)
+                {
+                    var value = array.GetAsID((ushort) i);
+                    if (value.IsPointer)
+                        refs.Add(value);
+                }
             }
 
-            return tmp;
+            return refs;
         }
 
         public override SegmentRef Dereference(Register pointer)
         {
-            var ret = new SegmentRef
+            SegmentRef ret = new SegmentRef();
+
+            SciArray array = this[(int) pointer.Offset];
+            bool isRaw = array.Type != SciArrayType.ID;
+
+            ret.isRaw = isRaw;
+            ret.maxSize = isRaw ? array.ByteSize : array.Size;
+            if (isRaw)
             {
-                isRaw = false,
-                maxSize = this[(int) pointer.Offset].Size * 2,
-                reg = new StackPtr(this[(int) pointer.Offset].RawData,0)
-            };
-            return ret;
-        }
-    }
-
-    internal class StringTable: SegmentObjTable<SciString>
-    {
-        public StringTable() : base(SegmentType.STRING)
-        {
-        }
-
-        public override void FreeAtAddress(SegManager segMan, Register subAddr)
-        {
-            this[(int) subAddr.Offset].Destroy();
-            FreeEntry((int) subAddr.Offset);
-        }
-
-        public override SegmentRef Dereference(Register pointer)
-        {
-            var ret = new SegmentRef
+                ret.raw = array.RawData;
+            }
+            else
             {
-                isRaw = true,
-                maxSize = this[(int) pointer.Offset].Size,
-                raw = new BytePtr(this[(int) pointer.Offset].RawData)
-            };
+                ret.reg = new RegisterBytePtr(array.RawData);
+            }
             return ret;
         }
     }

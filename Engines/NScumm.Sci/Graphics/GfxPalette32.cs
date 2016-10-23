@@ -17,11 +17,60 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using NScumm.Core;
 using NScumm.Sci.Engine;
 using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Graphics
 {
+    internal enum PalCyclerDirection
+    {
+        PalCycleBackward = 0,
+        PalCycleForward = 1
+    }
+
+    internal class PalCycler
+    {
+        /// <summary>
+        /// The color index of the palette cycler. This value is effectively used as the ID for the
+        /// cycler.
+        /// </summary>
+        public byte fromColor;
+
+        /// <summary>
+        /// The number of palette slots which are cycled by the palette cycler.
+        /// </summary>
+        public ushort numColorsToCycle;
+
+        /// <summary>
+        /// The position of the cursor in its cycle.
+        /// </summary>
+        public byte currentCycle;
+
+        /// <summary>
+        /// The direction of the cycler.
+        /// </summary>
+        public PalCyclerDirection direction;
+
+        /// <summary>
+        /// The cycle tick at the last time the cycler’s currentCycle was updated.
+        /// 795 days of game time ought to be enough for everyone? :)
+        /// </summary>
+        public uint lastUpdateTick;
+
+        /// <summary>
+        /// The amount of time in ticks each cycle should take to complete. In other words,
+        /// the higher the delay, the slower the cycle animation. If delay is 0, the cycler
+        /// does not automatically cycle and needs to be pumped manually with DoCycle.
+        /// </summary>
+        public short delay;
+
+        /// <summary>
+        /// The number of times this cycler has been paused.
+        /// </summary>
+        public ushort numTimesPaused;
+    }
+
     internal class GfxPalette32
     {
         private readonly ResourceManager _resMan;
@@ -46,7 +95,7 @@ namespace NScumm.Sci.Graphics
          * palette entries may be mixed into the source palette by
          * CelObj objects, which contain their own palettes.
          */
-        private Palette _sourcePalette;
+        private Palette _sourcePalette = new Palette();
 
         /**
          * The palette to be used when the hardware is next updated.
@@ -118,6 +167,25 @@ namespace NScumm.Sci.Graphics
          */
         private ushort _varyNumTimesPaused;
 
+        /**
+         * The cycle map is used to detect overlapping cyclers.
+         * According to SCI engine code, when two cyclers overlap,
+         * a fatal error has occurred and the engine will display
+         * an error and then exit.
+         *
+         * The cycle map is also by the color remapping system to
+         * avoid attempting to remap to palette entries that are
+         * cycling (so won't be the expected color once the cycler
+         * runs again).
+         */
+        private bool[] _cycleMap = new bool[256];
+        // SQ6 defines 10 cyclers
+        private PalCycler[] _cyclers = new PalCycler[10];
+
+        public Palette CurrentPalette => _currentPalette;
+        public Palette NextPalette => _nextPalette;
+        public bool[] CycleMap => _cycleMap;
+
         public GfxPalette32(ResourceManager resMan)
         {
             _resMan = resMan;
@@ -143,6 +211,18 @@ namespace NScumm.Sci.Graphics
             var palette = new HunkPalette(palResource.data);
             Submit(palette);
             return true;
+        }
+
+        public void Submit(Palette palette)
+        {
+            Palette oldSourcePalette = new Palette(_sourcePalette);
+            MergePaletteInternal(_sourcePalette, palette);
+
+            if (!_needsUpdate && _sourcePalette != oldSourcePalette)
+            {
+                ++_version;
+                _needsUpdate = true;
+            }
         }
 
         public void Submit(HunkPalette hunkPalette)
@@ -318,12 +398,14 @@ namespace NScumm.Sci.Graphics
             SetVaryTimeInternal(_varyTargetPercent, time);
         }
 
-        public void KernelPalVarySetTarget(int paletteId) {
+        public void KernelPalVarySetTarget(int paletteId)
+        {
             var palette = GetPaletteFromResourceInternal(paletteId);
             SetTarget(palette);
         }
 
-        public void KernelPalVarySetStart(int paletteId) {
+        public void KernelPalVarySetStart(int paletteId)
+        {
             var palette = GetPaletteFromResourceInternal(paletteId);
             SetStart(palette);
         }
@@ -348,6 +430,438 @@ namespace NScumm.Sci.Graphics
             else
             {
                 _varyStartPalette = new Palette(palette);
+            }
+        }
+
+        // NOTE: There are some game scripts (like SQ6 Sierra logo and main menu) that call
+        // setFade with numColorsToFade set to 256, but other parts of the engine like
+        // processShowStyleNone use 255 instead of 256. It is not clear if this is because
+        // the last palette entry is intentionally left unmodified, or if this is a bug
+        // in the engine. It certainly seems confused because all other places that accept
+        // color ranges typically receive values in the range of 0–255.
+        public void SetFade(ushort percent, byte fromColor, ushort numColorsToFade)
+        {
+            if (fromColor > numColorsToFade)
+            {
+                return;
+            }
+
+            System.Diagnostics.Debug.Assert(numColorsToFade <= _fadeTable.Length);
+
+            for (int i = fromColor; i < numColorsToFade; i++)
+                _fadeTable[i] = percent;
+        }
+
+        public bool UpdateForFrame()
+        {
+            ApplyAll();
+            _needsUpdate = false;
+            return SciEngine.Instance._gfxRemap32.RemapAllTables(_nextPalette != _currentPalette);
+        }
+
+        public void UpdateFFrame()
+        {
+            for (int i = 0; i < _nextPalette.colors.Length; ++i)
+            {
+                _nextPalette.colors[i] = _sourcePalette.colors[i];
+            }
+            _needsUpdate = false;
+            SciEngine.Instance._gfxRemap32.RemapAllTables(_nextPalette != _currentPalette);
+        }
+
+        public void UpdateHardware(bool updateScreen = true)
+        {
+            if (_currentPalette == _nextPalette)
+            {
+                return;
+            }
+
+            var bpal = new Core.Graphics.Color[256];
+
+            for (int i = 0; i < _currentPalette.colors.Length - 1; ++i)
+            {
+                _currentPalette.colors[i] = _nextPalette.colors[i];
+
+                // NOTE: If the brightness option in the user configuration file is set,
+                // SCI engine adjusts palette brightnesses here by mapping RGB values to values
+                // in some hard-coded brightness tables. There is no reason on modern hardware
+                // to implement this, unless it is discovered that some game uses a non-standard
+                // brightness setting by default
+
+                // All color entries MUST be copied, not just "used" entries, otherwise
+                // uninitialised memory from bpal makes its way into the system palette.
+                // This would not normally be a problem, except that games sometimes use
+                // unused palette entries. e.g. Phant1 title screen references palette
+                // entries outside its own palette, so will render garbage colors where
+                // the game expects them to be black
+                bpal[i] = Core.Graphics.Color.FromRgb(_currentPalette.colors[i].R,
+                    _currentPalette.colors[i].G, _currentPalette.colors[i].B);
+            }
+
+            // The last color must always be white
+            bpal[255].R = 255;
+            bpal[255].G = 255;
+            bpal[255].B = 255;
+
+            SciEngine.Instance.System.GraphicsManager.SetPalette(bpal, 0, 256);
+            if (updateScreen)
+            {
+                SciEngine.Instance.EventManager.UpdateScreen();
+            }
+        }
+
+        private void ApplyAll()
+        {
+            ApplyVary();
+            ApplyCycles();
+            ApplyFade();
+        }
+
+        private void ApplyVary()
+        {
+            while (SciEngine.Instance.TickCount - _varyLastTick > (uint) _varyTime && _varyDirection != 0)
+            {
+                _varyLastTick = (uint) (_varyLastTick + _varyTime);
+
+                if (_varyPercent == _varyTargetPercent)
+                {
+                    _varyDirection = 0;
+                }
+
+                _varyPercent += _varyDirection;
+            }
+
+            if (_varyPercent == 0 || _varyTargetPalette == null)
+            {
+                for (int i = 0, len = _nextPalette.colors.Length; i < len; ++i)
+                {
+                    if (_varyStartPalette != null && i >= _varyFromColor && i <= _varyToColor)
+                    {
+                        _nextPalette.colors[i] = _varyStartPalette.colors[i];
+                    }
+                    else
+                    {
+                        _nextPalette.colors[i] = _sourcePalette.colors[i];
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0, len = _nextPalette.colors.Length; i < len; ++i)
+                {
+                    if (i >= _varyFromColor && i <= _varyToColor)
+                    {
+                        Color targetColor = _varyTargetPalette.colors[i];
+                        Color sourceColor;
+
+                        if (_varyStartPalette != null)
+                        {
+                            sourceColor = _varyStartPalette.colors[i];
+                        }
+                        else
+                        {
+                            sourceColor = _sourcePalette.colors[i];
+                        }
+
+                        Color computedColor;
+
+                        int color;
+                        color = targetColor.R - sourceColor.R;
+                        computedColor.R = (byte) ((color * _varyPercent / 100) + sourceColor.R);
+                        color = targetColor.G - sourceColor.G;
+                        computedColor.G = (byte) (((color * _varyPercent) / 100) + sourceColor.G);
+                        color = targetColor.B - sourceColor.B;
+                        computedColor.B = (byte) (((color * _varyPercent) / 100) + sourceColor.B);
+                        computedColor.used = sourceColor.used;
+
+                        _nextPalette.colors[i] = computedColor;
+                    }
+                    else
+                    {
+                        _nextPalette.colors[i] = _sourcePalette.colors[i];
+                    }
+                }
+            }
+        }
+
+        private void ApplyCycles()
+        {
+            Color[] paletteCopy = new Color[256];
+            Array.Copy(_nextPalette.colors, paletteCopy, 256);
+
+            for (int i = 0, len = _cyclers.Length; i < len; ++i)
+            {
+                PalCycler cycler = _cyclers[i];
+                if (cycler == null)
+                {
+                    continue;
+                }
+
+                if (cycler.delay != 0 && cycler.numTimesPaused == 0)
+                {
+                    while (cycler.delay + cycler.lastUpdateTick < SciEngine.Instance.TickCount)
+                    {
+                        DoCycleInternal(cycler, 1);
+                        cycler.lastUpdateTick = (uint) (cycler.lastUpdateTick + cycler.delay);
+                    }
+                }
+
+                for (int j = 0; j < cycler.numColorsToCycle; j++)
+                {
+                    _nextPalette.colors[cycler.fromColor + j] =
+                        paletteCopy[cycler.fromColor + (cycler.currentCycle + j) % cycler.numColorsToCycle];
+                }
+            }
+        }
+
+        private void ApplyFade()
+        {
+            for (int i = 0; i < _fadeTable.Length; ++i)
+            {
+                if (_fadeTable[i] == 100)
+                    continue;
+
+                Color color = _nextPalette.colors[i];
+
+                color.R = (byte) Math.Min(255, color.R * _fadeTable[i] / 100);
+                color.G = (byte) Math.Min(255, color.G * _fadeTable[i] / 100);
+                color.B = (byte) Math.Min(255, color.B * _fadeTable[i] / 100);
+            }
+        }
+
+        private void DoCycleInternal(PalCycler cycler, short speed)
+        {
+            short currentCycle = cycler.currentCycle;
+            ushort numColorsToCycle = cycler.numColorsToCycle;
+
+            if (cycler.direction == 0)
+            {
+                currentCycle = (short) ((currentCycle - (speed % numColorsToCycle)) + numColorsToCycle);
+            }
+            else
+            {
+                currentCycle = (short) (currentCycle + speed);
+            }
+
+            cycler.currentCycle = (byte) (currentCycle % numColorsToCycle);
+        }
+
+        public void SetCycle(ushort fromColor, ushort toColor, short direction, ushort delay)
+        {
+            System.Diagnostics.Debug.Assert(fromColor < toColor);
+
+            int cyclerIndex;
+            int numCyclers = _cyclers.Length;
+
+            PalCycler cycler = GetCycler(fromColor);
+
+            if (cycler != null)
+            {
+                ClearCycleMap(fromColor, cycler.numColorsToCycle);
+            }
+            else
+            {
+                for (cyclerIndex = 0; cyclerIndex < numCyclers; ++cyclerIndex)
+                {
+                    if (_cyclers[cyclerIndex] == null)
+                    {
+                        cycler = new PalCycler();
+                        _cyclers[cyclerIndex] = cycler;
+                        break;
+                    }
+                }
+            }
+
+            // SCI engine overrides the first oldest cycler that it finds where
+            // “oldest” is determined by the difference between the tick and now
+            if (cycler == null)
+            {
+                uint now = SciEngine.Instance.TickCount;
+                uint minUpdateDelta = 0xFFFFFFFF;
+
+                for (cyclerIndex = 0; cyclerIndex < numCyclers; ++cyclerIndex)
+                {
+                    PalCycler candidate = _cyclers[cyclerIndex];
+
+                    uint updateDelta = now - candidate.lastUpdateTick;
+                    if (updateDelta < minUpdateDelta)
+                    {
+                        minUpdateDelta = updateDelta;
+                        cycler = candidate;
+                    }
+                }
+
+                ClearCycleMap(cycler.fromColor, cycler.numColorsToCycle);
+            }
+
+            ushort numColorsToCycle = (ushort) (1 + ((byte) toColor) - fromColor);
+            cycler.fromColor = (byte) fromColor;
+            cycler.numColorsToCycle = (byte) numColorsToCycle;
+            cycler.currentCycle = (byte) fromColor;
+            cycler.direction = direction < 0 ? PalCyclerDirection.PalCycleBackward : PalCyclerDirection.PalCycleForward;
+            cycler.delay = (short) delay;
+            cycler.lastUpdateTick = SciEngine.Instance.TickCount;
+            cycler.numTimesPaused = 0;
+
+            SetCycleMap(fromColor, numColorsToCycle);
+        }
+
+        private void SetCycleMap(ushort fromColor, ushort numColorsToSet)
+        {
+            Ptr<bool> mapEntry = new Ptr<bool>(_cycleMap, fromColor);
+            Ptr<bool> lastEntry = new Ptr<bool>(_cycleMap, numColorsToSet);
+            while (mapEntry.Offset < lastEntry.Offset)
+            {
+                if (mapEntry[0])
+                {
+                    Error("Cycles intersect");
+                }
+                mapEntry[0] = true;
+                mapEntry.Offset++;
+            }
+        }
+
+        private PalCycler GetCycler(ushort fromColor)
+        {
+            int numCyclers = _cyclers.Length;
+
+            for (int cyclerIndex = 0; cyclerIndex < numCyclers; ++cyclerIndex)
+            {
+                PalCycler cycler = _cyclers[cyclerIndex];
+                if (cycler != null && cycler.fromColor == fromColor)
+                {
+                    return cycler;
+                }
+            }
+
+            return null;
+        }
+
+        private void ClearCycleMap(ushort fromColor, ushort numColorsToClear)
+        {
+            var mapEntry = new Ptr<bool>(_cycleMap, fromColor);
+            var lastEntry = new Ptr<bool>(_cycleMap, numColorsToClear);
+            while (mapEntry.Offset < lastEntry.Offset)
+            {
+                mapEntry[0] = false;
+                mapEntry.Offset++;
+            }
+        }
+
+        public void DoCycle(byte fromColor, short speed)
+        {
+            PalCycler cycler = GetCycler(fromColor);
+            if (cycler != null)
+            {
+                cycler.lastUpdateTick = SciEngine.Instance.TickCount;
+                DoCycleInternal(cycler, speed);
+            }
+        }
+
+        public void CycleAllPause()
+        {
+            // NOTE: The original engine did not check for null pointers in the
+            // palette cyclers pointer array.
+            for (int i = 0, len = _cyclers.Length; i < len; ++i)
+            {
+                PalCycler cycler = _cyclers[i];
+                if (cycler != null)
+                {
+                    // This seems odd, because currentCycle is 0..numColorsPerCycle,
+                    // but fromColor is 0..255. When applyAllCycles runs, the values
+                    // end up back in range
+                    cycler.currentCycle = cycler.fromColor;
+                }
+            }
+
+            ApplyAllCycles();
+
+            for (int i = 0, len = _cyclers.Length; i < len; ++i)
+            {
+                PalCycler cycler = _cyclers[i];
+                if (cycler != null)
+                {
+                    ++cycler.numTimesPaused;
+                }
+            }
+        }
+
+        public void CyclePause(byte fromColor)
+        {
+            PalCycler cycler = GetCycler(fromColor);
+            if (cycler != null)
+            {
+                ++cycler.numTimesPaused;
+            }
+        }
+
+        public void CycleAllOn()
+        {
+            for (int i = 0, len = _cyclers.Length; i < len; ++i)
+            {
+                PalCycler cycler = _cyclers[i];
+                if (cycler != null && cycler.numTimesPaused > 0)
+                {
+                    --cycler.numTimesPaused;
+                }
+            }
+        }
+
+        public void CycleOff(byte fromColor)
+        {
+            for (int i = 0, len = _cyclers.Length; i < len; ++i)
+            {
+                PalCycler cycler = _cyclers[i];
+                if (cycler != null && cycler.fromColor == fromColor)
+                {
+                    ClearCycleMap(fromColor, cycler.numColorsToCycle);
+                    _cyclers[i] = null;
+                    break;
+                }
+            }
+        }
+
+        public void CycleAllOff()
+        {
+            for (int i = 0, len = _cyclers.Length; i < len; ++i)
+            {
+                PalCycler cycler = _cyclers[i];
+                if (cycler != null)
+                {
+                    ClearCycleMap(cycler.fromColor, cycler.numColorsToCycle);
+                    _cyclers[i] = null;
+                }
+            }
+        }
+
+        public void CycleOn(byte fromColor)
+        {
+            PalCycler cycler = GetCycler(fromColor);
+            if (cycler != null && cycler.numTimesPaused > 0)
+            {
+                --cycler.numTimesPaused;
+            }
+        }
+
+        private void ApplyAllCycles()
+        {
+            Color[] paletteCopy = new Color[256];
+            Array.Copy(_nextPalette.colors, paletteCopy, 256);
+
+            for (int cyclerIndex = 0, numCyclers = _cyclers.Length; cyclerIndex < numCyclers; ++cyclerIndex)
+            {
+                PalCycler cycler = _cyclers[cyclerIndex];
+                if (cycler != null)
+                {
+                    cycler.currentCycle = (byte) ((cycler.currentCycle + 1) % cycler.numColorsToCycle);
+                    // Disassembly was not fully evaluated to verify this is exactly the same
+                    // as the code from applyCycles, but it appeared to be at a glance
+                    for (int j = 0; j < cycler.numColorsToCycle; j++)
+                    {
+                        _nextPalette.colors[cycler.fromColor + j] =
+                            paletteCopy[cycler.fromColor + (cycler.currentCycle + j) % cycler.numColorsToCycle];
+                    }
+                }
             }
         }
     }

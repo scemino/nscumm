@@ -67,9 +67,9 @@ namespace NScumm.Sci.Graphics
 
             for (int i = 0; i < 256; i++)
             {
-                byte r = (byte) (_palette._sysPalette.colors[i].r * _remappingPercentToSet / 100);
-                byte g = (byte) (_palette._sysPalette.colors[i].g * _remappingPercentToSet / 100);
-                byte b = (byte) (_palette._sysPalette.colors[i].b * _remappingPercentToSet / 100);
+                byte r = (byte) (_palette._sysPalette.colors[i].R * _remappingPercentToSet / 100);
+                byte g = (byte) (_palette._sysPalette.colors[i].G * _remappingPercentToSet / 100);
+                byte b = (byte) (_palette._sysPalette.colors[i].B * _remappingPercentToSet / 100);
                 _remappingByPercent[i] = (byte) _palette.KernelFindColor(r, g, b);
             }
 
@@ -109,9 +109,9 @@ namespace NScumm.Sci.Graphics
 
             for (var i = 0; i < 256; i++)
             {
-                byte r = (byte) (_palette._sysPalette.colors[i].r * _remappingPercentToSet / 100);
-                byte g = (byte) (_palette._sysPalette.colors[i].g * _remappingPercentToSet / 100);
-                byte b = (byte) (_palette._sysPalette.colors[i].b * _remappingPercentToSet / 100);
+                byte r = (byte) (_palette._sysPalette.colors[i].R * _remappingPercentToSet / 100);
+                byte g = (byte) (_palette._sysPalette.colors[i].G * _remappingPercentToSet / 100);
+                byte b = (byte) (_palette._sysPalette.colors[i].B * _remappingPercentToSet / 100);
                 _remappingByPercent[i] = (byte) _palette.KernelFindColor(r, g, b);
             }
         }

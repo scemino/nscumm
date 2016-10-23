@@ -16,6 +16,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
 
 namespace NScumm.Core.Video
@@ -49,11 +50,11 @@ namespace NScumm.Core.Video
             return false;
         }
 
-        //public Timestamp GetFrameTime(uint frame)
-        //{
-        //    // Default implementation: Return an invalid (negative) number
-        //    return new Timestamp().AddFrames(-1);
-        //}
+        public virtual Timestamp GetFrameTime(uint frame)
+        {
+            // Default implementation: Return an invalid (negative) number
+            return new Timestamp(0).AddFrames(-1);
+        }
 
         public bool SetReverse(bool reverse)
         {

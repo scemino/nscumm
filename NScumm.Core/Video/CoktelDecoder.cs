@@ -193,7 +193,7 @@ namespace NScumm.Core.Video
 
         /** Draw directly onto the specified video memory. */
 
-        public void SetSurfaceMemory(byte[] mem, ushort width, ushort height, byte bpp)
+        public void SetSurfaceMemory(BytePtr mem, ushort width, ushort height, byte bpp)
         {
             FreeSurface();
 

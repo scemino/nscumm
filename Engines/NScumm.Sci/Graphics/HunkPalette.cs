@@ -148,9 +148,9 @@ namespace NScumm.Sci.Graphics
             for (var i = 0; i < outPalette.colors.Length; ++i)
             {
                 outPalette.colors[i].used = 0;
-                outPalette.colors[i].r = 0;
-                outPalette.colors[i].g = 0;
-                outPalette.colors[i].b = 0;
+                outPalette.colors[i].R = 0;
+                outPalette.colors[i].G = 0;
+                outPalette.colors[i].B = 0;
             }
 
             if (_numPalettes != 0)
@@ -166,11 +166,11 @@ namespace NScumm.Sci.Graphics
                     for (short i = header.startColor; i < end; ++i)
                     {
                         outPalette.colors[i].used = header.used;
-                        outPalette.colors[i].r = data.Value;
+                        outPalette.colors[i].R = data.Value;
                         data.Offset++;
-                        outPalette.colors[i].g = data.Value;
+                        outPalette.colors[i].G = data.Value;
                         data.Offset++;
-                        outPalette.colors[i].b = data.Value;
+                        outPalette.colors[i].B = data.Value;
                         data.Offset++;
                     }
                 }
@@ -180,11 +180,11 @@ namespace NScumm.Sci.Graphics
                     {
                         outPalette.colors[i].used = data.Value;
                         data.Offset++;
-                        outPalette.colors[i].r = data.Value;
+                        outPalette.colors[i].R = data.Value;
                         data.Offset++;
-                        outPalette.colors[i].g = data.Value;
+                        outPalette.colors[i].G = data.Value;
                         data.Offset++;
-                        outPalette.colors[i].b = data.Value;
+                        outPalette.colors[i].B = data.Value;
                         data.Offset++;
                     }
                 }

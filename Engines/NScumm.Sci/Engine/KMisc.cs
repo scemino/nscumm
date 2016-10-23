@@ -23,6 +23,7 @@ using static NScumm.Core.DebugHelper;
 using NScumm.Core.Graphics;
 using System.Collections.Generic;
 using System.Linq;
+using NScumm.Core.IO;
 
 namespace NScumm.Sci.Engine
 {
@@ -73,11 +74,12 @@ namespace NScumm.Sci.Engine
 
     internal partial class Kernel
     {
+        private const int SciPlatformMacintosh = 0;
         private const int SciPlatformDOS = 1;
         private const int SciPlatformWindows = 2;
         private const string AVOIDPATH_DYNMEM_STRING = "AvoidPath polyline";
 
-        private static Register kEmpty(EngineState s, int argc, StackPtr argv)
+        internal static Register kEmpty(EngineState s, int argc, StackPtr argv)
         {
             // Placeholder for empty kernel functions which are still called from the
             // engine scripts (like the empty kSetSynonyms function in SCI1.1). This
@@ -96,10 +98,11 @@ namespace NScumm.Sci.Engine
         /// <returns></returns>
         private static Register kGameIsRestarting(EngineState s, int argc, StackPtr argv)
         {
-            s.r_acc = Register.Make(0, (ushort)s.gameIsRestarting);
+            s.r_acc = Register.Make(0, (ushort) s.gameIsRestarting);
 
             if (argc != 0)
-            { // Only happens during replay
+            {
+                // Only happens during replay
                 if (argv[0].ToUInt16() == 0) // Set restarting flag
                     s.gameIsRestarting = GameIsRestarting.NONE;
             }
@@ -180,29 +183,29 @@ namespace NScumm.Sci.Engine
 
         private static Register kMemory(EngineState s, int argc, StackPtr argv)
         {
-            switch ((MemoryFunction)argv[0].ToUInt16())
+            switch ((MemoryFunction) argv[0].ToUInt16())
             {
                 case MemoryFunction.ALLOCATE_CRITICAL:
+                {
+                    int byteCount = argv[1].ToUInt16();
+                    // WORKAROUND:
+                    //  - pq3 (multilingual) room 202
+                    //     when plotting crimes, allocates the returned bytes from kStrLen
+                    //     on "W" and "E" and wants to put a string in there, which doesn't
+                    //     fit of course.
+                    //  - lsl5 (multilingual) room 280
+                    //     allocates memory according to a previous kStrLen for the name of
+                    //     the airport ladies (bug #3093818), which isn't enough
+
+                    // We always allocate 1 byte more, because of this
+                    byteCount++;
+
+                    if (s._segMan.AllocDynmem(byteCount, "kMemory() critical", out s.r_acc) == null)
                     {
-                        int byteCount = argv[1].ToUInt16();
-                        // WORKAROUND:
-                        //  - pq3 (multilingual) room 202
-                        //     when plotting crimes, allocates the returned bytes from kStrLen
-                        //     on "W" and "E" and wants to put a string in there, which doesn't
-                        //     fit of course.
-                        //  - lsl5 (multilingual) room 280
-                        //     allocates memory according to a previous kStrLen for the name of
-                        //     the airport ladies (bug #3093818), which isn't enough
-
-                        // We always allocate 1 byte more, because of this
-                        byteCount++;
-
-                        if (s._segMan.AllocDynmem(byteCount, "kMemory() critical", out s.r_acc) == null)
-                        {
-                            throw new InvalidOperationException("Critical heap allocation failed");
-                        }
-                        break;
+                        throw new InvalidOperationException("Critical heap allocation failed");
                     }
+                    break;
+                }
                 case MemoryFunction.ALLOCATE_NONCRITICAL:
                     s._segMan.AllocDynmem(argv[1].ToUInt16(), "kMemory() non-critical", out s.r_acc);
                     break;
@@ -221,60 +224,59 @@ namespace NScumm.Sci.Engine
                     }
                     break;
                 case MemoryFunction.MEMCPY:
-                    {
-                        int size = argv[3].ToUInt16();
-                        s._segMan.Memcpy(argv[1], argv[2], size);
-                        break;
-                    }
+                {
+                    int size = argv[3].ToUInt16();
+                    s._segMan.Memcpy(argv[1], argv[2], size);
+                    break;
+                }
                 case MemoryFunction.PEEK:
+                {
+                    if (argv[1].Segment == 0)
                     {
-                        if (argv[1].Segment == 0)
-                        {
-                            // This occurs in KQ5CD when interacting with certain objects
-                            Warning($"Attempt to peek invalid memory at {argv[1]}");
-                            return s.r_acc;
-                        }
-
-                        SegmentRef @ref = s._segMan.Dereference(argv[1]);
-
-                        if (!@ref.IsValid || @ref.maxSize < 2)
-                        {
-                            throw new InvalidOperationException($"Attempt to peek invalid memory at {argv[1]}");
-                        }
-                        if (@ref.isRaw)
-                            return Register.Make(0, @ref.raw.Data.ReadSciEndianUInt16(@ref.raw.Offset));
-                        else
-                        {
-                            if (@ref.skipByte)
-                                throw new InvalidOperationException($"Attempt to peek memory at odd offset {argv[1]}");
-                            return @ref.reg.Value[0];
-                        }
+                        // This occurs in KQ5CD when interacting with certain objects
+                        Warning($"Attempt to peek invalid memory at {argv[1]}");
+                        return s.r_acc;
                     }
+
+                    SegmentRef @ref = s._segMan.Dereference(argv[1]);
+
+                    if (!@ref.IsValid || @ref.maxSize < 2)
+                    {
+                        throw new InvalidOperationException($"Attempt to peek invalid memory at {argv[1]}");
+                    }
+                    if (@ref.isRaw)
+                        return Register.Make(0, @ref.raw.Data.ReadSciEndianUInt16(@ref.raw.Offset));
+                    if (@ref.skipByte)
+                        throw new InvalidOperationException($"Attempt to peek memory at odd offset {argv[1]}");
+                    return @ref.reg[0];
+                }
                 case MemoryFunction.POKE:
+                {
+                    SegmentRef @ref = s._segMan.Dereference(argv[1]);
+
+                    if (!@ref.IsValid || @ref.maxSize < 2)
                     {
-                        SegmentRef @ref = s._segMan.Dereference(argv[1]);
-
-                        if (!@ref.IsValid || @ref.maxSize < 2)
-                        {
-                            throw new InvalidOperationException($"Attempt to poke invalid memory at {argv[1]}");
-                        }
-
-                        if (@ref.isRaw)
-                        {
-                            if (argv[2].Segment != 0)
-                            {
-                                throw new InvalidOperationException($"Attempt to poke memory reference {argv[2]} to {argv[1]}");
-                            }
-                            @ref.raw.Data.WriteSciEndianUInt16(@ref.raw.Offset, (ushort)argv[2].Offset);       // Amiga versions are BE
-                        }
-                        else
-                        {
-                            if (@ref.skipByte)
-                                throw new InvalidOperationException($"Attempt to poke memory at odd offset {argv[1]}");
-                            @ref.reg = new StackPtr(argv, 2);
-                        }
-                        break;
+                        throw new InvalidOperationException($"Attempt to poke invalid memory at {argv[1]}");
                     }
+
+                    if (@ref.isRaw)
+                    {
+                        if (argv[2].Segment != 0)
+                        {
+                            throw new InvalidOperationException(
+                                $"Attempt to poke memory reference {argv[2]} to {argv[1]}");
+                        }
+                        @ref.raw.Data.WriteSciEndianUInt16(@ref.raw.Offset, (ushort) argv[2].Offset);
+                        // Amiga versions are BE
+                    }
+                    else
+                    {
+                        if (@ref.skipByte)
+                            throw new InvalidOperationException($"Attempt to poke memory at odd offset {argv[1]}");
+                        @ref.reg = new RegisterPtr(new StackPtr(argv, 2));
+                    }
+                    break;
+                }
             }
 
             return s.r_acc;
@@ -288,7 +290,7 @@ namespace NScumm.Sci.Engine
             // fragmented
             const ushort size = 0x7fea;
 
-            switch ((kMemoryInfoFunc)argv[0].Offset)
+            switch ((kMemoryInfoFunc) argv[0].Offset)
             {
                 case kMemoryInfoFunc.LARGEST_HEAP_BLOCK:
                     // In order to prevent "Memory fragmented" dialogs from
@@ -310,32 +312,33 @@ namespace NScumm.Sci.Engine
             // MemorySegment provides access to a 256-byte block of memory that remains
             // intact across restarts and restores
 
-            switch ((MemorySegmentFunction)argv[0].ToUInt16())
+            switch ((MemorySegmentFunction) argv[0].ToUInt16())
             {
                 case MemorySegmentFunction.SAVE_DATA:
+                {
+                    if (argc < 3)
+                        throw new InvalidOperationException("Insufficient number of arguments passed to MemorySegment");
+                    ushort size = argv[2].ToUInt16();
+
+                    if (size == 0)
+                        size = (ushort) (s._segMan.Strlen(argv[1]) + 1);
+
+                    if (size > EngineState.MemorySegmentMax)
                     {
-                        if (argc < 3)
-                            throw new InvalidOperationException("Insufficient number of arguments passed to MemorySegment");
-                        ushort size = argv[2].ToUInt16();
-
-                        if (size == 0)
-                            size = (ushort)(s._segMan.Strlen(argv[1]) + 1);
-
-                        if (size > EngineState.MemorySegmentMax)
-                        {
-                            // This was set to cut the block to 256 bytes. This should be an
-                            // error, as we won't restore the full block that the game scripts
-                            // request, thus error out instead.
-                            //size = EngineState::kMemorySegmentMax;
-                            throw new InvalidOperationException($"kMemorySegment: Requested to save more than 256 bytes ({size})");
-                        }
-
-                        s._memorySegmentSize = size;
-
-                        // We assume that this won't be called on pointers
-                        s._segMan.Memcpy(new ByteAccess(s._memorySegment), argv[1], size);
-                        break;
+                        // This was set to cut the block to 256 bytes. This should be an
+                        // error, as we won't restore the full block that the game scripts
+                        // request, thus error out instead.
+                        //size = EngineState::kMemorySegmentMax;
+                        throw new InvalidOperationException(
+                            $"kMemorySegment: Requested to save more than 256 bytes ({size})");
                     }
+
+                    s._memorySegmentSize = size;
+
+                    // We assume that this won't be called on pointers
+                    s._segMan.Memcpy(new ByteAccess(s._memorySegment), argv[1], size);
+                    break;
+                }
                 case MemorySegmentFunction.RESTORE_DATA:
                     s._segMan.Memcpy(argv[1], new ByteAccess(s._memorySegment), s._memorySegmentSize);
                     break;
@@ -361,7 +364,7 @@ namespace NScumm.Sci.Engine
                 return Register.NULL_REG;
             }
 
-            PlatformOps operation = (PlatformOps)((argc == 0) ? 0 : argv[0].ToUInt16());
+            PlatformOps operation = (PlatformOps) ((argc == 0) ? 0 : argv[0].ToUInt16());
 
             switch (operation)
             {
@@ -379,9 +382,10 @@ namespace NScumm.Sci.Engine
                 case PlatformOps.Unk0:
                 case PlatformOps.GetPlatform:
                     // For Mac versions, PlatformOps.(0) with other args has more functionality
-                    if (operation == PlatformOps.Unk0 && SciEngine.Instance.Platform == Core.IO.Platform.Macintosh && argc > 1)
+                    if (operation == PlatformOps.Unk0 && SciEngine.Instance.Platform == Core.IO.Platform.Macintosh &&
+                        argc > 1)
                         return kMacPlatform(s, argc - 1, argv + 1);
-                    return Register.Make(0, (ushort)(isWindows ? SciPlatformWindows : SciPlatformDOS));
+                    return Register.Make(0, (ushort) (isWindows ? SciPlatformWindows : SciPlatformDOS));
                 case PlatformOps.Unk5:
                     // This case needs to return the opposite of case 6 to get hires graphics
                     return Register.Make(0, !isWindows);
@@ -430,7 +434,7 @@ namespace NScumm.Sci.Engine
                 case 7: // Unknown, but always return -1
                     return Register.SIGNAL_REG;
                 case 1: // Unknown, calls QuickDraw region functions (KQ5, QFG1VGA, Dr. Brain 1)
-                    break;  // removed warning, as it produces a lot of spam in the console
+                    break; // removed warning, as it produces a lot of spam in the console
                 case 2: // Unknown, "UseNextWaitEvent" (Various)
                 case 3: // Unknown, "ProcessOpenDocuments" (Various)
                 case 5: // Unknown, plays a sound (KQ7)
@@ -494,7 +498,7 @@ namespace NScumm.Sci.Engine
 
             var loc_time = DateTime.Now;
 
-            GetTimeMode mode = (argc > 0) ? (GetTimeMode)argv[0].ToUInt16() : 0;
+            GetTimeMode mode = (argc > 0) ? (GetTimeMode) argv[0].ToUInt16() : 0;
 
             // Modes 2 and 3 are supported since 0.629.
             // This condition doesn't check that exactly, but close enough.
@@ -504,7 +508,7 @@ namespace NScumm.Sci.Engine
             switch (mode)
             {
                 case GetTimeMode.TICKS:
-                    retval = (int)(elapsedTime * 60 / 1000);
+                    retval = (int) (elapsedTime * 60 / 1000);
                     DebugC(DebugLevels.Time, "GetTime(elapsed) returns {0}", retval);
                     break;
                 case GetTimeMode.TIME_12HOUR:
@@ -525,7 +529,7 @@ namespace NScumm.Sci.Engine
             }
 
             //Debug($"GetTime=>{retval}");
-            return Register.Make(0, (ushort)retval);
+            return Register.Make(0, (ushort) retval);
         }
 
         private static Register kStub(EngineState s, int argc, StackPtr argv)
@@ -542,7 +546,8 @@ namespace NScumm.Sci.Engine
         internal static Register kDummy(EngineState s, int argc, StackPtr argv)
         {
             kStub(s, argc, argv);
-            throw new InvalidOperationException("Kernel function was called, which was considered to be unused - see log for details");
+            throw new InvalidOperationException(
+                "Kernel function was called, which was considered to be unused - see log for details");
         }
 
         private static Register kSetDebug(EngineState s, int argc, StackPtr argv)
@@ -568,95 +573,96 @@ namespace NScumm.Sci.Engine
 
             switch (argc)
             {
-
                 case 3:
-                    {
-                        Register retval;
-                        Polygon polygon = ConvertPolygon(s, argv[2]);
+                {
+                    Register retval;
+                    Polygon polygon = ConvertPolygon(s, argv[2]);
 
-                        if (polygon == null)
-                            return Register.NULL_REG;
+                    if (polygon == null)
+                        return Register.NULL_REG;
 
-                        // Override polygon type to prevent inverted result for contained access polygons
-                        polygon.Type = PolygonType.BARRED_ACCESS;
+                    // Override polygon type to prevent inverted result for contained access polygons
+                    polygon.Type = PolygonType.BARRED_ACCESS;
 
-                        retval = Register.Make(0, Contained(start, polygon) != PolygonContainmentType.OUTSIDE);
-                        return retval;
-                    }
+                    retval = Register.Make(0, Contained(start, polygon) != PolygonContainmentType.OUTSIDE);
+                    return retval;
+                }
                 case 6:
                 case 7:
                 case 8:
+                {
+                    var end = new Point(argv[2].ToInt16(), argv[3].ToInt16());
+                    Register poly_list, output;
+                    int width, height, opt = 1;
+
+                    if (ResourceManager.GetSciVersion() >= SciVersion.V2)
                     {
-                        var end = new Point(argv[2].ToInt16(), argv[3].ToInt16());
-                        Register poly_list, output;
-                        int width, height, opt = 1;
+                        if (argc < 7)
+                            Error("[avoidpath] Not enough arguments");
 
-                        if (ResourceManager.GetSciVersion() >= SciVersion.V2)
-                        {
-                            if (argc < 7)
-                                Error("[avoidpath] Not enough arguments");
+                        poly_list = (!argv[4].IsNull
+                            ? SciEngine.ReadSelector(s._segMan, argv[4], o => o.elements)
+                            : Register.NULL_REG);
+                        width = argv[5].ToUInt16();
+                        height = argv[6].ToUInt16();
+                        if (argc > 7)
+                            opt = argv[7].ToUInt16();
+                    }
+                    else
+                    {
+                        // SCI1.1 and older games always ran with an internal resolution of 320x200
+                        poly_list = argv[4];
+                        width = 320;
+                        height = 190;
+                        if (argc > 6)
+                            opt = argv[6].ToUInt16();
+                    }
 
-                            poly_list = (!argv[4].IsNull ? SciEngine.ReadSelector(s._segMan, argv[4], o => o.elements) : Register.NULL_REG);
-                            width = argv[5].ToUInt16();
-                            height = argv[6].ToUInt16();
-                            if (argc > 7)
-                                opt = argv[7].ToUInt16();
-                        }
-                        else
-                        {
-                            // SCI1.1 and older games always ran with an internal resolution of 320x200
-                            poly_list = argv[4];
-                            width = 320;
-                            height = 190;
-                            if (argc > 6)
-                                opt = argv[6].ToUInt16();
-                        }
+                    // TODO: if (DebugManager.Instance.IsDebugChannelEnabled(DebugLevels.AvoidPath))
+                    //{
+                    //    Debug("[avoidpath] Pathfinding input:");
+                    //    DrawPoint(s, start, 1, width, height);
+                    //    DrawPoint(s, end, 0, width, height);
 
-                        // TODO: if (DebugManager.Instance.IsDebugChannelEnabled(DebugLevels.AvoidPath))
-                        //{
-                        //    Debug("[avoidpath] Pathfinding input:");
-                        //    DrawPoint(s, start, 1, width, height);
-                        //    DrawPoint(s, end, 0, width, height);
+                    //    if (poly_list.Segment)
+                    //    {
+                    //        PrintInput(s, poly_list, start, end, opt);
+                    //        DrawInput(s, poly_list, start, end, opt, width, height);
+                    //    }
 
-                        //    if (poly_list.Segment)
-                        //    {
-                        //        PrintInput(s, poly_list, start, end, opt);
-                        //        DrawInput(s, poly_list, start, end, opt, width, height);
-                        //    }
+                    //    // Update the whole screen
+                    //    SciEngine.Instance._gfxScreen.CopyToScreen();
+                    //    SciEngine.Instance.System.GraphicsManager.UpdateScreen();
+                    //    if (SciEngine.Instance._gfxPaint16 == null)
+                    //        ServiceLocator.Platform.Sleep(2500);
+                    //}
 
-                        //    // Update the whole screen
-                        //    SciEngine.Instance._gfxScreen.CopyToScreen();
-                        //    SciEngine.Instance.System.GraphicsManager.UpdateScreen();
-                        //    if (SciEngine.Instance._gfxPaint16 == null)
-                        //        ServiceLocator.Platform.Sleep(2500);
-                        //}
+                    PathfindingState p = ConvertPolygonSet(s, poly_list, start, end, width, height, opt);
 
-                        PathfindingState p = ConvertPolygonSet(s, poly_list, start, end, width, height, opt);
+                    if (p == null)
+                    {
+                        Warning("[avoidpath] Error: pathfinding failed for following input:\n");
+                        PrintInput(s, poly_list, start, end, opt);
+                        Warning("[avoidpath] Returning direct path from start point to end point\n");
+                        output = AllocateOutputArray(s._segMan, 3);
+                        SegmentRef arrayRef = s._segMan.Dereference(output);
+                        System.Diagnostics.Debug.Assert(arrayRef.IsValid && !arrayRef.skipByte);
 
-                        if (p == null)
-                        {
-                            Warning("[avoidpath] Error: pathfinding failed for following input:\n");
-                            PrintInput(s, poly_list, start, end, opt);
-                            Warning("[avoidpath] Returning direct path from start point to end point\n");
-                            output = AllocateOutputArray(s._segMan, 3);
-                            SegmentRef arrayRef = s._segMan.Dereference(output);
-                            System.Diagnostics.Debug.Assert(arrayRef.IsValid && !arrayRef.skipByte);
+                        WritePoint(arrayRef, 0, start);
+                        WritePoint(arrayRef, 1, end);
+                        WritePoint(arrayRef, 2, new Point(POLY_LAST_POINT, POLY_LAST_POINT));
 
-                            WritePoint(arrayRef, 0, start);
-                            WritePoint(arrayRef, 1, end);
-                            WritePoint(arrayRef, 2, new Point(POLY_LAST_POINT, POLY_LAST_POINT));
-
-                            return output;
-                        }
-
-                        // Apply Dijkstra
-                        AStar(p);
-
-                        output = OutputPath(p, s);
-
-                        // Memory is freed by explicit calls to Memory
                         return output;
                     }
+
+                    // Apply Dijkstra
+                    AStar(p);
+
+                    output = OutputPath(p, s);
+
+                    // Memory is freed by explicit calls to Memory
+                    return output;
+                }
 
                 default:
                     Warning($"Unknown AvoidPath subfunction {argc}");
@@ -673,7 +679,7 @@ namespace NScumm.Sci.Engine
             var openSet = new List<Vertex>();
             openSet.Add(s.vertex_start);
             s.vertex_start.costG = 0;
-            s.vertex_start.costF = (uint)Math.Sqrt((float)s.vertex_start.v.SquareDistance(s.vertex_end.v));
+            s.vertex_start.costF = (uint) Math.Sqrt((float) s.vertex_start.v.SquareDistance(s.vertex_end.v));
 
             while (openSet.Count != 0)
             {
@@ -692,7 +698,8 @@ namespace NScumm.Sci.Engine
                     }
                 }
 
-                System.Diagnostics.Debug.Assert(vertex_min != null);    // the vertex cost should never be bigger than HUGE_DISTANCE
+                System.Diagnostics.Debug.Assert(vertex_min != null);
+                // the vertex cost should never be bigger than HUGE_DISTANCE
 
                 // Check if we are done
                 if (vertex_min == s.vertex_end)
@@ -714,7 +721,7 @@ namespace NScumm.Sci.Engine
                     if (!openSet.Contains(vertex))
                         openSet.Insert(0, vertex);
 
-                    new_dist = vertex_min.costG + (uint)Math.Sqrt((float)vertex_min.v.SquareDistance(vertex.v));
+                    new_dist = vertex_min.costG + (uint) Math.Sqrt((float) vertex_min.v.SquareDistance(vertex.v));
 
                     // When travelling to a vertex on the screen edge, we
                     // add a penalty score to make this path less appealing.
@@ -738,14 +745,15 @@ namespace NScumm.Sci.Engine
                     if (new_dist < vertex.costG)
                     {
                         vertex.costG = new_dist;
-                        vertex.costF = vertex.costG + (uint)Math.Sqrt((float)vertex.v.SquareDistance(s.vertex_end.v));
+                        vertex.costF = vertex.costG + (uint) Math.Sqrt((float) vertex.v.SquareDistance(s.vertex_end.v));
                         vertex.path_prev = vertex_min;
                     }
                 }
             }
 
-            if (openSet.Count==0)
-                DebugC(DebugLevels.AvoidPath, "AvoidPath: End point ({0}, {1}) is unreachable", s.vertex_end.v.X, s.vertex_end.v.Y);
+            if (openSet.Count == 0)
+                DebugC(DebugLevels.AvoidPath, "AvoidPath: End point ({0}, {1}) is unreachable", s.vertex_end.v.X,
+                    s.vertex_end.v.Y);
         }
 
         private static List<Vertex> VisibleVertices(PathfindingState s, Vertex vertex_cur)
@@ -879,15 +887,16 @@ namespace NScumm.Sci.Engine
         private static void WritePoint(SegmentRef @ref, int offset, Point point)
         {
             if (@ref.isRaw)
-            {    // dynmem blocks are raw
-                @ref.raw.Data.WriteSciEndianUInt16(@ref.raw.Offset + offset * POLY_POINT_SIZE, (ushort)point.X);
-                @ref.raw.Data.WriteSciEndianUInt16(@ref.raw.Offset + offset * POLY_POINT_SIZE + 2, (ushort)point.Y);
+            {
+                // dynmem blocks are raw
+                @ref.raw.Data.WriteSciEndianUInt16(@ref.raw.Offset + offset * POLY_POINT_SIZE, (ushort) point.X);
+                @ref.raw.Data.WriteSciEndianUInt16(@ref.raw.Offset + offset * POLY_POINT_SIZE + 2, (ushort) point.Y);
             }
             else
             {
-                var reg = @ref.reg.Value;
-                reg[offset * 2] = Register.Make(0, (ushort)point.X);
-                reg[offset * 2 + 1] = Register.Make(0, (ushort)point.Y);
+                var reg = @ref.reg;
+                reg[offset * 2] = Register.Make(0, (ushort) point.X);
+                reg[offset * 2 + 1] = Register.Make(0, (ushort) point.Y);
             }
         }
 
@@ -898,9 +907,7 @@ namespace NScumm.Sci.Engine
 # if ENABLE_SCI32
             if (ResourceManager.GetSciVersion() >= SciVersion.V2)
             {
-                var array = segMan.AllocateArray(out addr);
-                array.SetType(0);
-                array.SetSize(size * 2);
+                segMan.AllocateArray(SciArrayType.Int16, (ushort) (size * 2), out addr);
                 return addr;
             }
 #endif
@@ -915,11 +922,11 @@ namespace NScumm.Sci.Engine
 
 # if ENABLE_SCI32
             if (segMan.IsHeapObject(points))
-                points = SciEngine.ReadSelector(segMan, points, o=>o.data);
+                points = SciEngine.ReadSelector(segMan, points, o => o.data);
 #endif
 
-            int size = (int)SciEngine.ReadSelectorValue(segMan, polygon, o => o.size);
-            int type = (int)SciEngine.ReadSelectorValue(segMan, polygon, o => o.type);
+            int size = (int) SciEngine.ReadSelectorValue(segMan, polygon, o => o.size);
+            int type = (int) SciEngine.ReadSelectorValue(segMan, polygon, o => o.type);
             int i;
             Point point;
 
@@ -970,7 +977,154 @@ namespace NScumm.Sci.Engine
                 PrintPolygon(s._segMan, node.value);
                 node = s._segMan.LookupNode(node.succ);
             }
-
         }
+
+        private static Register kGetWindowsOption(EngineState s, int argc, StackPtr argv)
+        {
+            ushort windowsOption = argv[0].ToUInt16();
+            switch (windowsOption)
+            {
+                case 0:
+                    // Title bar on/off in Phantasmagoria, we return 0 (off)
+                    return Register.NULL_REG;
+                default:
+                    Warning("GetWindowsOption: Unknown option {0}", windowsOption);
+                    return Register.NULL_REG;
+            }
+        }
+
+#if ENABLE_SCI32
+        private static Register kGetConfig(EngineState s, int argc, StackPtr argv)
+        {
+            string setting = s._segMan.GetString(argv[0]);
+            Register data = SciEngine.ReadSelector(s._segMan, argv[1], o => o.data);
+
+            // This function is used to get the benchmarked results stored in the
+            // resource.cfg configuration file in Phantasmagoria 1. Normally,
+            // the configuration file contains values stored by the installer
+            // regarding audio and video settings, which are then used by the
+            // executable. In Phantasmagoria, two extra executable files are used
+            // to perform system benchmarks:
+            // - CPUID for the CPU benchmarks, sets the cpu and cpuspeed settings
+            // - HDDTEC for the graphics and CD-ROM benchmarks, sets the videospeed setting
+            //
+            // These settings are then used by the game scripts directly to modify
+            // the game speed and graphics output. The result of this call is stored
+            // in global 178. The scripts check these values against the value 425.
+            // Anything below that makes Phantasmagoria awfully sluggish, so we're
+            // setting everything to 500, which makes the game playable.
+
+            setting = setting.ToLowerInvariant();
+
+            if (setting == "videospeed")
+            {
+                s._segMan.Strcpy(data, "500");
+            }
+            else if (setting == "cpu")
+            {
+                // We always return the fastest CPU setting that CPUID can detect
+                // (i.e. 586).
+                s._segMan.Strcpy(data, "586");
+            }
+            else if (setting == "cpuspeed")
+            {
+                s._segMan.Strcpy(data, "500");
+            }
+            else if (setting == "language")
+            {
+                string languageId = $"{(int) SciEngine.Instance.GetSciLanguage():D}";
+                s._segMan.Strcpy(data, languageId);
+            }
+            else if (setting == "torindebug")
+            {
+                // Used to enable the debug mode in Torin's Passage (French).
+                // If true, the debug mode is enabled.
+                s._segMan.Strcpy(data, string.Empty);
+            }
+            else if (setting == "leakdump")
+            {
+                // An unknown setting in LSL7. Likely used for debugging.
+                s._segMan.Strcpy(data, string.Empty);
+            }
+            else if (setting == "startroom")
+            {
+                // Debug setting in LSL7, specifies the room to start from.
+                s._segMan.Strcpy(data, string.Empty);
+            }
+            else if (setting == "game")
+            {
+                // Hoyle 5 Demo startup.
+                s._segMan.Strcpy(data, string.Empty);
+            }
+            else
+            {
+                Error("GetConfig: Unknown configuration setting {0}", setting);
+            }
+
+            return argv[1];
+        }
+
+        // Likely modelled after the Windows 3.1 function GetPrivateProfileInt:
+// http://msdn.microsoft.com/en-us/library/windows/desktop/ms724345%28v=vs.85%29.aspx
+        private static Register kGetSierraProfileInt(EngineState s, int argc, StackPtr argv)
+        {
+            string category = s._segMan.GetString(argv[0]); // always "config"
+            category = category.ToLowerInvariant();
+            String setting = s._segMan.GetString(argv[1]);
+            setting = setting.ToLowerInvariant();
+            // The third parameter is the default value returned if the configuration key is missing
+
+            if (category == "config" && setting == "videospeed")
+            {
+                // We return the same fake value for videospeed as with kGetConfig
+                return Register.Make(0, 500);
+            }
+
+            Warning("kGetSierraProfileInt: Returning default value {0} for unknown setting {1}.{2}", argv[2].ToInt16(),
+                category, setting);
+            return argv[2];
+        }
+
+        enum PlatformOperation
+        {
+            GetPlatform = 0,
+            GetCDSpeed = 1,
+            GetColorDepth = 2,
+            GetCDDrive = 3
+        }
+
+        private static Register kPlatform32(EngineState s, int argc, StackPtr argv)
+        {
+            PlatformOperation operation = argc > 0
+                ? (PlatformOperation) argv[0].ToInt16()
+                : PlatformOperation.GetPlatform;
+
+            switch (operation)
+            {
+                case PlatformOperation.GetPlatform:
+                    switch (SciEngine.Instance.Platform)
+                    {
+                        case Platform.DOS:
+                            return Register.Make(0, SciPlatformDOS);
+                        case Platform.Windows:
+                            return Register.Make(0, SciPlatformWindows);
+                        case Platform.Macintosh:
+                            // For Mac versions, kPlatform(0) with other args has more functionality
+                            if (argc > 1)
+                                return kMacPlatform(s, argc - 1, argv + 1);
+                            return Register.Make(0, SciPlatformMacintosh);
+                        default:
+                            Error("Unknown platform {0}", SciEngine.Instance.Platform);
+                            return Register.NULL_REG;
+                    }
+                case PlatformOperation.GetColorDepth:
+                    return Register.Make(0, /* 256 color */ 2);
+                case PlatformOperation.GetCDSpeed:
+                case PlatformOperation.GetCDDrive:
+                default:
+                    return Register.Make(0, 0);
+            }
+        }
+#endif
     }
 }

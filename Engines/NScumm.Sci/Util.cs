@@ -32,12 +32,22 @@ namespace NScumm.Sci
             return ptr.ToUInt16(offset);
         }
 
+        public static ushort ReadSciEndianUInt16(this BytePtr ptr, int offset = 0)
+        {
+            return ptr.Data.ReadSciEndianUInt16(ptr.Offset + offset);
+        }
+
         public static void WriteSciEndianUInt16(this byte[] ptr, int offset, ushort val)
         {
             if (SciEngine.Instance.IsBe)
                 ptr.WriteUInt16BigEndian(offset, val);
             else
                 ptr.WriteUInt16(offset, val);
+        }
+
+        public static void WriteSciEndianUInt16(this BytePtr ptr, int offset, ushort val)
+        {
+            ptr.Data.WriteSciEndianUInt16(ptr.Offset + offset, val);
         }
 
         // Wrappers for reading integer values for SCI1.1+.
@@ -49,11 +59,21 @@ namespace NScumm.Sci
             return ptr.ToUInt16(offset);
         }
 
+        public static ushort ReadSci11EndianUInt16(this BytePtr ptr, int offset = 0)
+        {
+            return ptr.Data.ReadSci11EndianUInt16(ptr.Offset + offset);
+        }
+
         public static uint ReadSci11EndianUInt32(this byte[] ptr, int offset = 0)
         {
             if (SciEngine.Instance.Platform == Platform.Macintosh && ResourceManager.GetSciVersion() >= SciVersion.V1_1)
                 return ptr.ToUInt32BigEndian(offset);
             return ptr.ToUInt32(offset);
+        }
+
+        public static uint ReadSci11EndianUInt32(this BytePtr ptr, int offset = 0)
+        {
+            return ptr.Data.ReadSci11EndianUInt32(ptr.Offset + offset);
         }
 
         public static void WriteSci11EndianUInt16(this byte[] ptr, int offset, ushort val)
@@ -64,6 +84,11 @@ namespace NScumm.Sci
                 ptr.WriteUInt16(offset, val);
         }
 
+        public static void WriteSci11EndianUInt16(this BytePtr ptr, int offset, ushort val)
+        {
+            ptr.Data.WriteSci11EndianUInt16(ptr.Offset + offset, val);
+        }
+
         public static void WriteSci11EndianUInt32(this byte[] ptr, int offset, uint val)
         {
             if (SciEngine.Instance.Platform == Platform.Macintosh && ResourceManager.GetSciVersion() >= SciVersion.V1_1)
@@ -72,13 +97,24 @@ namespace NScumm.Sci
                 ptr.WriteUInt32(offset, val);
         }
 
+        public static void WriteSci11EndianUInt32(this BytePtr ptr, int offset, uint val)
+        {
+            ptr.Data.WriteSci11EndianUInt32(ptr.Offset + offset, val);
+        }
+
         // Wrappers for reading integer values in resources that are
         // LE in SCI1.1 Mac, but BE in SCI32 Mac
         public static ushort ReadSci32EndianUInt16(this byte[] ptr, int offset = 0)
         {
-            if (SciEngine.Instance.Platform == Platform.Macintosh && ResourceManager.GetSciVersion() >= SciVersion.V2_1_EARLY)
+            if (SciEngine.Instance.Platform == Platform.Macintosh &&
+                ResourceManager.GetSciVersion() >= SciVersion.V2_1_EARLY)
                 return ptr.ToUInt16BigEndian(offset);
             return ptr.ToUInt16(offset);
+        }
+
+        public static ushort ReadSci32EndianUInt16(this BytePtr ptr, int offset = 0)
+        {
+            return ptr.Data.ReadSci32EndianUInt16(ptr.Offset + offset);
         }
     }
 }

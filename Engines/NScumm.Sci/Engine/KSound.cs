@@ -242,6 +242,199 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
+#if ENABLE_SCI32
+        private static Register kDoAudio32(EngineState s, int argc, StackPtr argv)
+        {
+            if (s == null)
+                return Register.Make(0, (ushort) ResourceManager.GetSciVersion());
+            Error("not supposed to call this");
+            return Register.NULL_REG;
+        }
+
+        private static Register kDoAudioInit(EngineState s, int argc, StackPtr argv) {
+            return Register.Make(0, 0);
+        }
+
+        private static Register kDoAudioWaitForPlay(EngineState s, int argc, StackPtr argv) {
+            return SciEngine.Instance._audio32.KernelPlay(false, argc, argv);
+        }
+
+        private static Register kDoAudioPlay(EngineState s, int argc, StackPtr argv) {
+            return SciEngine.Instance._audio32.KernelPlay(true, argc, argv);
+        }
+
+        private static Register kDoAudioStop(EngineState s, int argc, StackPtr argv) {
+            short channelIndex = SciEngine.Instance._audio32.FindChannelByArgs(argc, argv, 0, argc > 1 ? argv[1] : Register.NULL_REG);
+            return Register.Make(0, (ushort) SciEngine.Instance._audio32.Stop((AudioChannelIndex) channelIndex));
+        }
+
+        private static Register kDoAudioPause(EngineState s, int argc, StackPtr argv) {
+            short channelIndex = SciEngine.Instance._audio32.FindChannelByArgs(argc, argv, 0, argc > 1 ? argv[1] : Register.NULL_REG);
+            return Register.Make(0, SciEngine.Instance._audio32.Pause((AudioChannelIndex) channelIndex));
+        }
+
+        private static Register kDoAudioResume(EngineState s, int argc, StackPtr argv) {
+            short channelIndex = SciEngine.Instance._audio32.FindChannelByArgs(argc, argv, 0, argc > 1 ? argv[1] : Register.NULL_REG);
+            return Register.Make(0, (ushort) (SciEngine.Instance._audio32.Resume(channelIndex)?1:0));
+        }
+
+        private static Register kDoAudioPosition(EngineState s, int argc, StackPtr argv) {
+            short channelIndex = SciEngine.Instance._audio32.FindChannelByArgs(argc, argv, 0, argc > 1 ? argv[1] : Register.NULL_REG);
+            return Register.Make(0, (ushort)SciEngine.Instance._audio32.GetPosition(channelIndex));
+        }
+
+        private static Register kDoAudioRate(EngineState s, int argc, StackPtr argv) {
+            // NOTE: In the original engine this would set the hardware
+            // DSP sampling rate; ScummVM mixer does not need this, so
+            // we only store the value to satisfy engine compatibility.
+
+            if (argc > 0) {
+                ushort sampleRate = argv[0].ToUInt16();
+                if (sampleRate != 0) {
+                    SciEngine.Instance._audio32.SetSampleRate(sampleRate);
+                }
+            }
+
+            return Register.Make(0, SciEngine.Instance._audio32.SampleRate);
+        }
+
+        private static Register kDoAudioVolume(EngineState s, int argc, StackPtr argv) {
+            short volume = (short) (argc > 0 ? argv[0].ToInt16() : -1);
+            short channelIndex = SciEngine.Instance._audio32.FindChannelByArgs(argc, argv, 1, argc > 2 ? argv[2] : Register.NULL_REG);
+
+            if (volume != -1) {
+                SciEngine.Instance._audio32.SetVolume((AudioChannelIndex) channelIndex, volume);
+            }
+
+            return Register.Make(0, (ushort) SciEngine.Instance._audio32.GetVolume(channelIndex));
+        }
+
+        private static Register kDoAudioGetCapability(EngineState s, int argc, StackPtr argv) {
+            return Register.Make(0, 1);
+        }
+
+        private static Register kDoAudioBitDepth(EngineState s, int argc, StackPtr argv) {
+            // NOTE: In the original engine this would set the hardware
+            // DSP bit depth; ScummVM mixer does not need this, so
+            // we only store the value to satisfy engine compatibility.
+
+            if (argc > 0) {
+                ushort bitDepth = argv[0].ToUInt16();
+                if (bitDepth != 0) {
+                    SciEngine.Instance._audio32.SetBitDepth((byte) bitDepth);
+                }
+            }
+
+            return Register.Make(0, SciEngine.Instance._audio32.GetBitDepth());
+        }
+
+        private static Register kDoAudioDistort(EngineState s, int argc, StackPtr argv)
+        {
+            return kDummy(s, argc, argv);
+        }
+
+        private static Register kDoAudioFade36(EngineState s, int argc, StackPtr argv)
+        {
+            return kDummy(s, argc, argv);
+        }
+
+        private static Register kDoAudioPan(EngineState s, int argc, StackPtr argv)
+        {
+            return kDummy(s, argc, argv);
+        }
+
+        private static Register kDoAudioPanOff(EngineState s, int argc, StackPtr argv)
+        {
+            return kDummy(s, argc, argv);
+        }
+
+        private static Register kDoAudioCritical(EngineState s, int argc, StackPtr argv)
+        {
+            return kEmpty(s, argc, argv);
+        }
+
+        private static Register kDoAudioMixing(EngineState s, int argc, StackPtr argv) {
+            if (argc > 0) {
+                SciEngine.Instance._audio32.SetAttenuatedMixing(argv[0].ToUInt16()!=0);
+            }
+
+            return Register.Make(0, SciEngine.Instance._audio32.GetAttenuatedMixing());
+        }
+
+        private static Register kDoAudioChannels(EngineState s, int argc, StackPtr argv) {
+            // NOTE: In the original engine this would set the hardware
+            // DSP stereo output; ScummVM mixer does not need this, so
+            // we only store the value to satisfy engine compatibility.
+
+            if (argc > 0) {
+                short numChannels = argv[0].ToInt16();
+                if (numChannels != 0) {
+                    SciEngine.Instance._audio32.SetNumOutputChannels(numChannels);
+                }
+            }
+
+            return Register.Make(0, SciEngine.Instance._audio32.GetNumOutputChannels());
+        }
+
+        private static Register kDoAudioPreload(EngineState s, int argc, StackPtr argv) {
+            // NOTE: In the original engine this would cause audio
+            // data for new channels to be preloaded to memory when
+            // the channel was initialized; we do not need this, so
+            // we only store the value to satisfy engine compatibility.
+
+            if (argc > 0) {
+                SciEngine.Instance._audio32.SetPreload((byte) argv[0].ToUInt16());
+            }
+
+            return Register.Make(0, SciEngine.Instance._audio32.GetPreload());
+        }
+
+        private static Register kDoAudioFade(EngineState s, int argc, StackPtr argv) {
+            if (argc < 4) {
+                return Register.Make(0, 0);
+            }
+
+            // NOTE: Sierra did a nightmarish hack here, temporarily replacing
+            // the argc of the kernel arguments with 2 and then restoring it
+            // after findChannelByArgs was called.
+            short channelIndex = SciEngine.Instance._audio32.FindChannelByArgs(2, argv, 0, argc > 5 ? argv[5] : Register.NULL_REG);
+
+            short volume = argv[1].ToInt16();
+            short speed = argv[2].ToInt16();
+            short steps = argv[3].ToInt16();
+            bool stopAfterFade = argc > 4 && argv[4].ToUInt16()!=0;
+
+            return Register.Make(0, SciEngine.Instance._audio32.FadeChannel(channelIndex, volume, speed, steps, stopAfterFade));
+        }
+
+        private static Register kDoAudioHasSignal(EngineState s, int argc, StackPtr argv) {
+            return Register.Make(0, SciEngine.Instance._audio32.HasSignal());
+        }
+
+        private static Register kDoAudioSetLoop(EngineState s, int argc, StackPtr argv) {
+            short channelIndex = SciEngine.Instance._audio32.FindChannelByArgs(argc, argv, 0, argc == 3 ? argv[2] : Register.NULL_REG);
+
+            bool loop = argv[0].ToInt16() != 0 && argv[0].ToInt16() != 1;
+
+            SciEngine.Instance._audio32.SetLoop(channelIndex, loop);
+            return s.r_acc;
+        }
+
+        private static Register kSetLanguage(EngineState s, int argc, StackPtr argv) {
+            // This is used by script 90 of MUMG Deluxe from the main menu to toggle
+            // the audio language between English and Spanish.
+            // Basically, it instructs the interpreter to switch the audio resources
+            // (resource.aud and associated map files) and load them from the "Spanish"
+            // subdirectory instead.
+            String audioDirectory = s._segMan.GetString(argv[0]);
+            //warning("SetLanguage: set audio resource directory to '%s'", audioDirectory.c_str());
+            SciEngine.Instance.ResMan.ChangeAudioDirectory(audioDirectory);
+
+            return s.r_acc;
+        }
+
+#endif
+
         private static Register kDoCdAudio(EngineState s, int argc, StackPtr argv)
         {
             throw new NotImplementedException("kDoAudio");
@@ -404,7 +597,7 @@ namespace NScumm.Sci.Engine
                     {
                         ResourceId id;
 
-                        SciEngine.Instance._audio.StopSoundSync();
+                        SciEngine.Instance._sync.Stop();
 
                         // Load sound sync resource and lock it
                         if (argc == 3)
@@ -422,14 +615,14 @@ namespace NScumm.Sci.Engine
                             return s.r_acc;
                         }
 
-                        SciEngine.Instance._audio.SetSoundSync(id, argv[1], segMan);
+                        SciEngine.Instance._sync.Start(id, argv[1]);
                         break;
                     }
                 case AudioSyncCommands.Next:
-                    SciEngine.Instance._audio.DoSoundSync(argv[1], segMan);
+                    SciEngine.Instance._sync.Next(argv[1]);
                     break;
                 case AudioSyncCommands.Stop:
-                    SciEngine.Instance._audio.StopSoundSync();
+                    SciEngine.Instance._sync.Stop();
                     break;
                 default:
                     throw new InvalidOperationException($"DoSync: Unhandled subfunction {argv[0].ToUInt16()}");

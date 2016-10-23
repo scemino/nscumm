@@ -26,13 +26,6 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Sound
 {
-    internal enum AudioSyncCommands
-    {
-        Start = 0,
-        Next = 1,
-        Stop = 2
-    }
-
     [Flags]
     internal enum SolFlags
     {
@@ -325,55 +318,8 @@ namespace NScumm.Sci.Sound
             }
         }
 
-        public void StopSoundSync()
-        {
-            if (_syncResource != null)
-            {
-                _resMan.UnlockResource(_syncResource);
-                _syncResource = null;
-            }
-        }
-
-        public void SetSoundSync(ResourceId id, Register syncObjAddr, SegManager segMan)
-        {
-            _syncResource = _resMan.FindResource(id, true);
-            _syncOffset = 0;
-
-            if (_syncResource != null)
-            {
-                SciEngine.WriteSelectorValue(segMan, syncObjAddr, o => o.syncCue, 0);
-            }
-            else
-            {
-                Warning($"setSoundSync: failed to find resource {id}");
-                // Notify the scripts to stop sound sync
-                SciEngine.WriteSelectorValue(segMan, syncObjAddr, o => o.syncCue, Register.SIGNAL_OFFSET);
-            }
-        }
-
-        public void DoSoundSync(Register syncObjAddr, SegManager segMan)
-        {
-            if (_syncResource != null && (_syncOffset < _syncResource.size - 1))
-            {
-                short syncCue = -1;
-                short syncTime = (short)_syncResource.data.ReadSci11EndianUInt16(_syncOffset);
-
-                _syncOffset += 2;
-
-                if ((syncTime != -1) && (_syncOffset < _syncResource.size - 1))
-                {
-                    syncCue = (short)_syncResource.data.ReadSci11EndianUInt16(_syncOffset);
-                    _syncOffset += 2;
-                }
-
-                SciEngine.WriteSelectorValue(segMan, syncObjAddr, o => o.syncTime, (ushort)syncTime);
-                SciEngine.WriteSelectorValue(segMan, syncObjAddr, o => o.syncCue, (ushort)syncCue);
-            }
-        }
-
         public void StopAllAudio()
         {
-            StopSoundSync();
             StopAudio();
             if (_audioCdStart > 0)
                 AudioCdStop();

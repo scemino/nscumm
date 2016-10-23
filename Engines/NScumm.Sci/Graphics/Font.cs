@@ -1,7 +1,7 @@
 ﻿//  Author:
 //       scemino <scemino74@gmail.com>
 //
-//  Copyright (c) 2015 
+//  Copyright (c) 2016
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -17,7 +17,6 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-using NScumm.Core.Common;
 using System;
 using NScumm.Core;
 
@@ -25,13 +24,13 @@ namespace NScumm.Sci.Graphics
 {
     internal class GfxFont
     {
-        public virtual int ResourceId { get { return 0; } }
-        public virtual byte Height { get { return 0; } }
+        public virtual int ResourceId => 0;
+        public virtual byte Height => 0;
 
         public virtual bool IsDoubleByte(ushort chr) { return false; }
         public virtual byte GetCharWidth(ushort chr) { return 0; }
         public virtual void Draw(ushort chr, short top, short left, byte color, bool greyedOutput) { }
-        public virtual void DrawToBuffer(ushort chr, short top, short left, byte color, bool greyedOutput, byte[] buffer, short width, short height) { }
+        public virtual void DrawToBuffer(ushort chr, short top, short left, byte color, bool greyedOutput, BytePtr buffer, short width, short height) { }
     }
 
     /// <summary>

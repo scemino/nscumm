@@ -30,7 +30,7 @@ namespace NScumm.Sci
         public const int SCI_EVENT_NONE = 0;
         public const int SCI_EVENT_MOUSE_PRESS = 1 << 0;
         public const int SCI_EVENT_MOUSE_RELEASE = 1 << 1;
-        public const int SCI_EVENT_KEYBOARD = (1 << 2);
+        public const int SCI_EVENT_KEYBOARD = 1 << 2;
         public const int SCI_EVENT_DIRECTION = (1 << 6);
         public const int SCI_EVENT_SAID = (1 << 7);
         /*Fake values for other events*/
@@ -39,26 +39,31 @@ namespace NScumm.Sci
         public const int SCI_EVENT_ANY = 0x7fff;
 
         /* Keycodes of special keys: */
+#if ENABLE_SCI32
+        public const int SCI_KEY_ETX = 3;
+#endif
+
+        /* Keycodes of special keys: */
         public const int SCI_KEY_ESC = 27;
         public const int SCI_KEY_BACKSPACE = 8;
         public const int SCI_KEY_ENTER = 13;
         public const int SCI_KEY_TAB = '\t';
         public const int SCI_KEY_SHIFT_TAB = (0xf << 8);
 
-        public const int SCI_KEY_HOME = (71 << 8);  // 7
-        public const int SCI_KEY_UP = (72 << 8);    // 8
-        public const int SCI_KEY_PGUP = (73 << 8);// 9
-                                                  //
-        public const int SCI_KEY_LEFT = (75 << 8);  // 4
-        public const int SCI_KEY_CENTER = (76 << 8);    // 5
+        public const int SCI_KEY_HOME = (71 << 8); // 7
+        public const int SCI_KEY_UP = (72 << 8); // 8
+        public const int SCI_KEY_PGUP = (73 << 8); // 9
+        //
+        public const int SCI_KEY_LEFT = (75 << 8); // 4
+        public const int SCI_KEY_CENTER = (76 << 8); // 5
         public const int SCI_KEY_RIGHT = (77 << 8); // 6
-                                                    //
-        public const int SCI_KEY_END = (79 << 8);   // 1
-        public const int SCI_KEY_DOWN = (80 << 8);  // 2
-        public const int SCI_KEY_PGDOWN = (81 << 8);    // 3
-                                                        //
-        public const int SCI_KEY_INSERT = (82 << 8);    // 0
-        public const int SCI_KEY_DELETE = (83 << 8);// .
+        //
+        public const int SCI_KEY_END = (79 << 8); // 1
+        public const int SCI_KEY_DOWN = (80 << 8); // 2
+        public const int SCI_KEY_PGDOWN = (81 << 8); // 3
+        //
+        public const int SCI_KEY_INSERT = (82 << 8); // 0
+        public const int SCI_KEY_DELETE = (83 << 8); // .
 
         public const int SCI_KEY_F1 = (59 << 8);
         public const int SCI_KEY_F2 = (60 << 8);
@@ -81,7 +86,9 @@ namespace NScumm.Sci
         public const int SCI_KEYMOD_CAPSLOCK = (1 << 6);
         public const int SCI_KEYMOD_INSERT = (1 << 7);
 
-        public const int SCI_KEYMOD_NO_FOOLOCK = (~(SCI_KEYMOD_SCRLOCK | SCI_KEYMOD_NUMLOCK | SCI_KEYMOD_CAPSLOCK | SCI_KEYMOD_INSERT));
+        public const int SCI_KEYMOD_NO_FOOLOCK =
+            (~(SCI_KEYMOD_SCRLOCK | SCI_KEYMOD_NUMLOCK | SCI_KEYMOD_CAPSLOCK | SCI_KEYMOD_INSERT));
+
         public const int SCI_KEYMOD_ALL = 0xFF;
 
         public short type;
@@ -167,7 +174,8 @@ namespace NScumm.Sci
                 if ((mask & SciEvent.SCI_EVENT_PEEK) == 0)
                     _events.Remove(e);
             }
-            else {
+            else
+            {
                 // No event found: we must return a SCI_EVT_NONE event.
 
                 // Because event.type is SCI_EVT_NONE already here,
@@ -294,10 +302,11 @@ namespace NScumm.Sci
             {
                 if (keys[0] >= KeyCode.D0 && keys[0] <= KeyCode.D9)
                 {
-                    input.character = (short)(keys[0] - KeyCode.D0 + '0');
+                    input.character = (short) (keys[0] - KeyCode.D0 + '0');
                 }
-                else {
-                    input.character = (short)keys[0];
+                else
+                {
+                    input.character = (short) keys[0];
                 }
             }
             im.ResetKeys();
@@ -397,6 +406,21 @@ namespace NScumm.Sci
                 if (SciEngine.Instance.ShouldQuit)
                     s.abortScriptProcessing = Engine.AbortGameState.QuitGame;
             }
+        }
+
+        private bool _hotRectanglesActive;
+        private Rect[] _hotRects;
+        private int _activeRectIndex;
+
+        public void SetHotRectanglesActive(bool active)
+        {
+            _hotRectanglesActive = active;
+        }
+
+        public void SetHotRectangles(Rect[] rects)
+        {
+            _hotRects = rects;
+            _activeRectIndex = -1;
         }
     }
 }

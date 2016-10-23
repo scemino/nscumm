@@ -33,6 +33,14 @@ namespace NScumm.Sci.Engine
         public int time;
         public int version;
         public string name;
+        public string gameVersion;
+#if ENABLE_SCI32
+        // Used by Shivers 1
+        public ushort lowScore;
+        public ushort highScore;
+        // Used by MGDX
+        public byte avatarId;
+#endif
     }
 
     internal class FileHandle : IDisposable
@@ -145,7 +153,6 @@ namespace NScumm.Sci.Engine
                     if (!savedHeros.IsNull)
                         SciEngine.WriteSelectorValue(segMan, savedHeros, o => o.sort, 0);
                 }
-
             }
             else
             {
@@ -180,10 +187,10 @@ namespace NScumm.Sci.Engine
                     string wrappedFilename = regularFilename.Substring(fileMask.Length - 1);
 
                     var testfile = saveFileMan.OpenForLoading(regularFilename);
-                    int testfileSize = (int)testfile.Length;
+                    int testfileSize = (int) testfile.Length;
                     if (testfileSize > 1024) // check, if larger than 1k. in that case its a saved game.
                         continue; // and we dont want to have those in the list
-                                  // We need to remove the prefix for display purposes
+                    // We need to remove the prefix for display purposes
                     _files.Add(wrappedFilename);
                     // but remember the actual name as well
                     _virtualFiles.Add(regularFilename);
@@ -226,7 +233,9 @@ namespace NScumm.Sci.Engine
                 desc.date = meta.saveDate;
                 // We need to fix date in here, because we save DDMMYYYY instead of
                 // YYYYMMDD, so sorting wouldn't work
-                desc.date = (int)(((desc.date & 0xFFFF) << 16) | ((desc.date & 0xFF0000) >> 8) | ((desc.date & 0xFF000000) >> 24));
+                desc.date =
+                    (int)
+                    (((desc.date & 0xFFFF) << 16) | ((desc.date & 0xFF0000) >> 8) | ((desc.date & 0xFF000000) >> 24));
                 desc.time = meta.saveTime;
                 desc.version = meta.version;
 
@@ -264,6 +273,56 @@ namespace NScumm.Sci.Engine
                     return saveNr;
             }
             return -1;
+        }
+
+        public static bool FillSavegameDesc(string filename, out SavegameDesc desc)
+        {
+            desc = null;
+            var saveFileMan = SciEngine.Instance.SaveFileManager;
+            Stream @in;
+            if ((@in = saveFileMan.OpenForLoading(filename)) == null)
+            {
+                return false;
+            }
+
+            SavegameMetadata meta;
+            if (!Savegame.get_savegame_metadata(@in, out meta) || string.IsNullOrEmpty(meta.name))
+            {
+                // invalid
+                @in.Dispose();
+                return false;
+            }
+            @in.Dispose();
+
+            int id = int.Parse(ServiceLocator.FileStorage.GetExtension(filename).Remove(0, 1));
+            desc = new SavegameDesc();
+            desc.id = (short) id;
+            desc.date = meta.saveDate;
+            // We need to fix date in here, because we save DDMMYYYY instead of
+            // YYYYMMDD, so sorting wouldn't work
+            desc.date =
+                (int) (((desc.date & 0xFFFF) << 16) | ((desc.date & 0xFF0000) >> 8) | ((desc.date & 0xFF000000) >> 24));
+            desc.time = meta.saveTime;
+            desc.version = meta.version;
+            desc.gameVersion = meta.gameVersion;
+#if ENABLE_SCI32
+            if (SciEngine.Instance.GameId == SciGameId.SHIVERS)
+            {
+                desc.lowScore = meta.lowScore;
+                desc.highScore = meta.highScore;
+            }
+            else if (SciEngine.Instance.GameId == SciGameId.MOTHERGOOSEHIRES)
+            {
+                desc.avatarId = meta.avatarId;
+            }
+#endif
+
+            if (meta.name[meta.name.Length - 1] == '\n')
+                meta.name = meta.name.Remove(meta.name.Length - 1, 1);
+
+            desc.name = meta.name;
+
+            return true;
         }
     }
 }

@@ -22,12 +22,14 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
 {
-    internal class AddrSet : HashSet<Register> { }
+    internal class AddrSet : HashSet<Register>
+    {
+    }
 
     internal class WorklistManager
     {
         public List<Register> _worklist;
-        public AddrSet _map;   // used for 2 contains() calls, inside push() and run_gc()
+        public AddrSet _map; // used for 2 contains() calls, inside push() and run_gc()
 
         public WorklistManager()
         {
@@ -96,7 +98,7 @@ namespace NScumm.Sci.Engine
 
                     // Get a list of all deallocatable objects in this segment,
                     // then free any which are not referenced from somewhere.
-                    var tmp = mobj.ListAllDeallocatable((ushort)seg);
+                    var tmp = mobj.ListAllDeallocatable((ushort) seg);
                     foreach (var addr in tmp)
                     {
                         if (!activeRefs.Contains(addr))
@@ -109,12 +111,11 @@ namespace NScumm.Sci.Engine
 #endif
                         }
                     }
-
                 }
             }
 
 # if GC_DEBUG_CODE
-            // Output debug summary of garbage collection
+// Output debug summary of garbage collection
             DebugC(DebugLevels.GC, "[GC] Summary:");
             for (int i = 0; i <= SEG_TYPE_MAX; i++)
                 if (segcount[i])
@@ -164,17 +165,35 @@ namespace NScumm.Sci.Engine
             var heap = s._segMan.Segments;
             int heapSize = heap.Count;
 
-            // Init: Explicitly loaded scripts
             for (var i = 1; i < heapSize; i++)
             {
-                if (heap[i] != null && heap[i].Type == SegmentType.SCRIPT)
+                // Init: Explicitly loaded scripts
+                if (heap[i] != null)
                 {
-                    Script script = (Script)heap[i];
+                    if (heap[i].Type == SegmentType.SCRIPT)
+                    {
+                        Script script = (Script) heap[i];
 
-                    if (script.Lockers != 0)
-                    { // Explicitly loaded?
-                        wm.Push(script.ListObjectReferences());
+                        if (script.Lockers != 0)
+                        {
+                            // Explicitly loaded?
+                            wm.Push(script.ListObjectReferences());
+                        }
                     }
+#if ENABLE_SCI32
+                    // Init: Explicitly opted-out bitmaps
+                    else if (heap[i].Type == SegmentType.BITMAP)
+                    {
+                        var bt = (BitmapTable) heap[i];
+                        for (var j = 0; j < bt._table.Length; j++)
+                        {
+                            if (bt._table[j].Item != null && !bt._table[j].Item.ShouldGc)
+                            {
+                                wm.Push(Register.Make((ushort) i, (ushort) j));
+                            }
+                        }
+                    }
+#endif
                 }
             }
 
@@ -212,7 +231,8 @@ namespace NScumm.Sci.Engine
                 var reg = wm._worklist.Last();
                 wm._worklist.Remove(reg);
                 if (reg.Segment != stackSegment)
-                { // No need to repeat this one
+                {
+                    // No need to repeat this one
                     DebugC(DebugLevels.GC, "[GC] Checking {0}", reg);
                     if (reg.Segment < heap.Count && heap[reg.Segment] != null)
                     {

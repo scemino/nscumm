@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NScumm.Core;
+using NScumm.Sci.Graphics;
 using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
@@ -40,7 +41,8 @@ namespace NScumm.Sci.Engine
 
 #if ENABLE_SCI32
         ARRAY = 11,
-        STRING = 12,
+        // 12 used to be string, now obsolete
+        BITMAP = 13,
 #endif
 
         MAX // For sanity checking
@@ -154,7 +156,7 @@ namespace NScumm.Sci.Engine
                 ret.skipByte = true;
             }
 
-            ret.reg = new StackPtr(_entries, (int)(pointer.Offset / 2));
+            ret.reg = new RegisterPtr(new StackPtr(_entries, (int)(pointer.Offset / 2)));
             return ret;
         }
 
@@ -489,7 +491,7 @@ namespace NScumm.Sci.Engine
 
             if (ret.maxSize > 0)
             {
-                ret.reg = new StackPtr(_locals, (int)(pointer.Offset / 2));
+                ret.reg = new RegisterPtr(new StackPtr(_locals, (int)(pointer.Offset / 2)));
             }
             else {
                 if ((SciEngine.Instance.EngineState.CurrentRoomNumber == 160 ||
@@ -504,9 +506,9 @@ namespace NScumm.Sci.Engine
                     //   game asks for variables at indices 114-120 too.
                 }
                 else {
-                    throw new System.InvalidOperationException($"LocalVariables::dereference: Offset at end or out of bounds {pointer}");
+                    throw new InvalidOperationException($"LocalVariables::dereference: Offset at end or out of bounds {pointer}");
                 }
-                ret.reg = StackPtr.Null;
+                ret.reg = null;
             }
             return ret;
         }
@@ -536,7 +538,7 @@ namespace NScumm.Sci.Engine
         /// number of available bytes
         /// </summary>
         public int maxSize;
-        public StackPtr? reg;
+        public IRegisterPtr reg;
         // FIXME: Perhaps a generic 'offset' is more appropriate here
         /// <summary>
         /// true if referencing the 2nd data byte of *reg, false otherwise
@@ -550,9 +552,20 @@ namespace NScumm.Sci.Engine
             maxSize = 0;
         }
 
-        public bool IsValid
+        public bool IsValid => isRaw ? raw != BytePtr.Null : reg!=null;
+    }
+
+    internal class BitmapTable : SegmentObjTable<SciBitmap>
+    {
+        public BitmapTable() : base(SegmentType.BITMAP) {}
+
+        public override SegmentRef Dereference(Register pointer)
         {
-            get { return (isRaw ? raw != BytePtr.Null : reg.HasValue); }
+            SegmentRef ret = new SegmentRef();
+            ret.isRaw = true;
+            ret.maxSize = this[(int) pointer.Offset].RawSize;
+            ret.raw = this[(int) pointer.Offset].RawData;
+            return ret;
         }
     }
 }

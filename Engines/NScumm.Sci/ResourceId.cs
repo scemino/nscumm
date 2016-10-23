@@ -117,7 +117,7 @@ namespace NScumm.Sci
 
         public override string ToString()
         {
-            return "({Type}, {Number}, {Tuple})";
+            return $"({Type}, {Number}, {Tuple})";
         }
     }
 }

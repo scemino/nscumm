@@ -21,7 +21,7 @@ using System;
 namespace NScumm.Core.Graphics
 {
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
-    public struct Rect
+    public struct Rect : IEquatable<Rect>
     {
         public short Top, Left;
         public short Bottom, Right;
@@ -45,6 +45,14 @@ namespace NScumm.Core.Graphics
         public bool IsEmpty => Left >= Right || Top >= Bottom;
 
         public bool IsValidRect => Left <= Right && Top <= Bottom;
+
+        public Rect(Rect r)
+        {
+            Top = r.Top;
+            Left = r.Left;
+            Bottom = r.Bottom;
+            Right = r.Right;
+        }
 
         public Rect(short w, short h)
         {
@@ -114,6 +122,17 @@ namespace NScumm.Core.Graphics
             return Contains(p.X, p.Y);
         }
 
+        /// <summary>
+        /// Check if the given rect is contained inside this rectangle.
+        /// </summary>
+        /// <param name="r">The rectangle to check</param>
+        /// <returns>true if the given rect is inside, false otherwise</returns>
+        public bool Contains(Rect r)
+        {
+            return (Left <= r.Left) && (r.Right <= Right) &&
+                   (Top <= r.Top) && (r.Bottom <= Bottom);
+        }
+
         public override string ToString()
         {
             return DebuggerDisplay;
@@ -155,6 +174,68 @@ namespace NScumm.Core.Graphics
             Right = Math.Max(Right, r.Right);
             Top = Math.Min(Top, r.Top);
             Bottom = Math.Max(Bottom, r.Bottom);
+        }
+
+        /**
+         * Check if given rectangle intersects with this rectangle
+         *
+         * @param r the rectangle to check
+         *
+         * @return true if the given rectangle has a non-empty intersection with
+         *         this rectangle, false otherwise
+         */
+        public bool Intersects(Rect r)
+        {
+            return (Left < r.Right) && (r.Left < Right) && (Top < r.Bottom) && (r.Top < Bottom);
+        }
+
+        /**
+         * Find the intersecting rectangle between this rectangle and the given rectangle
+         *
+         * @param r the intersecting rectangle
+         *
+         * @return the intersection of the rectangles or an empty rectangle if not intersecting
+         */
+        public Rect FindIntersectingRect(Rect r)
+        {
+            if (!Intersects(r))
+                return new Rect();
+
+            return new Rect(Math.Max(r.Left, Left), Math.Max(r.Top, Top), Math.Min(r.Right, Right),
+                Math.Min(r.Bottom, Bottom));
+        }
+
+        public bool Equals(Rect other)
+        {
+            return Top == other.Top && Bottom == other.Bottom && Left == other.Left && Right == other.Right;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            return obj is Rect && Equals((Rect) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = Top.GetHashCode();
+                hashCode = (hashCode * 397) ^ Bottom.GetHashCode();
+                hashCode = (hashCode * 397) ^ Left.GetHashCode();
+                hashCode = (hashCode * 397) ^ Right.GetHashCode();
+                return hashCode;
+            }
+        }
+
+        public static bool operator ==(Rect left, Rect right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Rect left, Rect right)
+        {
+            return !left.Equals(right);
         }
     }
 }

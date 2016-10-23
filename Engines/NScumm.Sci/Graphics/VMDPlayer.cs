@@ -58,6 +58,7 @@ namespace NScumm.Sci.Graphics
             StretchVertical = 0x100
         }
 
+        [Flags]
         public enum EventFlags
         {
             None = 0,
@@ -226,7 +227,19 @@ namespace NScumm.Sci.Graphics
             _boostEndColor = 255;
         }
 
-        private IOStatus Open(string fileName, OpenFlags flags)
+        public bool ShowCursor
+        {
+            get { return _showCursor; }
+            set { _showCursor = value; }
+        }
+
+        public void RestrictPalette(byte startColor, byte endColor)
+        {
+            _startColor = startColor;
+            _endColor = endColor;
+        }
+
+        public IOStatus Open(string fileName, OpenFlags flags)
         {
             if (_isOpen)
             {
@@ -243,10 +256,10 @@ namespace NScumm.Sci.Graphics
             return IOStatus.Success;
         }
 
-        private void Init(short x, short y, PlayFlags flags, short boostPercent, short boostStartColor,
+        public void Init(short x, short y, PlayFlags flags, short boostPercent, short boostStartColor,
             short boostEndColor)
         {
-            _x = (short) (ResourceManager.GetSciVersion() >= SciVersion.V3 ? x : (x & ~1));
+            _x = (short) (ResourceManager.GetSciVersion() >= SciVersion.V3 ? x : x & ~1);
             _y = y;
             _doublePixels = (flags & PlayFlags.DoublePixels) != 0;
             _blackLines = ConfigManager.Instance.Get<bool>("enable_black_lined_video") &&
@@ -260,7 +273,7 @@ namespace NScumm.Sci.Graphics
             _stretchVertical = (flags & PlayFlags.StretchVertical) != 0;
         }
 
-        private IOStatus Close()
+        public IOStatus Close()
         {
             if (!_isOpen)
             {
@@ -311,6 +324,318 @@ namespace NScumm.Sci.Graphics
             return IOStatus.Success;
         }
 
+        public EventFlags KernelPlayUntilEvent(EventFlags flags, short lastFrameNo, short yieldInterval)
+        {
+            System.Diagnostics.Debug.Assert(lastFrameNo >= -1);
+
+            var maxFrameNo = _decoder.GetFrameCount() - 1;
+
+            if (((flags & EventFlags.ToFrame) != 0) && lastFrameNo > 0)
+            {
+                _decoder.SetEndFrame((uint) Math.Min(lastFrameNo, maxFrameNo));
+            }
+            else
+            {
+                _decoder.SetEndFrame((uint) maxFrameNo);
+            }
+
+            if ((flags & EventFlags.YieldToVM) != 0)
+            {
+                _yieldInterval = 3;
+                if (yieldInterval == -1 && (flags & EventFlags.ToFrame) == 0)
+                {
+                    _yieldInterval = lastFrameNo;
+                }
+                else if (yieldInterval != -1)
+                {
+                    _yieldInterval = Math.Min(yieldInterval, maxFrameNo);
+                }
+            }
+            else
+            {
+                _yieldInterval = maxFrameNo;
+            }
+
+            return PlayUntilEvent(flags);
+        }
+
+        private EventFlags PlayUntilEvent(EventFlags flags)
+        {
+            // Flushing all the keyboard and mouse events out of the event manager to
+            // avoid letting any events queued from before the video started from
+            // accidentally activating an event callback
+            for (;;)
+            {
+                var @event = _eventMan.GetSciEvent(SciEvent.SCI_EVENT_KEYBOARD | SciEvent.SCI_EVENT_MOUSE_PRESS |
+                                                   SciEvent.SCI_EVENT_MOUSE_RELEASE | SciEvent.SCI_EVENT_QUIT);
+                if (@event.type == SciEvent.SCI_EVENT_NONE)
+                {
+                    break;
+                }
+                if (@event.type == SciEvent.SCI_EVENT_QUIT)
+                {
+                    return EventFlags.End;
+                }
+            }
+
+            _decoder.PauseVideo(false);
+
+            if ((flags & EventFlags.Reverse) != 0)
+            {
+                // NOTE: This flag may not work properly since SSCI does not care
+                // if a video has audio, but the VMD decoder does.
+                var success = _decoder.SetReverse(true);
+                System.Diagnostics.Debug.Assert(success);
+                _decoder.SetVolume(0);
+            }
+
+            if (!_isInitialized)
+            {
+                _isInitialized = true;
+
+                if (!_showCursor)
+                {
+                    SciEngine.Instance._gfxCursor.KernelHide();
+                }
+
+                var vmdRect = new Rect(_x, _y, (short) (_x + _decoder.GetWidth()), (short) (_y + _decoder.GetHeight()));
+                var vmdScaleInfo = new ScaleInfo();
+
+                if (!_blackoutRect.IsEmpty && _planeIsOwned)
+                {
+                    _blackoutPlane = new Plane(_blackoutRect);
+                    SciEngine.Instance._gfxFrameout.AddPlane(_blackoutPlane);
+                }
+
+                if (_doublePixels)
+                {
+                    vmdScaleInfo.x = 256;
+                    vmdScaleInfo.y = 256;
+                    vmdScaleInfo.signal = ScaleSignals32.kScaleSignalManual;
+                    vmdRect.Right += vmdRect.Width;
+                    vmdRect.Bottom += vmdRect.Height;
+                }
+                else if (_stretchVertical)
+                {
+                    vmdScaleInfo.y = 256;
+                    vmdScaleInfo.signal = ScaleSignals32.kScaleSignalManual;
+                    vmdRect.Bottom += vmdRect.Height;
+                }
+
+                var screenWidth = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScreenWidth;
+                var screenHeight = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScreenHeight;
+                var scriptWidth = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
+                var scriptHeight = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
+
+                Register bitmapId = new Register();
+                SciBitmap vmdBitmap = _segMan.AllocateBitmap(bitmapId, vmdRect.Width, vmdRect.Height, 255, 0, 0,
+                    screenWidth, screenHeight, 0, false, false);
+
+                if (screenWidth != scriptWidth || screenHeight != scriptHeight)
+                {
+                    var r1 = new Rational(scriptWidth, screenWidth);
+                    var r2 = new Rational(scriptHeight, screenHeight);
+                    Helpers.Mulru(ref vmdRect, ref r1, ref r2, 1);
+                }
+
+                var vmdCelInfo = new CelInfo32();
+                vmdCelInfo.bitmap = vmdBitmap.Object;
+                _decoder.SetSurfaceMemory(vmdBitmap.Pixels, vmdBitmap.Width, vmdBitmap.Height, 1);
+
+                if (_planeIsOwned)
+                {
+                    _x = 0;
+                    _y = 0;
+                    _plane = new Plane(vmdRect, PlanePictureCodes.kPlanePicColored);
+                    if (_priority != 0)
+                    {
+                        _plane._priority = (short) _priority;
+                    }
+                    SciEngine.Instance._gfxFrameout.AddPlane(_plane);
+                    _screenItem = new ScreenItem(_plane._object, vmdCelInfo, new Point(), vmdScaleInfo);
+                }
+                else
+                {
+                    _screenItem = new ScreenItem(_plane._object, vmdCelInfo, new Point(_x, _y), vmdScaleInfo);
+                    if (_priority != 0)
+                    {
+                        _screenItem._priority = (short) _priority;
+                    }
+                }
+
+                if (_blackLines)
+                {
+                    _screenItem._drawBlackLines = true;
+                }
+
+                // NOTE: There was code for positioning the screen item using insetRect
+                // here, but none of the game scripts seem to use this functionality.
+
+                SciEngine.Instance._gfxFrameout.AddScreenItem(_screenItem);
+
+                _decoder.Start();
+            }
+
+            var stopFlag = EventFlags.None;
+            while (!SciEngine.Instance.ShouldQuit)
+            {
+                if (_decoder.EndOfVideo)
+                {
+                    stopFlag = EventFlags.End;
+                    break;
+                }
+
+                SciEngine.Instance.EngineState.SpeedThrottler((int) _decoder.GetTimeToNextFrame());
+                SciEngine.Instance.EngineState._throttleTrigger = true;
+                if (_decoder.NeedsUpdate)
+                {
+                    RenderFrame();
+                }
+
+                var currentFrameNo = _decoder.CurrentFrame;
+
+                if (_yieldInterval > 0 &&
+                    currentFrameNo != _lastYieldedFrameNo &&
+                    currentFrameNo % _yieldInterval == 0
+                )
+                {
+                    _lastYieldedFrameNo = currentFrameNo;
+                    stopFlag = EventFlags.YieldToVM;
+                    break;
+                }
+
+                var @event = _eventMan.GetSciEvent(SciEvent.SCI_EVENT_MOUSE_PRESS | SciEvent.SCI_EVENT_PEEK);
+                if (((flags & EventFlags.MouseDown) != 0) && @event.type == SciEvent.SCI_EVENT_MOUSE_PRESS)
+                {
+                    stopFlag = EventFlags.MouseDown;
+                    break;
+                }
+
+                @event = _eventMan.GetSciEvent(SciEvent.SCI_EVENT_KEYBOARD | SciEvent.SCI_EVENT_PEEK);
+                if (((flags & EventFlags.EscapeKey) != 0) && @event.type == SciEvent.SCI_EVENT_KEYBOARD)
+                {
+                    var stop = false;
+                    if (ResourceManager.GetSciVersion() < SciVersion.V3)
+                    {
+                        while ((@event = _eventMan.GetSciEvent(SciEvent.SCI_EVENT_KEYBOARD)) != null &&
+                               @event.type != SciEvent.SCI_EVENT_NONE)
+                        {
+                            if (@event.character == SciEvent.SCI_KEY_ESC)
+                            {
+                                stop = true;
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        stop = @event.character == SciEvent.SCI_KEY_ESC;
+                    }
+
+                    if (stop)
+                    {
+                        stopFlag = EventFlags.EscapeKey;
+                        break;
+                    }
+                }
+
+                // TODO: Hot rectangles
+                if (((flags & EventFlags.HotRectangle) != 0) /* && event.type == SCI_EVENT_HOT_RECTANGLE */)
+                {
+                    Warning("Hot rectangles not implemented in VMD player");
+                    stopFlag = EventFlags.HotRectangle;
+                    break;
+                }
+            }
+
+            _decoder.PauseVideo(true);
+            return stopFlag;
+        }
+
+        private void RenderFrame()
+        {
+            // This writes directly to the CelObjMem we already created,
+            // so no need to take its return value
+            _decoder.DecodeNextFrame();
+
+            // NOTE: Normally this would write a hunk palette at the end of the
+            // video bitmap that CelObjMem would read out and submit, but instead
+            // we are just submitting it directly here because the decoder exposes
+            // this information a little bit differently than the one in SSCI
+            bool dirtyPalette = _decoder.HasDirtyPalette;
+            if (dirtyPalette)
+            {
+                var palette = new Palette();
+                palette.timestamp = (int) SciEngine.Instance.TickCount;
+                if (_blackPalette)
+                {
+                    for (var i = _startColor; i <= _endColor; ++i)
+                    {
+                        palette.colors[i].R = palette.colors[i].G = palette.colors[i].B = 0;
+                        palette.colors[i].used = 1;
+                    }
+                }
+                else
+                {
+                    FillPalette(palette);
+                }
+
+                SciEngine.Instance._gfxPalette32.Submit(palette);
+                SciEngine.Instance._gfxFrameout.UpdateScreenItem(_screenItem);
+                SciEngine.Instance._gfxFrameout.FrameOut(true);
+
+                if (_blackPalette)
+                {
+                    FillPalette(palette);
+                    SciEngine.Instance._gfxPalette32.Submit(palette);
+                    SciEngine.Instance._gfxPalette32.UpdateForFrame();
+                    SciEngine.Instance._gfxPalette32.UpdateHardware();
+                }
+            }
+            else
+            {
+                SciEngine.Instance._gfxFrameout.UpdateScreenItem(_screenItem);
+                //TODO: SciEngine.Instance.SciDebugger.OnFrame();
+                SciEngine.Instance._gfxFrameout.FrameOut(true);
+                SciEngine.Instance._gfxFrameout.Throttle();
+            }
+        }
+
+        private void FillPalette(Palette palette)
+        {
+            var vmdPalette = new Ptr<byte>(_decoder.Palette, _startColor);
+            for (var i = _startColor; i <= _endColor; ++i)
+            {
+                short r = vmdPalette.Value;
+                vmdPalette.Offset++;
+                short g = vmdPalette.Value;
+                vmdPalette.Offset++;
+                short b = vmdPalette.Value;
+                vmdPalette.Offset++;
+
+                if (_boostPercent != 100 && i >= _boostStartColor && i <= _boostEndColor)
+                {
+                    r = (short) ScummHelper.Clip(r * _boostPercent / 100, 0, 255);
+                    g = (short) ScummHelper.Clip(g * _boostPercent / 100, 0, 255);
+                    b = (short) ScummHelper.Clip(b * _boostPercent / 100, 0, 255);
+                }
+
+                palette.colors[i].R = (byte) r;
+                palette.colors[i].G = (byte) g;
+                palette.colors[i].B = (byte) b;
+                palette.colors[i].used = 1;
+            }
+        }
+
+        /// <summary>
+        /// Sets the area of the screen that should be blacked out
+        /// during VMD playback.
+        /// </summary>
+        /// <param name="rect"></param>
+        public void SetBlackoutArea(Rect rect)
+        {
+            _blackoutRect = rect;
+        }
     }
 #endif
 }

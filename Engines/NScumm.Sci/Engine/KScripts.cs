@@ -37,7 +37,7 @@ namespace NScumm.Sci.Engine
             if (restype == ResourceType.Memory)
                 return s._segMan.AllocateHunkEntry("kLoad()", resnr);
 
-            return Register.Make(0, (ushort)((((int)restype) << 11) | resnr)); // Return the resource identifier as handle
+            return Register.Make(0, (ushort)(((int)restype << 11) | resnr)); // Return the resource identifier as handle
         }
 
         // Unloads an arbitrary resource of type 'restype' with resource numbber 'resnr'
@@ -144,41 +144,38 @@ namespace NScumm.Sci.Engine
             {
                 return s.r_acc;
             }
-            else {
-                // This exists in the KQ5CD and GK1 interpreter. We know it is used
-                // when GK1 starts up, before the Sierra logo.
-                Warning("kDisposeScript called with 2 parameters, still untested");
-                return argv[1];
-            }
+            // This exists in the KQ5CD and GK1 interpreter. We know it is used
+            // when GK1 starts up, before the Sierra logo.
+            Warning("kDisposeScript called with 2 parameters, still untested");
+            return argv[1];
         }
 
         private static Register kIsObject(EngineState s, int argc, StackPtr argv)
         {
             if (argv[0].Offset == Register.SIGNAL_OFFSET) // Treated specially
                 return Register.NULL_REG;
-            else
-                return Register.Make(0, s._segMan.IsHeapObject(argv[0]));
+            return Register.Make(0, s._segMan.IsHeapObject(argv[0]));
         }
 
         private static Register kClone(EngineState s, int argc, StackPtr argv)
         {
             Register parentAddr = argv[0];
             SciObject parentObj = s._segMan.GetObject(parentAddr);
-            Register cloneAddr;
 
             if (parentObj == null)
             {
-                throw new InvalidOperationException($"Attempt to clone non-object/class at {parentAddr} failed");
+                Error($"Attempt to clone non-object/class at {parentAddr} failed");
             }
 
             DebugC(DebugLevels.Memory, "Attempting to clone from {0}", parentAddr);
 
             ushort infoSelector = (ushort)parentObj.InfoSelector[0].Offset;
+            Register cloneAddr;
             var cloneObj = s._segMan.AllocateClone(out cloneAddr);
 
             if (cloneObj.Item == null)
             {
-                throw new InvalidOperationException($"Cloning {parentAddr} failed-- internal error");
+                Error($"Cloning {parentAddr} failed-- internal error");
             }
 
             // In case the parent object is a clone itself we need to refresh our
@@ -218,8 +215,6 @@ namespace NScumm.Sci.Engine
             ResourceType type = SciEngine.Instance.ResMan.ConvertResType(argv[0].ToUInt16());
             ResourceId id = new ResourceId(type, argv[1].ToUInt16());
 
-            ResourceManager.ResourceSource.Resource which;
-
             switch (state)
             {
                 case 1:
@@ -237,9 +232,9 @@ namespace NScumm.Sci.Engine
                                 SciEngine.Instance.ResMan.UnlockResource(res);
                         }
                     }
-                    else {
-                        which = SciEngine.Instance.ResMan.FindResource(id, false);
-
+                    else
+                    {
+                        var which = SciEngine.Instance.ResMan.FindResource(id, false);
                         if (which != null)
                             SciEngine.Instance.ResMan.UnlockResource(which);
                         else {

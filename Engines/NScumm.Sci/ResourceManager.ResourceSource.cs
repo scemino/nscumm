@@ -31,38 +31,47 @@ namespace NScumm.Sci
         /// Directories containing game resources/patches.
         /// </summary>
         Directory = 0,
+
         /// <summary>
         /// External resource patches.
         /// </summary>
         Patch,
+
         /// <summary>
         /// Game resources (resource.* or ressci.*).
         /// </summary>
         Volume,
+
         /// <summary>
         /// Non-audio resource maps.
         /// </summary>
         ExtMap,
+
         /// <summary>
         /// SCI1.1 and later audio resource maps.
         /// </summary>
         IntMap,
+
         /// <summary>
         /// Audio resources - resource.sfx / resource.aud.
         /// </summary>
         AudioVolume,
+
         /// <summary>
         /// SCI1 audio resource maps.
         /// </summary>
         ExtAudioMap,
+
         /// <summary>
         /// External WAVE files, patched in as sound resources.
         /// </summary>
         Wave,
+
         /// <summary>
         /// Mac SCI1.1 and later resource forks.
         /// </summary>
         MacResourceFork,
+
         /// <summary>
         /// Script chunk resources (*.chk).
         /// </summary>
@@ -75,445 +84,23 @@ namespace NScumm.Sci
     internal enum ResourceStatus
     {
         NoMalloc = 0,
-        Allocated,
+        Allocated = 1,
+
         /// <summary>
         /// In the LRU queue.
         /// </summary>
-        Enqueued,
+        Enqueued = 2,
+
         /// <summary>
         /// Allocated and in use 
         /// </summary>
-        Locked
+        Locked = 3
     }
 
     internal partial class ResourceManager
     {
-        public class ResourceMap : Dictionary<ResourceId, ResourceSource.Resource>
+        protected class ResourceMap : Dictionary<ResourceId, ResourceSource.Resource>
         {
-        }
-
-        public class ResourceSource
-        {
-            /// <summary>
-            /// Class for storing resources in memory.
-            /// </summary>
-            public class Resource
-            {
-                internal const int MAX_MEMORY = 256 * 1024;	// 256KB
-
-                internal ResourceId _id; // TODO: _id could almost be made const, only readResourceInfo() modifies it...
-
-                /// <summary>
-                /// Offset in file
-                /// </summary>
-                internal int _fileOffset;
-                internal ResourceSource _source;
-                protected ResourceManager _resMan;
-                internal ResourceStatus _status;
-                /// <summary>
-                /// Number of places where this resource was locked
-                /// </summary>
-                internal ushort _lockers;
-
-                // NOTE : Currently most member variables lack the underscore prefix and have
-                // public visibility to let the rest of the engine compile without changes.
-                public int size;
-                public byte[] data;
-                public int _headerSize;
-                public byte[] _header;
-
-                public uint AudioCompressionType
-                {
-                    get
-                    {
-                        return _source.AudioCompressionType;
-                    }
-                }
-
-                public ResourceType ResourceType { get { return _id.Type; } }
-
-                public ushort Number { get { return _id.Number; } }
-
-                public bool IsLocked { get { return _status == ResourceStatus.Locked; } }
-
-                public Resource(ResourceManager resMan, ResourceId id)
-                {
-                    _resMan = resMan;
-                    _id = id;
-                }
-
-                public ResourceErrorCodes ReadResourceInfo(ResVersion volVersion, Stream file,
-                                      out int szPacked, out ResourceCompression compression)
-                {
-                    szPacked = 0;
-                    compression = ResourceCompression.None;
-
-                    // SCI0 volume format:  {wResId wPacked+4 wUnpacked wCompression} = 8 bytes
-                    // SCI1 volume format:  {bResType wResNumber wPacked+4 wUnpacked wCompression} = 9 bytes
-                    // SCI1.1 volume format:  {bResType wResNumber wPacked wUnpacked wCompression} = 9 bytes
-                    // SCI32 volume format :  {bResType wResNumber dwPacked dwUnpacked wCompression} = 13 bytes
-                    ushort w, number;
-                    int wCompression, szUnpacked;
-                    ResourceType type;
-
-                    if (file.Length == 0)
-                        return ResourceErrorCodes.EMPTY_RESOURCE;
-
-                    var br = new BinaryReader(file);
-                    switch (volVersion)
-                    {
-                        case ResVersion.Sci0Sci1Early:
-                        case ResVersion.Sci1Middle:
-                            w = br.ReadUInt16();
-                            type = _resMan.ConvertResType(w >> 11);
-                            number = (ushort)(w & 0x7FF);
-                            szPacked = br.ReadUInt16() - 4;
-                            szUnpacked = br.ReadUInt16();
-                            wCompression = br.ReadUInt16();
-                            break;
-                        case ResVersion.Sci1Late:
-                            type = _resMan.ConvertResType(file.ReadByte());
-                            number = br.ReadUInt16();
-                            szPacked = br.ReadUInt16() - 4;
-                            szUnpacked = br.ReadUInt16();
-                            wCompression = br.ReadUInt16();
-                            break;
-                        case ResVersion.Sci11:
-                            type = _resMan.ConvertResType(br.ReadByte());
-                            number = br.ReadUInt16();
-                            szPacked = br.ReadUInt16();
-                            szUnpacked = br.ReadUInt16();
-                            wCompression = br.ReadUInt16();
-                            break;
-#if ENABLE_SCI32
-                        case ResVersion.Sci2:
-                        case ResVersion.Sci3:
-                            type = _resMan.ConvertResType(br.ReadByte());
-                            number = br.ReadUInt16();
-                            szPacked = br.ReadInt32();
-                            szUnpacked = br.ReadInt32();
-
-                            // The same comment applies here as in
-                            // detectVolVersion regarding SCI3. We ignore the
-                            // compression field for SCI3 games, but must presume
-                            // it exists in the file.
-                            wCompression = br.ReadUInt16();
-
-                            if (volVersion == ResVersion.Sci3)
-                                wCompression = szPacked != szUnpacked ? 32 : 0;
-
-                            break;
-#endif
-                        default:
-                            return ResourceErrorCodes.RESMAP_INVALID_ENTRY;
-                    }
-
-                    // check if there were errors while reading
-                    if (file.Position >= file.Length)
-                        return ResourceErrorCodes.IO_ERROR;
-
-                    _id = new ResourceId(type, number);
-                    size = szUnpacked;
-
-                    // checking compression method
-                    switch (wCompression)
-                    {
-                        case 0:
-                            compression = ResourceCompression.None;
-                            break;
-                        case 1:
-                            compression = (GetSciVersion() <= SciVersion.V01) ? ResourceCompression.LZW : ResourceCompression.Huffman;
-                            break;
-                        case 2:
-                            compression = (GetSciVersion() <= SciVersion.V01) ? ResourceCompression.Huffman : ResourceCompression.LZW1;
-                            break;
-                        case 3:
-                            compression = ResourceCompression.LZW1View;
-                            break;
-                        case 4:
-                            compression = ResourceCompression.LZW1Pic;
-                            break;
-                        case 18:
-                        case 19:
-                        case 20:
-                            compression = ResourceCompression.DCL;
-                            break;
-#if ENABLE_SCI32
-                        case 32:
-                            compression = ResourceCompression.STACpack;
-                            break;
-#endif
-                        default:
-                            compression = ResourceCompression.Unknown;
-                            break;
-                    }
-
-                    return (compression == ResourceCompression.Unknown) ? ResourceErrorCodes.UNKNOWN_COMPRESSION : ResourceErrorCodes.NONE;
-                }
-
-                public void Unalloc()
-                {
-                    data = null;
-                    _status = ResourceStatus.NoMalloc;
-                }
-
-                public bool LoadFromAudioVolumeSCI1(Stream stream)
-                {
-                    data = new byte[size];
-
-                    int really_read = stream.Read(data, 0, size);
-                    if (really_read != size)
-                        Warning("Read {0} bytes from {1} but expected {2}", really_read, _id, size);
-
-                    _status = ResourceStatus.Allocated;
-                    return true;
-                }
-
-                public bool LoadFromAudioVolumeSCI11(Stream stream)
-                {
-                    // Check for WAVE files here
-                    var br = new BinaryReader(stream);
-                    uint riffTag = br.ReadUInt32BigEndian();
-                    if (riffTag == ScummHelper.MakeTag('R', 'I', 'F', 'F'))
-                    {
-                        _headerSize = 0;
-                        size = br.ReadInt32() + 8;
-                        stream.Seek(-8, SeekOrigin.Current);
-                        return LoadFromWaveFile(stream);
-                    }
-                    stream.Seek(-4, SeekOrigin.Current);
-
-                    // Rave-resources (King's Quest 6) don't have any header at all
-                    if (ResourceType != ResourceType.Rave)
-                    {
-                        var type = _resMan.ConvertResType(br.ReadByte());
-                        if (((ResourceType == ResourceType.Audio || ResourceType == ResourceType.Audio36) && (type != ResourceType.Audio))
-                            || ((ResourceType == ResourceType.Sync || ResourceType == ResourceType.Sync36) && (type != ResourceType.Sync)))
-                        {
-                            Warning("Resource type mismatch loading {0}", _id);
-                            Unalloc();
-                            return false;
-                        }
-
-                        _headerSize = br.ReadByte();
-
-                        if (type == ResourceType.Audio)
-                        {
-                            if (_headerSize != 7 && _headerSize != 11 && _headerSize != 12)
-                            {
-                                Warning("Unsupported audio header");
-                                Unalloc();
-                                return false;
-                            }
-
-                            if (_headerSize != 7)
-                            { // Size is defined already from the map
-                              // Load sample size
-                                stream.Seek(7, SeekOrigin.Current);
-                                size = br.ReadInt32();
-                                // Adjust offset to point at the header data again
-                                stream.Seek(-11, SeekOrigin.Current);
-                            }
-                        }
-                    }
-                    return LoadPatch(stream);
-                }
-
-                public bool LoadFromWaveFile(Stream stream)
-                {
-                    data = new byte[size];
-
-                    int really_read = stream.Read(data, 0, size);
-                    if (really_read != size)
-                        Error("Read {0} bytes from {1} but expected {2}", really_read, _id, size);
-
-                    _status = ResourceStatus.Allocated;
-                    return true;
-                }
-
-                public bool LoadFromPatchFile()
-                {
-                    string filename = _source.LocationName;
-                    var file = Core.Engine.OpenFileRead(filename);
-                    if (file == null)
-                    {
-                        Warning($"Failed to open patch file {filename}");
-                        Unalloc();
-                        return false;
-                    }
-                    // Skip resourceid and header size byte
-                    file.Seek(2, SeekOrigin.Begin);
-                    return LoadPatch(file);
-                }
-
-                // Resource manager constructors and operations
-
-                private bool LoadPatch(Stream file)
-                {
-                    Resource res = this;
-
-                    // We assume that the resource type matches res.type
-                    //  We also assume that the current file position is right at the actual data (behind resourceid/headersize byte)
-
-                    res.data = new byte[res.size];
-
-                    if (res._headerSize > 0)
-                        res._header = new byte[res._headerSize];
-
-                    if ((res.data == null) || ((res._headerSize > 0) && (res._header == null)))
-                    {
-                        Error($"Can't allocate {res.size + res._headerSize} bytes needed for loading {res._id}");
-                    }
-
-                    int really_read;
-                    if (res._headerSize > 0)
-                    {
-                        really_read = file.Read(res._header, 0, res._headerSize);
-                        if (really_read != res._headerSize)
-                            Error($"Read {really_read} bytes from {res._id} but expected {res._headerSize}");
-                    }
-
-                    really_read = file.Read(res.data, 0, res.size);
-                    if (really_read != res.size)
-                        Error($"Read {really_read} bytes from {res._id} but expected {res.size}");
-
-                    res._status = ResourceStatus.Allocated;
-                    return true;
-                }
-
-
-                internal ResourceErrorCodes Decompress(ResVersion volVersion, Stream file)
-                {
-                    int szPacked = 0;
-                    ResourceCompression compression;
-
-                    // fill resource info
-                    var errorNum = ReadResourceInfo(volVersion, file, out szPacked, out compression);
-                    if (errorNum != ResourceErrorCodes.NONE)
-                        return errorNum;
-
-                    // getting a decompressor
-                    Decompressor dec;
-                    switch (compression)
-                    {
-                        case ResourceCompression.None:
-                            dec = new Decompressor();
-                            break;
-                        case ResourceCompression.Huffman:
-                            dec = new DecompressorHuffman();
-                            break;
-                        case ResourceCompression.LZW:
-                        case ResourceCompression.LZW1:
-                        case ResourceCompression.LZW1View:
-                        case ResourceCompression.LZW1Pic:
-                            dec = new DecompressorLzw(compression);
-                            break;
-                        case ResourceCompression.DCL:
-                            dec = new DecompressorDcl();
-                            break;
-#if ENABLE_SCI32
-                        case ResourceCompression.STACpack:
-                            dec = new DecompressorLzs();
-                            break;
-#endif
-                        default:
-                            Error($"Resource {_id}: Compression method {compression} not supported");
-                            return ResourceErrorCodes.UNKNOWN_COMPRESSION;
-                    }
-
-                    data = new byte[size];
-                    _status = ResourceStatus.Allocated;
-                    errorNum = dec.Unpack(file, data, szPacked, size);
-                    if (errorNum != ResourceErrorCodes.NONE)
-                        Unalloc();
-
-                    return errorNum;
-                }
-
-#if ENABLE_SCI32
-                public Stream MakeStream()
-                {
-                    return new MemoryStream(data, 0, size);
-                }
-#endif
-            }
-
-            protected readonly ResSourceType _sourceType;
-            protected readonly string _name;
-            public readonly object _resourceFile;
-            public readonly int _volumeNumber;
-            internal bool _scanned;
-
-            public ResSourceType SourceType { get { return _sourceType; } }
-            public string LocationName { get { return _name; } }
-
-            // FIXME: This audio specific method is a hack. After all, why should a
-            // ResourceSource or a Resource (which uses this method) have audio
-            // specific methods? But for now we keep this, as it eases transition.
-            public virtual uint AudioCompressionType { get { return 0; } }
-
-            public ResourceSource(ResSourceType type, string name, int volNum = 0, object resFile = null)
-            {
-                _sourceType = type;
-                _name = name;
-                _volumeNumber = volNum;
-                _resourceFile = resFile;
-            }
-
-            public virtual void ScanSource(ResourceManager resMan)
-            {
-            }
-
-            public virtual ResourceSource FindVolume(ResourceSource map, int volNum)
-            {
-                return null;
-            }
-
-            /// <summary>
-            /// Auxiliary method, used by loadResource implementations.
-            /// </summary>
-            /// <param name="resMan"></param>
-            /// <param name="res"></param>
-            /// <returns></returns>
-            public Stream GetVolumeFile(ResourceManager resMan, Resource res)
-            {
-                var fileStream = resMan.GetVolumeFile(this);
-                if (fileStream == null)
-                {
-                    Warning($"Failed to open {LocationName}");
-                    if (res != null)
-                        res.Unalloc();
-                }
-
-                return fileStream;
-            }
-
-            /// <summary>
-            /// Load a resource.
-            /// </summary>
-            /// <param name="resMan"></param>
-            /// <param name="res"></param>
-            public virtual void LoadResource(ResourceManager resMan, Resource res)
-            {
-                var fileStream = GetVolumeFile(resMan, res);
-                if (fileStream == null)
-                    return;
-
-                fileStream.Seek(res._fileOffset, SeekOrigin.Begin);
-
-                var error = res.Decompress(resMan._volVersion, fileStream);
-                if (error != ResourceErrorCodes.NONE)
-                {
-                    //Warning($"Error {error} occurred while reading {res._id} from resource file %s: %s",
-                    //res.ResourceLocation,
-                    //s_errorDescriptions[error]);
-                    res.Unalloc();
-                }
-
-                if (_resourceFile != null)
-                    fileStream.Dispose();
-            }
-
         }
 
         public void SetAudioLanguage(short language)
@@ -532,7 +119,7 @@ namespace NScumm.Sci
                 // Remove all volumes that use this map from the source list
                 foreach (var it in _sources.ToList())
                 {
-                    ResourceSource src = it;
+                    var src = it;
                     if (src.FindVolume(_audioMapSCI1, src._volumeNumber) != null)
                     {
                         _sources.Remove(it);
@@ -547,7 +134,7 @@ namespace NScumm.Sci
 
             string filename = $"AUDIO{language:D3}";
 
-            string fullname = filename + ".MAP";
+            var fullname = filename + ".MAP";
             var f = Core.Engine.OpenFileRead(fullname);
             if (f == null)
             {
@@ -555,13 +142,14 @@ namespace NScumm.Sci
                 return;
             }
 
+            f.Dispose();
             _audioMapSCI1 = AddSource(new ExtAudioMapResourceSource(fullname, language));
 
             // Search for audio volumes for this language and add them to the source list
             var files = ServiceLocator.FileStorage.EnumerateFiles(SciEngine.Instance.Directory, filename + ".0??");
             foreach (var name in files)
             {
-                int number =int.Parse(name.Substring(name.Length - 3, 3));
+                var number = int.Parse(name.Substring(name.Length - 3, 3));
 
                 AddSource(new AudioVolumeResourceSource(this, name, _audioMapSCI1, number));
             }
@@ -569,61 +157,64 @@ namespace NScumm.Sci
             ScanNewSources();
         }
 
-        public ResourceErrorCodes ReadAudioMapSCI1(ResourceSource map, bool unload= false)
+        public ResourceErrorCodes ReadAudioMapSCI1(ResourceSource map, bool unload = false)
         {
-            Stream file = Core.Engine.OpenFileRead(map.LocationName);
+            var file = Core.Engine.OpenFileRead(map.LocationName);
 
             if (file == null)
                 return ResourceErrorCodes.RESMAP_NOT_FOUND;
 
-            var br = new BinaryReader(file);
-            bool oldFormat = (br.ReadUInt16() >> 11) == (int)ResourceType.Audio;
-            file.Seek(0, SeekOrigin.Begin);
-
-            while (true)
+            using (var br = new BinaryReader(file))
             {
-                ushort n = br.ReadUInt16();
-                uint offset = br.ReadUInt32();
-                int size = br.ReadInt32();
+                var oldFormat = br.ReadUInt16() >> 11 == (int) ResourceType.Audio;
+                file.Seek(0, SeekOrigin.Begin);
 
-                if (file.Position == file.Length)
+                while (true)
                 {
-                    Warning("Error while reading {0}", map.LocationName);
-                    return ResourceErrorCodes.RESMAP_NOT_FOUND;
-                }
+                    var n = br.ReadUInt16();
+                    var offset = br.ReadUInt32();
+                    var size = br.ReadInt32();
 
-                if (n == 0xffff)
-                    break;
+                    if (file.Position == file.Length)
+                    {
+                        Warning("Error while reading {0}", map.LocationName);
+                        return ResourceErrorCodes.RESMAP_NOT_FOUND;
+                    }
 
-                byte volume_nr;
+                    if (n == 0xffff)
+                        break;
 
-                if (oldFormat)
-                {
-                    n &= 0x07ff; // Mask out resource type
-                    volume_nr = (byte)(offset >> 25); // most significant 7 bits
-                    offset &= 0x01ffffff; // least significant 25 bits
-                }
-                else {
-                    volume_nr = (byte)(offset >> 28); // most significant 4 bits
-                    offset &= 0x0fffffff; // least significant 28 bits
-                }
+                    byte volumeNr;
 
-                ResourceSource src = FindVolume(map, volume_nr);
-
-                if (src != null)
-                {
-                    if (unload)
-                        RemoveAudioResource(new ResourceId(ResourceType.Audio, n));
+                    if (oldFormat)
+                    {
+                        n &= 0x07ff; // Mask out resource type
+                        volumeNr = (byte) (offset >> 25); // most significant 7 bits
+                        offset &= 0x01ffffff; // least significant 25 bits
+                    }
                     else
-                        AddResource(new ResourceId(ResourceType.Audio, n), src, offset, size);
-                }
-                else {
-                    Warning("Failed to find audio volume %i", volume_nr);
+                    {
+                        volumeNr = (byte) (offset >> 28); // most significant 4 bits
+                        offset &= 0x0fffffff; // least significant 28 bits
+                    }
+
+                    var src = FindVolume(map, volumeNr);
+
+                    if (src != null)
+                    {
+                        if (unload)
+                            RemoveAudioResource(new ResourceId(ResourceType.Audio, n));
+                        else
+                            AddResource(new ResourceId(ResourceType.Audio, n), src, offset, size);
+                    }
+                    else
+                    {
+                        Warning("Failed to find audio volume {0}", volumeNr);
+                    }
                 }
             }
 
             return 0;
-
         }
 
         private void RemoveAudioResource(ResourceId resId)
@@ -639,7 +230,8 @@ namespace NScumm.Sci
                     {
                         Warning("Failed to remove resource {0} (still in use)", resId);
                     }
-                    else {
+                    else
+                    {
                         if (res._status == ResourceStatus.Enqueued)
                             RemoveFromLRU(res);
 
@@ -652,7 +244,7 @@ namespace NScumm.Sci
         private class DirectoryResourceSource : ResourceSource
         {
             public DirectoryResourceSource(string name)
-                    : base(ResSourceType.Directory, name)
+                : base(ResSourceType.Directory, name)
             {
             }
 
@@ -661,44 +253,22 @@ namespace NScumm.Sci
                 resMan.ReadResourcePatches();
 
                 // We can't use getSciVersion() at this point, thus using _volVersion
-                if (resMan._volVersion >= ResVersion.Sci11)    // SCI1.1+
+                if (resMan._volVersion >= ResVersion.Sci11) // SCI1.1+
                     resMan.ReadResourcePatchesBase36();
 
                 resMan.ReadWaveAudioPatches();
             }
         }
 
-        private class VolumeResourceSource : ResourceSource
-        {
-            private ResourceSource _associatedMap;
-
-            public VolumeResourceSource(string name, ResourceSource map, int volNum, ResSourceType type = ResSourceType.Volume)
-                : base(type, name, volNum)
-            {
-                _associatedMap = map;
-            }
-
-            public VolumeResourceSource(string name, ResourceSource map, int volNum, object resFile)
-                : base(ResSourceType.Volume, name, volNum, resFile)
-            {
-                _associatedMap = map;
-            }
-
-            public override ResourceSource FindVolume(ResourceSource map, int volNum)
-            {
-                if (_associatedMap == map && _volumeNumber == volNum)
-                    return this;
-                return null;
-            }
-        }
-
         private class PatchResourceSource : ResourceSource
         {
-            public PatchResourceSource(string name) : base(ResSourceType.Patch, name) { }
+            public PatchResourceSource(string name) : base(ResSourceType.Patch, name)
+            {
+            }
 
             public override void LoadResource(ResourceManager resMan, Resource res)
             {
-                bool result = res.LoadFromPatchFile();
+                var result = res.LoadFromPatchFile();
                 if (!result)
                 {
                     // TODO: We used to fallback to the "default" code here if loadFromPatchFile
@@ -711,7 +281,7 @@ namespace NScumm.Sci
 
         private class ExtMapResourceSource : ResourceSource
         {
-            public ExtMapResourceSource(string name, int volNum, object resFile = null)
+            public ExtMapResourceSource(string name, int volNum, string resFile = null)
                 : base(ResSourceType.ExtMap, name, volNum, resFile)
             {
             }
@@ -727,9 +297,12 @@ namespace NScumm.Sci
 
         private class IntMapResourceSource : ResourceSource
         {
-            public IntMapResourceSource(string name, int volNum)
-            : base(ResSourceType.IntMap, name, volNum)
+            public readonly ushort _mapNumber;
+
+            public IntMapResourceSource(string name, int volNum, int mapNum)
+                : base(ResSourceType.IntMap, name, volNum)
             {
+                _mapNumber = (ushort) mapNum;
             }
 
             public override void ScanSource(ResourceManager resMan)
@@ -740,10 +313,10 @@ namespace NScumm.Sci
 
         private class AudioVolumeResourceSource : VolumeResourceSource
         {
-            protected uint _audioCompressionType;
-            protected int[] _audioCompressionOffsetMapping;
+            protected readonly uint _audioCompressionType;
+            protected readonly int[] _audioCompressionOffsetMapping;
 
-            public override uint AudioCompressionType { get { return _audioCompressionType; } }
+            public override uint AudioCompressionType => _audioCompressionType;
 
             public AudioVolumeResourceSource(ResourceManager resMan, string name, ResourceSource map, int volNum)
                 : base(name, map, volNum, ResSourceType.AudioVolume)
@@ -759,11 +332,9 @@ namespace NScumm.Sci
 
                 var fileStream = GetVolumeFile(resMan, null);
                 var br = new BinaryReader(fileStream);
-                if (fileStream == null)
-                    return;
 
                 fileStream.Seek(0, SeekOrigin.Begin);
-                uint compressionType = br.ReadUInt32BigEndian();
+                var compressionType = br.ReadUInt32BigEndian();
                 if (compressionType == ScummHelper.MakeTag('M', 'P', '3', ' ') ||
                     compressionType == ScummHelper.MakeTag('O', 'G', 'G', ' ') ||
                     compressionType == ScummHelper.MakeTag('F', 'L', 'A', 'C'))
@@ -771,20 +342,20 @@ namespace NScumm.Sci
                     // Detected a compressed audio volume
                     _audioCompressionType = compressionType;
                     // Now read the whole offset mapping table for later usage
-                    int recordCount = br.ReadInt32();
+                    var recordCount = br.ReadInt32();
                     if (recordCount == 0)
                         Error("compressed audio volume doesn't contain any entries");
                     var offsetMapping = new int[(recordCount + 1) * 2];
                     var i = 0;
                     _audioCompressionOffsetMapping = offsetMapping;
-                    for (int recordNo = 0; recordNo < recordCount; recordNo++)
+                    for (var recordNo = 0; recordNo < recordCount; recordNo++)
                     {
                         offsetMapping[i++] = br.ReadInt32();
                         offsetMapping[i++] = br.ReadInt32();
                     }
                     // Put ending zero
                     offsetMapping[i++] = 0;
-                    offsetMapping[i++] = (int)fileStream.Length;
+                    offsetMapping[i++] = (int) fileStream.Length;
                 }
 
                 if (_resourceFile != null)
@@ -843,7 +414,8 @@ namespace NScumm.Sci
                             return;
                     }
                 }
-                else {
+                else
+                {
                     System.Diagnostics.Debug.Assert(fileStream.Length == -1 || res._fileOffset < fileStream.Length);
                     // original file, directly seek to given offset and get SCI1/SCI1.1 audio resource
                     fileStream.Seek(res._fileOffset, SeekOrigin.Begin);
@@ -881,7 +453,7 @@ namespace NScumm.Sci
 
             public override void ScanSource(ResourceManager resMan)
             {
-                Resource chunk = resMan.FindResource(new ResourceId(ResourceType.Chunk, _number), false);
+                var chunk = resMan.FindResource(new ResourceId(ResourceType.Chunk, _number), false);
 
                 if (chunk == null)
                     Error("Trying to load non-existent chunk");
@@ -891,11 +463,11 @@ namespace NScumm.Sci
 
                 for (;;)
                 {
-                    ResourceType type = resMan.ConvertResType(ptr.Value);
-                    ushort number = ptr.ToUInt16(1);
-                    ResourceId id = new ResourceId(type, number);
+                    var type = resMan.ConvertResType(ptr.Value);
+                    var number = ptr.ToUInt16(1);
+                    var id = new ResourceId(type, number);
 
-                    ResourceEntry entry = new ResourceEntry
+                    var entry = new ResourceEntry
                     {
                         offset = ptr.ToInt32(3),
                         length = ptr.ToInt32(7)
@@ -922,13 +494,13 @@ namespace NScumm.Sci
 
             public override void LoadResource(ResourceManager resMan, Resource res)
             {
-                Resource chunk = resMan.FindResource(new ResourceId(ResourceType.Chunk, _number), false);
+                var chunk = resMan.FindResource(new ResourceId(ResourceType.Chunk, _number), false);
 
                 if (!_resMap.ContainsKey(res._id))
                     Error("Trying to load non-existent resource from chunk {0}: {1} {2}", _number,
                         GetResourceTypeName(res._id.Type), res._id.Number);
 
-                ResourceEntry entry = _resMap[res._id];
+                var entry = _resMap[res._id];
                 res.data = new byte[entry.length];
                 res.size = entry.length;
                 res._header = null;
@@ -953,16 +525,10 @@ namespace NScumm.Sci
         public bool DetectEarlySound()
         {
             var res = FindResource(new ResourceId(ResourceType.Sound, 1), false);
-            if (res != null)
-            {
-                if (res.size >= 0x22)
-                {
-                    if (res.data.ToUInt16(0x1f) == 0) // channel 15 voice count + play mask is 0 in SCI0LATE
-                        if (res.data[0x21] == 0) // last byte right before actual data is 0 as well
-                            return false;
-                }
-            }
-            return true;
+            if (!(res?.size >= 0x22)) return true;
+
+            if (res.data.ToUInt16(0x1f) != 0) return true;
+            return res.data[0x21] != 0;
         }
     }
 }

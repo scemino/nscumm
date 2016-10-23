@@ -180,7 +180,7 @@ namespace NScumm.Sci.Video
         {
             Close();
 
-            _fileStream = new EndianBinaryReader(_isBigEndian, new SeekableSubReadStream(stream,0,stream.Length,true));
+            _fileStream = new EndianBinaryReader(_isBigEndian, new SeekableSubReadStream(stream, 0, stream.Length, true));
 
             ReadHeaderChunk();
 
@@ -272,6 +272,38 @@ namespace NScumm.Sci.Video
             var curPos = _fileStream.BaseStream.Position;
             if ((curPos & 0x7ff) != 0)
                 _fileStream.BaseStream.Seek((curPos & ~0x7ff) + 2048, SeekOrigin.Begin);
+        }
+
+        public bool Load(int id)
+        {
+            // TODO: RAMA's robot 1003 cannot be played (shown at the menu screen) -
+            // its drawn at odd coordinates. SV can't play it either (along with some
+            // others), so it must be some new functionality added in RAMA's robot
+            // videos. Skip it for now.
+            if (SciEngine.Instance.GameId == SciGameId.RAMA && id == 1003)
+                return false;
+
+            // Robots for the options in the RAMA menu
+            if (SciEngine.Instance.GameId == SciGameId.RAMA && (id >= 1004 && id <= 1009))
+                return false;
+
+            // TODO: The robot video in the Lighthouse demo gets stuck
+            if (SciEngine.Instance.GameId == SciGameId.LIGHTHOUSE && id == 16)
+                return false;
+
+            string fileName = $"{id}.rbt";
+            var stream = Core.Engine.OpenFileRead(fileName);
+
+            if (stream == null)
+            {
+                Warning("Unable to open robot file {0}", fileName);
+                return false;
+            }
+
+            using (stream)
+            {
+                return LoadStream(stream);
+            }
         }
     }
 }

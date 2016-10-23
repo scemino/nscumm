@@ -19,6 +19,7 @@
 using NScumm.Core;
 using NScumm.Core.Graphics;
 using System.Collections.Generic;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
 {
@@ -26,10 +27,17 @@ namespace NScumm.Sci.Engine
     {
         private static int g_debug_simulated_key = 0;
 
-        private static Dictionary<ushort, ushort> keyToDirMap = new Dictionary<ushort, ushort> {
-            { SciEvent.SCI_KEY_HOME,   8 }, { SciEvent.SCI_KEY_UP,     1 }, { SciEvent.SCI_KEY_PGUP,   2 },
-            { SciEvent.SCI_KEY_LEFT,   7 }, { SciEvent.SCI_KEY_CENTER, 0 }, { SciEvent.SCI_KEY_RIGHT,  3 },
-            { SciEvent.SCI_KEY_END,    6 }, { SciEvent.SCI_KEY_DOWN,   5 }, { SciEvent.SCI_KEY_PGDOWN, 4 },
+        private static Dictionary<ushort, ushort> keyToDirMap = new Dictionary<ushort, ushort>
+        {
+            {SciEvent.SCI_KEY_HOME, 8},
+            {SciEvent.SCI_KEY_UP, 1},
+            {SciEvent.SCI_KEY_PGUP, 2},
+            {SciEvent.SCI_KEY_LEFT, 7},
+            {SciEvent.SCI_KEY_CENTER, 0},
+            {SciEvent.SCI_KEY_RIGHT, 3},
+            {SciEvent.SCI_KEY_END, 6},
+            {SciEvent.SCI_KEY_DOWN, 5},
+            {SciEvent.SCI_KEY_PGDOWN, 4},
         };
 
         private static Register kGetEvent(EngineState s, int argc, StackPtr argv)
@@ -37,7 +45,9 @@ namespace NScumm.Sci.Engine
             int mask = argv[0].ToUInt16();
             Register obj = argv[1];
             SciEvent curEvent;
-            int modifier_mask = ResourceManager.GetSciVersion() <= SciVersion.V01 ? SciEvent.SCI_KEYMOD_ALL : SciEvent.SCI_KEYMOD_NO_FOOLOCK;
+            int modifier_mask = ResourceManager.GetSciVersion() <= SciVersion.V01
+                ? SciEvent.SCI_KEYMOD_ALL
+                : SciEvent.SCI_KEYMOD_NO_FOOLOCK;
             SegManager segMan = s._segMan;
             Point mousePos;
 
@@ -63,10 +73,10 @@ namespace NScumm.Sci.Engine
                 SciEngine.Instance._gfxCursor.RefreshPosition();
 
                 SciEngine.WriteSelectorValue(segMan, obj, o => o.type, SciEvent.SCI_EVENT_KEYBOARD); // Keyboard event
-                SciEngine.WriteSelectorValue(segMan, obj, o => o.message, (ushort)g_debug_simulated_key);
+                SciEngine.WriteSelectorValue(segMan, obj, o => o.message, (ushort) g_debug_simulated_key);
                 SciEngine.WriteSelectorValue(segMan, obj, o => o.modifiers, SciEvent.SCI_KEYMOD_NUMLOCK); // Numlock on
-                SciEngine.WriteSelectorValue(segMan, obj, o => o.x, (ushort)mousePos.X);
-                SciEngine.WriteSelectorValue(segMan, obj, o => o.y, (ushort)mousePos.Y);
+                SciEngine.WriteSelectorValue(segMan, obj, o => o.x, (ushort) mousePos.X);
+                SciEngine.WriteSelectorValue(segMan, obj, o => o.y, (ushort) mousePos.Y);
                 g_debug_simulated_key = 0;
                 return Register.Make(0, 1);
             }
@@ -79,7 +89,7 @@ namespace NScumm.Sci.Engine
                 mousePos = curEvent.mousePosSci;
             else
 #endif
-            mousePos = curEvent.mousePos;
+                mousePos = curEvent.mousePos;
 
             // Limit the mouse cursor position, if necessary
             SciEngine.Instance._gfxCursor.RefreshPosition();
@@ -98,14 +108,15 @@ namespace NScumm.Sci.Engine
                 {
                     s._cursorWorkaroundActive = false;
                 }
-                else {
+                else
+                {
                     mousePos.X = s._cursorWorkaroundPoint.X;
                     mousePos.Y = s._cursorWorkaroundPoint.Y;
                 }
             }
 
-            SciEngine.WriteSelectorValue(segMan, obj, o => o.x, (ushort)mousePos.X);
-            SciEngine.WriteSelectorValue(segMan, obj, o => o.y, (ushort)mousePos.Y);
+            SciEngine.WriteSelectorValue(segMan, obj, o => o.x, (ushort) mousePos.X);
+            SciEngine.WriteSelectorValue(segMan, obj, o => o.y, (ushort) mousePos.Y);
 
             //s._gui.moveCursor(s.gfx_state.pointer_pos.x, s.gfx_state.pointer_pos.y);
 
@@ -118,12 +129,14 @@ namespace NScumm.Sci.Engine
                     break;
 
                 case SciEvent.SCI_EVENT_KEYBOARD:
-                    SciEngine.WriteSelectorValue(segMan, obj, o => o.type, SciEvent.SCI_EVENT_KEYBOARD); // Keyboard event
+                    SciEngine.WriteSelectorValue(segMan, obj, o => o.type, SciEvent.SCI_EVENT_KEYBOARD);
+                    // Keyboard event
                     s.r_acc = Register.Make(0, 1);
 
-                    SciEngine.WriteSelectorValue(segMan, obj, o => o.message, (ushort)curEvent.character);
+                    SciEngine.WriteSelectorValue(segMan, obj, o => o.message, (ushort) curEvent.character);
                     // We only care about the translated character
-                    SciEngine.WriteSelectorValue(segMan, obj, o => o.modifiers, (ushort)(curEvent.modifiers & modifier_mask));
+                    SciEngine.WriteSelectorValue(segMan, obj, o => o.modifiers,
+                        (ushort) (curEvent.modifiers & modifier_mask));
                     break;
 
                 case SciEvent.SCI_EVENT_MOUSE_RELEASE:
@@ -152,9 +165,10 @@ namespace NScumm.Sci.Engine
                                 break;
                         }
 
-                        SciEngine.WriteSelectorValue(segMan, obj, o => o.type, (ushort)curEvent.type);
+                        SciEngine.WriteSelectorValue(segMan, obj, o => o.type, (ushort) curEvent.type);
                         SciEngine.WriteSelectorValue(segMan, obj, o => o.message, 0);
-                        SciEngine.WriteSelectorValue(segMan, obj, o => o.modifiers, (ushort)((curEvent.modifiers | extra_bits) & modifier_mask));
+                        SciEngine.WriteSelectorValue(segMan, obj, o => o.modifiers,
+                            (ushort) ((curEvent.modifiers | extra_bits) & modifier_mask));
                         s.r_acc = Register.Make(0, 1);
                     }
                     break;
@@ -163,7 +177,8 @@ namespace NScumm.Sci.Engine
                     // Return a null event
                     SciEngine.WriteSelectorValue(segMan, obj, o => o.type, SciEvent.SCI_EVENT_NONE);
                     SciEngine.WriteSelectorValue(segMan, obj, o => o.message, 0);
-                    SciEngine.WriteSelectorValue(segMan, obj, o => o.modifiers, (ushort)(curEvent.modifiers & modifier_mask));
+                    SciEngine.WriteSelectorValue(segMan, obj, o => o.modifiers,
+                        (ushort) (curEvent.modifiers & modifier_mask));
                     s.r_acc = Register.NULL_REG;
                     break;
             }
@@ -214,7 +229,8 @@ namespace NScumm.Sci.Engine
             {
                 // Game is benchmarking, don't add a delay
             }
-            else {
+            else
+            {
                 ServiceLocator.Platform.Sleep(10);
             }
 
@@ -229,17 +245,16 @@ namespace NScumm.Sci.Engine
 
             if (obj.Segment != 0)
             {
-                short x = (short)SciEngine.ReadSelectorValue(segMan, obj, o => o.x);
-                short y = (short)SciEngine.ReadSelectorValue(segMan, obj, o => o.y);
+                short x = (short) SciEngine.ReadSelectorValue(segMan, obj, o => o.x);
+                short y = (short) SciEngine.ReadSelectorValue(segMan, obj, o => o.y);
 
                 SciEngine.Instance._gfxCoordAdjuster.KernelGlobalToLocal(ref x, ref y, planeObject);
 
-                SciEngine.WriteSelectorValue(segMan, obj, o => o.x, (ushort)x);
-                SciEngine.WriteSelectorValue(segMan, obj, o => o.y, (ushort)y);
+                SciEngine.WriteSelectorValue(segMan, obj, o => o.x, (ushort) x);
+                SciEngine.WriteSelectorValue(segMan, obj, o => o.y, (ushort) y);
             }
 
             return s.r_acc;
-
         }
 
         private static Register kJoystick(EngineState s, int argc, StackPtr argv)
@@ -257,13 +272,13 @@ namespace NScumm.Sci.Engine
 
             if (obj.Segment != 0)
             {
-                short x = (short)SciEngine.ReadSelectorValue(segMan, obj, o => o.x);
-                short y = (short)SciEngine.ReadSelectorValue(segMan, obj, o => o.y);
+                short x = (short) SciEngine.ReadSelectorValue(segMan, obj, o => o.x);
+                short y = (short) SciEngine.ReadSelectorValue(segMan, obj, o => o.y);
 
                 SciEngine.Instance._gfxCoordAdjuster.KernelLocalToGlobal(ref x, ref y, planeObject);
 
-                SciEngine.WriteSelectorValue(segMan, obj, o => o.x, (ushort)x);
-                SciEngine.WriteSelectorValue(segMan, obj, o => o.y, (ushort)y);
+                SciEngine.WriteSelectorValue(segMan, obj, o => o.x, (ushort) x);
+                SciEngine.WriteSelectorValue(segMan, obj, o => o.y, (ushort) y);
             }
 
             return s.r_acc;
@@ -276,8 +291,9 @@ namespace NScumm.Sci.Engine
             SegManager segMan = s._segMan;
 
             if (SciEngine.ReadSelectorValue(segMan, obj, o => o.type) == SciEvent.SCI_EVENT_KEYBOARD)
-            { // Keyboard
-                ushort message = (ushort)SciEngine.ReadSelectorValue(segMan, obj, o => o.message);
+            {
+                // Keyboard
+                ushort message = (ushort) SciEngine.ReadSelectorValue(segMan, obj, o => o.message);
                 ushort eventType = SciEvent.SCI_EVENT_DIRECTION;
                 // Check if the game is using cursor views. These games allowed control
                 // of the mouse cursor via the keyboard controls (the so called
@@ -289,13 +305,91 @@ namespace NScumm.Sci.Engine
                 {
                     SciEngine.WriteSelectorValue(segMan, obj, o => o.type, eventType);
                     SciEngine.WriteSelectorValue(segMan, obj, o => o.message, keyToDirMap[message]);
-                    return Register.TRUE_REG;    // direction mapped
+                    return Register.TRUE_REG; // direction mapped
                 }
 
-                return Register.NULL_REG;    // unknown direction
+                return Register.NULL_REG; // unknown direction
             }
 
-            return s.r_acc;    // no keyboard event to map, leave accumulator unchanged
+            return s.r_acc; // no keyboard event to map, leave accumulator unchanged
+        }
+
+        private static Register kGlobalToLocal32(EngineState s, int argc, StackPtr argv)
+        {
+            Register result = argv[0];
+            Register planeObj = argv[1];
+
+            bool visible = true;
+            var plane = SciEngine.Instance._gfxFrameout.VisiblePlanes.FindByObject(planeObj);
+            if (plane == null)
+            {
+                plane = SciEngine.Instance._gfxFrameout.GetPlanes().FindByObject(planeObj);
+                visible = false;
+            }
+            if (plane == null)
+            {
+                Error("kGlobalToLocal: Plane {0} not found", planeObj);
+            }
+
+            short x = (short) (SciEngine.ReadSelectorValue(s._segMan, result, o => o.x) - plane._gameRect.Left);
+            short y = (short) (SciEngine.ReadSelectorValue(s._segMan, result, o => o.y) - plane._gameRect.Top);
+
+            SciEngine.WriteSelectorValue(s._segMan, result, o => o.x, (ushort) x);
+            SciEngine.WriteSelectorValue(s._segMan, result, o => o.y, (ushort) y);
+
+            return Register.Make(0, visible);
+        }
+
+        private static Register kLocalToGlobal32(EngineState s, int argc, StackPtr argv)
+        {
+            Register result = argv[0];
+            Register planeObj = argv[1];
+
+            bool visible = true;
+            var plane = SciEngine.Instance._gfxFrameout.VisiblePlanes.FindByObject(planeObj);
+            if (plane == null)
+            {
+                plane = SciEngine.Instance._gfxFrameout.GetPlanes().FindByObject(planeObj);
+                visible = false;
+            }
+            if (plane == null)
+            {
+                Error("kLocalToGlobal: Plane {0} not found", planeObj);
+            }
+
+            short x = (short) (SciEngine.ReadSelectorValue(s._segMan, result, o => o.x) + plane._gameRect.Left);
+            short y = (short) (SciEngine.ReadSelectorValue(s._segMan, result, o => o.y) + plane._gameRect.Top);
+
+            SciEngine.WriteSelectorValue(s._segMan, result, o => o.x, (ushort) x);
+            SciEngine.WriteSelectorValue(s._segMan, result, o => o.y, (ushort) y);
+
+            return Register.Make(0, visible);
+        }
+
+        private static Register kSetHotRectangles(EngineState s, int argc, StackPtr argv)
+        {
+            if (argc == 1)
+            {
+                SciEngine.Instance.EventManager.SetHotRectanglesActive(argv[0].ToUInt16() != 0);
+                return s.r_acc;
+            }
+
+            short numRects = argv[0].ToInt16();
+            SciArray hotRects = s._segMan.LookupArray(argv[1]);
+
+            Rect[] rects = new Rect[numRects];
+            var p = new UShortAccess(hotRects.ByteAt(0));
+            for (var i = 0; i < numRects; ++i)
+            {
+                rects[i].Left = (short) p[i * 4];
+                rects[i].Top = (short) p[i * 4 + 1];
+                rects[i].Right = (short) (p[i * 4 + 2] + 1);
+                rects[i].Bottom = (short) (p[i * 4 + 3] + 1);
+            }
+
+            SciEngine.Instance.EventManager.SetHotRectanglesActive(true);
+            SciEngine.Instance.EventManager.SetHotRectangles(rects);
+            return s.r_acc;
         }
     }
 }

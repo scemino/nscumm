@@ -17,7 +17,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Linq.Expressions;
+using NScumm.Core;
 using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
@@ -43,7 +43,7 @@ namespace NScumm.Sci.Engine
         Script_End
     }
 
-    internal struct Register
+    internal struct Register : IComparable<Register>
     {
         /// <summary>
         ///  Special reg_t 'offset' used to indicate an error, or that an operation has
@@ -51,10 +51,33 @@ namespace NScumm.Sci.Engine
         /// </summary>
         public const ushort SIGNAL_OFFSET = ushort.MaxValue;
 
+        public const int Size = 4;
+
         public static readonly Register NULL_REG = Make(0, 0);
         public static readonly Register SIGNAL_REG = Make(0, SIGNAL_OFFSET);
         public static readonly Register TRUE_REG = Make(0, 1);
 
+        // Segment and offset. These should never be accessed directly
+        private BytePtr _data;
+
+        private BytePtr Data => _data == BytePtr.Null ? (_data = new BytePtr(new byte[4])) : _data;
+
+        private ushort _offset
+        {
+            get { return Data.ToUInt16(); }
+            set { Data.WriteUInt16(0, value); }
+        }
+
+        private ushort _segment
+        {
+            get { return Data.ToUInt16(2); }
+            set { Data.WriteUInt16(2, value); }
+        }
+
+        public Register(BytePtr data)
+        {
+            _data = data;
+        }
 
         private Register(ushort segment, ushort offset)
             : this()
@@ -63,10 +86,56 @@ namespace NScumm.Sci.Engine
             Offset = offset;
         }
 
-        // Segment and offset. These should never be accessed directly
-        public uint Offset;
+        public uint Offset
+        {
+            get
+            {
+                if (ResourceManager.GetSciVersion() < SciVersion.V3)
+                {
+                    return _offset;
+                }
+                // Return the lower 16 bits from the offset, and the 17th and 18th bits from the segment
+                return (uint) (((Segment & 0xC000) << 2) | _offset);
+            }
+            set
+            {
+                if (ResourceManager.GetSciVersion() < SciVersion.V3)
+                {
+                    _offset = (ushort) value;
+                }
+                else
+                {
+                    // Store the lower 16 bits in the offset, and the 17th and 18th bits in the segment
+                    _offset = (ushort) (value & 0xFFFF);
+                    _segment = (ushort) (((value & 0x30000) >> 2) | (_segment & 0x3FFF));
+                }
+            }
+        }
 
-        public ushort Segment;
+        public ushort Segment
+        {
+            get
+            {
+                if (ResourceManager.GetSciVersion() < SciVersion.V3)
+                {
+                    return _segment;
+                }
+                // Return the lower 14 bits of the segment
+                return (ushort) (_segment & 0x3FFF);
+            }
+            set
+            {
+                if (ResourceManager.GetSciVersion() < SciVersion.V3)
+                {
+                    _segment = value;
+                }
+                else
+                {
+                    // Set the lower 14 bits of the segment, and preserve the upper 2 ones for the offset
+                    _segment = (ushort) ((_segment & 0xC000) | (value & 0x3FFF));
+                }
+            }
+        }
 
         public bool IsNull => (Offset | Segment) == 0;
 
@@ -78,12 +147,17 @@ namespace NScumm.Sci.Engine
 
         public ushort ToUInt16()
         {
-            return (ushort)Offset;
+            return (ushort) Offset;
         }
 
         public short ToInt16()
         {
-            return (short)Offset;
+            return (short) Offset;
+        }
+
+        public void CopyTo(byte[] data, int offset)
+        {
+            Array.Copy(_data.Data, _data.Offset, data, offset, 4);
         }
 
         public void Set(Register copy)
@@ -100,7 +174,7 @@ namespace NScumm.Sci.Engine
 
         public static Register Make(ushort segment, bool condition)
         {
-            return Make(segment, (ushort)(condition ? 1 : 0));
+            return Make(segment, (ushort) (condition ? 1 : 0));
         }
 
         public override int GetHashCode()
@@ -108,10 +182,15 @@ namespace NScumm.Sci.Engine
             return Segment.GetHashCode() ^ Offset.GetHashCode();
         }
 
+        public int CompareTo(Register other)
+        {
+            return Compare(other, false);
+        }
+
         public override bool Equals(object obj)
         {
             if (!(obj is Register)) return false;
-            var other = (Register)obj;
+            var other = (Register) obj;
             return Offset == other.Offset && Segment == other.Segment;
         }
 
@@ -141,7 +220,7 @@ namespace NScumm.Sci.Engine
                     case SegmentType.SCRIPT:
                     case SegmentType.STACK:
                     case SegmentType.DYNMEM:
-                        return Make(left.Segment, (ushort)(left.Offset + right.ToInt16()));
+                        return Make(left.Segment, (ushort) (left.Offset + right.ToInt16()));
                     default:
                         return left.LookForWorkaround(right, "addition");
                 }
@@ -154,14 +233,14 @@ namespace NScumm.Sci.Engine
             if (left.IsNumber && right.IsNumber)
             {
                 // Normal arithmetics
-                return Make(0, (ushort)(left.ToInt16() + right.ToInt16()));
+                return Make(0, (ushort) (left.ToInt16() + right.ToInt16()));
             }
             return left.LookForWorkaround(right, "addition");
         }
 
         public static Register operator +(Register left, int right)
         {
-            return left + Make(0, (ushort)right);
+            return left + Make(0, (ushort) right);
         }
 
         public static Register operator -(Register left, Register right)
@@ -170,27 +249,27 @@ namespace NScumm.Sci.Engine
             {
                 // We can subtract numbers, or pointers with the same segment,
                 // an operation which will yield a number like in C
-                return Make(0, (ushort)(left.ToInt16() - right.ToInt16()));
+                return Make(0, (ushort) (left.ToInt16() - right.ToInt16()));
             }
-            return left + Make(right.Segment, (ushort)(-right.ToInt16()));
+            return left + Make(right.Segment, (ushort) (-right.ToInt16()));
         }
 
         public static Register operator -(Register left, int right)
         {
-            return left - Make(0, (ushort)right);
+            return left - Make(0, (ushort) right);
         }
 
         public static Register operator *(Register left, Register right)
         {
             if (left.IsNumber && right.IsNumber)
-                return Make(0, (ushort)(left.ToInt16() * right.ToInt16()));
+                return Make(0, (ushort) (left.ToInt16() * right.ToInt16()));
             return left.LookForWorkaround(right, "multiplication");
         }
 
         public static Register operator /(Register left, Register right)
         {
             if (left.IsNumber && right.IsNumber && !right.IsNull)
-                return Make(0, (ushort)(left.ToInt16() / right.ToInt16()));
+                return Make(0, (ushort) (left.ToInt16() / right.ToInt16()));
             return left.LookForWorkaround(right, "division");
         }
 
@@ -208,51 +287,72 @@ namespace NScumm.Sci.Engine
                     Warning("Modulo of a negative number has been requested for SCI0. This *could* lead to issues");
                 short value = left.ToInt16();
                 short modulo = Math.Abs(right.ToInt16());
-                short result = (short)(value % modulo);
+                short result = (short) (value % modulo);
                 if (result < 0)
                     result += modulo;
-                return Make(0, (ushort)result);
+                return Make(0, (ushort) result);
             }
             return left.LookForWorkaround(right, "modulo");
         }
 
+#if ENABLE_SCI32
+        public static Register operator &(Register left, int right)
+        {
+            return left & Make(0, (ushort) right);
+        }
+
+        public static Register operator |(Register left, int right)
+        {
+            return left | Make(0, (ushort) right);
+        }
+
+        public static Register operator ^(Register left, int right)
+        {
+            return left ^ Make(0, (ushort) right);
+        }
+
+//        public Register operator&=(short right) { this = this & right; }
+//        void operator|=(int16 right) { *this = *this | right; }
+//        void operator^=(int16 right) { *this = *this ^ right; }
+#endif
+
         public Register ShiftRight(Register right)
         {
             if (IsNumber && right.IsNumber)
-                return Make(0, (ushort)(ToUInt16() >> right.ToUInt16()));
+                return Make(0, (ushort) (ToUInt16() >> right.ToUInt16()));
             return LookForWorkaround(right, "shift right");
         }
 
         public Register ShiftLeft(Register right)
         {
             if (IsNumber && right.IsNumber)
-                return Make(0, (ushort)(ToUInt16() << right.ToUInt16()));
+                return Make(0, (ushort) (ToUInt16() << right.ToUInt16()));
             return LookForWorkaround(right, "shift left");
         }
 
         public static Register IncOffset(Register reg, short offset)
         {
-            return Make(reg.Segment, (ushort)(reg.Offset + offset));
+            return Make(reg.Segment, (ushort) (reg.Offset + offset));
         }
 
         public static Register operator &(Register left, Register right)
         {
             if (left.IsNumber && right.IsNumber)
-                return Make(0, (ushort)(left.ToUInt16() & right.ToUInt16()));
+                return Make(0, (ushort) (left.ToUInt16() & right.ToUInt16()));
             return left.LookForWorkaround(right, "bitwise AND");
         }
 
         public static Register operator |(Register left, Register right)
         {
             if (left.IsNumber && right.IsNumber)
-                return Make(0, (ushort)(left.ToUInt16() | right.ToUInt16()));
+                return Make(0, (ushort) (left.ToUInt16() | right.ToUInt16()));
             return left.LookForWorkaround(right, "bitwise OR");
         }
 
         public static Register operator ^(Register left, Register right)
         {
             if (left.IsNumber && right.IsNumber)
-                return Make(0, (ushort)(left.ToUInt16() ^ right.ToUInt16()));
+                return Make(0, (ushort) (left.ToUInt16() ^ right.ToUInt16()));
             return left.LookForWorkaround(right, "bitwise XOR");
         }
 
@@ -320,10 +420,12 @@ namespace NScumm.Sci.Engine
         private Register LookForWorkaround(Register right, string operation)
         {
             SciTrackOriginReply originReply;
-            SciWorkaroundSolution solution = Workarounds.TrackOriginAndFindWorkaround(0, Workarounds.ArithmeticWorkarounds, out originReply);
+            SciWorkaroundSolution solution = Workarounds.TrackOriginAndFindWorkaround(0,
+                Workarounds.ArithmeticWorkarounds, out originReply);
             if (solution.type == SciWorkaroundType.NONE)
             {
-                throw new InvalidOperationException($"Invalid arithmetic operation ({operation} - params: {this} and {right}) from method {originReply.objectName}::{originReply.methodName} (room {SciEngine.Instance.EngineState.CurrentRoomNumber}, script {originReply.scriptNr}, localCall {originReply.localCallOffset:X})");
+                throw new InvalidOperationException(
+                    $"Invalid arithmetic operation ({operation} - params: {this} and {right}) from method {originReply.objectName}::{originReply.methodName} (room {SciEngine.Instance.EngineState.CurrentRoomNumber}, script {originReply.scriptNr}, localCall {originReply.localCallOffset:X})");
             }
 
             // assert(solution.type == WORKAROUND_FAKE);
@@ -382,7 +484,31 @@ namespace NScumm.Sci.Engine
             // SQ1, room 28, when throwing water at the Orat
             // SQ1, room 58, when giving the ID card to the robot
             // SQ4 CD, at the first game screen, when the narrator is about to speak
-            return (IsPointer && right.IsNumber && right.Offset <= 2000 && ResourceManager.GetSciVersion() <= SciVersion.V1_1);
+            return (IsPointer && right.IsNumber && right.Offset <= 2000 &&
+                    ResourceManager.GetSciVersion() <= SciVersion.V1_1);
+        }
+    }
+
+    internal static class RegisterExtension
+    {
+        public static Register ToRegister(this BytePtr ptr, int offset = 0)
+        {
+            return new Register(new BytePtr(ptr.Data, ptr.Offset+offset));
+        }
+
+        public static Register ToRegister(this byte[] data, int offset = 0)
+        {
+            return new Register(new BytePtr(data, offset));
+        }
+
+        public static void WriteRegister(this byte[] data, int offset, Register register)
+        {
+            register.CopyTo(data, offset);
+        }
+
+        public static void WriteRegister(this BytePtr ptr, int offset, Register register)
+        {
+            register.CopyTo(ptr.Data, ptr.Offset + offset);
         }
     }
 
@@ -408,7 +534,7 @@ namespace NScumm.Sci.Engine
         public override bool Equals(object obj)
         {
             if (!(obj is Register32)) return false;
-            var other = (Register32)obj;
+            var other = (Register32) obj;
             return Offset == other.Offset && Segment == other.Segment;
         }
 
@@ -424,7 +550,7 @@ namespace NScumm.Sci.Engine
 
         public static Register32 Make(int segment, int offset)
         {
-            return new Register32 { Segment = segment, Offset = offset };
+            return new Register32 {Segment = segment, Offset = offset};
         }
     }
 }

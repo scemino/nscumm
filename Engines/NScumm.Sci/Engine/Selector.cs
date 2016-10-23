@@ -114,29 +114,35 @@ namespace NScumm.Sci.Engine
         public int select;
 
 # if ENABLE_SCI32
-        public int data; // Used by Array()/String()
-        public int picture; // Used to hold the picture ID for SCI32 pictures
-        public int bitmap; // Used to hold the text bitmap for SCI32 texts
-
+        public int data;
+        public int picture;
+        public int bitmap;
         public int plane;
         public int top;
         public int left;
         public int bottom;
         public int right;
-        public int resX;
         public int resY;
-
+        public int resX;
+        public int dimmed;
         public int fore;
         public int back;
         public int skip;
-        public int dimmed;
-
+        public int borderColor;
+        public int width;
         public int fixPriority;
         public int mirrored;
         public int visible;
-
         public int useInsetRect;
         public int inTop, inLeft, inBottom, inRight;
+        public int textTop, textLeft, textBottom, textRight;
+        public int title;
+        public int titleFont;
+        public int titleFore;
+        public int titleBack;
+        public int magnifier;
+        public int frameOut;
+        public int casts;
 #endif
     };
 }

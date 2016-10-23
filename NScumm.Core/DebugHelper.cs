@@ -168,7 +168,7 @@ namespace NScumm.Core
         {
             if (level > DebugLevel)
                 return;
-            
+
             ServiceLocator.Platform.LogMessage(LogMessageType.Debug, format + Environment.NewLine, args);
         }
 

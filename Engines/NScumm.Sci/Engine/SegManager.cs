@@ -21,6 +21,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using NScumm.Sci.Graphics;
 using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
@@ -35,10 +36,12 @@ namespace NScumm.Sci.Engine
         /// Fail if not loaded
         /// </summary>
         DONT_LOAD = 0,
+
         /// <summary>
         /// Load, if neccessary
         /// </summary>
         LOAD = 1,
+
         /// <summary>
         /// Load, if neccessary, and lock
         /// </summary>
@@ -51,6 +54,7 @@ namespace NScumm.Sci.Engine
         /// number of the script the class is in, -1 for non-existing
         /// </summary>
         public int script;
+
         /// <summary>
         /// offset; script-relative offset, segment: 0 if not instantiated
         /// </summary>
@@ -72,10 +76,7 @@ namespace NScumm.Sci.Engine
                 return _items[key];
             }
 
-            set
-            {
-                _items[key] = value;
-            }
+            set { _items[key] = value; }
         }
 
         public int Count => _items.Count;
@@ -88,7 +89,7 @@ namespace NScumm.Sci.Engine
 
         public void Add(KeyValuePair<TKey, TValue> item)
         {
-            ((IDictionary<TKey, TValue>)_items).Add(item);
+            ((IDictionary<TKey, TValue>) _items).Add(item);
         }
 
         public void Add(TKey key, TValue value)
@@ -113,17 +114,17 @@ namespace NScumm.Sci.Engine
 
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
-            ((IDictionary<TKey, TValue>)_items).CopyTo(array, arrayIndex);
+            ((IDictionary<TKey, TValue>) _items).CopyTo(array, arrayIndex);
         }
 
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
-            return ((IDictionary<TKey, TValue>)_items).GetEnumerator();
+            return ((IDictionary<TKey, TValue>) _items).GetEnumerator();
         }
 
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
-            return ((IDictionary<TKey, TValue>)_items).Remove(item);
+            return ((IDictionary<TKey, TValue>) _items).Remove(item);
         }
 
         public bool Remove(TKey key)
@@ -153,24 +154,30 @@ namespace NScumm.Sci.Engine
         private readonly ResourceManager _resMan;
         private Register _saveDirPtr;
         private readonly ScriptPatcher _scriptPatcher;
+
         /// <summary>
         /// Table of all classes
         /// </summary>
         private Class[] _classTable;
+
         private readonly HashMap<int, ushort> _scriptSegMap;
         private readonly List<SegmentObj> _heap;
+
         /// <summary>
         /// ID of the (a) clones segment
         /// </summary>
         private ushort _clonesSegId;
+
         /// <summary>
         /// ID of the (a) list segment
         /// </summary>
         private ushort _listsSegId;
+
         /// <summary>
         /// ID of the (a) node segment
         /// </summary>
         private ushort _nodesSegId;
+
         /// <summary>
         /// ID of the (a) hunk segment
         /// </summary>
@@ -178,7 +185,7 @@ namespace NScumm.Sci.Engine
 
 #if ENABLE_SCI32
         private ushort _arraysSegId;
-        private ushort _stringSegId;
+        private ushort _bitmapSegId;
 #endif
 
         public int ClassTableSize => _classTable.Length;
@@ -194,7 +201,7 @@ namespace NScumm.Sci.Engine
             _resMan = resMan;
             _scriptPatcher = scriptPatcher;
             _scriptSegMap = new HashMap<int, ushort>();
-            _heap = new List<SegmentObj>();
+            _heap = new List<SegmentObj> {null};
 
             _saveDirPtr = Register.NULL_REG;
             _parserPtr = Register.NULL_REG;
@@ -207,6 +214,7 @@ namespace NScumm.Sci.Engine
          * @parm obj The address to check
          * @return True if it is an object, false otherwise
          */
+
         public bool IsObject(Register obj)
         {
             return GetObject(obj) != null;
@@ -223,10 +231,7 @@ namespace NScumm.Sci.Engine
                     scr.IncrementLockers();
                     return segmentId;
                 }
-                else
-                {
-                    scr.FreeScript();
-                }
+                scr.FreeScript();
             }
             else
             {
@@ -243,7 +248,7 @@ namespace NScumm.Sci.Engine
 
         public ByteAccess DerefBulkPtr(Register pointer, int entries)
         {
-            return (BytePtr)DerefPtr(this, pointer, entries, true);
+            return (BytePtr) DerefPtr(this, pointer, entries, true);
         }
 
         public void UninstantiateScript(int scriptNr)
@@ -252,13 +257,14 @@ namespace NScumm.Sci.Engine
             Script scr = GetScriptIfLoaded(segmentId);
 
             if (scr == null || scr.IsMarkedAsDeleted)
-            {   // Is it already unloaded?
+            {
+                // Is it already unloaded?
                 //warning("unloading script 0x%x requested although not loaded", script_nr);
                 // This is perfectly valid SCI behavior
                 return;
             }
 
-            scr.DecrementLockers();   // One less locker
+            scr.DecrementLockers(); // One less locker
 
             if (scr.Lockers > 0)
                 return;
@@ -422,7 +428,8 @@ namespace NScumm.Sci.Engine
 
         public bool FreeDynmem(Register addr)
         {
-            if (addr.Segment < 1 || addr.Segment >= _heap.Count || _heap[addr.Segment] == null || _heap[addr.Segment].Type != SegmentType.DYNMEM)
+            if (addr.Segment < 1 || addr.Segment >= _heap.Count || _heap[addr.Segment] == null ||
+                _heap[addr.Segment].Type != SegmentType.DYNMEM)
                 return false; // error
 
             Deallocate(addr.Segment);
@@ -431,7 +438,7 @@ namespace NScumm.Sci.Engine
         }
 
 #if ENABLE_SCI32
-        public SciArray<Register> AllocateArray(out Register addr)
+        public SciArray AllocateArray(SciArrayType type, ushort size, out Register addr)
         {
             ArrayTable table;
             int offset;
@@ -446,10 +453,40 @@ namespace NScumm.Sci.Engine
             offset = table.AllocEntry();
 
             addr = Register.Make(_arraysSegId, (ushort) offset);
-            return table[offset];
+
+            SciArray array = table[offset];
+            array.SetType(type);
+            array.Resize(size);
+            return array;
         }
 
-        public SciArray<Register> LookupArray(Register addr)
+        public SciBitmap AllocateBitmap(Register addr, short width, short height, byte skipColor, short displaceX,
+            short displaceY, short scaledWidth, short scaledHeight, int paletteSize, bool remap, bool gc)
+        {
+            BitmapTable table;
+            int offset;
+
+            if (_bitmapSegId == 0)
+            {
+                table = (BitmapTable) AllocSegment(new BitmapTable(), out _bitmapSegId);
+            }
+            else
+            {
+                table = (BitmapTable) _heap[_bitmapSegId];
+            }
+
+            offset = table.AllocEntry();
+
+            addr = Register.Make(_bitmapSegId, (ushort) offset);
+            SciBitmap bitmap = table[offset];
+
+            bitmap.Create(width, height, skipColor, displaceX, displaceY, scaledWidth, scaledHeight, paletteSize, remap,
+                gc);
+
+            return bitmap;
+        }
+
+        public SciArray LookupArray(Register addr)
         {
             if (_heap[addr.Segment].Type != SegmentType.ARRAY)
                 Error("Attempt to use non-array {0} as array", addr);
@@ -461,6 +498,24 @@ namespace NScumm.Sci.Engine
 
             return arrayTable[(int) addr.Offset];
         }
+
+        public bool IsArray(Register addr)
+        {
+            return addr.Segment == _arraysSegId;
+        }
+
+        public SciBitmap LookupBitmap(Register addr)
+        {
+            if (_heap[addr.Segment].Type != SegmentType.BITMAP)
+                Error("Attempt to use non-bitmap {0} as bitmap", addr);
+
+            BitmapTable bitmapTable = (BitmapTable) _heap[addr.Segment];
+
+            if (!bitmapTable.IsValidEntry((int) addr.Offset))
+                Error("Attempt to use invalid entry {0} as bitmap", addr);
+
+            return bitmapTable[(int) addr.Offset];
+        }
 #endif
 
         public SegmentObjTable<SciObject>.Entry AllocateClone(out Register addr)
@@ -469,13 +524,13 @@ namespace NScumm.Sci.Engine
             int offset;
 
             if (_clonesSegId == 0)
-                table = (CloneTable)AllocSegment(new CloneTable(), out _clonesSegId);
+                table = (CloneTable) AllocSegment(new CloneTable(), out _clonesSegId);
             else
-                table = (CloneTable)_heap[_clonesSegId];
+                table = (CloneTable) _heap[_clonesSegId];
 
             offset = table.AllocEntry();
 
-            addr = Register.Make(_clonesSegId, (ushort)offset);
+            addr = Register.Make(_clonesSegId, (ushort) offset);
             return table._table[offset];
         }
 
@@ -498,29 +553,30 @@ namespace NScumm.Sci.Engine
             bool oldScriptHeader = (ResourceManager.GetSciVersion() == SciVersion.V0_EARLY);
             ushort segmentId = GetScriptSegment(scriptNr);
             Script scr = GetScript(segmentId);
-            Register reg = Register.Make(segmentId, oldScriptHeader ? (ushort)2 : (ushort)0);
+            Register reg = Register.Make(segmentId, oldScriptHeader ? (ushort) 2 : (ushort) 0);
             ScriptObjectTypes objType, objLength = 0;
 
             // Make a pass over the object in order to uninstantiate all superclasses
 
             do
             {
-                reg = Register.IncOffset(reg, (short)objLength); // Step over the last checked object
+                reg = Register.IncOffset(reg, (short) objLength); // Step over the last checked object
 
-                var tmp = scr.GetBuf((int)(reg.Offset));
-                objType = (ScriptObjectTypes)tmp.Data.ReadSci11EndianUInt16(tmp.Offset);
+                var tmp = scr.GetBuf((int) (reg.Offset));
+                objType = (ScriptObjectTypes) tmp.Data.ReadSci11EndianUInt16(tmp.Offset);
                 if (objType == 0)
                     break;
-                tmp = scr.GetBuf((int)(reg.Offset + 2));
-                objLength = (ScriptObjectTypes)tmp.Data.ReadSci11EndianUInt16(tmp.Offset);
+                tmp = scr.GetBuf((int) (reg.Offset + 2));
+                objLength = (ScriptObjectTypes) tmp.Data.ReadSci11EndianUInt16(tmp.Offset);
 
                 reg = Register.IncOffset(reg, 4); // Step over header
 
                 if ((objType == ScriptObjectTypes.OBJECT) || (objType == ScriptObjectTypes.CLASS))
-                { // object or class?
-                    reg = Register.IncOffset(reg, 8);   // magic offset (SCRIPT_OBJECT_MAGIC_OFFSET)
-                    tmp = scr.GetBuf((int)(reg.Offset + 2));
-                    short superclass = (short)tmp.Data.ReadSci11EndianUInt16(tmp.Offset);
+                {
+                    // object or class?
+                    reg = Register.IncOffset(reg, 8); // magic offset (SCRIPT_OBJECT_MAGIC_OFFSET)
+                    tmp = scr.GetBuf((int) (reg.Offset + 2));
+                    short superclass = (short) tmp.Data.ReadSci11EndianUInt16(tmp.Offset);
 
                     if (superclass >= 0)
                     {
@@ -529,7 +585,7 @@ namespace NScumm.Sci.Engine
                         if (superclassScript == scriptNr)
                         {
                             if (scr.Lockers != 0)
-                                scr.DecrementLockers();  // Decrease lockers if this is us ourselves
+                                scr.DecrementLockers(); // Decrease lockers if this is us ourselves
                         }
                         else
                         {
@@ -538,11 +594,10 @@ namespace NScumm.Sci.Engine
                         // Recurse to assure that the superclass lockers number gets decreased
                     }
 
-                    reg = Register.IncOffset(reg, (short)Script.SCRIPT_OBJECT_MAGIC_OFFSET);
+                    reg = Register.IncOffset(reg, (short) Script.SCRIPT_OBJECT_MAGIC_OFFSET);
                 } // if object or class
 
                 reg = Register.IncOffset(reg, -4); // Step back on header
-
             } while (objType != 0);
         }
 
@@ -553,7 +608,7 @@ namespace NScumm.Sci.Engine
             segid = _scriptSegMap.GetValue(scriptNr, 0);
             if (segid > 0)
             {
-                return (Script)_heap[segid];
+                return (Script) _heap[segid];
             }
 
             // allocate the SegmentObj
@@ -562,7 +617,7 @@ namespace NScumm.Sci.Engine
             // Add the script to the "script id . segment id" hashmap
             _scriptSegMap[scriptNr] = segid;
 
-            return (Script)mem;
+            return (Script) mem;
         }
 
         public SegmentObj AllocSegment(SegmentObj mem, out ushort segid)
@@ -606,7 +661,7 @@ namespace NScumm.Sci.Engine
 
             if (seg >= 65536) throw new InvalidOperationException("No space left in heap");
 
-            return (ushort)seg;
+            return (ushort) seg;
         }
 
         public void InitSysStrings()
@@ -615,15 +670,15 @@ namespace NScumm.Sci.Engine
             {
                 // We need to allocate system strings in one segment, for compatibility reasons
                 AllocDynmem(512, "system strings", out _saveDirPtr);
-                _parserPtr = Register.Make(_saveDirPtr.Segment, (ushort)(_saveDirPtr.Offset + 256));
+                _parserPtr = Register.Make(_saveDirPtr.Segment, (ushort) (_saveDirPtr.Offset + 256));
 # if ENABLE_SCI32
             }
-            else {
-                var saveDirString = AllocateString(out _saveDirPtr);
-                saveDirString.SetSize(256);
-                saveDirString.SetValue(0, 0);
+            else
+            {
+                SciArray saveDirString = AllocateArray(SciArrayType.String, 256, out _saveDirPtr);
+                saveDirString[0] = 0;
 
-                _parserPtr = Register.NULL_REG;  // no SCI2 game had a parser
+                _parserPtr = Register.NULL_REG; // no SCI2 game had a parser
 #endif
             }
         }
@@ -635,7 +690,7 @@ namespace NScumm.Sci.Engine
 
         public StackPtr? DerefRegPtr(Register pointer, int entries)
         {
-            return (StackPtr?)DerefPtr(this, pointer, 2 * entries, false);
+            return (StackPtr?) DerefPtr(this, pointer, 2 * entries, false);
         }
 
         public Register GetClassAddress(int classnr, ScriptLoadType loadType, ushort callerSegment)
@@ -656,11 +711,11 @@ namespace NScumm.Sci.Engine
 
                 if (theClass.reg.Segment == 0)
                 {
-                    throw new InvalidOperationException($"[VM] Trying to instantiate class {classnr:x} by instantiating script 0x{theClass.script:x} ({theClass.script}) failed;");
+                    throw new InvalidOperationException(
+                        $"[VM] Trying to instantiate class {classnr:x} by instantiating script 0x{theClass.script:x} ({theClass.script}) failed;");
                 }
             }
-            else
-            if (callerSegment != theClass.reg.Segment)
+            else if (callerSegment != theClass.reg.Segment)
                 GetScript(theClass.reg.Segment).IncrementLockers();
 
             return theClass.reg;
@@ -672,7 +727,7 @@ namespace NScumm.Sci.Engine
             SegmentObj mobj = AllocSegment(new DynMem(), out seg);
             addr = Register.Make(seg, 0);
 
-            DynMem d = (DynMem)mobj;
+            DynMem d = (DynMem) mobj;
 
             d._size = size;
 
@@ -690,7 +745,7 @@ namespace NScumm.Sci.Engine
         {
             if (seg < 1 || seg >= _heap.Count || _heap[seg] == null || _heap[seg].Type != SegmentType.SCRIPT)
                 return null;
-            return (Script)_heap[seg];
+            return (Script) _heap[seg];
         }
 
 
@@ -699,7 +754,7 @@ namespace NScumm.Sci.Engine
             var vocab996 = _resMan.FindResource(new ResourceId(ResourceType.Vocab, 996), true);
 
             if (vocab996 == null)
-                throw new InvalidOperationException("SegManager: failed to open vocab 996");
+                Error("SegManager: failed to open vocab 996");
 
             int totalClasses = vocab996.size >> 2;
             _classTable = new Class[totalClasses];
@@ -722,7 +777,7 @@ namespace NScumm.Sci.Engine
             for (int i = 0; i < _heap.Count; i++)
             {
                 if (_heap[i] != null)
-                    Deallocate((ushort)i);
+                    Deallocate((ushort) i);
             }
 
             _heap.Clear();
@@ -737,7 +792,7 @@ namespace NScumm.Sci.Engine
 
 # if ENABLE_SCI32
             _arraysSegId = 0;
-            _stringSegId = 0;
+            _bitmapSegId = 0;
 #endif
 
             // Reinitialize class table
@@ -767,16 +822,16 @@ namespace NScumm.Sci.Engine
                 if (mobj == null)
                     continue;
 
-                var objpos = Register.Make((ushort)i, 0);
+                var objpos = Register.Make((ushort) i, 0);
 
                 if (mobj.Type == SegmentType.SCRIPT)
                 {
                     // It's a script, scan all objects in it
-                    var scr = (Script)mobj;
+                    var scr = (Script) mobj;
                     var objects = scr.ObjectMap;
                     foreach (var it in objects)
                     {
-                        objpos.Offset = (ushort)it.Value.Pos.Offset;
+                        objpos.Offset = (ushort) it.Value.Pos.Offset;
                         if (name == GetObjectName(objpos))
                             result.Add(objpos);
                     }
@@ -784,13 +839,13 @@ namespace NScumm.Sci.Engine
                 else if (mobj.Type == SegmentType.CLONES)
                 {
                     // It's clone table, scan all objects in it
-                    var ct = (CloneTable)mobj;
+                    var ct = (CloneTable) mobj;
                     for (uint idx = 0; idx < ct._table.Length; ++idx)
                     {
-                        if (!ct.IsValidEntry((ushort)idx))
+                        if (!ct.IsValidEntry((ushort) idx))
                             continue;
 
-                        objpos.Offset = (ushort)idx;
+                        objpos.Offset = (ushort) idx;
                         if (name == GetObjectName(objpos))
                             result.Add(objpos);
                     }
@@ -810,7 +865,7 @@ namespace NScumm.Sci.Engine
 
             if (index < 0)
                 return result[0];
-            else if (result.Count <= (uint)index)
+            else if (result.Count <= (uint) index)
                 return Register.NULL_REG; // Not found
             return result[index];
         }
@@ -818,52 +873,22 @@ namespace NScumm.Sci.Engine
         public DataStack AllocateStack(int size, out ushort segid)
         {
             var mobj = AllocSegment(new DataStack(), out segid);
-            DataStack retval = (DataStack)mobj;
+            DataStack retval = (DataStack) mobj;
 
             retval._entries = new Register[size];
             retval._capacity = size;
 
             // SSCI initializes the stack with "S" characters (uppercase S in SCI0-SCI1,
             // lowercase s in SCI0 and SCI11) - probably stands for "stack"
-            byte filler = (ResourceManager.GetSciVersion() >= SciVersion.V01 && ResourceManager.GetSciVersion() <= SciVersion.V1_LATE) ? (byte)'S' : (byte)'s';
+            byte filler = (ResourceManager.GetSciVersion() >= SciVersion.V01 &&
+                           ResourceManager.GetSciVersion() <= SciVersion.V1_LATE)
+                ? (byte) 'S'
+                : (byte) 's';
             for (int i = 0; i < size; i++)
                 retval._entries[i] = Register.Make(0, filler);
 
             return retval;
         }
-
-#if ENABLE_SCI32
-        private SciString AllocateString(out Register addr)
-        {
-            StringTable table;
-            int offset;
-
-            if (_stringSegId == 0)
-            {
-                table = (StringTable) AllocSegment(new StringTable(), out _stringSegId);
-            }
-            else
-                table = (StringTable) _heap[_stringSegId];
-
-            offset = table.AllocEntry();
-
-            addr = Register.Make(_stringSegId, (ushort) offset);
-            return table[offset];
-        }
-
-        public SciString LookupString(Register addr)
-        {
-            if (_heap[addr.Segment].Type != SegmentType.STRING)
-                Error("lookupString: Attempt to use non-string {0} as string", addr);
-
-            StringTable stringTable = (StringTable) _heap[addr.Segment];
-
-            if (!stringTable.IsValidEntry((int)addr.Offset))
-                Error("lookupString: Attempt to use non-string {0} as string", addr);
-
-            return stringTable[(int)addr.Offset];
-        }
-#endif
 
         public void Memcpy(Register dest, Register src, int n)
         {
@@ -906,7 +931,7 @@ namespace NScumm.Sci.Engine
                 for (var i = 0; i < n; i++)
                 {
                     char c = GetChar(srcR, i);
-                    SetChar(destR, (uint)i, (byte)c);
+                    SetChar(destR, (uint) i, (byte) c);
                 }
             }
         }
@@ -934,7 +959,7 @@ namespace NScumm.Sci.Engine
             {
                 // raw . non-raw
                 for (var i = 0; i < n; i++)
-                    SetChar(destR, (uint)i, src[i]);
+                    SetChar(destR, (uint) i, src[i]);
             }
         }
 
@@ -964,7 +989,7 @@ namespace NScumm.Sci.Engine
                 for (var i = 0; i < n; i++)
                 {
                     char c = GetChar(srcR, i);
-                    dest[i] = (byte)c;
+                    dest[i] = (byte) c;
                 }
             }
         }
@@ -1000,7 +1025,8 @@ namespace NScumm.Sci.Engine
         {
             if (seg < 1 || seg >= _heap.Count)
             {
-                throw new ArgumentOutOfRangeException(nameof(seg), $"SegManager::getScript(): seg id {seg:X} out of bounds");
+                throw new ArgumentOutOfRangeException(nameof(seg),
+                    $"SegManager::getScript(): seg id {seg:X} out of bounds");
             }
             if (_heap[seg] == null)
             {
@@ -1008,9 +1034,10 @@ namespace NScumm.Sci.Engine
             }
             if (_heap[seg].Type != SegmentType.SCRIPT)
             {
-                throw new InvalidOperationException($"SegManager::getScript(): seg id {seg:X} refers to type {_heap[seg].Type} != SEG_TYPE_SCRIPT");
+                throw new InvalidOperationException(
+                    $"SegManager::getScript(): seg id {seg:X} refers to type {_heap[seg].Type} != SEG_TYPE_SCRIPT");
             }
-            return (Script)_heap[seg];
+            return (Script) _heap[seg];
         }
 
         public int FindSegmentByType(SegmentType type)
@@ -1052,7 +1079,7 @@ namespace NScumm.Sci.Engine
         /// <returns>A physical reference to the address pointed to, or NULL on error or if not enough entries were available.</returns>
         public string DerefString(Register pointer, int entries = 0)
         {
-            var data = (BytePtr)DerefPtr(this, pointer, entries, true);
+            var data = (BytePtr) DerefPtr(this, pointer, entries, true);
             return ScummHelper.GetText(data.Data, data.Offset);
         }
 
@@ -1082,7 +1109,8 @@ namespace NScumm.Sci.Engine
             {
                 var isRaw = ret.isRaw ? "raw" : "not raw";
                 var wr = wantRaw ? "raw" : "not raw";
-                Warning($"Dereferencing pointer {pointer} (type {segMan.GetSegmentType(pointer.Segment)}) which is {isRaw}, but expected {wr}");
+                Warning(
+                    $"Dereferencing pointer {pointer} (type {segMan.GetSegmentType(pointer.Segment)}) which is {isRaw}, but expected {wr}");
             }
 
             if (!wantRaw && ret.skipByte)
@@ -1131,9 +1159,9 @@ namespace NScumm.Sci.Engine
             {
                 if (mobj.Type == SegmentType.CLONES)
                 {
-                    var ct = (CloneTable)mobj;
-                    if (ct.IsValidEntry((int)pos.Offset))
-                        obj = ct._table[(int)pos.Offset].Item;
+                    var ct = (CloneTable) mobj;
+                    if (ct.IsValidEntry((int) pos.Offset))
+                        obj = ct._table[(int) pos.Offset].Item;
                     else
                     {
                         Warning("getObject(): Trying to get an invalid object");
@@ -1141,11 +1169,11 @@ namespace NScumm.Sci.Engine
                 }
                 else if (mobj.Type == SegmentType.SCRIPT)
                 {
-                    var scr = (Script)mobj;
-                    if (pos.Offset <= scr.BufSize && pos.Offset >= (uint)-Script.SCRIPT_OBJECT_MAGIC_OFFSET
-                            && scr.OffsetIsObject((int)pos.Offset))
+                    var scr = (Script) mobj;
+                    if (pos.Offset <= scr.BufSize && pos.Offset >= (uint) -Script.SCRIPT_OBJECT_MAGIC_OFFSET
+                        && scr.OffsetIsObject((int) pos.Offset))
                     {
-                        obj = scr.GetObject((ushort)pos.Offset);
+                        obj = scr.GetObject((ushort) pos.Offset);
                     }
                 }
             }
@@ -1159,9 +1187,9 @@ namespace NScumm.Sci.Engine
 
             if (_hunksSegId == 0)
                 AllocSegment(new HunkTable(), out _hunksSegId);
-            table = (HunkTable)_heap[_hunksSegId];
+            table = (HunkTable) _heap[_hunksSegId];
 
-            ushort offset = (ushort)table.AllocEntry();
+            ushort offset = (ushort) table.AllocEntry();
 
             Register addr = Register.Make(_hunksSegId, offset);
             Hunk h = table._table[offset].Item;
@@ -1184,7 +1212,7 @@ namespace NScumm.Sci.Engine
                 return;
             }
 
-            HunkTable ht = (HunkTable)GetSegment(addr.Segment, SegmentType.HUNK);
+            HunkTable ht = (HunkTable) GetSegment(addr.Segment, SegmentType.HUNK);
 
             if (ht == null)
             {
@@ -1192,14 +1220,14 @@ namespace NScumm.Sci.Engine
                 return;
             }
 
-            ht.FreeEntryContents((int)addr.Offset);
+            ht.FreeEntryContents((int) addr.Offset);
         }
 
         public byte[] GetHunkPointer(Register addr)
         {
-            HunkTable ht = (HunkTable)GetSegment(addr.Segment, SegmentType.HUNK);
+            HunkTable ht = (HunkTable) GetSegment(addr.Segment, SegmentType.HUNK);
 
-            if (ht == null || !ht.IsValidEntry((int)addr.Offset))
+            if (ht == null || !ht.IsValidEntry((int) addr.Offset))
             {
                 // Valid SCI behavior, e.g. when loading/quitting
                 return null;
@@ -1232,12 +1260,14 @@ namespace NScumm.Sci.Engine
                 // raw . raw
                 if (n == 0xFFFFFFFFU)
                 {
-                    Array.Copy(src.ToCharArray().Select(c => (byte)c).ToArray(), 0, destR.raw.Data, destR.raw.Offset, src.Length);
+                    Array.Copy(src.ToCharArray().Select(c => (byte) c).ToArray(), 0, destR.raw.Data, destR.raw.Offset,
+                        src.Length);
                     destR.raw.Data[destR.raw.Offset + src.Length] = 0;
                 }
                 else
                 {
-                    Array.Copy(src.ToCharArray().Select(c => (byte)c).ToArray(), 0, destR.raw.Data, destR.raw.Offset, (int)n);
+                    Array.Copy(src.ToCharArray().Select(c => (byte) c).ToArray(), 0, destR.raw.Data, destR.raw.Offset,
+                        (int) n);
                     destR.raw.Data[destR.raw.Offset + n] = 0;
                 }
             }
@@ -1247,13 +1277,13 @@ namespace NScumm.Sci.Engine
                 // raw . non-raw
                 for (i = 0; i < n && i < src.Length; i++)
                 {
-                    SetChar(destR, (uint)i, (byte)src[i]);
+                    SetChar(destR, (uint) i, (byte) src[i]);
                     if (src[i] == 0)
                         break;
                 }
                 if (i == src.Length)
                 {
-                    SetChar(destR, (uint)i, 0);
+                    SetChar(destR, (uint) i, 0);
                 }
                 // Put an ending NUL to terminate the string
                 if (destR.maxSize > n)
@@ -1302,7 +1332,7 @@ namespace NScumm.Sci.Engine
                 for (var i = 0; i < n; i++)
                 {
                     char c = GetChar(srcR, i);
-                    destR.raw[i] = (byte)c;
+                    destR.raw[i] = (byte) c;
                     if (c == 0)
                         break;
                 }
@@ -1313,7 +1343,7 @@ namespace NScumm.Sci.Engine
                 for (var i = 0; i < n; i++)
                 {
                     char c = GetChar(srcR, i);
-                    SetChar(destR, (uint)i, (byte)c);
+                    SetChar(destR, (uint) i, (byte) c);
                     if (c == 0)
                         break;
                 }
@@ -1326,7 +1356,7 @@ namespace NScumm.Sci.Engine
             if (@ref.skipByte)
                 offset++;
 
-            Register val = @ref.reg.Value[offset / 2];
+            Register val = @ref.reg[offset / 2];
 
             // segment 0xFFFF means that the scripts are using uninitialized temp-variable space
             //  we can safely ignore this, if it isn't one of the first 2 chars.
@@ -1339,7 +1369,7 @@ namespace NScumm.Sci.Engine
             if (SciEngine.Instance.IsBe)
                 oddOffset = !oddOffset;
 
-            return (char)(oddOffset ? val.Offset >> 8 : val.Offset & 0xff);
+            return (char) (oddOffset ? val.Offset >> 8 : val.Offset & 0xff);
         }
 
         private static void SetChar(SegmentRef @ref, uint offset, byte value)
@@ -1347,39 +1377,38 @@ namespace NScumm.Sci.Engine
             if (@ref.skipByte)
                 offset++;
 
-            StackPtr val = @ref.reg.Value + (int)offset / 2;
+            var val = @ref.reg.Add((int) offset / 2);
 
-            val.SetSegment(0, 0);
+            val[0] = Register.Make(0, (ushort) val[0].Offset);
 
             bool oddOffset = (offset & 1) != 0;
             if (SciEngine.Instance.IsBe)
                 oddOffset = !oddOffset;
 
             if (oddOffset)
-                val.SetOffset(0, (ushort)((val[0].Offset & 0x00ff) | (value << 8)));
+                val[0] = Register.Make(val[0].Segment, (ushort) ((val[0].Offset & 0x00ff) | (value << 8)));
             else
-                val.SetOffset(0, (ushort)((val[0].Offset & 0xff00) | value));
+                val[0] = Register.Make(val[0].Segment, (ushort) ((val[0].Offset & 0xff00) | value));
         }
 
         public List AllocateList(out Register addr)
         {
-            ListTable table;
             int offset;
 
             if (_listsSegId == 0)
                 AllocSegment(new ListTable(), out _listsSegId);
-            table = (ListTable)_heap[_listsSegId];
+            var table = (ListTable) _heap[_listsSegId];
 
             offset = table.AllocEntry();
 
-            addr = Register.Make(_listsSegId, (ushort)offset);
+            addr = Register.Make(_listsSegId, (ushort) offset);
             return table._table[offset].Item;
         }
 
         public int Strlen(Register str)
         {
             if (str.IsNull)
-                return 0;   // empty text
+                return 0; // empty text
 
             SegmentRef strR = Dereference(str);
             if (!strR.IsValid)
@@ -1407,7 +1436,7 @@ namespace NScumm.Sci.Engine
         /// </summary>
         /// <param name="pointer">pointer The pointer to dereference</param>
         /// <param name="entries">The number of values expected (for checking)</param>
-        /// <returns>The string referenced, or an empty string if not enough 
+        /// <returns>The string referenced, or an empty string if not enough
         /// entries were available.</returns>
         public string GetString(Register pointer, int entries = 0)
         {
@@ -1452,9 +1481,9 @@ namespace NScumm.Sci.Engine
                 throw new InvalidOperationException($"Attempt to use non-list {addr} as list");
             }
 
-            ListTable lt = (ListTable)_heap[addr.Segment];
+            ListTable lt = (ListTable) _heap[addr.Segment];
 
-            if (!lt.IsValidEntry((int)addr.Offset))
+            if (!lt.IsValidEntry((int) addr.Offset))
             {
                 throw new InvalidOperationException($"Attempt to use non-list {addr} as list");
             }
@@ -1474,9 +1503,9 @@ namespace NScumm.Sci.Engine
                 throw new InvalidOperationException($"Attempt to use non-node {addr} (type {type}) as list node");
             }
 
-            NodeTable nt = (NodeTable)_heap[addr.Segment];
+            NodeTable nt = (NodeTable) _heap[addr.Segment];
 
-            if (!nt.IsValidEntry((int)addr.Offset))
+            if (!nt.IsValidEntry((int) addr.Offset))
             {
                 if (!stopOnDiscarded)
                     return null;
@@ -1503,7 +1532,7 @@ namespace NScumm.Sci.Engine
 
             if (mobj.Type == SegmentType.SCRIPT)
             {
-                Script scr = (Script)mobj;
+                Script scr = (Script) mobj;
                 _scriptSegMap.Remove(scr.ScriptNumber);
                 if (scr.LocalsSegment != 0)
                 {
@@ -1540,11 +1569,11 @@ namespace NScumm.Sci.Engine
 
             if (_nodesSegId == 0)
                 AllocSegment(new NodeTable(), out _nodesSegId);
-            table = (NodeTable)_heap[_nodesSegId];
+            table = (NodeTable) _heap[_nodesSegId];
 
             offset = table.AllocEntry();
 
-            addr = Register.Make(_nodesSegId, (ushort)offset);
+            addr = Register.Make(_nodesSegId, (ushort) offset);
             return table._table[offset].Item;
         }
     }

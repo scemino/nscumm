@@ -16,6 +16,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System;
 using System.Diagnostics;
 
 namespace NScumm.Core
@@ -39,6 +40,7 @@ namespace NScumm.Core
 
         public Rational(int num = 1, int denom = 1)
         {
+            if (denom == 0) throw new ArgumentOutOfRangeException(nameof(denom));
             _numerator = num;
             _denominator = denom;
         }

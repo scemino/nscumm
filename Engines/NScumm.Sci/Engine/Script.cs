@@ -19,6 +19,7 @@
 using NScumm.Core;
 using System;
 using System.Collections.Generic;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
 {
@@ -536,8 +537,7 @@ namespace NScumm.Sci.Engine
         {
             if (_localsBlock != null)
                 return RelocateBlock(_localsBlock._locals, _localsOffset, segment, location, _scriptSize);
-            else
-                return false;
+            return false;
         }
 
         // This helper function is used by Script::relocateLocal and Object::relocate
@@ -571,7 +571,7 @@ namespace NScumm.Sci.Engine
 
             var script = resMan.FindResource(new ResourceId(ResourceType.Script, (ushort)script_nr), false);
             if (script == null)
-                throw new InvalidOperationException("Script {script_nr} not found");
+                Error($"Script {script_nr} not found");
 
             _nr = script_nr;
             _bufSize = _scriptSize = script.size;

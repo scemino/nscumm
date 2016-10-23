@@ -26,11 +26,11 @@ namespace NScumm.Sci.Graphics
     public struct Color : IEquatable<Color>
     {
         public byte used;
-        public byte r, g, b;
+        public byte R, G, B;
 
         public override int GetHashCode()
         {
-            return r ^ g ^ b;
+            return R ^ G ^ B;
         }
 
         public override bool Equals(object obj)
@@ -40,7 +40,7 @@ namespace NScumm.Sci.Graphics
 
         public bool Equals(Color other)
         {
-            return other.r == r && other.g == g && other.b == b;
+            return other.R == R && other.G == G && other.B == B;
         }
 
         public static bool operator ==(Color c1, Color c2)
@@ -56,10 +56,10 @@ namespace NScumm.Sci.Graphics
 
     internal class Palette
     {
-        public byte[] mapping = new byte[256];
+        public readonly byte[] mapping = new byte[256];
         public int timestamp;
-        public Color[] colors = new Color[256];
-        public byte[] intensity = new byte[256];
+        public readonly Color[] colors = new Color[256];
+        public readonly byte[] intensity = new byte[256];
 
         public Palette()
         {
@@ -162,6 +162,19 @@ namespace NScumm.Sci.Graphics
             rect.Top = (short) Mulru(rect.Top, ref ratioY);
             rect.Right = (short) (Mulru(rect.Right - 1, ref ratioX, extra) + 1);
             rect.Bottom = (short) (Mulru(rect.Bottom - 1, ref ratioY, extra) + 1);
+        }
+
+        /**
+         * Multiplies a rectangle by two ratios with default
+         * rounding. Modifies the rect directly. Uses inclusive
+         * rectangle rounding.
+         */
+        public static void Mulinc(ref Rect rect, Rational ratioX, Rational ratioY)
+        {
+            rect.Left = (short) (rect.Left * ratioX);
+            rect.Top = (short) (rect.Top * ratioY);
+            rect.Right = (short) (((rect.Right - 1) * ratioX) + 1);
+            rect.Bottom = (short) (((rect.Bottom - 1) * ratioY) + 1);
         }
     }
 }

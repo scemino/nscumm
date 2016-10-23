@@ -32,8 +32,8 @@ namespace NScumm.Sci.Graphics
         public ushort ScriptWidth { get; set; }
         public ushort ScriptHeight { get; set; }
 
-        public Buffer(ushort width, ushort height, byte[] pixels)
-            : base(width, height, pixels==null?BytePtr.Null: new BytePtr(pixels), PixelFormat.Indexed8)
+        public Buffer(ushort width, ushort height, BytePtr pixels)
+            : base(width, height, pixels, PixelFormat.Indexed8)
         {
             _screenWidth = width;
             _screenHeight = height;

@@ -942,7 +942,7 @@ namespace NScumm.Sci.Graphics
                                         for (i = 0; i < 256; i++)
                                         {
                                             palette.colors[i].used = data[curPos++];
-                                            palette.colors[i].r = data[curPos++]; palette.colors[i].g = data[curPos++]; palette.colors[i].b = data[curPos++];
+                                            palette.colors[i].R = data[curPos++]; palette.colors[i].G = data[curPos++]; palette.colors[i].B = data[curPos++];
                                         }
                                         _palette.Set(palette, true);
                                     }

@@ -29,7 +29,7 @@ namespace NScumm.Sci.Graphics
          * the correct column to read from the source bitmap
          * when drawing a scaled version of the source bitmap.
          */
-        public int[] valuesX =new int[1024];
+        public int[] valuesX = new int[1024];
 
         /**
          * The ratio used to generate the x-values.
@@ -41,7 +41,7 @@ namespace NScumm.Sci.Graphics
          * the correct row to read from a source bitmap when
          * drawing a scaled version of the source bitmap.
          */
-        public int[] valuesY =new int[1024];
+        public int[] valuesY = new int[1024];
 
         /**
          * The ratio used to generate the y-values.
@@ -50,15 +50,16 @@ namespace NScumm.Sci.Graphics
     }
 
 
-    internal class CelScaler {
-        /**
-         * Cached scale tables.
-         */
-        private CelScalerTable[] _scaleTables=new CelScalerTable[2];
+    internal class CelScaler
+    {
+        /// <summary>
+        /// Cached scale tables
+        /// </summary>
+        private readonly CelScalerTable[] _scaleTables;
 
-        /**
-         * The index of the most recently used scale table.
-         */
+        /// <summary>
+        /// The index of the most recently used scale table.
+        /// </summary>
         private int _activeIndex;
 
         /**
@@ -67,6 +68,7 @@ namespace NScumm.Sci.Graphics
          * the least most recently used table will be replaced
          * and activated.
          */
+
         private void ActivateScaleTables(ref Rational scaleX, ref Rational scaleY)
         {
             short screenWidth = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScreenWidth;
@@ -106,6 +108,7 @@ namespace NScumm.Sci.Graphics
          * size, which should be large enough to draw across the
          * entire target buffer.
          */
+
         private void BuildLookupTable(int[] table, ref Rational ratio, int size)
         {
             var t = new Ptr<int>(table);
@@ -127,6 +130,11 @@ namespace NScumm.Sci.Graphics
 
         public CelScaler()
         {
+            _scaleTables = new CelScalerTable[2];
+            for (int i = 0; i < _scaleTables.Length; i++)
+            {
+                _scaleTables[i] = new CelScalerTable();
+            }
             var table = _scaleTables[0];
             table.scaleX = new Rational();
             table.scaleY = new Rational();
@@ -141,10 +149,12 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        /**
-         * Retrieves scaler tables for the given X and Y ratios.
-         */
-
+        /// <summary>
+        /// Retrieves scaler tables for the given X and Y ratios.
+        /// </summary>
+        /// <param name="scaleX"></param>
+        /// <param name="scaleY"></param>
+        /// <returns></returns>
         public CelScalerTable GetScalerTable(ref Rational scaleX, ref Rational scaleY)
         {
             ActivateScaleTables(ref scaleX, ref scaleY);

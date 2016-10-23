@@ -26,7 +26,7 @@ namespace NScumm.Core
     public struct BytePtr
     {
         public int Offset;
-        public readonly byte[] Data;
+        public byte[] Data;
 
         public static readonly BytePtr Null = new BytePtr(null);
 
@@ -72,7 +72,45 @@ namespace NScumm.Core
         public static bool operator ==(BytePtr p1, BytePtr p2)
         {
             return p1.Data == p2.Data &&
-                     p1.Offset == p2.Offset;
+                   p1.Offset == p2.Offset;
+        }
+
+        public static BytePtr operator +(BytePtr p, int offset)
+        {
+            return new BytePtr(p, offset);
+        }
+
+        public static BytePtr operator -(BytePtr p, int offset)
+        {
+            return new BytePtr(p, -offset);
+        }
+
+        public static bool operator >(BytePtr p1, BytePtr p2)
+        {
+            if (p1.Data != p2.Data) throw new InvalidOperationException("Cannot compare the 2 pointers");
+
+            return p1.Offset > p2.Offset;
+        }
+
+        public static bool operator >=(BytePtr p1, BytePtr p2)
+        {
+            if (p1.Data != p2.Data) throw new InvalidOperationException("Cannot compare the 2 pointers");
+
+            return p1.Offset >= p2.Offset;
+        }
+
+        public static bool operator <(BytePtr p1, BytePtr p2)
+        {
+            if (p1.Data != p2.Data) throw new InvalidOperationException("Cannot compare the 2 pointers");
+
+            return p1.Offset < p2.Offset;
+        }
+
+        public static bool operator <=(BytePtr p1, BytePtr p2)
+        {
+            if (p1.Data != p2.Data) throw new InvalidOperationException("Cannot compare the 2 pointers");
+
+            return p1.Offset <= p2.Offset;
         }
 
         public static bool operator !=(BytePtr p1, BytePtr p2)
@@ -83,12 +121,18 @@ namespace NScumm.Core
         public override bool Equals(object obj)
         {
             if (!(obj is BytePtr)) return false;
-            return this == (BytePtr)obj;
+            return this == (BytePtr) obj;
         }
 
         public override int GetHashCode()
         {
-            return Data == null ? 0 : Data.GetHashCode() ^ Offset;
+            return Data?.GetHashCode() ^ Offset ?? 0;
+        }
+
+        public void Realloc(int newSize)
+        {
+            var size = Offset + newSize;
+            Array.Resize(ref Data, size);
         }
     }
 
@@ -126,7 +170,7 @@ namespace NScumm.Core
         public static bool operator ==(Int32Ptr p1, Int32Ptr p2)
         {
             return p1.Data == p2.Data &&
-                     p1.Offset == p2.Offset;
+                   p1.Offset == p2.Offset;
         }
 
         public static bool operator !=(Int32Ptr p1, Int32Ptr p2)
@@ -137,7 +181,7 @@ namespace NScumm.Core
         public override bool Equals(object obj)
         {
             if (!(obj is Int32Ptr)) return false;
-            return this == (Int32Ptr)obj;
+            return this == (Int32Ptr) obj;
         }
 
         public override int GetHashCode()
@@ -146,7 +190,7 @@ namespace NScumm.Core
         }
     }
 
-    public struct DisposablePtr<T>: IDisposable where T: IDisposable
+    public struct DisposablePtr<T> : IDisposable where T : IDisposable
     {
         private readonly bool _dispose;
         private readonly T _value;
@@ -161,7 +205,7 @@ namespace NScumm.Core
 
         public void Dispose()
         {
-            if(_dispose && _value!=null) _value.Dispose();
+            if (_dispose && _value != null) _value.Dispose();
         }
     }
 
@@ -204,7 +248,7 @@ namespace NScumm.Core
         public static bool operator ==(Ptr<T> p1, Ptr<T> p2)
         {
             return p1.Data == p2.Data &&
-                     p1.Offset == p2.Offset;
+                   p1.Offset == p2.Offset;
         }
 
         public static bool operator !=(Ptr<T> p1, Ptr<T> p2)
@@ -215,7 +259,7 @@ namespace NScumm.Core
         public override bool Equals(object obj)
         {
             if (!(obj is Ptr<T>)) return false;
-            return this == (Ptr<T>)obj;
+            return this == (Ptr<T>) obj;
         }
 
         public override int GetHashCode()
@@ -228,7 +272,7 @@ namespace NScumm.Core
     {
         public static void WriteByte(this BytePtr data, int startIndex, byte value)
         {
-            data.Data[data.Offset + startIndex]= value;
+            data.Data[data.Offset + startIndex] = value;
         }
 
         public static void WriteInt16(this BytePtr data, int startIndex, short value)
@@ -263,12 +307,12 @@ namespace NScumm.Core
 
         public static short ToInt16BigEndian(this BytePtr value, int startIndex = 0)
         {
-            return (short)value.Data.ToUInt16BigEndian(value.Offset + startIndex);
+            return (short) value.Data.ToUInt16BigEndian(value.Offset + startIndex);
         }
 
         public static short ToInt16(this BytePtr value, int startIndex = 0)
         {
-            return (short)value.Data.ToUInt16(value.Offset + startIndex);
+            return (short) value.Data.ToUInt16(value.Offset + startIndex);
         }
 
         public static ushort ToUInt16BigEndian(this BytePtr value, int startIndex = 0)

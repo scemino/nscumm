@@ -19,9 +19,13 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System;
+using System.Collections.Generic;
+using NScumm.Core;
 using NScumm.Core.Graphics;
 using NScumm.Core.IO;
 using NScumm.Core.Video;
+using NScumm.Sci.Graphics;
 using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
@@ -159,6 +163,219 @@ namespace NScumm.Sci.Engine
 
             return s.r_acc;
         }
+
+#if ENABLE_SCI32
+        private static Register kPlayVMD(EngineState s, int argc, StackPtr argv)
+        {
+            if (s == null)
+                return Register.Make(0, (ushort) ResourceManager.GetSciVersion());
+            Error("not supposed to call this");
+            return Register.NULL_REG;
+        }
+
+        private static Register kPlayVMDOpen(EngineState s, int argc, StackPtr argv)
+        {
+            string fileName = s._segMan.GetString(argv[0]);
+            // argv[1] is an optional cache size argument which we do not use
+            // const uint16 cacheSize = argc > 1 ? CLIP<int16>(argv[1].toSint16(), 16, 1024) : 0;
+            var flags = argc > 2 ? (VMDPlayer.OpenFlags) argv[2].ToUInt16() : VMDPlayer.OpenFlags.None;
+
+            return Register.Make(0, (ushort) SciEngine.Instance._video32.VMDPlayer.Open(fileName, flags));
+        }
+
+        private static Register kPlayVMDInit(EngineState s, int argc, StackPtr argv)
+        {
+            short x = argv[0].ToInt16();
+            short y = argv[1].ToInt16();
+            VMDPlayer.PlayFlags flags = argc > 2 ? (VMDPlayer.PlayFlags) argv[2].ToUInt16() : VMDPlayer.PlayFlags.None;
+            short boostPercent;
+            short boostStartColor;
+            short boostEndColor;
+            if (argc > 5 && (flags & VMDPlayer.PlayFlags.Boost) != 0)
+            {
+                boostPercent = argv[3].ToInt16();
+                boostStartColor = argv[4].ToInt16();
+                boostEndColor = argv[5].ToInt16();
+            }
+            else
+            {
+                boostPercent = 0;
+                boostStartColor = -1;
+                boostEndColor = -1;
+            }
+
+            SciEngine.Instance._video32.VMDPlayer.Init(x, y, flags, boostPercent, boostStartColor, boostEndColor);
+
+            return Register.Make(0, 0);
+        }
+
+        private static Register kPlayVMDClose(EngineState s, int argc, StackPtr argv)
+        {
+            return Register.Make(0, (ushort) SciEngine.Instance._video32.VMDPlayer.Close());
+        }
+
+        private static Register kPlayVMDPlayUntilEvent(EngineState s, int argc, StackPtr argv)
+        {
+            VMDPlayer.EventFlags flags = (VMDPlayer.EventFlags) argv[0].ToUInt16();
+            short lastFrameNo = (short) (argc > 1 ? argv[1].ToInt16() : -1);
+            short yieldInterval = (short) (argc > 2 ? argv[2].ToInt16() : -1);
+            return Register.Make(0,
+                (ushort) SciEngine.Instance._video32.VMDPlayer.KernelPlayUntilEvent(flags, lastFrameNo, yieldInterval));
+        }
+
+        private static Register kPlayVMDShowCursor(EngineState s, int argc, StackPtr argv)
+        {
+            SciEngine.Instance._video32.VMDPlayer.ShowCursor = argv[0].ToUInt16() != 0;
+            return s.r_acc;
+        }
+
+        private static Register kPlayVMDSetBlackoutArea(EngineState s, int argc, StackPtr argv)
+        {
+            short scriptWidth = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
+            short scriptHeight = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
+
+            Rect blackoutArea = new Rect();
+            blackoutArea.Left = Math.Max((short) 0, argv[0].ToInt16());
+            blackoutArea.Top = Math.Max((short) 0, argv[1].ToInt16());
+            blackoutArea.Right = Math.Min(scriptWidth, (short) (argv[2].ToInt16() + 1));
+            blackoutArea.Bottom = Math.Min(scriptHeight, (short) (argv[3].ToInt16() + 1));
+            SciEngine.Instance._video32.VMDPlayer.SetBlackoutArea(blackoutArea);
+            return s.r_acc;
+        }
+
+        private static Register kPlayVMDRestrictPalette(EngineState s, int argc, StackPtr argv)
+        {
+            SciEngine.Instance._video32.VMDPlayer.RestrictPalette((byte) argv[0].ToUInt16(), (byte) argv[1].ToUInt16());
+            return s.r_acc;
+        }
+
+        private static Register kRobot(EngineState s, int argc, StackPtr argv)
+        {
+            short subop = argv[0].ToInt16();
+
+            switch (subop)
+            {
+                case 0:
+                {
+                    // init
+                    int id = argv[1].ToUInt16();
+                    Register obj = argv[2];
+                    short flag = argv[3].ToInt16();
+                    short x = argv[4].ToInt16();
+                    short y = argv[5].ToInt16();
+                    Warning("kRobot(init), id {0}, obj {1}, flag {2}, x={3}, y={4}", id, obj, flag, x, y);
+                    SciEngine.Instance._robotDecoder.Load(id);
+                    SciEngine.Instance._robotDecoder.Start();
+                    SciEngine.Instance._robotDecoder.Pos = new Point(x, y);
+                }
+                    break;
+                case 1: // LSL6 hires (startup)
+                    // TODO
+                    return Register.NULL_REG; // an integer is expected
+                case 4:
+                {
+                    // start - we don't really have a use for this one
+                    //int id = argv[1].toUint16();
+                    //warning("kRobot(start), id %d", id);
+                }
+                    break;
+                case 7: // unknown, called e.g. by Phantasmagoria
+                    Warning("kRobot({0})", subop);
+                    break;
+                case 8: // sync
+                    //if (true) {	// debug: automatically skip all robot videos
+                    if (SciEngine.Instance._robotDecoder.EndOfVideo)
+                    {
+                        SciEngine.Instance._robotDecoder.Close();
+                        // Signal the engine scripts that the video is done
+                        SciEngine.WriteSelector(s._segMan, argv[1], o => o.signal, Register.SIGNAL_REG);
+                    }
+                    else
+                    {
+                        SciEngine.WriteSelector(s._segMan, argv[1], o => o.signal, Register.NULL_REG);
+                    }
+                    break;
+                default:
+                    Warning("kRobot({0})", subop);
+                    break;
+            }
+
+            return s.r_acc;
+        }
+
+        private static Register kPlayDuck(EngineState s, int argc, StackPtr argv)
+        {
+            throw new NotImplementedException("kPlayDuck");
+//            ushort operation = argv[0].ToUInt16();
+//            bool reshowCursor = SciEngine.Instance._gfxCursor.IsVisible;
+//
+//            switch (operation)
+//            {
+//                case 1: // Play
+//                    // 6 params
+//                    s._videoState.Reset();
+//                    s._videoState.fileName = $"{argv[1].ToUInt16()}.duk";
+//
+//                    var videoDecoder = new AVIDecoder();
+//
+//                    if (!videoDecoder.LoadFile(s._videoState.fileName))
+//                    {
+//                        Warning("Could not open Duck {0}", s._videoState.fileName);
+//                        break;
+//                    }
+//
+//                    if (reshowCursor)
+//                        SciEngine.Instance._gfxCursor.KernelHide();
+//
+//                {
+//                    // Duck videos are 16bpp, so we need to change the active pixel format
+//                    int oldWidth = SciEngine.Instance.Settings.Game.Width;
+//                    int oldHeight = SciEngine.Instance.Settings.Game.Height;
+//                    var formats = new List<PixelFormat> {videoDecoder.PixelFormat};
+//                    InitGraphics(640, 480, true, formats);
+//
+//                    if (SciEngine.Instance.System.GraphicsManager.PixelFormat.GetBytesPerPixel() !=
+//                        videoDecoder.PixelFormat.BytesPerPixel)
+//                        Error("Could not switch screen format for the duck video");
+//
+//                    PlayVideo(videoDecoder, s._videoState);
+//
+//                    // Switch back to 8bpp
+//                    InitGraphics(oldWidth, oldHeight, oldWidth > 320);
+//                }
+//
+//                    if (reshowCursor)
+//                        SciEngine.Instance._gfxCursor.KernelShow();
+//                    break;
+//                default:
+//                    kStub(s, argc, argv);
+//                    break;
+//            }
+//
+//            return s.r_acc;
+        }
+
+        private static Register kShowMovie32(EngineState s, int argc, StackPtr argv)
+        {
+            string fileName = s._segMan.GetString(argv[0]);
+            short numTicks = argv[1].ToInt16();
+            short x = (short) (argc > 3 ? argv[2].ToInt16() : 0);
+            short y = (short) (argc > 3 ? argv[3].ToInt16() : 0);
+
+            throw new NotImplementedException();
+            //TODO: vs
+            // SciEngine.Instance._video32.SEQPlayer.Play(fileName, numTicks, x, y);
+
+            return s.r_acc;
+        }
+
+        private static Register kShowMovieWin(EngineState s, int argc, StackPtr argv)
+        {
+            if (s == null)
+                return Register.Make(0, (ushort) ResourceManager.GetSciVersion());
+            Error("not supposed to call this");
+            return Register.NULL_REG;
+        }
+#endif
     }
 }
-

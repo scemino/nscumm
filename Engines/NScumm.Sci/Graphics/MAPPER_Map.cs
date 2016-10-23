@@ -39,7 +39,7 @@ namespace NScumm.Sci.Graphics
             }
             else if (SciEngine.Instance._gfxRemap32.RemapEnabled(pixel))
             {
-                target.Value = SciEngine.Instance._gfxRemap32.RemapColor(pixel, target);
+                target.Value = SciEngine.Instance._gfxRemap32.RemapColor(pixel, target[0]);
             }
         }
     }

@@ -88,11 +88,21 @@ namespace NScumm.Sci.Graphics
 
         public short KernelViewGetLoopCount(int viewId)
         {
+#if ENABLE_SCI32
+            if (ResourceManager.GetSciVersion() >= SciVersion.V2) {
+                return CelObjView.GetNumLoops(viewId);
+            }
+#endif
             return (short)GetView(viewId).LoopCount;
         }
 
         public short KernelViewGetCelCount(int viewId, short loopNo)
         {
+#if ENABLE_SCI32
+            if (ResourceManager.GetSciVersion() >= SciVersion.V2) {
+                return CelObjView.GetNumCels(viewId, loopNo);
+            }
+#endif
             return (short)GetView(viewId).GetCelCount(loopNo);
         }
 

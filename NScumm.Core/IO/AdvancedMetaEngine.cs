@@ -167,18 +167,18 @@ namespace NScumm.Core.IO
 
     public class ADGameDescription
     {
-        public string gameid;
-        public string extra;
-        public ADGameFileDescription[] filesDescriptions;
-        public Language language;
-        public Platform platform;
+        public readonly string gameid;
+        public readonly string extra;
+        public readonly ADGameFileDescription[] filesDescriptions;
+        public readonly Language language;
+        public readonly Platform platform;
 
-        /**
-         * A bitmask of extra flags. The top 16 bits are reserved for generic flags
-         * defined in the ADGameFlags. This leaves 16 bits to be used by client
-         * code.
-         */
-        public ADGameFlags flags;
+        /// <summary>
+        /// A bitmask of extra flags. The top 16 bits are reserved for generic flags
+        /// defined in the ADGameFlags. This leaves 16 bits to be used by client
+        /// code.
+        /// </summary>
+        public readonly ADGameFlags flags;
 
         public GuiOptions guioptions;
 
@@ -217,24 +217,24 @@ namespace NScumm.Core.IO
             var dir = ServiceLocator.FileStorage.GetDirectoryName(path);
             D.Debug(3, $"Starting detection in dir '{path}'");
 
-            var files = new Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase);
+            var files = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var allFiles = ServiceLocator.FileStorage.EnumerateFiles(dir, option: SearchOption.AllDirectories);
             foreach (var file in allFiles)
             {
                 files[ServiceLocator.FileStorage.GetFileName(file)] = file;
             }
 
-            int curFilesMatched = 0;
+            var curFilesMatched = 0;
 
-            List<IGameDescriptor> matched = new List<IGameDescriptor>();
-            int maxFilesMatched = 0;
-            bool gotAnyMatchesWithAllFiles = false;
+            var matched = new List<IGameDescriptor>();
+            var maxFilesMatched = 0;
+            var gotAnyMatchesWithAllFiles = false;
 
             // MD5 based matching
             foreach (var g in _gameDescriptors)
             {
-                bool fileMissing = false;
-                bool allFilesPresent = true;
+                var fileMissing = false;
+                var allFilesPresent = true;
 
                 foreach (var desc in g.filesDescriptions)
                 {
@@ -263,45 +263,45 @@ namespace NScumm.Core.IO
                         fileMissing = true;
                         break;
                     }
+                }
 
-                    // We found at least one entry with all required files present.
-                    // That means that we got new variant of the game.
-                    //
-                    // Without this check we would have erroneous checksum display
-                    // where only located files will be enlisted.
-                    //
-                    // Potentially this could rule out variants where some particular file
-                    // is really missing, but the developers should better know about such
-                    // cases.
-                    if (allFilesPresent)
-                        gotAnyMatchesWithAllFiles = true;
+                // We found at least one entry with all required files present.
+                // That means that we got new variant of the game.
+                //
+                // Without this check we would have erroneous checksum display
+                // where only located files will be enlisted.
+                //
+                // Potentially this could rule out variants where some particular file
+                // is really missing, but the developers should better know about such
+                // cases.
+                if (allFilesPresent)
+                    gotAnyMatchesWithAllFiles = true;
 
-                    if (!fileMissing)
+                if (!fileMissing)
+                {
+                    // TODO: D.Debug(2, "Found game: %s (%s %s/%s) (%d)", desc.gameid, desc.extra,
+                    //getPlatformDescription(g->platform), getLanguageDescription(g->language), i);
+
+                    if (curFilesMatched > maxFilesMatched)
                     {
-                        // TODO: D.Debug(2, "Found game: %s (%s %s/%s) (%d)", desc.gameid, desc.extra,
-                        //getPlatformDescription(g->platform), getLanguageDescription(g->language), i);
+                        D.Debug(2, " ... new best match, removing all previous candidates");
+                        maxFilesMatched = curFilesMatched;
 
-                        if (curFilesMatched > maxFilesMatched)
-                        {
-                            D.Debug(2, " ... new best match, removing all previous candidates");
-                            maxFilesMatched = curFilesMatched;
-
-                            matched.Clear(); // Remove any prior, lower ranked matches.
-                            matched.Add(CreateGameDescriptor(path, g));
-                        }
-                        else if (curFilesMatched == maxFilesMatched)
-                        {
-                            matched.Add(CreateGameDescriptor(path, g));
-                        }
-                        else
-                        {
-                            D.Debug(2, " ... skipped");
-                        }
+                        matched.Clear(); // Remove any prior, lower ranked matches.
+                        matched.Add(CreateGameDescriptor(path, g));
+                    }
+                    else if (curFilesMatched == maxFilesMatched)
+                    {
+                        matched.Add(CreateGameDescriptor(path, g));
                     }
                     else
                     {
-                        D.Debug(5, $"Skipping game: {g.gameid} ({g.extra} {g.platform}/{g.language})");
+                        D.Debug(2, " ... skipped");
                     }
+                }
+                else
+                {
+                    D.Debug(5, $"Skipping game: {g.gameid} ({g.extra} {g.platform}/{g.language})");
                 }
             }
 
@@ -314,10 +314,22 @@ namespace NScumm.Core.IO
                 }
 
                 // TODO:Filename based fallback
-                return null;
+                var desc = FallbackDetect(dir, files);
+                if (desc == null) return null;
+                var gd = CreateGameDescriptor(path, desc);
+                return new GameDetected(gd, this);
             }
 
             return new GameDetected(matched.First(), this);
+        }
+
+        /**
+         * An (optional) generic fallback detect function which is invoked
+         * if the regular MD5 based detection failed to detect anything.
+         */
+        protected virtual ADGameDescription FallbackDetect(string directory, Dictionary<string, string> allFiles)
+        {
+            throw new NotImplementedException();
         }
 
         public override List<ExtraGuiOption> GetExtraGuiOptions(string target)

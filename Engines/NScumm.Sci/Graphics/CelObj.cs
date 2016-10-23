@@ -21,7 +21,6 @@
 using System;
 using NScumm.Core;
 using NScumm.Core.Graphics;
-using NScumm.Sci.Engine;
 using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Graphics
@@ -84,110 +83,22 @@ namespace NScumm.Sci.Graphics
     }
 
     /// <summary>
-    /// A CelInfo32 object describes the basic properties of a
-    /// cel object.
-    /// </summary>
-    internal class CelInfo32
-    {
-        /// <summary>
-        /// The type of the cel object.
-        /// </summary>
-        public CelType type;
-
-        /// <summary>
-        /// For cel objects that draw from resources, the ID of
-        /// the resource to load.
-        /// </summary>
-        public int resourceId;
-
-        /// <summary>
-        /// For CelObjView, the loop number to draw from the
-        /// view resource.
-        /// </summary>
-        public short loopNo;
-
-        /// <summary>
-        /// For CelObjView and CelObjPic, the cel number to draw
-        /// from the view or pic resource.
-        /// </summary>
-        public short celNo;
-
-        /// <summary>
-        /// For CelObjMem, a segment register pointing to a heap
-        /// resource containing headered bitmap data.
-        /// </summary>
-        public Register bitmap;
-
-        /// <summary>
-        /// For CelObjColor, the fill color.
-        /// </summary>
-        public byte color;
-
-        // NOTE: In at least SCI2.1/SQ6, color is left
-        // uninitialised.
-        public CelInfo32()
-        {
-            type = CelType.Mem;
-        }
-
-        // NOTE: This is the equivalence criteria used by
-        // CelObj::searchCache in at least SCI2.1/SQ6. Notably,
-        // it does not check the color field.
-        public static bool operator ==(CelInfo32 info1, CelInfo32 info2)
-        {
-            return info1.type == info2.type &&
-                   info1.resourceId == info2.resourceId &&
-                   info1.loopNo == info2.loopNo &&
-                   info1.celNo == info2.celNo &&
-                   info1.bitmap == info2.bitmap;
-        }
-
-        public static bool operator !=(CelInfo32 info1, CelInfo32 info2)
-        {
-            return !(info1 == info2);
-        }
-
-        public override int GetHashCode()
-        {
-            return type.GetHashCode() ^
-                   resourceId.GetHashCode() ^
-                   loopNo.GetHashCode() ^
-                   celNo.GetHashCode() ^
-                   bitmap.GetHashCode();
-        }
-
-        public CelInfo32 Clone()
-        {
-            var info = new CelInfo32
-            {
-                type = type,
-                resourceId = resourceId,
-                loopNo = loopNo,
-                celNo = celNo,
-                bitmap = bitmap,
-                color = color
-            };
-            return info;
-        }
-    }
-
-    /// <summary>
     /// A cel object is the lowest-level rendering primitive in
     /// the SCI engine and draws itself directly to a target
     /// pixel buffer.
     /// </summary>
     internal abstract class CelObj
     {
-/**
-                                                 * When true, every second line of the cel will be
-                                                 * rendered as a black line.
-                                                 *
-                                                 * @see ScreenItem::_drawBlackLines
-                                                 * @note Using a static member because otherwise this
-                                                 * would otherwise need to be copied down through
-                                                 * several calls. (SSCI did similar, using a global
-                                                 * variable.)
-                                                 */
+        /**
+         * When true, every second line of the cel will be
+         * rendered as a black line.
+         *
+         * @see ScreenItem::_drawBlackLines
+         * @note Using a static member because otherwise this
+         * would otherwise need to be copied down through
+         * several calls. (SSCI did similar, using a global
+         * variable.)
+         */
         protected static bool _drawBlackLines;
 
         /**
@@ -213,13 +124,13 @@ namespace NScumm.Sci.Graphics
          * The offset to the cel header for this cel within the
          * raw resource data.
          */
-        public uint _celHeaderOffset;
+        public int _celHeaderOffset;
 
         /**
          * The offset to the embedded palette for this cel
          * within the raw resource data.
          */
-        public uint _hunkPaletteOffset;
+        public int _hunkPaletteOffset;
 
         /**
          * The natural dimensions of the cel.
@@ -229,7 +140,7 @@ namespace NScumm.Sci.Graphics
         /**
          * TODO: Documentation
          */
-        public Point _displace;
+        public Point _origin;
 
         /**
          * The dimensions of the original coordinate system for
@@ -244,7 +155,9 @@ namespace NScumm.Sci.Graphics
          * scriptWidth/Height but seems to typically be changed
          * to more closely match the native screen resolution.
          */
-        public ushort _scaledWidth, _scaledHeight;
+        public ushort _xResolution, _yResolution;
+
+        public Point _displace;
 
         /**
          * The skip (transparent) color for the cel. When
@@ -292,8 +205,8 @@ namespace NScumm.Sci.Graphics
             _info = src._info.Clone();
             _mirrorX = src._mirrorX;
             _remap = src._remap;
-            _scaledHeight = src._scaledHeight;
-            _scaledWidth = src._scaledWidth;
+            _yResolution = src._yResolution;
+            _xResolution = src._xResolution;
             _transparent = src._transparent;
             _transparentColor = src._transparentColor;
             _width = src._width;
@@ -839,7 +752,7 @@ namespace NScumm.Sci.Graphics
          * palette.
          */
 
-        private void SubmitPalette()
+        public void SubmitPalette()
         {
             if (_hunkPaletteOffset != 0)
             {

@@ -30,7 +30,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>..\..\NScumm.MonoGame\Platforms\WindowsGL\bin\Release\plugins\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;ENABLE_SCI32</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -49,16 +49,27 @@
     <Compile Include="DecompressorHuffman.cs" />
     <Compile Include="DecompressorLzs.cs" />
     <Compile Include="DecompressorLzw.cs" />
+    <Compile Include="Engine\ClassReference.cs" />
+    <Compile Include="Engine\KernelFunction.cs" />
     <Compile Include="Engine\KPathing.cs" />
     <Compile Include="Engine\KVideo.cs" />
     <Compile Include="Engine\Savegame.cs" />
     <Compile Include="Engine\SciArray.cs" />
+    <Compile Include="Engine\SciKernelMapEntry.cs" />
+    <Compile Include="Engine\SciKernelMapSubEntry.cs" />
+    <Compile Include="Engine\SciVersionRange.cs" />
     <Compile Include="Event.cs" />
     <Compile Include="ExtAudioMapResourceSource.cs" />
+    <Compile Include="FanMadePatchInfo.cs" />
     <Compile Include="Graphics\Buffer.cs" />
+    <Compile Include="Graphics\CelInfo32.cs" />
     <Compile Include="Graphics\CelObj.cs" />
+    <Compile Include="Graphics\CelObjColor.cs" />
+    <Compile Include="Graphics\CelObjMem.cs" />
     <Compile Include="Graphics\CelObjPic.cs" />
+    <Compile Include="Graphics\CelObjView.cs" />
     <Compile Include="Graphics\CelScaler.cs" />
+    <Compile Include="Graphics\GfxCursor32.cs" />
     <Compile Include="Graphics\GfxFrameout.cs" />
     <Compile Include="Graphics\GfxPalette32.cs" />
     <Compile Include="Graphics\GfxRemap.cs" />
@@ -74,7 +85,13 @@
     <Compile Include="Graphics\Renderer.cs" />
     <Compile Include="Graphics\SCALER_NoScale.cs" />
     <Compile Include="Graphics\SCALER_Scale.cs" />
+    <Compile Include="Graphics\SciBitmap.cs" />
     <Compile Include="Graphics\ScreenItem.cs" />
+    <Compile Include="Graphics\ScrollWindow.cs" />
+    <Compile Include="Graphics\ScrollWindowEntry.cs" />
+    <Compile Include="Graphics\SingleRemap.cs" />
+    <Compile Include="Graphics\StablePointerArray.cs" />
+    <Compile Include="Graphics\TextEditor.cs" />
     <Compile Include="Graphics\Video32.cs" />
     <Compile Include="Graphics\VMDPlayer.cs" />
     <Compile Include="ResourceId.cs" />
@@ -92,6 +109,7 @@
     <Compile Include="Sound\Drivers\MidiPlayer_Fb01.cs" />
     <Compile Include="Sound\Drivers\MidiPlayer_FMTowns.cs" />
     <Compile Include="Sound\Drivers\MidiPlayer_Midi.cs" />
+    <Compile Include="Sound\Sync.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="Sound\MidiParserSci.cs" />
     <Compile Include="Sound\Audio.cs" />
@@ -155,7 +173,11 @@
     <Compile Include="Video\RobotDecoder.cs" />
     <Compile Include="WaveResourceSource.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Reference Include="System.Runtime.InteropServices, Version=4.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>..\..\..\..\..\..\..\Library\Frameworks\Mono.framework\External\xbuild-frameworks\MonoAndroid\v1.0\Facades\System.Runtime.InteropServices.dll</HintPath>
+    </Reference>
+  </ItemGroup>
   <ItemGroup>
     <Folder Include="Sound\" />
     <Folder Include="Sound\Decoders" />

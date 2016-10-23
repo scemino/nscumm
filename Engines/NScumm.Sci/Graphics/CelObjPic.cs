@@ -27,24 +27,25 @@ namespace NScumm.Sci.Graphics
 {
     internal class CelObjPic : CelObj
     {
-        /**
-	 * The number of cels in the original picture resource.
-	 */
+        /// <summary>
+        /// The number of cels in the original picture resource.
+        /// </summary>
         public readonly byte _celCount;
 
-        /**
-         * The position of this cel relative to the top-left
-         * corner of the picture.
-         */
+        /// <summary>
+        /// The position of this cel relative to the top-left
+        /// corner of the picture.
+        /// </summary>
         public Point _relativePosition;
 
-        /**
-         * The z-buffer priority for this cel. Higher prorities
-         * are drawn on top of lower priorities.
-         */
+        /// <summary>
+        /// The z-buffer priority for this cel. Higher prorities
+        /// are drawn on top of lower priorities.
+        /// </summary>
         public readonly short _priority;
 
         private CelObjPic(CelObjPic src)
+            : base(src)
         {
             _celCount = src._celCount;
             _priority = src._priority;
@@ -71,7 +72,7 @@ namespace NScumm.Sci.Graphics
             {
                 Error("Expected a CelObjPic in cache slot {0}", cacheIndex);
             }
-            var celObjCopy=new CelObjPic(cachedCelObj);
+            var celObjCopy = new CelObjPic(cachedCelObj);
             entry.id = ++_nextCacheId;
             return celObjCopy;
         }
@@ -110,10 +111,10 @@ namespace NScumm.Sci.Graphics
                 Error("Cel number {0} greater than cel count {1}", _info.celNo, _celCount);
             }
 
-            _celHeaderOffset = (uint) (data.ReadSci11EndianUInt16() + (data.ReadSci11EndianUInt16(4) * _info.celNo));
-            _hunkPaletteOffset = data.ReadSci11EndianUInt32(6);
+            _celHeaderOffset = data.ReadSci11EndianUInt16() + (data.ReadSci11EndianUInt16(4) * _info.celNo);
+            _hunkPaletteOffset = (int) data.ReadSci11EndianUInt32(6);
 
-            var celHeader = new BytePtr(data, (int) _celHeaderOffset);
+            var celHeader = new BytePtr(data, _celHeaderOffset);
 
             _width = celHeader.Data.ReadSci11EndianUInt16(celHeader.Offset);
             _height = celHeader.Data.ReadSci11EndianUInt16(celHeader.Offset + 2);
@@ -130,23 +131,23 @@ namespace NScumm.Sci.Graphics
 
             if (sizeFlag2 != 0)
             {
-                _scaledWidth = sizeFlag1;
-                _scaledHeight = sizeFlag2;
+                _xResolution = sizeFlag1;
+                _yResolution = sizeFlag2;
             }
             else if (sizeFlag1 == 0)
             {
-                _scaledWidth = LowRes.X;
-                _scaledHeight = LowRes.Y;
+                _xResolution = LowRes.X;
+                _yResolution = LowRes.Y;
             }
             else if (sizeFlag1 == 1)
             {
-                _scaledWidth = 640;
-                _scaledHeight = 480;
+                _xResolution = 640;
+                _yResolution = 480;
             }
             else if (sizeFlag1 == 2)
             {
-                _scaledWidth = 640;
-                _scaledHeight = 400;
+                _xResolution = 640;
+                _yResolution = 400;
             }
 
             if ((celHeader[10] & 128) != 0)

@@ -50,6 +50,10 @@ namespace NScumm.Sci.Engine
         SELECTOR_modNum,
         SELECTOR_cycler,
         SELECTOR_setLoop
+#if ENABLE_SCI32
+        ,
+        SELECTOR_newWith
+#endif
     }
 
     internal enum SciWorkaroundType
@@ -79,7 +83,7 @@ namespace NScumm.Sci.Engine
     ///
     /// Arrays of SciWorkaroundEntry instances are terminated by
     /// a fake entry in which "objectName" is null.
-    // </summary>
+    /// </summary>
     internal class SciWorkaroundEntry
     {
         public SciGameId gameId;
@@ -136,16 +140,6 @@ namespace NScumm.Sci.Engine
         }
 
         public const ushort PATCH_CODE_UINT16 = SIG_CODE_UINT16;
-
-        public static ushort PATCH_UINT16_1(int value)
-        {
-            return (ushort)(SIG_CODE_UINT16 | (value & 0xFF));
-        }
-
-        public static ushort PATCH_UINT16_2(int value)
-        {
-            return ((ushort)(value >> 8));
-        }
 
         public const int PATCH_CODE_BYTE = SIG_CODE_BYTE;
 
@@ -206,7 +200,6 @@ namespace NScumm.Sci.Engine
             if (workaroundList != null)
             {
                 // Search if there is a workaround for this one
-                SciWorkaroundEntry workaround;
                 short inheritanceLevel = 0;
                 string searchObjectName = SciEngine.Instance.GetSciLanguageString(curObjectName, Language.English);
                 Register searchObject = lastCall.sendp;
@@ -217,7 +210,7 @@ namespace NScumm.Sci.Engine
 
                 do
                 {
-                    workaround = workaroundList[i++];
+                    var workaround = workaroundList[i++];
                     while (workaround.methodName != null)
                     {
                         bool objectNameMatches = (workaround.objectName == null) ||
@@ -412,6 +405,16 @@ namespace NScumm.Sci.Engine
         //    };
         //    return noneFound;
         //}
+
+        //    gameID,           room,script,lvl,          object-name, method-name, local-call-signature, index,                workaround
+        public static readonly SciWorkaroundEntry[] kArraySetElements_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.PHANTASMAGORIA, roomNr = 902, scriptNr = 64918,
+                inheritanceLevel = 0, objectName = "Str", methodName = "callKernel", index = 0,
+                newValue = new SciWorkaroundSolution{ type = SciWorkaroundType.FAKE, value = 0 }
+            }, // tries to set an element of a string array to the ego object when starting a new game and selecting a chapter above 1
+        };
+
 
         //    gameID,           room,script,lvl,          object-name, method-name,    call,index,             workaround
         public static readonly SciWorkaroundEntry[] ArithmeticWorkarounds = {
@@ -745,6 +748,7 @@ namespace NScumm.Sci.Engine
             new SciWorkaroundEntry { gameId = SciGameId.PQ2,     roomNr = -1, scriptNr = 255, inheritanceLevel = 0, objectName =     "DIcon", methodName = "setSize",  index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // when showing picture within windows, called with 2nd/3rd parameters as objects
             new SciWorkaroundEntry { gameId = SciGameId.SQ1,     roomNr =  1, scriptNr = 255, inheritanceLevel = 0, objectName =     "DIcon", methodName = "setSize",  index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // DEMO: Called with 2nd/3rd parameters as objects when clicking on the menu - bug #5012
             new SciWorkaroundEntry { gameId = SciGameId.FANMADE, roomNr = -1, scriptNr = 979, inheritanceLevel = 0, objectName =     "DIcon", methodName = "setSize",  index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // In The Gem Scenario and perhaps other fanmade games, this is called with 2nd/3rd parameters as objects - bug #5144
+            new SciWorkaroundEntry { gameId = SciGameId.LSL6HIRES, roomNr = -1, scriptNr = 94, inheritanceLevel =0, objectName = "ll6ControlPanel", methodName ="init", index =0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // when opening the "controls" panel from the main menu, the third argument is missing
         };
 
         public static readonly SciWorkaroundEntry[] kCelHigh_workarounds =
@@ -978,6 +982,11 @@ namespace NScumm.Sci.Engine
             new SciWorkaroundEntry { gameId = SciGameId.SQ6,        roomNr =    -1, scriptNr =64964, inheritanceLevel =  0,   objectName =           "DPath", methodName = "init",                            index =      1, newValue = { type = SciWorkaroundType.FAKE,value =    0 } }, // during the game
             new SciWorkaroundEntry { gameId = SciGameId.TORIN,      roomNr =    -1, scriptNr =64017, inheritanceLevel =  0,    objectName =         "oFlags", methodName = "clear",                           index =      0, newValue = { type = SciWorkaroundType.FAKE,value =    0 } }, // entering Torin's home in the French version
             new SciWorkaroundEntry { gameId = SciGameId.TORIN,     roomNr =  10000, scriptNr =64029, inheritanceLevel =  0,   objectName =          "oMessager", methodName = "nextMsg",                      index =      3, newValue = { type = SciWorkaroundType.FAKE,value =    0 } }, // start of chapter one
+        };
+
+        public static readonly SciWorkaroundEntry[] kScrollWindowAdd_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.PHANTASMAGORIA, roomNr = 45, scriptNr =  64907, inheritanceLevel = 0, objectName = "ScrollableWindow", methodName = "addString", index =   0, newValue = { type = SciWorkaroundType.STILLCALL, value = 0 } }, // ScrollWindow interface passes the last two parameters twice
         };
     }
 }

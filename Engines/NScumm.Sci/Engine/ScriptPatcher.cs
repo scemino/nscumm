@@ -88,6 +88,9 @@ namespace NScumm.Sci.Engine
             "modNum",       // King's Quest 6 CD / Laura Bow 2 CD for audio+text support
             "cycler",       // Space Quest 4 / system selector
             "setLoop",      // Laura Bow 1 Colonel's Bequest
+#if ENABLE_SCI32
+            "newWith",      // SCI2 array script
+#endif
             null
         };
 
@@ -2466,14 +2469,42 @@ namespace NScumm.Sci.Engine
             Workarounds.PATCH_END
         };
 
-        //          script, description,                                      signature                         patch
         private static readonly SciScriptPatcherEntry[] mothergoose256Signatures = {
             new SciScriptPatcherEntry(  true,     0, "replay save issue",                           1, mothergoose256SignatureReplay,    mothergoose256PatchReplay ),
             new SciScriptPatcherEntry(  true,     0, "save limit dialog (SCI1.1)",                  1, mothergoose256SignatureSaveLimit, mothergoose256PatchSaveLimit ),
             new SciScriptPatcherEntry(  true,   994, "save limit dialog (SCI1)",                    1, mothergoose256SignatureSaveLimit, mothergoose256PatchSaveLimit ),
         };
 
-        // ===========================================================================
+#if ENABLE_SCI32
+
+        // Phantasmagoria & SQ6 try to initialize the first entry of an int16 array
+        // using an empty string, which is not valid (it should be a number)
+        private static readonly ushort[] sci21IntArraySignature = {
+            0x38, Workarounds.SIG_SELECTOR16(ScriptPatcherSelectors.SELECTOR_newWith), // pushi newWith
+            0x7a,                          // push2
+            0x39, 0x04,                    // pushi $4
+            0x72, Workarounds.SIG_ADDTOOFFSET(+2),     // lofsa string ""
+            Workarounds.SIG_MAGICDWORD,
+            0x36,                          // push
+            0x51, 0x0b,                    // class IntArray
+            0x4a, 0x8,                     // send $8
+            Workarounds.SIG_END
+        };
+
+        private static readonly ushort[] sci21IntArrayPatch = {
+            Workarounds.PATCH_ADDTOOFFSET(+6),      // push $b9; push2; pushi $4
+            0x76,                       // push0
+            0x34, Workarounds.PATCH_UINT16_1(0x0001), Workarounds.PATCH_UINT16_2(0x0001), // ldi 0001 (waste bytes)
+            Workarounds.PATCH_END
+        };
+
+    private static readonly SciScriptPatcherEntry[] phantasmagoriaSignatures = {
+            new SciScriptPatcherEntry(true,901,"invalid array construction",1,sci21IntArraySignature,sci21IntArrayPatch)
+        };
+
+#endif
+
+    // ===========================================================================
         // Police Quest 1 VGA
 
         // When briefing is about to start in room 15, other officers will get into the room too.
@@ -4167,6 +4198,11 @@ namespace NScumm.Sci.Engine
                 case SciGameId.MOTHERGOOSE256:
                     signatureTable = mothergoose256Signatures;
                     break;
+#if ENABLE_SCI32
+                case SciGameId.PHANTASMAGORIA:
+                    signatureTable = phantasmagoriaSignatures;
+                    break;
+#endif
                 case SciGameId.PQ1:
                     signatureTable = pq1vgaSignatures;
                     break;

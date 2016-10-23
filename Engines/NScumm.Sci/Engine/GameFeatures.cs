@@ -722,7 +722,7 @@ namespace NScumm.Sci.Engine
                         _sci21KernelType = SciVersion.V2;
                         return true;
                     }
-                    else if (kFuncNum == 0x75)
+                    if (kFuncNum == 0x75)
                     {
                         _sci21KernelType = SciVersion.V2_1_EARLY;
                         return true;

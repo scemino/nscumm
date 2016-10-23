@@ -27,6 +27,19 @@ namespace NScumm.Sci.Engine
     internal class SciObject
     {
         public const int InfoFlagClone = 0x0001;
+#if ENABLE_SCI32
+        /**
+         * When set, indicates to game scripts that a screen
+         * item can be updated.
+         */
+        public const int InfoFlagViewVisible = 0x0008; // TODO: "dirty" ?
+
+        /**
+         * When set, the object has an associated screen item in
+         * the rendering tree.
+         */
+        public const int InfoFlagViewInserted = 0x0010;
+#endif
         public const int InfoFlagClass = 0x8000;
 
         public const int OffsetLocalVariables = -6;
@@ -47,12 +60,15 @@ namespace NScumm.Sci.Engine
         /// Object offset within its script; for clones, this is their base
         /// </summary>
         private Register _pos;
+
         private Register[] _variables;
         private ushort _offset;
+
         /// <summary>
         /// Register pointing to superclass for SCI3
         /// </summary>
         private Register _superClassPosSci3;
+
         /// <summary>
         /// Register containing species "selector" for SCI3
         /// </summary>
@@ -62,23 +78,29 @@ namespace NScumm.Sci.Engine
         /// Register containing info "selector" for SCI3
         /// </summary>
         private StackPtr _infoSelectorSci3 = new StackPtr(new Register[1], 0);
+
         /// <summary>
         /// base + object offset within base
         /// </summary>
         private ByteAccess _baseObj;
+
         /// <summary>
         /// Pointer to the varselector area for this object
         /// </summary>
         private UShortAccess _baseVars;
+
         private ushort _methodCount;
+
         /// <summary>
         /// Pointer to the method selector area for this object
         /// </summary>
         private List<ushort> _baseMethod;
+
         /// <summary>
         /// This is used to enable relocation of property valuesa in SCI3.
         /// </summary>
         private uint[] _propertyOffsetsSci3;
+
         private int _flags;
         private bool[] _mustSetViewVisible;
 
@@ -96,7 +118,7 @@ namespace NScumm.Sci.Engine
             {
                 if (ResourceManager.GetSciVersion() <= SciVersion.V3)
                     _variables[_offset] = value;
-                else    // SCI3
+                else // SCI3
                     _speciesSelectorSci3 = value;
             }
         }
@@ -113,7 +135,7 @@ namespace NScumm.Sci.Engine
             {
                 if (ResourceManager.GetSciVersion() <= SciVersion.V3)
                     _variables[_offset + 1] = value;
-                else    // SCI3
+                else // SCI3
                     _superClassPosSci3 = value;
             }
         }
@@ -130,8 +152,8 @@ namespace NScumm.Sci.Engine
             {
                 if (ResourceManager.GetSciVersion() < SciVersion.V3)
                     _variables[4] = value;
-                else    // SCI3
-                        // This should never occur, this is called from a SCI1.1 - SCI2.1 only function
+                else // SCI3
+                    // This should never occur, this is called from a SCI1.1 - SCI2.1 only function
                     Error("setClassScriptSelector called for SCI3");
             }
         }
@@ -160,14 +182,14 @@ namespace NScumm.Sci.Engine
             get
             {
                 if (ResourceManager.GetSciVersion() <= SciVersion.V3)
-                    return new StackPtr(_variables,_offset + 2);
+                    return new StackPtr(_variables, _offset + 2);
                 return _infoSelectorSci3;
             }
             set
             {
                 if (ResourceManager.GetSciVersion() <= SciVersion.V3)
                     _variables[_offset + 2] = value[0];
-                else    // SCI3
+                else // SCI3
                     _infoSelectorSci3 = value;
             }
         }
@@ -177,8 +199,10 @@ namespace NScumm.Sci.Engine
             get
             {
                 if (ResourceManager.GetSciVersion() <= SciVersion.V3)
-                    return _offset + 3 < (ushort)_variables.Length ? new StackPtr(_variables,_offset + 3) : StackPtr.Null;
-                return _variables.Length != 0 ? new StackPtr(_variables,0) : StackPtr.Null;
+                    return _offset + 3 < (ushort) _variables.Length
+                        ? new StackPtr(_variables, _offset + 3)
+                        : StackPtr.Null;
+                return _variables.Length != 0 ? new StackPtr(_variables, 0) : StackPtr.Null;
             }
         }
 
@@ -193,7 +217,7 @@ namespace NScumm.Sci.Engine
 
         public SciObject()
         {
-            _offset = ResourceManager.GetSciVersion() < SciVersion.V1_1 ? (ushort)0 : (ushort)5;
+            _offset = ResourceManager.GetSciVersion() < SciVersion.V1_1 ? (ushort) 0 : (ushort) 5;
             _baseMethod = new List<ushort>();
         }
 
@@ -223,7 +247,10 @@ namespace NScumm.Sci.Engine
             _flags |= OBJECT_FLAG_FREED;
         }
 
-        public Register GetVariable(int var) { return _variables[var]; }
+        public Register GetVariable(int var)
+        {
+            return _variables[var];
+        }
 
         public StackPtr GetVariableRef(int var)
         {
@@ -243,7 +270,9 @@ namespace NScumm.Sci.Engine
             if (ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
             {
                 var obj = GetClass(segMan);
-                varnum = ResourceManager.GetSciVersion() <= SciVersion.V1_LATE ? VarCount : obj.GetVariable(1).ToUInt16();
+                varnum = ResourceManager.GetSciVersion() <= SciVersion.V1_LATE
+                    ? VarCount
+                    : obj.GetVariable(1).ToUInt16();
                 buf = obj._baseVars.ToByteAccess();
             }
             else if (ResourceManager.GetSciVersion() == SciVersion.V3)
@@ -261,7 +290,7 @@ namespace NScumm.Sci.Engine
 
         public void Init(byte[] buf, Register obj_pos, bool initVariables)
         {
-            ByteAccess data = new ByteAccess(buf, (int)obj_pos.Offset);
+            ByteAccess data = new ByteAccess(buf, (int) obj_pos.Offset);
             _baseObj = data;
             _pos = obj_pos;
 
@@ -272,10 +301,12 @@ namespace NScumm.Sci.Engine
                 _methodCount = data.ToUInt16(data.ToUInt16(OffsetFunctionArea) - 2);
                 for (int i = 0; i < _methodCount * 2 + 2; ++i)
                 {
-                    _baseMethod.Add(data.Data.ReadSci11EndianUInt16(data.Offset + data.ToUInt16(OffsetFunctionArea) + i * 2));
+                    _baseMethod.Add(
+                        data.Data.ReadSci11EndianUInt16(data.Offset + data.ToUInt16(OffsetFunctionArea) + i * 2));
                 }
             }
-            else if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
+            else if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 &&
+                     ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
             {
                 Array.Resize(ref _variables, data.Data.ReadSci11EndianUInt16(data.Offset + 2));
                 _baseVars = new UShortAccess(buf, data.Data.ReadSci11EndianUInt16(data.Offset + 4));
@@ -350,7 +381,7 @@ namespace NScumm.Sci.Engine
                 if (groupLocation != 0)
                 {
                     // This object actually has selectors belonging to this group
-                    int typeMask = (int)seeker.Data.ReadSci11EndianUInt32(seeker.Offset);
+                    int typeMask = (int) seeker.Data.ReadSci11EndianUInt32(seeker.Offset);
 
                     _mustSetViewVisible[groupNr] = (typeMask & 1) != 0;
 
@@ -358,17 +389,19 @@ namespace NScumm.Sci.Engine
                     {
                         int value = seeker.Data.ReadSci11EndianUInt16(seeker.Offset + bit * 2);
                         if ((typeMask & (1 << bit)) != 0)
-                        { // Property
+                        {
+                            // Property
                             ++properties;
                         }
                         else if (value != 0xffff)
-                        { // Method
+                        {
+                            // Method
                             ++methods;
                         }
-                        else {
+                        else
+                        {
                             // Undefined selector
                         }
-
                     }
                 }
                 else
@@ -392,14 +425,15 @@ namespace NScumm.Sci.Engine
                 if (groupLocation != 0)
                 {
                     // This object actually has selectors belonging to this group
-                    int typeMask = (int)seeker.Data.ReadSci11EndianUInt32(seeker.Offset);
+                    int typeMask = (int) seeker.Data.ReadSci11EndianUInt32(seeker.Offset);
                     int groupBaseId = groupNr * 32;
 
                     for (int bit = 2; bit < 32; ++bit)
                     {
                         int value = seeker.Data.ReadSci11EndianUInt16(seeker.Offset + bit * 2);
                         if ((typeMask & (1 << bit)) != 0)
-                        { // Property
+                        {
+                            // Property
 
                             // FIXME: We really shouldn't be doing endianness
                             // conversion here; instead, propertyIds should be converted
@@ -407,23 +441,25 @@ namespace NScumm.Sci.Engine
                             // This interim solution fixes playing SCI3 PC games
                             // on Big Endian platforms
 
-                            propertyIds.WriteSci11EndianUInt16(propertyCounter * sizeof(ushort), (ushort)(groupBaseId + bit));
-                            _variables[propertyCounter] = Register.Make(0, (ushort)value);
-                            uint propertyOffset = ((uint)(seeker.Offset + bit * 2));
+                            propertyIds.WriteSci11EndianUInt16(propertyCounter * sizeof(ushort),
+                                (ushort) (groupBaseId + bit));
+                            _variables[propertyCounter] = Register.Make(0, (ushort) value);
+                            uint propertyOffset = ((uint) (seeker.Offset + bit * 2));
                             propertyOffsets[propertyCounter] = propertyOffset;
                             ++propertyCounter;
                         }
                         else if (value != 0xffff)
-                        { // Method
-                            _baseMethod.Add((ushort)(groupBaseId + bit));
-                            _baseMethod.Add((ushort)(value + buf.ReadSci11EndianUInt32()));
+                        {
+                            // Method
+                            _baseMethod.Add((ushort) (groupBaseId + bit));
+                            _baseMethod.Add((ushort) (value + buf.ReadSci11EndianUInt32()));
                             //                  methodOffsets[methodCounter] = (seeker + bit * 2) - buf;
                             ++methodCounter;
                         }
-                        else {
+                        else
+                        {
                             // Undefined selector
                         }
-
                     }
                 }
             }
@@ -432,18 +468,17 @@ namespace NScumm.Sci.Engine
             _superClassPosSci3 = Register.Make(0, _baseObj.Data.ReadSci11EndianUInt16(_baseObj.Offset + 8));
 
             _baseVars = new UShortAccess(propertyIds);
-            _methodCount = (ushort)methods;
+            _methodCount = (ushort) methods;
             _propertyOffsetsSci3 = propertyOffsets;
             //_methodOffsetsSci3 = methodOffsets;
-
         }
 
         public void InitSpecies(SegManager segMan, Register addr)
         {
-            ushort speciesOffset = (ushort)SpeciesSelector.Offset;
+            ushort speciesOffset = (ushort) SpeciesSelector.Offset;
 
-            if (speciesOffset == 0xffff)        // -1
-                SpeciesSelector = Register.NULL_REG;   // no species
+            if (speciesOffset == 0xffff) // -1
+                SpeciesSelector = Register.NULL_REG; // no species
             else
                 SpeciesSelector = segMan.GetClassAddress(speciesOffset, ScriptLoadType.LOCK, addr.Segment);
         }
@@ -492,12 +527,12 @@ namespace NScumm.Sci.Engine
                     }
 
                     DebugC(DebugLevels.VM, "Object {0} (name {1}, script {2}) "
-                           +"varnum doesn't match baseObj's: obj {3}, base {4}",
-                            _pos, name, objScript,
-                            originalVarCount, baseObj.VarCount);
+                                           + "varnum doesn't match baseObj's: obj {3}, base {4}",
+                        _pos, name, objScript,
+                        originalVarCount, baseObj.VarCount);
 
 #if None
-			// We enumerate the methods selectors which could be hidden here
+// We enumerate the methods selectors which could be hidden here
 			if (getSciVersion() <= SCI_VERSION_2_1) {
 				const SegmentRef objRef = segMan.dereference(baseObj._pos);
 				uint segBound = objRef.maxSize/2 - baseObj.getVarCount();
@@ -533,22 +568,23 @@ namespace NScumm.Sci.Engine
 
         private void InitSuperClass(SegManager segMan, Register addr)
         {
-            ushort superClassOffset = (ushort)SuperClassSelector.Offset;
+            ushort superClassOffset = (ushort) SuperClassSelector.Offset;
 
-            if (superClassOffset == 0xffff)         // -1
-                SuperClassSelector = Register.NULL_REG;    // no superclass
+            if (superClassOffset == 0xffff) // -1
+                SuperClassSelector = Register.NULL_REG; // no superclass
             else
                 SuperClassSelector = segMan.GetClassAddress(superClassOffset, ScriptLoadType.LOCK, addr.Segment);
         }
 
         public bool RelocateSci0Sci21(ushort segment, int location, int scriptSize)
         {
-            return RelocateBlock(_variables, (int)Pos.Offset, segment, location, scriptSize);
+            return RelocateBlock(_variables, (int) Pos.Offset, segment, location, scriptSize);
         }
 
         // This helper function is used by Script::relocateLocal and Object::relocate
         // Duplicate in segment.cpp and script.cpp
-        private static bool RelocateBlock(Register[] block, int block_location, ushort segment, int location, int scriptSize)
+        private static bool RelocateBlock(Register[] block, int block_location, ushort segment, int location,
+            int scriptSize)
         {
             int rel = location - block_location;
 
@@ -562,11 +598,13 @@ namespace NScumm.Sci.Engine
 
             if ((rel & 1) != 0)
             {
-                throw new InvalidOperationException($"Attempt to relocate odd variable #{idx}.5e (relative to {block_location:X4})");
+                throw new InvalidOperationException(
+                    $"Attempt to relocate odd variable #{idx}.5e (relative to {block_location:X4})");
             }
-            block[idx] = Register.Make(segment,(ushort) block[idx].Offset); // Perform relocation
-            if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
-                block[idx] = Register.IncOffset(block[idx], (short)scriptSize);
+            block[idx] = Register.Make(segment, (ushort) block[idx].Offset); // Perform relocation
+            if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 &&
+                ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
+                block[idx] = Register.IncOffset(block[idx], (short) scriptSize);
 
             return true;
         }
@@ -603,5 +641,30 @@ namespace NScumm.Sci.Engine
                 offset--;
             return _baseMethod[offset];
         }
+#if ENABLE_SCI32
+        public void SetInfoSelectorFlag(int flag)
+        {
+            if (ResourceManager.GetSciVersion() < SciVersion.V3)
+            {
+                _variables[_offset + 2] |= flag;
+            }
+            else
+            {
+                _infoSelectorSci3[0] |= flag;
+            }
+        }
+
+        public void ClearInfoSelectorFlag(int flag)
+        {
+            if (ResourceManager.GetSciVersion() < SciVersion.V3)
+            {
+                _variables[_offset + 2] = _variables[_offset + 2] & ~flag;
+            }
+            else
+            {
+                _infoSelectorSci3[0] = _infoSelectorSci3[0] & ~flag;
+            }
+        }
+#endif
     }
 }

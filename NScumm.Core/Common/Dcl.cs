@@ -62,11 +62,11 @@ namespace NScumm.Core.Common
         Stream _sourceStream;
         Stream _targetStream;
 
-        public static bool Decompress(Stream src, byte[] dest, uint packedSize, uint unpackedSize)
+        public static bool Decompress(Stream src, BytePtr dest, uint packedSize, uint unpackedSize)
         {
             bool success = false;
 
-            if (src==null || dest== null)
+            if (src==null || dest== BytePtr.Null)
                 return false;
 
             byte[] sourceBufferPtr = new byte[packedSize];
@@ -75,7 +75,7 @@ namespace NScumm.Core.Common
             src.Read(sourceBufferPtr, 0, (int)packedSize);
 
             using (var sourceStream = new MemoryStream(sourceBufferPtr, 0, (int)packedSize))
-            using (var targetStream = new MemoryStream(dest, 0, (int)unpackedSize))
+            using (var targetStream = new MemoryStream(dest.Data, dest.Offset, (int)unpackedSize))
             {
                 var dcl = new DecompressorDCL();
                 success = dcl.Unpack(sourceStream, targetStream, unpackedSize, true);

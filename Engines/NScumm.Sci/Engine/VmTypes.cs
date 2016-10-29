@@ -95,19 +95,19 @@ namespace NScumm.Sci.Engine
                     return _offset;
                 }
                 // Return the lower 16 bits from the offset, and the 17th and 18th bits from the segment
-                return (uint) (((Segment & 0xC000) << 2) | _offset);
+                return (uint)(((Segment & 0xC000) << 2) | _offset);
             }
             set
             {
                 if (ResourceManager.GetSciVersion() < SciVersion.V3)
                 {
-                    _offset = (ushort) value;
+                    _offset = (ushort)value;
                 }
                 else
                 {
                     // Store the lower 16 bits in the offset, and the 17th and 18th bits in the segment
-                    _offset = (ushort) (value & 0xFFFF);
-                    _segment = (ushort) (((value & 0x30000) >> 2) | (_segment & 0x3FFF));
+                    _offset = (ushort)(value & 0xFFFF);
+                    _segment = (ushort)(((value & 0x30000) >> 2) | (_segment & 0x3FFF));
                 }
             }
         }
@@ -121,7 +121,7 @@ namespace NScumm.Sci.Engine
                     return _segment;
                 }
                 // Return the lower 14 bits of the segment
-                return (ushort) (_segment & 0x3FFF);
+                return (ushort)(_segment & 0x3FFF);
             }
             set
             {
@@ -132,7 +132,7 @@ namespace NScumm.Sci.Engine
                 else
                 {
                     // Set the lower 14 bits of the segment, and preserve the upper 2 ones for the offset
-                    _segment = (ushort) ((_segment & 0xC000) | (value & 0x3FFF));
+                    _segment = (ushort)((_segment & 0xC000) | (value & 0x3FFF));
                 }
             }
         }
@@ -147,12 +147,12 @@ namespace NScumm.Sci.Engine
 
         public ushort ToUInt16()
         {
-            return (ushort) Offset;
+            return (ushort)Offset;
         }
 
         public short ToInt16()
         {
-            return (short) Offset;
+            return (short)Offset;
         }
 
         public void CopyTo(byte[] data, int offset)
@@ -174,7 +174,7 @@ namespace NScumm.Sci.Engine
 
         public static Register Make(ushort segment, bool condition)
         {
-            return Make(segment, (ushort) (condition ? 1 : 0));
+            return Make(segment, (ushort)(condition ? 1 : 0));
         }
 
         public override int GetHashCode()
@@ -190,7 +190,7 @@ namespace NScumm.Sci.Engine
         public override bool Equals(object obj)
         {
             if (!(obj is Register)) return false;
-            var other = (Register) obj;
+            var other = (Register)obj;
             return Offset == other.Offset && Segment == other.Segment;
         }
 
@@ -220,7 +220,7 @@ namespace NScumm.Sci.Engine
                     case SegmentType.SCRIPT:
                     case SegmentType.STACK:
                     case SegmentType.DYNMEM:
-                        return Make(left.Segment, (ushort) (left.Offset + right.ToInt16()));
+                        return Make(left.Segment, (ushort)(left.Offset + right.ToInt16()));
                     default:
                         return left.LookForWorkaround(right, "addition");
                 }
@@ -233,14 +233,14 @@ namespace NScumm.Sci.Engine
             if (left.IsNumber && right.IsNumber)
             {
                 // Normal arithmetics
-                return Make(0, (ushort) (left.ToInt16() + right.ToInt16()));
+                return Make(0, (ushort)(left.ToInt16() + right.ToInt16()));
             }
             return left.LookForWorkaround(right, "addition");
         }
 
         public static Register operator +(Register left, int right)
         {
-            return left + Make(0, (ushort) right);
+            return left + Make(0, (ushort)right);
         }
 
         public static Register operator -(Register left, Register right)
@@ -249,27 +249,27 @@ namespace NScumm.Sci.Engine
             {
                 // We can subtract numbers, or pointers with the same segment,
                 // an operation which will yield a number like in C
-                return Make(0, (ushort) (left.ToInt16() - right.ToInt16()));
+                return Make(0, (ushort)(left.ToInt16() - right.ToInt16()));
             }
-            return left + Make(right.Segment, (ushort) (-right.ToInt16()));
+            return left + Make(right.Segment, (ushort)(-right.ToInt16()));
         }
 
         public static Register operator -(Register left, int right)
         {
-            return left - Make(0, (ushort) right);
+            return left - Make(0, (ushort)right);
         }
 
         public static Register operator *(Register left, Register right)
         {
             if (left.IsNumber && right.IsNumber)
-                return Make(0, (ushort) (left.ToInt16() * right.ToInt16()));
+                return Make(0, (ushort)(left.ToInt16() * right.ToInt16()));
             return left.LookForWorkaround(right, "multiplication");
         }
 
         public static Register operator /(Register left, Register right)
         {
             if (left.IsNumber && right.IsNumber && !right.IsNull)
-                return Make(0, (ushort) (left.ToInt16() / right.ToInt16()));
+                return Make(0, (ushort)(left.ToInt16() / right.ToInt16()));
             return left.LookForWorkaround(right, "division");
         }
 
@@ -287,10 +287,10 @@ namespace NScumm.Sci.Engine
                     Warning("Modulo of a negative number has been requested for SCI0. This *could* lead to issues");
                 short value = left.ToInt16();
                 short modulo = Math.Abs(right.ToInt16());
-                short result = (short) (value % modulo);
+                short result = (short)(value % modulo);
                 if (result < 0)
                     result += modulo;
-                return Make(0, (ushort) result);
+                return Make(0, (ushort)result);
             }
             return left.LookForWorkaround(right, "modulo");
         }
@@ -298,61 +298,61 @@ namespace NScumm.Sci.Engine
 #if ENABLE_SCI32
         public static Register operator &(Register left, int right)
         {
-            return left & Make(0, (ushort) right);
+            return left & Make(0, (ushort)right);
         }
 
         public static Register operator |(Register left, int right)
         {
-            return left | Make(0, (ushort) right);
+            return left | Make(0, (ushort)right);
         }
 
         public static Register operator ^(Register left, int right)
         {
-            return left ^ Make(0, (ushort) right);
+            return left ^ Make(0, (ushort)right);
         }
 
-//        public Register operator&=(short right) { this = this & right; }
-//        void operator|=(int16 right) { *this = *this | right; }
-//        void operator^=(int16 right) { *this = *this ^ right; }
+        //        public Register operator&=(short right) { this = this & right; }
+        //        void operator|=(int16 right) { *this = *this | right; }
+        //        void operator^=(int16 right) { *this = *this ^ right; }
 #endif
 
         public Register ShiftRight(Register right)
         {
             if (IsNumber && right.IsNumber)
-                return Make(0, (ushort) (ToUInt16() >> right.ToUInt16()));
+                return Make(0, (ushort)(ToUInt16() >> right.ToUInt16()));
             return LookForWorkaround(right, "shift right");
         }
 
         public Register ShiftLeft(Register right)
         {
             if (IsNumber && right.IsNumber)
-                return Make(0, (ushort) (ToUInt16() << right.ToUInt16()));
+                return Make(0, (ushort)(ToUInt16() << right.ToUInt16()));
             return LookForWorkaround(right, "shift left");
         }
 
         public static Register IncOffset(Register reg, short offset)
         {
-            return Make(reg.Segment, (ushort) (reg.Offset + offset));
+            return Make(reg.Segment, (ushort)(reg.Offset + offset));
         }
 
         public static Register operator &(Register left, Register right)
         {
             if (left.IsNumber && right.IsNumber)
-                return Make(0, (ushort) (left.ToUInt16() & right.ToUInt16()));
+                return Make(0, (ushort)(left.ToUInt16() & right.ToUInt16()));
             return left.LookForWorkaround(right, "bitwise AND");
         }
 
         public static Register operator |(Register left, Register right)
         {
             if (left.IsNumber && right.IsNumber)
-                return Make(0, (ushort) (left.ToUInt16() | right.ToUInt16()));
+                return Make(0, (ushort)(left.ToUInt16() | right.ToUInt16()));
             return left.LookForWorkaround(right, "bitwise OR");
         }
 
         public static Register operator ^(Register left, Register right)
         {
             if (left.IsNumber && right.IsNumber)
-                return Make(0, (ushort) (left.ToUInt16() ^ right.ToUInt16()));
+                return Make(0, (ushort)(left.ToUInt16() ^ right.ToUInt16()));
             return left.LookForWorkaround(right, "bitwise XOR");
         }
 
@@ -441,6 +441,10 @@ namespace NScumm.Sci.Engine
                     return ToUInt16() - right.ToUInt16();
                 return ToInt16() - right.ToInt16();
             }
+#if ENABLE_SCI32
+            if (ResourceManager.GetSciVersion() >= SciVersion.V2)
+                return Sci32Comparison(right);
+#endif
             if (PointerComparisonWithInteger(right))
             {
                 return 1;
@@ -451,6 +455,30 @@ namespace NScumm.Sci.Engine
             }
             return LookForWorkaround(right, "comparison").ToInt16();
         }
+
+# if ENABLE_SCI32
+        private int Sci32Comparison(Register right)
+        {
+            // In SCI32, MemIDs are normally indexes into the memory manager's handle
+            // list, but the engine reserves indexes at and above 20000 for objects
+            // that were created inside the engine (as opposed to inside the VM). The
+            // engine compares these as a tiebreaker for graphics objects that are at
+            // the same priority, and it is necessary to at least minimally handle
+            // this situation.
+            // This is obviously a bogus comparision, but then, this entire thing is
+            // bogus. For the moment, it just needs to be deterministic.
+            if (IsNumber && !right.IsNumber)
+            {
+                return 1;
+            }
+            else if (right.IsNumber && !IsNumber)
+            {
+                return -1;
+            }
+
+            return (int)(Offset - right.Offset);
+        }
+#endif
 
         private bool PointerComparisonWithInteger(Register right)
         {
@@ -493,7 +521,7 @@ namespace NScumm.Sci.Engine
     {
         public static Register ToRegister(this BytePtr ptr, int offset = 0)
         {
-            return new Register(new BytePtr(ptr.Data, ptr.Offset+offset));
+            return new Register(new BytePtr(ptr.Data, ptr.Offset + offset));
         }
 
         public static Register ToRegister(this byte[] data, int offset = 0)
@@ -534,7 +562,7 @@ namespace NScumm.Sci.Engine
         public override bool Equals(object obj)
         {
             if (!(obj is Register32)) return false;
-            var other = (Register32) obj;
+            var other = (Register32)obj;
             return Offset == other.Offset && Segment == other.Segment;
         }
 
@@ -550,7 +578,7 @@ namespace NScumm.Sci.Engine
 
         public static Register32 Make(int segment, int offset)
         {
-            return new Register32 {Segment = segment, Offset = offset};
+            return new Register32 { Segment = segment, Offset = offset };
         }
     }
 }

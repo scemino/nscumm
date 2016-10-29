@@ -875,7 +875,7 @@ namespace NScumm.Sword1
 
             var bpp = Surface.GetBytesPerPixel(screen.PixelFormat);
             System.Diagnostics.Debug.Assert(bpp == 1 || bpp == 2);
-            System.Diagnostics.Debug.Assert(screen.Pixels != null);
+            System.Diagnostics.Debug.Assert(screen.Pixels != BytePtr.Null);
 
             PixelFormat screenFormat = _system.GraphicsManager.PixelFormat;
             var screenBpp = Surface.GetBytesPerPixel(screenFormat);

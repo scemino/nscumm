@@ -72,7 +72,7 @@ namespace NScumm.Sci.Graphics
 
             if (SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth == LowRes.X)
             {
-                var unscaledX = (short) (scaledPosition.X / scaleX);
+                var unscaledX = (short) (new Rational(scaledPosition.X) / scaleX);
                 if (flip)
                 {
                     var lastIndex = celObj._width - 1;

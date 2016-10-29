@@ -74,6 +74,7 @@
     <Compile Include="Graphics\GfxPalette32.cs" />
     <Compile Include="Graphics\GfxRemap.cs" />
     <Compile Include="Graphics\GfxRemap32.cs" />
+    <Compile Include="Graphics\GfxTransitions32.cs" />
     <Compile Include="Graphics\HunkPalette.cs" />
     <Compile Include="Graphics\MAPPER_Map.cs" />
     <Compile Include="Graphics\MAPPER_NoMap.cs" />
@@ -170,6 +171,9 @@
     <Compile Include="Engine\Script.cs" />
     <Compile Include="Engine\ScriptPatcher.cs" />
     <Compile Include="Graphics\Screen.cs" />
+    <Compile Include="Video\AudioList.cs" />
+    <Compile Include="Video\DelayTime.cs" />
+    <Compile Include="Video\RobotAudioStream.cs" />
     <Compile Include="Video\RobotDecoder.cs" />
     <Compile Include="WaveResourceSource.cs" />
   </ItemGroup>
@@ -178,15 +182,7 @@
       <HintPath>..\..\..\..\..\..\..\Library\Frameworks\Mono.framework\External\xbuild-frameworks\MonoAndroid\v1.0\Facades\System.Runtime.InteropServices.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Sound\" />
-    <Folder Include="Sound\Decoders" />
-    <Folder Include="Sound\Drivers\" />
-    <Folder Include="Parser\" />
-    <Folder Include="Engine\" />
-    <Folder Include="Graphics\" />
-    <Folder Include="Video" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.

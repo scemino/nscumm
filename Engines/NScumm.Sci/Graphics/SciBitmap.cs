@@ -31,17 +31,17 @@ namespace NScumm.Sci.Graphics
             set { _data.WriteSci11EndianUInt16(2, value); }
         }
 
-        public Point Displace
+        public Point Origin
         {
             get
             {
-                return new Point((short) _data.ReadSci11EndianUInt16(4),
-                    (short) _data.ReadSci11EndianUInt16(6));
+                return new Point((short)_data.ReadSci11EndianUInt16(4),
+                    (short)_data.ReadSci11EndianUInt16(6));
             }
             set
             {
-                _data.WriteSci11EndianUInt16(4, (ushort) value.X);
-                _data.WriteSci11EndianUInt16(6, (ushort) value.Y);
+                _data.WriteSci11EndianUInt16(4, (ushort)value.X);
+                _data.WriteSci11EndianUInt16(6, (ushort)value.Y);
             }
         }
 
@@ -63,7 +63,7 @@ namespace NScumm.Sci.Graphics
                 }
                 else
                 {
-                    flags = (ushort) (flags & ~kBitmapRemap);
+                    flags = (ushort)(flags & ~kBitmapRemap);
                 }
                 _data.WriteSci11EndianUInt16(10, flags);
             }
@@ -73,29 +73,29 @@ namespace NScumm.Sci.Graphics
 
         public int DataSize
         {
-            get { return (int) _data.ReadSci11EndianUInt32(12); }
-            set { _data.WriteSci11EndianUInt32(12, (uint) value); }
+            get { return (int)_data.ReadSci11EndianUInt32(12); }
+            set { _data.WriteSci11EndianUInt32(12, (uint)value); }
         }
 
         public int RawSize => _dataSize;
 
         public int HunkPaletteOffset
         {
-            get { return (int) _data.ReadSci11EndianUInt32(20); }
+            get { return (int)_data.ReadSci11EndianUInt32(20); }
             set
             {
                 if (value != 0)
                 {
                     value += BitmapHeaderSize;
                 }
-                _data.WriteSci11EndianUInt32(20, (uint) value);
+                _data.WriteSci11EndianUInt32(20, (uint)value);
             }
         }
 
         public int DataOffset
         {
-            get { return (int) _data.ReadSci11EndianUInt32(24); }
-            set { _data.WriteSci11EndianUInt32(24, (uint) value); }
+            get { return (int)_data.ReadSci11EndianUInt32(24); }
+            set { _data.WriteSci11EndianUInt32(24, (uint)value); }
         }
 
         // NOTE: This property is used as a "magic number" for
@@ -103,18 +103,18 @@ namespace NScumm.Sci.Graphics
         // and so is always set to the size of the header.
         public int UncompressedDataOffset
         {
-            get { return (int) _data.ReadSci11EndianUInt32(28); }
-            set { _data.WriteSci11EndianUInt32(28, (uint) value); }
+            get { return (int)_data.ReadSci11EndianUInt32(28); }
+            set { _data.WriteSci11EndianUInt32(28, (uint)value); }
         }
 
         // NOTE: This property always seems to be zero
         public int ControlOffset
         {
-            get { return (int) _data.ReadSci11EndianUInt32(32); }
-            set { _data.WriteSci11EndianUInt32(32, (uint) value); }
+            get { return (int)_data.ReadSci11EndianUInt32(32); }
+            set { _data.WriteSci11EndianUInt32(32, (uint)value); }
         }
 
-        public ushort ScaledWidth
+        public ushort XResolution
         {
             get
             {
@@ -135,7 +135,7 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        public ushort ScaledHeight
+        public ushort YResolution
         {
             get
             {
@@ -157,6 +157,18 @@ namespace NScumm.Sci.Graphics
         }
 
         public BytePtr Pixels => new BytePtr(_data, UncompressedDataOffset);
+
+        public BytePtr HunkPalette
+        {
+            get
+            {
+                if (HunkPaletteOffset == 0)
+                {
+                    return BytePtr.Null;
+                }
+                return new BytePtr(_data, HunkPaletteOffset);
+            }
+        }
 
         public Register Object { get; }
 
@@ -234,15 +246,15 @@ namespace NScumm.Sci.Graphics
         public void Create(short width, short height, byte skipColor, short displaceX, short displaceY,
             short scaledWidth, short scaledHeight, int paletteSize, bool remap, bool gc)
         {
-            _dataSize = GetBitmapSize((ushort) width, (ushort) height) + paletteSize;
+            _dataSize = GetBitmapSize((ushort)width, (ushort)height) + paletteSize;
             Array.Resize(ref _data, _dataSize);
             ShouldGc = gc;
 
-            short bitmapHeaderSize = (short) BitmapHeaderSize;
+            short bitmapHeaderSize = (short)BitmapHeaderSize;
 
-            Width = (ushort) width;
-            Height = (ushort) height;
-            Displace = new Point(displaceX, displaceY);
+            Width = (ushort)width;
+            Height = (ushort)height;
+            Origin = new Point(displaceX, displaceY);
             SkipColor = skipColor;
             _data[9] = 0;
             _data.WriteSci11EndianUInt16(10, 0);
@@ -253,8 +265,8 @@ namespace NScumm.Sci.Graphics
             DataOffset = bitmapHeaderSize;
             UncompressedDataOffset = bitmapHeaderSize;
             ControlOffset = 0;
-            ScaledWidth = (ushort) scaledWidth;
-            ScaledHeight = (ushort) scaledHeight;
+            XResolution = (ushort)scaledWidth;
+            YResolution = (ushort)scaledHeight;
 
             _buffer = new Buffer(Width, Height, Pixels);
         }

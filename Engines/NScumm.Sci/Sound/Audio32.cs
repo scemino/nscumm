@@ -26,6 +26,7 @@ using NScumm.Core.Audio;
 using NScumm.Core.Audio.Decoders;
 using NScumm.Sci.Engine;
 using NScumm.Sci.Sound.Decoders;
+using NScumm.Sci.Video;
 using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Sound
@@ -63,7 +64,7 @@ namespace NScumm.Sci.Sound
          * `getLength` function, which is needed to tell the
          * game engine the duration of audio streams.
          */
-        public ISeekableAudioStream stream;
+        public IAudioStream stream;
 
         /**
          * The converter used to transform and merge the input
@@ -170,9 +171,9 @@ namespace NScumm.Sci.Sound
 
     internal class Audio32 : IAudioStream
     {
-        /**
-		 * The maximum channel volume.
-		 */
+        /// <summary>
+        /// The maximum channel volume.
+        /// </summary>
         private const int MaxVolume = 127;
 
         private ResourceManager _resMan;
@@ -180,33 +181,65 @@ namespace NScumm.Sci.Sound
         private SoundHandle _handle;
         private object _mutex = new object();
 
-        /**
-         * If true, audio will be mixed by reducing the target
-         * buffer by half every time a new channel is mixed in.
-         * The final channel is not attenuated.
-         */
+        /// <summary>
+        /// If true, audio will be mixed by reducing the target
+        /// buffer by half every time a new channel is mixed in.
+        /// The final channel is not attenuated.
+        /// </summary>
         private bool _attenuatedMixing;
 
-        /**
-         * When true, a modified attenuation algorithm is used
-         * (`A/4 + B`) instead of standard linear attenuation
-         * (`A/2 + B/2`).
-         */
+        public bool StopRobotAudio()
+        {
+            lock (_mutex)
+            {
+                var channelIndex = FindRobotChannel();
+                if (channelIndex == AudioChannelIndex.NoExistingChannel)
+                {
+                    return false;
+                }
+
+                Stop(channelIndex);
+                return true;
+            }
+        }
+
+        private AudioChannelIndex FindRobotChannel()
+        {
+            lock (_mutex)
+            {
+                for (var i = 0; i < _numActiveChannels; ++i)
+                {
+                    if (_channels[i].robot)
+                    {
+                        return (AudioChannelIndex)i;
+                    }
+                }
+            }
+
+            return AudioChannelIndex.NoExistingChannel;
+        }
+
+
+        /// <summary>
+        /// When true, a modified attenuation algorithm is used
+        /// (`A/4 + B`) instead of standard linear attenuation
+        /// (`A/2 + B/2`).
+        /// </summary>
         private bool _useModifiedAttenuation;
 
-        /**
-         * The audio channels.
-         */
+        /// <summary>
+        /// The audio channels.
+        /// </summary>
         private List<AudioChannel> _channels;
 
-        /**
-         * The number of active audio channels in the mixer.
-         * Being active is not the same as playing; active
-         * channels may be paused.
-         */
+        /// <summary>
+        /// The number of active audio channels in the mixer.
+        /// Being active is not the same as playing; active
+        /// channels may be paused.
+        /// </summary>
         private byte _numActiveChannels;
 
-        /**
+       /**
          * Whether or not we are in the audio thread.
          *
          * This flag is used instead of passing a parameter to
@@ -316,7 +349,7 @@ namespace NScumm.Sci.Sound
 
         public Audio32(ResourceManager resMan)
         {
-            _sources=new List<ResourceManager.ResourceSource>();
+            _sources = new List<ResourceManager.ResourceSource>();
             _resMan = resMan;
             _mixer = SciEngine.Instance.Mixer;
             _globalSampleRate = 44100;
@@ -367,10 +400,25 @@ namespace NScumm.Sci.Sound
             _monitoredBuffer = null;
         }
 
-        /**
-         * Gets the number of currently active channels.
-         */
+        public bool FinishRobotAudio()
+        {
+            lock (_mutex)
+            {
+                var channelIndex = FindRobotChannel();
+                if (channelIndex == AudioChannelIndex.NoExistingChannel)
+                {
+                    return false;
+                }
 
+                ((RobotAudioStream)GetChannel((int)channelIndex).stream).Finish();
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of currently active channels.
+        /// </summary>
+        /// <returns></returns>
         public byte GetNumActiveChannels()
         {
             lock (_mutex)
@@ -379,11 +427,10 @@ namespace NScumm.Sci.Sound
             }
         }
 
-        /**
-         * Gets the (fake) sample rate of the hardware DAC.
-         * For script compatibility only.
-         */
-
+        /// <summary>
+        /// Gets the (fake) sample rate of the hardware DAC.
+        /// For script compatibility only.
+        /// </summary>
         public ushort SampleRate
         {
             get { return _globalSampleRate; }
@@ -402,26 +449,26 @@ namespace NScumm.Sci.Sound
         {
             if (channelIndex < 0 || channelIndex >= _numActiveChannels)
             {
-                return (short) (_mixer.GetChannelVolume(_handle) * MaxVolume / Mixer.MaxChannelVolume);
+                return (short)(_mixer.GetChannelVolume(_handle) * MaxVolume / Mixer.MaxChannelVolume);
             }
 
             lock (_mutex)
             {
-                return (short) GetChannel(channelIndex).volume;
+                return (short)GetChannel(channelIndex).volume;
             }
         }
 
         public void SetVolume(short channelIndex, short volume)
         {
-            volume = Math.Min((short) MaxVolume, volume);
-            if (channelIndex == (int) AudioChannelIndex.AllChannels)
+            volume = Math.Min((short)MaxVolume, volume);
+            if (channelIndex == (int)AudioChannelIndex.AllChannels)
             {
                 ConfigManager.Instance.Set<int>("sfx_volume", volume * Mixer.MaxChannelVolume / MaxVolume);
                 ConfigManager.Instance.Set<int>("speech_volume", volume * Mixer.MaxChannelVolume / MaxVolume);
                 _mixer.SetChannelVolume(_handle, volume * Mixer.MaxChannelVolume / MaxVolume);
                 SciEngine.Instance.SyncSoundSettings();
             }
-            else if (channelIndex != (int) AudioChannelIndex.NoExistingChannel)
+            else if (channelIndex != (int)AudioChannelIndex.NoExistingChannel)
             {
                 lock (_mutex)
                 {
@@ -434,7 +481,7 @@ namespace NScumm.Sci.Sound
         {
             lock (_mutex)
             {
-                if (channelIndex == (int) AudioChannelIndex.NoExistingChannel || _numActiveChannels == 0)
+                if (channelIndex == (int)AudioChannelIndex.NoExistingChannel || _numActiveChannels == 0)
                 {
                     return -1;
                 }
@@ -446,7 +493,7 @@ namespace NScumm.Sci.Sound
 
                 // NOTE: The original engine also queried the audio driver to see whether
                 // it thought that there was audio playback occurring via driver opcode 9
-                if (channelIndex == (int) AudioChannelIndex.AllChannels)
+                if (channelIndex == (int)AudioChannelIndex.AllChannels)
                 {
                     if (_pausedAtTick != 0)
                     {
@@ -454,7 +501,7 @@ namespace NScumm.Sci.Sound
                     }
                     else
                     {
-                        position = (int) (now - _startedAtTick);
+                        position = (int)(now - _startedAtTick);
                     }
                 }
                 else
@@ -463,19 +510,19 @@ namespace NScumm.Sci.Sound
 
                     if (channel.pausedAtTick != 0)
                     {
-                        position = (int) (channel.pausedAtTick - channel.startedAtTick);
+                        position = (int)(channel.pausedAtTick - channel.startedAtTick);
                     }
                     else if (_pausedAtTick != 0)
                     {
-                        position = (int) (_pausedAtTick - channel.startedAtTick);
+                        position = (int)(_pausedAtTick - channel.startedAtTick);
                     }
                     else
                     {
-                        position = (int) (now - channel.startedAtTick);
+                        position = (int)(now - channel.startedAtTick);
                     }
                 }
 
-                return (short) Math.Min(position, 65534);
+                return (short)Math.Min(position, 65534);
             }
         }
 
@@ -487,18 +534,18 @@ namespace NScumm.Sci.Sound
                 FreeUnusedChannels();
 
                 AudioChannel channel;
-                if (channelIndex != (int) AudioChannelIndex.NoExistingChannel)
+                if (channelIndex != (int)AudioChannelIndex.NoExistingChannel)
                 {
                     channel = GetChannel(channelIndex);
 
                     if (channel.pausedAtTick != 0)
                     {
                         Resume(channelIndex);
-                        return (ushort) Math.Min(65534, 1 + channel.stream.Length.Milliseconds * 60 / 1000);
+                        return (ushort)Math.Min(65534, 1 + ((ISeekableAudioStream)channel.stream).Length.Milliseconds * 60 / 1000);
                     }
 
                     Warning("Tried to resume channel {0} that was not paused", channel.id);
-                    return (ushort) Math.Min(65534, 1 + channel.stream.Length.Milliseconds * 60 / 1000);
+                    return (ushort)Math.Min(65534, 1 + ((ISeekableAudioStream)channel.stream).Length.Milliseconds * 60 / 1000);
                 }
 
                 if (_numActiveChannels == _channels.Count)
@@ -611,7 +658,7 @@ namespace NScumm.Sci.Sound
                 // use audio streams, and allocate and fill the monitoring buffer
                 // when reading audio data from the stream.
 
-                channel.duration = /* round up */ (uint) (1 + channel.stream.Length.Milliseconds * 60 / 1000);
+                channel.duration = /* round up */ (uint)(1 + ((ISeekableAudioStream)channel.stream).Length.Milliseconds * 60 / 1000);
 
                 uint now = SciEngine.Instance.TickCount;
                 channel.pausedAtTick = autoPlay ? 0 : now;
@@ -619,16 +666,16 @@ namespace NScumm.Sci.Sound
 
                 if (_numActiveChannels == 1)
                 {
-                    _startedAtTick = (int) now;
+                    _startedAtTick = (int)now;
                 }
 
-                return (ushort) channel.duration;
+                return (ushort)channel.duration;
             }
         }
 
         public bool Resume(short channelIndex)
         {
-            if (channelIndex == (int) AudioChannelIndex.NoExistingChannel)
+            if (channelIndex == (int)AudioChannelIndex.NoExistingChannel)
             {
                 return false;
             }
@@ -637,7 +684,7 @@ namespace NScumm.Sci.Sound
             {
                 uint now = SciEngine.Instance.TickCount;
 
-                if (channelIndex == (int) AudioChannelIndex.AllChannels)
+                if (channelIndex == (int)AudioChannelIndex.AllChannels)
                 {
                     // Global pause in SSCI is an extra layer over
                     // individual channel pauses, so only unpause channels
@@ -652,15 +699,15 @@ namespace NScumm.Sci.Sound
                         AudioChannel channel = GetChannel(i);
                         if (channel.pausedAtTick == 0)
                         {
-                            channel.startedAtTick = (uint) (channel.startedAtTick + now - _pausedAtTick);
+                            channel.startedAtTick = (uint)(channel.startedAtTick + now - _pausedAtTick);
                         }
                     }
 
-                    _startedAtTick = (int) (_startedAtTick + now - _pausedAtTick);
+                    _startedAtTick = (int)(_startedAtTick + now - _pausedAtTick);
                     _pausedAtTick = 0;
                     return true;
                 }
-                else if (channelIndex == (int) AudioChannelIndex.RobotChannel)
+                else if (channelIndex == (int)AudioChannelIndex.RobotChannel)
                 {
                     for (int i = 0; i < _numActiveChannels; ++i)
                     {
@@ -694,9 +741,9 @@ namespace NScumm.Sci.Sound
         {
             var initialPosition = stream.Position;
 
-// TODO: Resource manager for audio resources reads past the
-// header so even though this is the detection algorithm
-// in SSCI, ScummVM can't use it
+            // TODO: Resource manager for audio resources reads past the
+            // header so even though this is the detection algorithm
+            // in SSCI, ScummVM can't use it
 #if Undefined
 	byte header[6];
 	if (stream.read(header, sizeof(header)) != sizeof(header)) {
@@ -764,14 +811,14 @@ namespace NScumm.Sci.Sound
                 }
                 else
                 {
-                    FreeChannel((int) channelIndex);
+                    FreeChannel((int)channelIndex);
                     --_numActiveChannels;
-                    for (var i = (int) channelIndex; i < oldNumChannels - 1; ++i)
+                    for (var i = (int)channelIndex; i < oldNumChannels - 1; ++i)
                     {
                         _channels[i] = _channels[i + 1];
                         if (i + 1 == _monitoredChannelIndex)
                         {
-                            _monitoredChannelIndex = (short) i;
+                            _monitoredChannelIndex = (short)i;
                         }
                     }
                 }
@@ -800,7 +847,7 @@ namespace NScumm.Sci.Sound
                 {
                     if (_pausedAtTick == 0)
                     {
-                        _pausedAtTick = (int) now;
+                        _pausedAtTick = (int)now;
                         didPause = true;
                     }
                 }
@@ -821,7 +868,7 @@ namespace NScumm.Sci.Sound
                 }
                 else
                 {
-                    AudioChannel channel = GetChannel((int) channelIndex);
+                    AudioChannel channel = GetChannel((int)channelIndex);
 
                     if (channel.pausedAtTick == 0)
                     {
@@ -923,7 +970,7 @@ namespace NScumm.Sci.Sound
                     //       0 | 0  (>> 0)
                     //       1 | 4  (>> 2)
                     //       2 | 8...
-                    attenuationAmount = (byte) (_numActiveChannels * 2);
+                    attenuationAmount = (byte)(_numActiveChannels * 2);
                     attenuationStepAmount = 2;
                 }
                 else
@@ -934,7 +981,7 @@ namespace NScumm.Sci.Sound
                     //       2 | 6...
                     if (_monitoredChannelIndex == -1 && _numActiveChannels > 1)
                     {
-                        attenuationAmount = (byte) (_numActiveChannels + 1);
+                        attenuationAmount = (byte)(_numActiveChannels + 1);
                         attenuationStepAmount = 1;
                     }
                     else
@@ -1065,14 +1112,14 @@ namespace NScumm.Sci.Sound
             argc -= startIndex;
             if (argc <= 0)
             {
-                return (short) AudioChannelIndex.AllChannels;
+                return (short)AudioChannelIndex.AllChannels;
             }
 
             lock (_mutex)
             {
                 if (_numActiveChannels == 0)
                 {
-                    return (short) AudioChannelIndex.NoExistingChannel;
+                    return (short)AudioChannelIndex.NoExistingChannel;
                 }
 
                 ResourceId searchId;
@@ -1086,10 +1133,10 @@ namespace NScumm.Sci.Sound
                     searchId = new ResourceId(
                         ResourceType.Audio36,
                         argv[startIndex].ToUInt16(),
-                        (byte) argv[startIndex + 1].ToUInt16(),
-                        (byte) argv[startIndex + 2].ToUInt16(),
-                        (byte) argv[startIndex + 3].ToUInt16(),
-                        (byte) argv[startIndex + 4].ToUInt16()
+                        (byte)argv[startIndex + 1].ToUInt16(),
+                        (byte)argv[startIndex + 2].ToUInt16(),
+                        (byte)argv[startIndex + 3].ToUInt16(),
+                        (byte)argv[startIndex + 4].ToUInt16()
                     );
                 }
 
@@ -1103,7 +1150,7 @@ namespace NScumm.Sci.Sound
             {
                 if (_numActiveChannels == 0)
                 {
-                    return (short) AudioChannelIndex.NoExistingChannel;
+                    return (short)AudioChannelIndex.NoExistingChannel;
                 }
 
                 if (resourceId.Type == ResourceType.Audio)
@@ -1115,7 +1162,7 @@ namespace NScumm.Sci.Sound
                             (soundNode.IsNull || soundNode == channel.soundNode)
                         )
                         {
-                            return (short) i;
+                            return (short)i;
                         }
                     }
                 }
@@ -1126,7 +1173,7 @@ namespace NScumm.Sci.Sound
                         AudioChannel candidate = GetChannel(i);
                         if (!candidate.robot && candidate.id == resourceId)
                         {
-                            return (short) i;
+                            return (short)i;
                         }
                     }
                 }
@@ -1135,11 +1182,11 @@ namespace NScumm.Sci.Sound
                     Error("Audio32::findChannelById: Unknown resource type {0}", resourceId.Type);
                 }
 
-                return (short) AudioChannelIndex.NoExistingChannel;
+                return (short)AudioChannelIndex.NoExistingChannel;
             }
         }
 
-        private int WriteAudioInternal(IRewindableAudioStream sourceStream, IRateConverter converter,
+        private int WriteAudioInternal(IAudioStream sourceStream, IRateConverter converter,
             Ptr<short> targetBuffer, int numSamples, int leftVolume, int rightVolume, bool loop)
         {
             int samplesToRead = numSamples;
@@ -1162,7 +1209,7 @@ namespace NScumm.Sci.Sound
             {
                 if (loop && sourceStream.IsEndOfStream)
                 {
-                    sourceStream.Rewind();
+                    ((ISeekableAudioStream)sourceStream).Rewind();
                 }
 
                 int loopSamplesWritten =
@@ -1201,34 +1248,34 @@ namespace NScumm.Sci.Sound
 
                 if (channel.fadeStartTick != 0)
                 {
-                    uint fadeElapsed = (uint) (SciEngine.Instance.TickCount - channel.fadeStartTick);
+                    uint fadeElapsed = (uint)(SciEngine.Instance.TickCount - channel.fadeStartTick);
                     if (fadeElapsed > channel.fadeDuration)
                     {
                         channel.fadeStartTick = 0;
                         if (channel.stopChannelOnFade)
                         {
-                            Stop((AudioChannelIndex) channelIndex);
+                            Stop((AudioChannelIndex)channelIndex);
                             return true;
                         }
-                        SetVolume((AudioChannelIndex) channelIndex, channel.fadeTargetVolume);
+                        SetVolume((AudioChannelIndex)channelIndex, channel.fadeTargetVolume);
                         return false;
                     }
 
                     int volume;
                     if (channel.fadeStartVolume > channel.fadeTargetVolume)
                     {
-                        volume = (int) (channel.fadeStartVolume -
+                        volume = (int)(channel.fadeStartVolume -
                                         fadeElapsed * (channel.fadeStartVolume - channel.fadeTargetVolume) /
                                         channel.fadeDuration);
                     }
                     else
                     {
-                        volume = (int) (channel.fadeStartVolume +
+                        volume = (int)(channel.fadeStartVolume +
                                         fadeElapsed * (channel.fadeTargetVolume - channel.fadeStartVolume) /
                                         channel.fadeDuration);
                     }
 
-                    SetVolume((AudioChannelIndex) channelIndex, volume);
+                    SetVolume((AudioChannelIndex)channelIndex, volume);
                     return false;
                 }
 
@@ -1250,7 +1297,7 @@ namespace NScumm.Sci.Sound
             {
                 lock (_mutex)
                 {
-                    GetChannel((int) channelIndex).volume = volume;
+                    GetChannel((int)channelIndex).volume = volume;
                 }
             }
         }
@@ -1266,11 +1313,11 @@ namespace NScumm.Sci.Sound
                     {
                         if (channel.loop)
                         {
-                            channel.stream.Rewind();
+                            ((ISeekableAudioStream)channel.stream).Rewind();
                         }
                         else
                         {
-                            Stop((AudioChannelIndex) channelIndex--);
+                            Stop((AudioChannelIndex)channelIndex--);
                         }
                     }
                 }
@@ -1317,8 +1364,8 @@ namespace NScumm.Sci.Sound
 
             if (argc >= 5)
             {
-                resourceId = new ResourceId(ResourceType.Audio36, argv[0].ToUInt16(), (byte) argv[1].ToUInt16(),
-                    (byte) argv[2].ToUInt16(), (byte) argv[3].ToUInt16(), (byte) argv[4].ToUInt16());
+                resourceId = new ResourceId(ResourceType.Audio36, argv[0].ToUInt16(), (byte)argv[1].ToUInt16(),
+                    (byte)argv[2].ToUInt16(), (byte)argv[3].ToUInt16(), (byte)argv[4].ToUInt16());
 
                 if (argc < 6 || argv[5].ToInt16() == 1)
                 {
@@ -1436,11 +1483,12 @@ namespace NScumm.Sci.Sound
 
         public void SetNumOutputChannels(short numChannels)
         {
-            if (numChannels > _maxAllowedOutputChannels) {
+            if (numChannels > _maxAllowedOutputChannels)
+            {
                 numChannels = _maxAllowedOutputChannels;
             }
 
-            _globalNumOutputChannels = (byte) numChannels;
+            _globalNumOutputChannels = (byte)numChannels;
         }
 
         /**
@@ -1456,7 +1504,8 @@ namespace NScumm.Sci.Sound
 	 * Gets the (fake) number of preloaded channels.
 	 * For script compatibility only.
 	 */
-        public byte GetPreload() {
+        public byte GetPreload()
+        {
             return _preload;
         }
 
@@ -1464,7 +1513,8 @@ namespace NScumm.Sci.Sound
          * Sets the (fake) number of preloaded channels.
          * For script compatibility only.
          */
-        public void SetPreload(byte preload) {
+        public void SetPreload(byte preload)
+        {
             _preload = preload;
         }
 
@@ -1485,12 +1535,12 @@ namespace NScumm.Sci.Sound
                     return false;
                 }
 
-                if (steps!=0 && speed!=0)
+                if (steps != 0 && speed != 0)
                 {
-                    channel.fadeStartTick = (int) SciEngine.Instance.TickCount;
+                    channel.fadeStartTick = (int)SciEngine.Instance.TickCount;
                     channel.fadeStartVolume = channel.volume;
                     channel.fadeTargetVolume = targetVolume;
-                    channel.fadeDuration = (uint) (speed * steps);
+                    channel.fadeDuration = (uint)(speed * steps);
                     channel.stopChannelOnFade = stopAfterFade;
                 }
                 else
@@ -1513,11 +1563,11 @@ namespace NScumm.Sci.Sound
                 }
 
                 var buffer = new Ptr<short>(_monitoredBuffer);
-                var end  = new Ptr<short>(_monitoredBuffer, _numMonitoredSamples);
+                var end = new Ptr<short>(_monitoredBuffer, _numMonitoredSamples);
 
                 while (buffer != end)
                 {
-                    var sample = buffer.Value;buffer.Offset++;
+                    var sample = buffer.Value; buffer.Offset++;
                     if (sample > 1280 || sample < -1280)
                     {
                         return true;
@@ -1540,6 +1590,85 @@ namespace NScumm.Sci.Sound
 
                 AudioChannel channel = GetChannel(channelIndex);
                 channel.loop = loop;
+            }
+        }
+
+        public bool PlayRobotAudio(RobotAudioStream.RobotAudioPacket packet)
+        {
+            // Stop immediately
+            if (packet.dataSize == 0)
+            {
+                Warning("Stopping robot stream by zero-length packet");
+                return StopRobotAudio();
+            }
+
+            // Flush and then stop
+            if (packet.dataSize == -1)
+            {
+                Warning("Stopping robot stream by negative-length packet");
+                return FinishRobotAudio();
+            }
+
+            lock (_mutex)
+            {
+                var channelIndex = FindRobotChannel();
+
+                bool isNewChannel = false;
+                if (channelIndex == AudioChannelIndex.NoExistingChannel)
+                {
+                    if (_numActiveChannels == _channels.Count)
+                    {
+                        return false;
+                    }
+
+                    channelIndex = (AudioChannelIndex)_numActiveChannels++;
+                    isNewChannel = true;
+                }
+
+                AudioChannel channel = GetChannel((int)channelIndex);
+
+                if (isNewChannel)
+                {
+                    channel.id = new ResourceId();
+                    channel.resource = null;
+                    channel.loop = false;
+                    channel.robot = true;
+                    channel.fadeStartTick = 0;
+                    channel.pausedAtTick = 0;
+                    channel.soundNode = Register.NULL_REG;
+                    channel.volume = MaxVolume;
+                    // TODO: SCI3 introduces stereo audio
+                    channel.pan = -1;
+                    channel.converter = RateHelper.MakeRateConverter(RobotAudioStream.kRobotSampleRate, Rate, false);
+                    // The RobotAudioStream buffer size is
+                    // ((bytesPerSample * channels * sampleRate * 2000ms) / 1000ms) & ~3
+                    // where bytesPerSample = 2, channels = 1, and sampleRate = 22050
+                    channel.stream = new RobotAudioStream(88200);
+                    _robotAudioPaused = false;
+
+                    if (_numActiveChannels == 1)
+                    {
+                        _startedAtTick = (int)SciEngine.Instance.TickCount;
+                    }
+                }
+
+                return ((RobotAudioStream)channel.stream).AddPacket(packet);
+            }
+        }
+
+        public bool QueryRobotAudio(out RobotAudioStream.StreamState status)
+        {
+            lock (_mutex)
+            {
+                var channelIndex = FindRobotChannel();
+                if (channelIndex == AudioChannelIndex.NoExistingChannel)
+                {
+                    status = new RobotAudioStream.StreamState();
+                    return false;
+                }
+
+                status = ((RobotAudioStream)GetChannel((int)channelIndex).stream).GetStatus();
+                return true;
             }
         }
     }

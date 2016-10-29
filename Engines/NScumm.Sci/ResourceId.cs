@@ -30,6 +30,11 @@ namespace NScumm.Sci
         public ushort Number => _number;
         public uint Tuple => _tuple;
 
+        public ResourceId()
+        {
+            _type = ResourceType.Invalid;
+        }
+
         public ResourceId(ResourceType type, ushort number, uint tuple = 0)
         {
             _type = FixupType(type);

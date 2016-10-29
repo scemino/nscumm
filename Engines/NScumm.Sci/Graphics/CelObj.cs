@@ -756,7 +756,7 @@ namespace NScumm.Sci.Graphics
         {
             if (_hunkPaletteOffset != 0)
             {
-                HunkPalette palette = new HunkPalette(new BytePtr(GetResPointer(), (int) _hunkPaletteOffset));
+                HunkPalette palette = new HunkPalette(new BytePtr(GetResPointer(), _hunkPaletteOffset));
                 SciEngine.Instance._gfxPalette32.Submit(palette);
             }
         }

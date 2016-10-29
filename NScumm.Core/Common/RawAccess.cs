@@ -66,6 +66,11 @@ namespace NScumm.Core
             System.Array.Copy(_data, Offset, dest, destIndex, length);
         }
 
+        public void CopyTo(BytePtr dest, int destIndex, int length)
+        {
+            System.Array.Copy(_data, Offset, dest.Data, dest.Offset + destIndex, length);
+        }
+
         public void CopyFrom(byte[] data, int offset, int length)
         {
             System.Array.Copy(data, offset, Data, Offset, length);

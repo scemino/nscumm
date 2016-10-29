@@ -125,7 +125,7 @@ namespace NScumm.Sci.Graphics
             var newSize = 0;
             for (var i = 0; i < _size; i++)
             {
-                if (_items[i] == null) continue;
+                if (Equals(_items[i], default(T))) continue;
 
                 _items[newSize++] = _items[i];
             }

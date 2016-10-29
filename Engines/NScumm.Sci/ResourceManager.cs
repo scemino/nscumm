@@ -667,7 +667,7 @@ namespace NScumm.Sci
             // and making the renderer very slow.
             if (GetSciVersion() >= SciVersion.V2)
             {
-                _maxMemoryLRU = 2048 * 1024; // 2MiB
+                _maxMemoryLRU = 4096 * 1024; // 4MiB
             }
 
             switch (_viewType)
@@ -2397,7 +2397,7 @@ namespace NScumm.Sci
 
         private void FreeOldResources()
         {
-            while (ResourceSource.Resource.MAX_MEMORY < _memoryLRU)
+            while (_maxMemoryLRU < _memoryLRU)
             {
                 var goner = _LRU.Last();
                 RemoveFromLRU(goner);
@@ -2866,7 +2866,11 @@ namespace NScumm.Sci
             /// </summary>
             public class Resource
             {
-                internal const int MAX_MEMORY = 256 * 1024; // 256KB
+                // Maximum number of bytes to allow being allocated for resources
+                // Note: maxMemory will not be interpreted as a hard limit, only as a restriction
+                // for resources which are not explicitly locked. However, a warning will be
+                // issued whenever this limit is exceeded.
+                int _maxMemoryLRU;
 
                 internal ResourceId _id; // TODO: _id could almost be made const, only readResourceInfo() modifies it...
 

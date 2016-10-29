@@ -77,8 +77,8 @@ namespace NScumm.Sci
 #if ENABLE_SCI32
         public Audio32 _audio32;
         public Video32 _video32;
-        public RobotDecoder _robotDecoder;
         public GfxFrameout _gfxFrameout; // kFrameout and the like for 32-bit gfx
+        public GfxTransitions32 _gfxTransitions32;
 #endif
 
         public readonly DebugState _debugState;
@@ -182,7 +182,7 @@ namespace NScumm.Sci
             new FanMadePatchInfo(SciGameId.FANMADE, 0, 0, 0, 0x00)
         };
 
-        public uint TickCount => (uint) (TotalPlayTime * 60 / 1000);
+        public uint TickCount => (uint)(TotalPlayTime * 60 / 1000);
 
         public MacResManager MacExecutable => _macExecutable;
 
@@ -258,7 +258,7 @@ namespace NScumm.Sci
 
             if (Selector(s => s.subtitleLang) != -1)
                 subtitleLanguage =
-                    (Language) ReadSelectorValue(EngineState._segMan, GameObject, s => s.subtitleLang);
+                    (Language)ReadSelectorValue(EngineState._segMan, GameObject, s => s.subtitleLang);
 
             Language foundLanguage;
             var retval = GetSciLanguageString(str, activeLanguage, out foundLanguage, out languageSplitter);
@@ -309,7 +309,7 @@ namespace NScumm.Sci
                     if (foundLanguage != Sci.Language.None)
                     {
                         // Return language splitter
-                        languageSplitter = (ushort) (curChar | (curChar2 << 8));
+                        languageSplitter = (ushort)(curChar | (curChar2 << 8));
                         // Return the secondary language found in the string
                         secondaryLanguage = foundLanguage;
                         break;
@@ -507,13 +507,13 @@ namespace NScumm.Sci
 
         public Language GetSciLanguage()
         {
-            var lang = (Language) ResMan.GetAudioLanguage();
+            var lang = (Language)ResMan.GetAudioLanguage();
             if (lang != Sci.Language.None)
                 return lang;
 
             if (Selector(o => o.printLang) == -1) return Sci.Language.English;
 
-            lang = (Language) ReadSelectorValue(EngineState._segMan, GameObject, o => o.printLang);
+            lang = (Language)ReadSelectorValue(EngineState._segMan, GameObject, o => o.printLang);
 
             if ((ResourceManager.GetSciVersion() < SciVersion.V1_1) && (lang != Sci.Language.None)) return lang;
 
@@ -556,7 +556,7 @@ namespace NScumm.Sci
         public void SetSciLanguage(Language lang)
         {
             if (Selector(o => o.printLang) != -1)
-                WriteSelectorValue(EngineState._segMan, GameObject, o => o.printLang, (ushort) lang);
+                WriteSelectorValue(EngineState._segMan, GameObject, o => o.printLang, (ushort)lang);
         }
 
         public string WrapFilename(string name)
@@ -687,7 +687,7 @@ namespace NScumm.Sci
                 Run();
 
                 // As soon as we get control again, actually restore the game
-                Register[] restoreArgv = {Register.NULL_REG, Register.Make(0, (ushort) directSaveSlotLoading)};
+                Register[] restoreArgv = { Register.NULL_REG, Register.Make(0, (ushort)directSaveSlotLoading) };
                 // special call (argv[0] is NULL)
                 Kernel.kRestoreGame(EngineState, 2, new StackPtr(restoreArgv, 0));
 
@@ -827,23 +827,23 @@ namespace NScumm.Sci
             if (ConfigManager.Instance.Get<bool>("originalsaveload"))
                 return;
 
-            var kernelNamesSize = (ushort) Kernel.KernelNamesSize;
+            var kernelNamesSize = (ushort)Kernel.KernelNamesSize;
             for (ushort kernelNr = 0; kernelNr < kernelNamesSize; kernelNr++)
             {
                 var kernelName = Kernel.GetKernelName(kernelNr);
                 if (kernelName == "RestoreGame")
-                    kernelIdRestore = (byte) kernelNr;
+                    kernelIdRestore = (byte)kernelNr;
                 if (kernelName == "SaveGame")
-                    kernelIdSave = (byte) kernelNr;
+                    kernelIdSave = (byte)kernelNr;
                 if (kernelName == "Save")
-                    kernelIdSave = kernelIdRestore = (byte) kernelNr;
+                    kernelIdSave = kernelIdRestore = (byte)kernelNr;
             }
 
             // Search for gameobject superclass ::restore
-            var gameSuperObjectMethodCount = (ushort) gameSuperObject.MethodCount;
+            var gameSuperObjectMethodCount = (ushort)gameSuperObject.MethodCount;
             for (ushort methodNr = 0; methodNr < gameSuperObjectMethodCount; methodNr++)
             {
-                var selectorId = (ushort) gameSuperObject.GetFuncSelector(methodNr);
+                var selectorId = (ushort)gameSuperObject.GetFuncSelector(methodNr);
                 var methodName = Kernel.GetSelectorName(selectorId);
                 if (methodName == "restore")
                 {
@@ -868,10 +868,10 @@ namespace NScumm.Sci
             }
 
             // Search for gameobject ::save, if there is one patch that one too
-            var gameObjectMethodCount = (ushort) gameObject.MethodCount;
+            var gameObjectMethodCount = (ushort)gameObject.MethodCount;
             for (ushort methodNr = 0; methodNr < gameObjectMethodCount; methodNr++)
             {
-                var selectorId = (ushort) gameObject.GetFuncSelector(methodNr);
+                var selectorId = (ushort)gameObject.GetFuncSelector(methodNr);
                 var methodName = Kernel.GetSelectorName(selectorId);
                 if (methodName == "save")
                 {
@@ -891,7 +891,7 @@ namespace NScumm.Sci
         private static void PatchGameSaveRestoreCode(SegManager segMan, Register methodAddress, byte id)
         {
             var script = segMan.GetScript(methodAddress.Segment);
-            var patchPtr = script.GetBuf((int) methodAddress.Offset);
+            var patchPtr = script.GetBuf((int)methodAddress.Offset);
 
             if (ResourceManager.GetSciVersion() <= SciVersion.V1_1)
             {
@@ -917,7 +917,7 @@ namespace NScumm.Sci
             bool doRestore)
         {
             var script = segMan.GetScript(methodAddress.Segment);
-            var patchPtr = script.GetBuf((int) methodAddress.Offset);
+            var patchPtr = script.GetBuf((int)methodAddress.Offset);
             Array.Copy(PatchGameRestoreSaveSci21, 0, patchPtr.Data, patchPtr.Offset, PatchGameRestoreSaveSci21.Length);
 
             if (doRestore)
@@ -954,7 +954,7 @@ namespace NScumm.Sci
 
             if (Selector(s => s.subtitleLang) != -1)
                 subtitleLanguage =
-                    (Language) ReadSelectorValue(EngineState._segMan, GameObject, s => s.subtitleLang);
+                    (Language)ReadSelectorValue(EngineState._segMan, GameObject, s => s.subtitleLang);
 
             Language foundLanguage;
             var retval = GetSciLanguageString(str, activeLanguage, out foundLanguage, out languageSplitter);
@@ -1048,7 +1048,7 @@ namespace NScumm.Sci
 
         private void InitStackBaseWithSelector(int selector)
         {
-            EngineState.stack_base[0] = Register.Make(0, (ushort) selector);
+            EngineState.stack_base[0] = Register.Make(0, (ushort)selector);
             EngineState.stack_base[1] = Register.NULL_REG;
 
             // Register the first element on the execution stack
@@ -1071,10 +1071,10 @@ namespace NScumm.Sci
             // If game is multilingual and English was selected as language
             if (Selector(o => o.printLang) != -1) // set text language to English
                 WriteSelectorValue(EngineState._segMan, GameObject, o => o.printLang,
-                    (ushort) Sci.Language.English);
+                    (ushort)Sci.Language.English);
             if (Selector(o => o.parseLang) != -1) // and set parser language to English as well
                 WriteSelectorValue(EngineState._segMan, GameObject, o => o.parseLang,
-                    (ushort) Sci.Language.English);
+                    (ushort)Sci.Language.English);
         }
 
         private void InitGraphics()
@@ -1095,7 +1095,6 @@ namespace NScumm.Sci
 # if ENABLE_SCI32
             _gfxControls32 = null;
             _gfxText32 = null;
-            _robotDecoder = null;
             _gfxFrameout = null;
             _gfxPaint32 = null;
             _gfxPalette32 = null;
@@ -1132,8 +1131,8 @@ namespace NScumm.Sci
                 _gfxCursor.Init(_gfxCoordAdjuster, EventManager);
                 _gfxCompare = new GfxCompare(EngineState._segMan, _gfxCache, _gfxScreen, _gfxCoordAdjuster);
                 _gfxPaint32 = new GfxPaint32(EngineState._segMan);
-                _robotDecoder = new RobotDecoder(Platform == Platform.Macintosh);
-                _gfxFrameout = new GfxFrameout(EngineState._segMan, ResMan, _gfxCoordAdjuster, _gfxScreen, _gfxPalette32, _gfxCursor32);
+                _gfxTransitions32 = new GfxTransitions32(EngineState._segMan);
+                _gfxFrameout = new GfxFrameout(EngineState._segMan, _gfxTransitions32, ResMan, _gfxCoordAdjuster, _gfxScreen, _gfxPalette32, _gfxCursor32);
                 _gfxCursor32.Init(_gfxFrameout.CurrentBuffer);
                 _gfxText32 = new GfxText32(EngineState._segMan, _gfxCache);
                 _gfxControls32 = new GfxControls32(EngineState._segMan, _gfxCache, _gfxText32);
@@ -1189,8 +1188,8 @@ namespace NScumm.Sci
                 Instance._opcode_formats[Vm.op_lofss][0] = opcode_format.Script_Offset;
             }
 
-# if ENABLE_SCI32
-// In SCI32, some arguments are now words instead of bytes
+#if ENABLE_SCI32
+            // In SCI32, some arguments are now words instead of bytes
             if (ResourceManager.GetSciVersion() >= SciVersion.V2)
             {
                 Instance._opcode_formats[Vm.op_calle][2] = opcode_format.Script_Word;
@@ -1323,7 +1322,7 @@ namespace NScumm.Sci
                 if (ResourceManager.GetSciVersion() >= SciVersion.V2)
                 {
                     EngineState.variables[Vm.VAR_GLOBAL][Vm.GlobalVarTextSpeed] =
-                        Register.Make(0, (ushort) (8 - ConfigManager.Instance.Get<int>("talkspeed") * 8 / 255));
+                        Register.Make(0, (ushort)(8 - ConfigManager.Instance.Get<int>("talkspeed") * 8 / 255));
                 }
 #endif
 
@@ -1360,12 +1359,12 @@ namespace NScumm.Sci
                             // Mixed Up Mother Goose Deluxe does not support simultaneous speech + subtitles
 #endif // ENABLE_SCI32
                             EngineState.variables[Vm.VAR_GLOBAL][Vm.GlobalVarMessageType] = Register.Make(0, 3);
-                                // speech + subtitles
+                            // speech + subtitles
                             break;
                         default:
                             // Game does not support speech and subtitles, set it to speech
                             EngineState.variables[Vm.VAR_GLOBAL][Vm.GlobalVarMessageType] = Register.Make(0, 2);
-                                // speech
+                            // speech
                             break;
                     }
                 }
@@ -1377,7 +1376,7 @@ namespace NScumm.Sci
             // Update ScummVM's speech/subtitles settings for SCI1.1 CD games,
             // depending on the in-game settings
             if (!IsCd || ResourceManager.GetSciVersion() != SciVersion.V1_1) return;
-            var ingameSetting = (ushort) EngineState.variables[Vm.VAR_GLOBAL][90].Offset;
+            var ingameSetting = (ushort)EngineState.variables[Vm.VAR_GLOBAL][90].Offset;
 
             switch (ingameSetting)
             {
@@ -1511,8 +1510,8 @@ namespace NScumm.Sci
             var framesize = 2 + 1 * argc;
             var stackframe = kArgp.Value + kArgc;
 
-            stackframe[0] = Register.Make(0, (ushort) selectorId); // The selector we want to call
-            stackframe[1] = Register.Make(0, (ushort) argc); // Argument count
+            stackframe[0] = Register.Make(0, (ushort)selectorId); // The selector we want to call
+            stackframe[1] = Register.Make(0, (ushort)argc); // Argument count
 
             Register tmp;
             var slcType = LookupSelector(s._segMan, @object, selectorId, null, out tmp);
@@ -1598,7 +1597,7 @@ namespace NScumm.Sci
         {
             ushort parserLanguage = 1;
             if (Selector(o => o.parseLang) != -1)
-                parserLanguage = (ushort) ReadSelectorValue(EngineState._segMan, GameObject, o => o.parseLang);
+                parserLanguage = (ushort)ReadSelectorValue(EngineState._segMan, GameObject, o => o.parseLang);
 
             if (parserLanguage == _vocabularyLanguage) return;
 

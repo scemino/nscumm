@@ -60,9 +60,9 @@ namespace NScumm.Sci
 
         public Platform Platform { get; set; }
 
-        public int Width { get; }
+        public int Width { get; set; }
 
-        public int Height { get; }
+        public int Height { get; set; }
 
         public Core.Language Language { get; set; }
     }
@@ -94,6 +94,8 @@ namespace NScumm.Sci
         public const int DebugMode = 1 << 21;
         public const int ScriptPatcher = 1 << 22;
         public const int Workarounds = 1 << 23;
+        public const int Video = 1 << 24;
+        public const int Game = 1 << 25;
     }
 
     internal enum SciGameId
@@ -316,19 +318,31 @@ namespace NScumm.Sci
 
         public override IEngine Create(GameSettings settings, ISystem system)
         {
-            return new SciEngine(system, settings, (SciGameDescriptor) settings.Game,
+            return new SciEngine(system, settings, (SciGameDescriptor)settings.Game,
                 GameIdStrToEnum[settings.Game.Id]);
         }
 
         protected override IGameDescriptor CreateGameDescriptor(string path, ADGameDescription desc)
         {
+            int width;
+            int height;
+            if (GameIdStrToEnum[desc.gameid] == SciGameId.PHANTASMAGORIA)
+            {
+                width = 630; height = 450;
+            }
+            else
+            {
+                width = 320; height = 200;
+            }
             return new SciGameDescriptor(desc)
             {
                 Path = path,
                 Description = "TODO",
                 Language = desc.language,
                 Platform = desc.platform,
-                Id = desc.gameid
+                Id = desc.gameid,
+                Width = width,
+                Height = height
             };
         }
 
@@ -3206,12 +3220,13 @@ namespace NScumm.Sci
                 platform: platform,
                 language: language,
                 guiOptions: guiOptions, flags: flags);
+
             return s_fallbackDesc;
         }
 
         private Core.Language CharToScummVMLanguage(byte c)
         {
-            switch ((char) c)
+            switch ((char)c)
             {
                 case 'F':
                     return Core.Language.FR_FRA;

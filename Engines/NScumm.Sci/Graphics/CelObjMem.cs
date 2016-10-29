@@ -34,6 +34,7 @@ namespace NScumm.Sci.Graphics
     {
         public CelObjMem(Register bitmapObject)
         {
+            _info = new CelInfo32();
             _info.type = CelType.Mem;
             _info.bitmap = bitmapObject;
             _mirrorX = false;
@@ -49,10 +50,10 @@ namespace NScumm.Sci.Graphics
             }
             _width = bitmap.Width;
             _height = bitmap.Height;
-            _displace = bitmap.Displace;
+            _displace = bitmap.Origin;
             _transparentColor = bitmap.SkipColor;
-            _xResolution = bitmap.ScaledWidth;
-            _yResolution = bitmap.ScaledHeight;
+            _xResolution = bitmap.XResolution;
+            _yResolution = bitmap.YResolution;
             _hunkPaletteOffset = bitmap.HunkPaletteOffset;
             _remap = bitmap.Remap;
         }
@@ -64,7 +65,7 @@ namespace NScumm.Sci.Graphics
 
         public override BytePtr GetResPointer()
         {
-            return SciEngine.Instance.EngineState._segMan.GetHunkPointer(_info.bitmap);
+            return SciEngine.Instance.EngineState._segMan.LookupBitmap(_info.bitmap).RawData;
         }
     }
 }

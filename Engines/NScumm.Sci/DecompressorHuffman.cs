@@ -29,7 +29,7 @@ namespace NScumm.Sci
     {
         private byte[] _nodes;
 
-        public override ResourceErrorCodes Unpack(Stream src, byte[] dest, int nPacked, int nUnpacked)
+        public override ResourceErrorCodes Unpack(Stream src, BytePtr dest, int nPacked, int nUnpacked)
         {
             Init(src, dest, nPacked, nUnpacked);
             byte numnodes;

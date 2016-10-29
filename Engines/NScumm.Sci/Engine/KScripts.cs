@@ -144,9 +144,6 @@ namespace NScumm.Sci.Engine
             {
                 return s.r_acc;
             }
-            // This exists in the KQ5CD and GK1 interpreter. We know it is used
-            // when GK1 starts up, before the Sierra logo.
-            Warning("kDisposeScript called with 2 parameters, still untested");
             return argv[1];
         }
 

@@ -28,7 +28,7 @@ namespace NScumm.Core
         public int Offset;
         public byte[] Data;
 
-        public static readonly BytePtr Null = new BytePtr(null);
+        public static readonly BytePtr Null = new BytePtr();
 
         public byte Value
         {
@@ -50,6 +50,7 @@ namespace NScumm.Core
 
         public BytePtr(byte[] data, int offset = 0)
         {
+            if (data == null) throw new ArgumentNullException(nameof(data));
             Data = data;
             Offset = offset;
         }

@@ -44,6 +44,7 @@
     <Compile Include="Audio\SampleProviders\MonoToStereoAudioSampleProvider16.cs" />
     <Compile Include="Audio\SampleProviders\ResampleAudioSampleProvider.cs" />
     <Compile Include="BitStream.cs" />
+    <Compile Include="Common\Array.cs" />
     <Compile Include="Common\Disposable.cs" />
     <Compile Include="Common\Huffman.cs" />
     <Compile Include="Common\RandomSource.cs" />
@@ -230,9 +231,5 @@
   <ItemGroup>
     <Compile Include="Video\PsxStreamDecoder.Video.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Image\" />
-    <Folder Include="Audio\SoftSynth\Mt32\" />
-    <Folder Include="Image\Codecs" />
-  </ItemGroup>
+  <ItemGroup />
 </Project>

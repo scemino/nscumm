@@ -17,11 +17,13 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Collections.Generic;
 using NScumm.Core;
 using NScumm.Core.Graphics;
 using NScumm.Sci.Engine;
 using static NScumm.Core.DebugHelper;
+using NScumm.Sci.Video;
+using NScumm.Core.Common;
+using System.Collections.Generic;
 
 #if ENABLE_SCI32
 
@@ -33,14 +35,6 @@ namespace NScumm.Sci.Graphics
         Horizontal = 2
     }
 
-// TODO: Verify display styles and adjust names appropriately for
-    // types 1 through 12 & 15 (others are correct)
-    // Names should be:
-    // * VShutterIn, VShutterOut
-    // * HShutterIn, HShutterOut
-    // * WipeLeft, WipeRight, WipeDown, WipeUp
-    // * PixelDissolve
-    // * ShutDown and Kill? (and Plain and Fade?)
     internal enum ShowStyleType /* : uint8 */
     {
         kShowStyleNone = 0,
@@ -54,102 +48,11 @@ namespace NScumm.Sci.Graphics
         kShowStyleWipeDown = 8,
         kShowStyleIrisOut = 9,
         kShowStyleIrisIn = 10,
-        kShowStyle11 = 11,
-        kShowStyle12 = 12,
+        kShowStyleDissolveNoMorph = 11,
+        kShowStyleDissolve = 12,
         kShowStyleFadeOut = 13,
         kShowStyleFadeIn = 14,
-        // TODO: Only in SCI3
-        kShowStyleUnknown = 15
-    }
-
-    /**
-     * Show styles represent transitions applied to draw planes.
-     * One show style per plane can be active at a time.
-     */
-
-    internal class ShowStyleEntry
-    {
-        /**
-         * The ID of the plane this show style belongs to.
-         * In SCI2.1mid (at least SQ6), per-plane transitions
-         * were removed and a single plane ID is used.
-         */
-        public Register plane;
-
-        /**
-         * The type of the transition.
-         */
-        public ShowStyleType type;
-
-        // TODO: This name is probably incorrect
-        public bool fadeUp;
-
-        /**
-         * The number of steps for the show style.
-         */
-        public short divisions;
-
-        // NOTE: This property exists from SCI2 through at least
-        // SCI2.1mid but is never used in the actual processing
-        // of the styles?
-        public int unknownC;
-
-        /**
-         * The color used by transitions that draw CelObjColor
-         * screen items. -1 for transitions that do not draw
-         * screen items.
-         */
-        public short color;
-
-        // TODO: Probably uint32
-        // TODO: This field probably should be used in order to
-        // provide time-accurate processing of show styles. In the
-        // actual SCI engine (at least 2–2.1mid) it appears that
-        // style transitions are drawn “as fast as possible”, one
-        // step per loop, even though this delay field exists
-        public int delay;
-
-        // TODO: Probably bool, but never seems to be true?
-        public int animate;
-
-        /**
-         * The wall time at which the next step of the animation
-         * should execute.
-         */
-        public int nextTick;
-
-        /**
-         * During playback of the show style, the current step
-         * (out of divisions).
-         */
-        public int currentStep;
-
-        /**
-         * The next show style.
-         */
-        public ShowStyleEntry next;
-
-        /**
-         * Whether or not this style has finished running and
-         * is ready for disposal.
-         */
-        public bool processed;
-
-        //
-        // Engine specific properties for SCI2.1mid through SCI3
-        //
-
-        /**
-         * The number of entries in the fadeColorRanges array.
-         */
-        public byte fadeColorRangesCount;
-
-        /**
-         * A pointer to an dynamically sized array of palette
-         * indexes, in the order [ fromColor, toColor, ... ].
-         * Only colors within this range are transitioned.
-         */
-        public Ptr<ushort> fadeColorRanges;
+        kShowStyleMorph = 15
     }
 
     internal class GfxFrameout
@@ -253,7 +156,7 @@ namespace NScumm.Sci.Graphics
          * @note This field is on `GraphicsMgr.screen` in SCI
          * engine.
          */
-        private RectList _showList;
+        private RectList _showList = new RectList();
 
         /**
          * The amount of extra overdraw that is acceptable when
@@ -289,21 +192,20 @@ namespace NScumm.Sci.Graphics
         private Ptr<short> _defaultDivisions;
         private Ptr<short> _defaultUnknownC;
 
-        /**
-         * TODO: Documentation
-         */
-        private ShowStyleEntry _showStyles;
+        private GfxTransitions32 _transitions;
+        private GfxCursor32 _cursor = new GfxCursor32();
 
         public Buffer CurrentBuffer => _currentBuffer;
         public PlaneList VisiblePlanes => _visiblePlanes;
 
-        public GfxFrameout(SegManager segMan, ResourceManager resMan, GfxCoordAdjuster coordAdjuster, GfxScreen screen, GfxPalette32 palette, GfxCursor32 gfxCursor32)
+        public GfxFrameout(SegManager segMan, GfxTransitions32 transitions, ResourceManager resMan, GfxCoordAdjuster coordAdjuster, GfxScreen screen, GfxPalette32 palette, GfxCursor32 gfxCursor32)
         {
             _palette = palette;
             _visiblePlanes = new PlaneList();
             _resMan = resMan;
             _screen = screen;
             _segMan = segMan;
+            _transitions = transitions;
             if (SciEngine.Instance.GameId == SciGameId.PHANTASMAGORIA)
             {
                 _currentBuffer = new Buffer(630, 450, BytePtr.Null);
@@ -317,7 +219,7 @@ namespace NScumm.Sci.Graphics
                 _currentBuffer = new Buffer(320, 200, BytePtr.Null);
             }
             _currentBuffer = new Buffer(screen.DisplayWidth, screen.DisplayHeight, BytePtr.Null);
-            _screenRect = new Rect((short) screen.DisplayWidth, (short) screen.DisplayHeight);
+            _screenRect = new Rect((short)screen.DisplayWidth, (short)screen.DisplayHeight);
             _currentBuffer.SetPixels(new byte[screen.DisplayWidth * screen.DisplayHeight]);
 
             for (int i = 0; i < 236; i += 2)
@@ -379,7 +281,7 @@ namespace NScumm.Sci.Graphics
             // principle, CoordAdjuster could be reused for
             // convertGameRectToPlaneRect, but it is not super clear yet
             // what the benefit would be to do that.
-            _coordAdjuster = (GfxCoordAdjuster32) coordAdjuster;
+            _coordAdjuster = (GfxCoordAdjuster32)coordAdjuster;
 
             // TODO: Script resolution is hard-coded per game;
             // also this must be set or else the engine will crash
@@ -389,7 +291,16 @@ namespace NScumm.Sci.Graphics
 
         public void DeleteScreenItem(ScreenItem screenItem)
         {
-            throw new NotImplementedException();
+            Plane plane = _planes.FindByObject(screenItem._plane);
+            if (plane == null)
+            {
+                Error("GfxFrameout::deleteScreenItem: Could not find plane {0} for screen item {1}", screenItem._plane, screenItem._object);
+            }
+            if (plane._screenItemList.FindByObject(screenItem._object) == null)
+            {
+                Error("GfxFrameout::deleteScreenItem: Screen item {0} not found in plane {1}", screenItem._object, screenItem._plane);
+            }
+            DeleteScreenItem(screenItem, plane);
         }
 
         public void DeleteScreenItem(ScreenItem screenItem, Plane plane)
@@ -418,9 +329,24 @@ namespace NScumm.Sci.Graphics
             DeleteScreenItem(screenItem, plane);
         }
 
-        public void DeletePlane(Plane plane)
+        public void DeletePlane(Plane planeToFind)
         {
-            throw new NotImplementedException();
+            Plane plane = _planes.FindByObject(planeToFind._object);
+            if (plane == null)
+            {
+                Error("deletePlane: Plane {0} not found", planeToFind._object);
+            }
+
+            if (plane._created != 0)
+            {
+                _planes.Remove(plane);
+            }
+            else
+            {
+                plane._created = 0;
+                plane._moved = 0;
+                plane._deleted = GetScreenCount();
+            }
         }
 
         public void Run()
@@ -433,7 +359,7 @@ namespace NScumm.Sci.Graphics
             // and is a background fill plane to ensure hidden planes
             // (planes with a priority of -1) are never drawn
             Plane initPlane =
-                new Plane(new Rect((short) _currentBuffer.ScriptWidth, (short) _currentBuffer.ScriptHeight));
+                new Plane(new Rect((short)_currentBuffer.ScriptWidth, (short)_currentBuffer.ScriptHeight));
             initPlane._priority = 0;
             _planes.Add(initPlane);
         }
@@ -538,7 +464,7 @@ namespace NScumm.Sci.Graphics
 
         private bool CheckForFred(Register @object)
         {
-            short viewId = (short) SciEngine.ReadSelectorValue(_segMan, @object, o => o.view);
+            short viewId = (short)SciEngine.ReadSelectorValue(_segMan, @object, o => o.view);
             SciGameId gameId = SciEngine.Instance.GameId;
 
             if (gameId == SciGameId.QFG4 && viewId == 9999)
@@ -575,296 +501,24 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        public void KernelDeleteScreenItem(Register @object)
-        {
-            // The "fred" object is used to test graphics performance;
-            // it is impacted by framerate throttling, so disable the
-            // throttling when this item is on the screen for the
-            // performance check to pass.
-            if (!_benchmarkingFinished && CheckForFred(@object))
-            {
-                _benchmarkingFinished = true;
-                _throttleFrameOut = true;
-            }
-
-            _segMan.GetObject(@object).ClearInfoSelectorFlag(SciObject.InfoFlagViewInserted);
-
-            Register planeObject = SciEngine.ReadSelector(_segMan, @object, o => o.plane);
-            Plane plane = _planes.FindByObject(planeObject);
-
-            ScreenItem screenItem = plane?._screenItemList.FindByObject(@object);
-            if (screenItem == null)
-            {
-                return;
-            }
-
-            DeleteScreenItem(screenItem, plane);
-        }
-
-        public void KernelFrameOut(bool shouldShowBits)
-        {
-            if (_showStyles != null)
-            {
-                ProcessShowStyles();
-            }
-            else if (_palMorphIsOn)
-            {
-                PalMorphFrameOut(_styleRanges, null);
-                _palMorphIsOn = false;
-            }
-            else
-            {
-// TODO: Window scroll
-//		if (g_PlaneScroll) {
-//			processScrolls();
-//		}
-
-                FrameOut(shouldShowBits);
-            }
-
-            Throttle();
-        }
-
-        public void Throttle()
-        {
-            if (!_throttleFrameOut) return;
-
-            byte throttleTime;
-            if (_throttleState == 2)
-            {
-                throttleTime = 17;
-                _throttleState = 0;
-            }
-            else
-            {
-                throttleTime = 16;
-                ++_throttleState;
-            }
-
-            SciEngine.Instance.EngineState.SpeedThrottler(throttleTime);
-            SciEngine.Instance.EngineState._throttleTrigger = true;
-        }
-
-
-        // NOTE: Different version of SCI engine support different show styles
-        // SCI2 implements 0, 1/3/5/7/9, 2/4/6/8/10, 11, 12, 13, 14
-        // SCI2.1 implements 0, 1/2/3/4/5/6/7/8/9/10/11/12/15, 13, 14
-        // SCI3 implements 0, 1/3/5/7/9, 2/4/6/8/10, 11, 12/15, 13, 14
-        // TODO: Sierra code needs to be replaced with code that uses the
-        // computed entry.delay property instead of just counting divisors,
-        // as the latter is machine-speed-dependent and leads to wrong
-        // transition speeds
-        private void ProcessShowStyles()
-        {
-            uint now = SciEngine.Instance.TickCount;
-
-            bool continueProcessing;
-
-            // TODO: Change to bool? Engine uses inc to set the value to true,
-            // but there does not seem to be any reason to actually count how
-            // many times it was set
-            int doFrameOut;
-            do
-            {
-                continueProcessing = false;
-                doFrameOut = 0;
-                ShowStyleEntry showStyle = _showStyles;
-                while (showStyle != null)
-                {
-                    bool retval = false;
-
-                    if (showStyle.animate == 0)
-                    {
-                        ++doFrameOut;
-                    }
-
-                    if (showStyle.nextTick < now || showStyle.animate == 0)
-                    {
-                        // TODO: Different versions of SCI use different processors!
-                        // This is the SQ6/KQ7/SCI2.1mid table.
-                        switch (showStyle.type)
-                        {
-                            case ShowStyleType.kShowStyleNone:
-                            {
-                                retval = ProcessShowStyleNone(showStyle);
-                                break;
-                            }
-                            case ShowStyleType.kShowStyleHShutterOut:
-                            case ShowStyleType.kShowStyleVShutterOut:
-                            case ShowStyleType.kShowStyleWipeLeft:
-                            case ShowStyleType.kShowStyleWipeUp:
-                            case ShowStyleType.kShowStyleIrisOut:
-                            case ShowStyleType.kShowStyleHShutterIn:
-                            case ShowStyleType.kShowStyleVShutterIn:
-                            case ShowStyleType.kShowStyleWipeRight:
-                            case ShowStyleType.kShowStyleWipeDown:
-                            case ShowStyleType.kShowStyleIrisIn:
-                            case ShowStyleType.kShowStyle11:
-                            case ShowStyleType.kShowStyle12:
-                            case ShowStyleType.kShowStyleUnknown:
-                            {
-                                retval = ProcessShowStyleMorph(showStyle);
-                                break;
-                            }
-                            case ShowStyleType.kShowStyleFadeOut:
-                            {
-                                retval = ProcessShowStyleFade(-1, showStyle);
-                                break;
-                            }
-                            case ShowStyleType.kShowStyleFadeIn:
-                            {
-                                retval = ProcessShowStyleFade(1, showStyle);
-                                break;
-                            }
-                        }
-                    }
-
-                    if (!retval)
-                    {
-                        continueProcessing = true;
-                    }
-
-                    if (retval && showStyle.processed)
-                    {
-                        showStyle = DeleteShowStyleInternal(showStyle);
-                    }
-                    else
-                    {
-                        showStyle = showStyle.next;
-                    }
-                }
-
-                if (doFrameOut != 0)
-                {
-                    FrameOut(true);
-
-                    // TODO: Transitions without the “animate” flag are too
-                    // fast, but the throttle value is arbitrary. Someone on
-                    // real hardware probably needs to test what the actual
-                    // speed of these transitions should be
-                    EngineState state = SciEngine.Instance.EngineState;
-                    state.SpeedThrottler(33);
-                    state._throttleTrigger = true;
-                }
-            } while (continueProcessing && doFrameOut != 0);
-        }
-
-        private ShowStyleEntry DeleteShowStyleInternal(ShowStyleEntry showStyle)
-        {
-            ShowStyleEntry lastEntry = null;
-
-            for (ShowStyleEntry testEntry = _showStyles; testEntry != null; testEntry = testEntry.next)
-            {
-                if (testEntry == showStyle)
-                {
-                    break;
-                }
-                lastEntry = testEntry;
-            }
-
-            if (lastEntry == null)
-            {
-                _showStyles = showStyle.next;
-                lastEntry = _showStyles;
-            }
-            else
-            {
-                lastEntry.next = showStyle.next;
-            }
-
-            // TODO: Verify that this is the correct entry to return
-            // for the loop in processShowStyles to work correctly
-            return lastEntry;
-        }
-
-
-        private bool ProcessShowStyleNone(ShowStyleEntry showStyle)
-        {
-            if (showStyle.fadeUp)
-            {
-                _palette.SetFade(100, 0, 255);
-            }
-            else
-            {
-                _palette.SetFade(0, 0, 255);
-            }
-
-            showStyle.processed = true;
-            return true;
-        }
-
-        private bool ProcessShowStyleMorph(ShowStyleEntry showStyle)
-        {
-            PalMorphFrameOut(_styleRanges, showStyle);
-            showStyle.processed = true;
-            return true;
-        }
-
-        // TODO: Normalise use of 'entry' vs 'showStyle'
-        private bool ProcessShowStyleFade(int direction, ShowStyleEntry showStyle)
-        {
-            bool unchanged = true;
-            if (showStyle.currentStep < showStyle.divisions)
-            {
-                int percent;
-                if (direction <= 0)
-                {
-                    percent = showStyle.divisions - showStyle.currentStep - 1;
-                }
-                else
-                {
-                    percent = showStyle.currentStep;
-                }
-
-                percent *= 100;
-                percent /= showStyle.divisions - 1;
-
-                if (showStyle.fadeColorRangesCount > 0)
-                {
-                    for (int i = 0, len = showStyle.fadeColorRangesCount; i < len; i += 2)
-                    {
-                        _palette.SetFade((ushort) percent, (byte) showStyle.fadeColorRanges[i],
-                            showStyle.fadeColorRanges[i + 1]);
-                    }
-                }
-                else
-                {
-                    _palette.SetFade((ushort) percent, 0, 255);
-                }
-
-                ++showStyle.currentStep;
-                showStyle.nextTick += showStyle.delay;
-                unchanged = false;
-            }
-
-            if (showStyle.currentStep >= showStyle.divisions && unchanged)
-            {
-                if (direction > 0)
-                {
-                    showStyle.processed = true;
-                }
-
-                return true;
-            }
-
-            return false;
-        }
-
-        private void PalMorphFrameOut(sbyte[] styleRanges, ShowStyleEntry showStyle)
+        public void PalMorphFrameOut(sbyte[] styleRanges, PlaneShowStyle showStyle)
         {
             Palette sourcePalette = new Palette(_palette.NextPalette);
             AlterVmap(sourcePalette, sourcePalette, -1, styleRanges);
 
-            short prevRoom = SciEngine.Instance.EngineState.variables[Vm.VAR_GLOBAL][12].ToInt16();
+            short prevRoom = SciEngine.Instance.EngineState.variables[Vm.VAR_GLOBAL][Vm.GlobalVarPreviousRoomNo].ToInt16();
 
-            Rect rect = new Rect((short) _screen.DisplayWidth, (short) _screen.DisplayHeight);
+            Rect rect = new Rect((short)_currentBuffer.ScreenWidth, (short)_currentBuffer.ScreenHeight);
             _showList.Add(rect);
             ShowBits();
 
             // NOTE: The original engine allocated these as static arrays of 100
             // pointers to ScreenItemList / RectList
-            var screenItemLists = new List<DrawList>(_planes.Count);
-            var eraseLists = new List<RectList>(_planes.Count);
+            var screenItemLists = new Array<DrawList>();
+            var eraseLists = new Array<RectList>();
+
+            screenItemLists.Resize(_planes.Count);
+            eraseLists.Resize(_planes.Count);
 
             if (SciEngine.Instance._gfxRemap32.RemapCount > 0 && _remapOccurred)
             {
@@ -888,7 +542,7 @@ namespace NScumm.Sci.Graphics
             _remapOccurred = _palette.UpdateForFrame();
             _frameNowVisible = false;
 
-            for (var i = 0; i < _planes.Count; ++i)
+            for (int i = 0; i < _planes.Count; ++i)
             {
                 DrawEraseList(eraseLists[i], _planes[i]);
                 DrawScreenItemList(screenItemLists[i]);
@@ -911,8 +565,7 @@ namespace NScumm.Sci.Graphics
             {
                 for (int i = 0; i < sourcePalette.colors.Length; ++i)
                 {
-                    // TODO: Limiting range 72 to 103 is NOT present in every game
-                    if (styleRanges[i] == -1 || (styleRanges[i] == 0 && i > 71 && i < 104))
+                    if (styleRanges[i] == -1 || ValidZeroStyle((byte)styleRanges[i], i))
                     {
                         sourcePalette.colors[i] = nextPalette.colors[i];
                         sourcePalette.colors[i].used = 1;
@@ -923,13 +576,11 @@ namespace NScumm.Sci.Graphics
             _palette.Submit(sourcePalette);
             _palette.UpdateFFrame();
             _palette.UpdateHardware();
-            AlterVmap(nextPalette, sourcePalette, 1, _styleRanges);
+            AlterVmap(nextPalette, sourcePalette, 1, _transitions._styleRanges);
 
-            if (showStyle != null && showStyle.type != ShowStyleType.kShowStyleUnknown)
+            if (showStyle != null && showStyle.type != ShowStyleType.kShowStyleMorph)
             {
-// TODO: SCI2.1mid transition effects
-//		processEffects();
-                Warning("Transition {0} not implemented!", showStyle.type);
+                _transitions.ProcessEffects(showStyle);
             }
             else
             {
@@ -967,7 +618,7 @@ namespace NScumm.Sci.Graphics
             // inside the next loop in SCI2.1mid
             _frameNowVisible = false;
 
-            for (var i = 0; i < _planes.Count; ++i)
+            for (int i = 0; i < _planes.Count; ++i)
             {
                 DrawEraseList(eraseLists[i], _planes[i]);
                 DrawScreenItemList(screenItemLists[i]);
@@ -981,6 +632,112 @@ namespace NScumm.Sci.Graphics
             _frameNowVisible = true;
         }
 
+        /**
+	     * Validates whether the given palette index in the
+	     * style range should copy a color from the next
+	     * palette to the source palette during a palette
+	     * morph operation.
+	     */
+        private bool ValidZeroStyle(byte style, int i)
+        {
+            if (style != 0)
+            {
+                return false;
+            }
+
+            // TODO: Cannot check Shivers or MGDX until those executables can be
+            // unwrapped
+            switch (SciEngine.Instance.GameId)
+            {
+                case SciGameId.KQ7:
+                case SciGameId.PHANTASMAGORIA:
+                case SciGameId.SQ6:
+                    return (i > 71 && i < 104);
+                default:
+                    return true;
+            }
+        }
+
+        public void KernelDeleteScreenItem(Register @object)
+        {
+            // The "fred" object is used to test graphics performance;
+            // it is impacted by framerate throttling, so disable the
+            // throttling when this item is on the screen for the
+            // performance check to pass.
+            if (!_benchmarkingFinished && CheckForFred(@object))
+            {
+                _benchmarkingFinished = true;
+                _throttleFrameOut = true;
+            }
+
+            _segMan.GetObject(@object).ClearInfoSelectorFlag(SciObject.InfoFlagViewInserted);
+
+            Register planeObject = SciEngine.ReadSelector(_segMan, @object, o => o.plane);
+            Plane plane = _planes.FindByObject(planeObject);
+
+            ScreenItem screenItem = plane?._screenItemList.FindByObject(@object);
+            if (screenItem == null)
+            {
+                return;
+            }
+
+            DeleteScreenItem(screenItem, plane);
+        }
+
+        public void ShowRect(Rect rect)
+        {
+            if (!rect.IsEmpty)
+            {
+                _showList.Clear();
+                _showList.Add(rect);
+                ShowBits();
+            }
+        }
+
+        public void KernelFrameOut(bool shouldShowBits)
+        {
+            if (_transitions.HasShowStyles)
+            {
+                _transitions.ProcessShowStyles();
+            }
+            else if (_palMorphIsOn)
+            {
+                PalMorphFrameOut(_transitions._styleRanges, null);
+                _palMorphIsOn = false;
+            }
+            else
+            {
+                if (_transitions.HasScrolls)
+                {
+                    _transitions.ProcessScrolls();
+                }
+
+                FrameOut(shouldShowBits);
+            }
+
+            Throttle();
+        }
+
+        public void Throttle()
+        {
+            if (!_throttleFrameOut) return;
+
+            byte throttleTime;
+            if (_throttleState == 2)
+            {
+                throttleTime = 17;
+                _throttleState = 0;
+            }
+            else
+            {
+                throttleTime = 16;
+                ++_throttleState;
+            }
+
+            SciEngine.Instance.EngineState.SpeedThrottler(throttleTime);
+            SciEngine.Instance.EngineState._throttleTrigger = true;
+        }
+        
         private void AlterVmap(Palette palette1, Palette palette2, sbyte style, sbyte[] styleRanges)
         {
             byte[] clut = new byte[256];
@@ -1013,7 +770,7 @@ namespace NScumm.Sci.Graphics
                         }
                     }
 
-                    clut[paletteIndex] = (byte) minDiffIndex;
+                    clut[paletteIndex] = (byte)minDiffIndex;
                 }
 
                 if (style == 1 && styleRanges[paletteIndex] == 0)
@@ -1036,7 +793,7 @@ namespace NScumm.Sci.Graphics
                         }
                     }
 
-                    clut[paletteIndex] = (byte) minDiffIndex;
+                    clut[paletteIndex] = (byte)minDiffIndex;
                 }
             }
 
@@ -1078,7 +835,7 @@ namespace NScumm.Sci.Graphics
                 MergeToShowList(drawItem.rect, _showList, _overdrawThreshold);
                 ScreenItem screenItem = drawItem.screenItem;
                 // TODO: Remove
-//		debug("Drawing item %04x:%04x to %d %d %d %d", PRINT_REG(screenItem._object), PRINT_RECT(drawItem.rect));
+                //		debug("Drawing item %04x:%04x to %d %d %d %d", PRINT_REG(screenItem._object), PRINT_RECT(drawItem.rect));
                 CelObj celObj = screenItem._celObj;
                 celObj.Draw(_currentBuffer, screenItem, ref drawItem.rect, screenItem._mirrorX ^ celObj._mirrorX);
             }
@@ -1265,14 +1022,14 @@ namespace NScumm.Sci.Graphics
             return splitCount;
         }
 
-        // NOTE: The third rectangle parameter is only ever given a non-empty rect
-        // by VMD code, via `frameOut`
-        private void CalcLists(IList<DrawList> drawLists, IList<RectList> eraseLists)
+        private void CalcLists(Array<DrawList> drawLists, Array<RectList> eraseLists)
         {
             CalcLists(drawLists, eraseLists, new Rect());
         }
 
-        private void CalcLists(IList<DrawList> drawLists, IList<RectList> eraseLists, Rect eraseRect)
+        // NOTE: The third rectangle parameter is only ever given a non-empty rect
+        // by VMD code, via `frameOut`
+        private void CalcLists(Array<DrawList> drawLists, Array<RectList> eraseLists, Rect eraseRect)
         {
             RectList eraseList = new RectList();
             Rect[] outRects = new Rect[4];
@@ -1634,21 +1391,11 @@ namespace NScumm.Sci.Graphics
 
         private void ShowBits()
         {
-            foreach (var rect in _showList)
+            if (_showList.Count == 0)
             {
-                Rect rounded = new Rect(rect);
-                // NOTE: SCI engine used BR-inclusive rects so used slightly
-                // different masking here to ensure that the width of rects
-                // was always even.
-                rounded.Left &= ~1;
-                rounded.Right = (short) ((rounded.Right + 1) & ~1);
-
-                // TODO:
-                // _cursor.GonnaPaint(rounded);
+                SciEngine.Instance.System.GraphicsManager.UpdateScreen();
+                return;
             }
-
-            // TODO:
-            // _cursor.PaintStarting();
 
             foreach (var rect in _showList)
             {
@@ -1657,20 +1404,38 @@ namespace NScumm.Sci.Graphics
                 // different masking here to ensure that the width of rects
                 // was always even.
                 rounded.Left &= ~1;
-                rounded.Right = (short) ((rounded.Right + 1) & ~1);
-
-                BytePtr sourceBuffer = new BytePtr(_currentBuffer.Pixels,
-                    rounded.Top * _currentBuffer.ScreenWidth + rounded.Left);
-
-                SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(sourceBuffer, _currentBuffer.ScreenWidth,
-                    rounded.Left, rounded.Top,
-                    rounded.Width, rounded.Height);
+                rounded.Right = (short)((rounded.Right + 1) & ~1);
+                _cursor.GonnaPaint(rounded);
             }
 
-            // TODO:
-            // _cursor.DonePainting();
+            _cursor.PaintStarting();
+
+            foreach (var rect in _showList)
+            {
+                Rect rounded = new Rect(rect);
+                // NOTE: SCI engine used BR-inclusive rects so used slightly
+                // different masking here to ensure that the width of rects
+                // was always even.
+                rounded.Left &= ~1;
+                rounded.Right = (short)((rounded.Right + 1) & ~1);
+
+                BytePtr sourceBuffer = _currentBuffer.Pixels + rounded.Top * _currentBuffer.ScreenWidth + rounded.Left;
+
+                // TODO: Sometimes transition screen items generate zero-dimension
+                // show rectangles. Is this a bug?
+                if (rounded.Width == 0 || rounded.Height == 0)
+                {
+                    Warning("Zero-dimension show rectangle ignored");
+                    continue;
+                }
+
+                SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(sourceBuffer, _currentBuffer.ScreenWidth, rounded.Left, rounded.Top, rounded.Width, rounded.Height);
+            }
+
+            _cursor.DonePainting();
 
             _showList.Clear();
+            SciEngine.Instance.System.GraphicsManager.UpdateScreen();
         }
 
         public short KernelGetHighPlanePri()
@@ -1733,43 +1498,34 @@ namespace NScumm.Sci.Graphics
                 if (screenItem._scale.signal != ScaleSignals32.kScaleSignalNone && screenItem._scale.x != 0 &&
                     screenItem._scale.y != 0)
                 {
-                    scaledPosition.X = (short) (scaledPosition.X * 128 / screenItem._scale.x);
-                    scaledPosition.Y = (short) (scaledPosition.Y * 128 / screenItem._scale.y);
+                    scaledPosition.X = (short)(scaledPosition.X * 128 / screenItem._scale.x);
+                    scaledPosition.Y = (short)(scaledPosition.Y * 128 / screenItem._scale.y);
                 }
 
-                byte pixel = celObj.ReadPixel((ushort) scaledPosition.X, (ushort) scaledPosition.Y, mirrorX);
+                byte pixel = celObj.ReadPixel((ushort)scaledPosition.X, (ushort)scaledPosition.Y, mirrorX);
                 return pixel != celObj._transparentColor;
             }
 
             return true;
         }
 
-        private ShowStyleEntry FindShowStyleForPlane(Register planeObj)
-        {
-            ShowStyleEntry entry = _showStyles;
-            while (entry != null)
-            {
-                if (entry.plane == planeObj)
-                {
-                    break;
-                }
-                entry = entry.next;
-            }
-
-            return entry;
-        }
-
         public void FrameOut(bool shouldShowBits, Rect eraseRect = new Rect())
         {
-            // TODO: Robot
-            //	if (_robot != nullptr) {
-            //		_robot.doRobot();
-            //	}
+            RobotDecoder robotPlayer = SciEngine.Instance._video32.RobotPlayer;
+            bool robotIsActive = robotPlayer.Status != RobotStatus.kRobotStatusUninitialized;
+
+            if (robotIsActive)
+            {
+                robotPlayer.DoRobot();
+            }
 
             // NOTE: The original engine allocated these as static arrays of 100
             // pointers to ScreenItemList / RectList
-            List<DrawList> screenItemLists = new List<DrawList>(_planes.Count);
-            List<RectList> eraseLists = new List<RectList>(_planes.Count);
+            var screenItemLists = new Array<DrawList>();
+            var eraseLists = new Array<RectList>();
+
+            screenItemLists.Resize(_planes.Count);
+            eraseLists.Resize(_planes.Count);
 
             if (SciEngine.Instance._gfxRemap32.RemapCount > 0 && _remapOccurred)
             {
@@ -1804,10 +1560,10 @@ namespace NScumm.Sci.Graphics
                 DrawScreenItemList(screenItemLists[i]);
             }
 
-// TODO: Robot
-//	if (_robot != nullptr) {
-//		_robot.frameAlmostVisible();
-//	}
+            if (robotIsActive)
+            {
+                robotPlayer.FrameAlmostVisible();
+            }
 
             _palette.UpdateHardware(!shouldShowBits);
 
@@ -1818,10 +1574,10 @@ namespace NScumm.Sci.Graphics
 
             _frameNowVisible = true;
 
-// TODO: Robot
-//	if (_robot != nullptr) {
-//		robot.frameNowVisible();
-//	}
+            if (robotIsActive)
+            {
+                robotPlayer.FrameNowVisible();
+            }
         }
 
         public void KernelUpdatePlane(Register @object)
@@ -1916,13 +1672,13 @@ namespace NScumm.Sci.Graphics
                 if (deltaX != 0)
                 {
                     SciEngine.WriteSelectorValue(_segMan, screenItem._object, o => o.x,
-                        (ushort) (SciEngine.ReadSelectorValue(_segMan, screenItem._object, o => o.x) + deltaX));
+                        (ushort)(SciEngine.ReadSelectorValue(_segMan, screenItem._object, o => o.x) + deltaX));
                 }
 
                 if (deltaY != 0)
                 {
                     SciEngine.WriteSelectorValue(_segMan, screenItem._object, o => o.y,
-                        (ushort) (SciEngine.ReadSelectorValue(_segMan, screenItem._object, o => o.y) + deltaY));
+                        (ushort)(SciEngine.ReadSelectorValue(_segMan, screenItem._object, o => o.y) + deltaY));
                 }
             }
         }
@@ -1942,29 +1698,55 @@ namespace NScumm.Sci.Graphics
 
         public bool KernelSetNowSeen(Register screenItemObject)
         {
-            Register planeObject = SciEngine.ReadSelector(_segMan, screenItemObject, o=>o.plane);
+            Register planeObject = SciEngine.ReadSelector(_segMan, screenItemObject, o => o.plane);
 
             Plane plane = _planes.FindByObject(planeObject);
-            if (plane == null) {
+            if (plane == null)
+            {
                 Error("kSetNowSeen: Plane {0} not found for screen item {1}", planeObject, screenItemObject);
             }
 
             ScreenItem screenItem = plane._screenItemList.FindByObject(screenItemObject);
-            if (screenItem == null) {
+            if (screenItem == null)
+            {
                 return false;
             }
 
             Rect result = screenItem.GetNowSeenRect(plane);
-            SciEngine.WriteSelectorValue(_segMan, screenItemObject, o=>o.nsLeft, (ushort) result.Left);
-            SciEngine.WriteSelectorValue(_segMan, screenItemObject, o=>o.nsTop, (ushort) result.Top);
-            SciEngine.WriteSelectorValue(_segMan, screenItemObject, o=>o.nsRight, (ushort) (result.Right - 1));
-            SciEngine.WriteSelectorValue(_segMan, screenItemObject, o=>o.nsBottom, (ushort) (result.Bottom - 1));
+            SciEngine.WriteSelectorValue(_segMan, screenItemObject, o => o.nsLeft, (ushort)result.Left);
+            SciEngine.WriteSelectorValue(_segMan, screenItemObject, o => o.nsTop, (ushort)result.Top);
+            SciEngine.WriteSelectorValue(_segMan, screenItemObject, o => o.nsRight, (ushort)(result.Right - 1));
+            SciEngine.WriteSelectorValue(_segMan, screenItemObject, o => o.nsBottom, (ushort)(result.Bottom - 1));
             return true;
         }
 
-        public void ShakeScreen(short toInt16, ShakeDirection shakeDirection)
+        public void ShakeScreen(short numShakes, ShakeDirection direction)
         {
-            throw new NotImplementedException();
+            if (direction.HasFlag(ShakeDirection.Horizontal))
+            {
+                // Used by QFG4 room 750
+                Warning("TODO: Horizontal shake not implemented");
+                return;
+            }
+
+            while ((numShakes--) != 0)
+            {
+                if (direction.HasFlag(ShakeDirection.Vertical))
+                {
+                    SciEngine.Instance.System.GraphicsManager.ShakePosition = _isHiRes ? 8 : 4;
+                }
+
+                SciEngine.Instance.System.GraphicsManager.UpdateScreen();
+                SciEngine.Instance.EngineState.Wait(3);
+
+                if (direction.HasFlag(ShakeDirection.Vertical))
+                {
+                    SciEngine.Instance.System.GraphicsManager.ShakePosition = 0;
+                }
+
+                SciEngine.Instance.System.GraphicsManager.UpdateScreen();
+                SciEngine.Instance.EngineState.Wait(3);
+            }
         }
     }
 }

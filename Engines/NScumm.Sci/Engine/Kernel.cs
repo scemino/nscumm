@@ -793,6 +793,21 @@ namespace NScumm.Sci.Engine
             SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21(0), 23, kPlayVMDRestrictPalette, "ii")
         };
 
+        private static readonly SciKernelMapSubEntry[] kRobot_subops =
+        {
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21(0), 0, kRobotOpen, "ioiii(i)"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21(0), 1, kRobotShowFrame, "i(ii)"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21(0), 2, kRobotGetFrameSize, "r"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21(0), 4, kRobotPlay, ""),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21(0), 5, kRobotGetIsFinished, ""),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21(0), 6, kRobotGetIsPlaying, ""),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21(0), 7, kRobotClose, ""),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21(0), 8, kRobotGetCue, "o"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21(0), 10, kRobotPause, ""),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21(0), 11, kRobotGetFrameNo, ""),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21(0), 12, kRobotSetPriority, "i"),
+        };
+
         //    version,         subId, function-mapping,                    signature,              workarounds
         private static readonly SciKernelMapSubEntry[] kList_subops =
         {
@@ -1184,7 +1199,7 @@ namespace NScumm.Sci.Engine
 #endif
             SciKernelMapEntry.Make(kGetSaveFiles, SciVersionRange.SIG_EVERYWHERE, "rrr"),
             SciKernelMapEntry.Make(kGetTime, SciVersionRange.SIG_EVERYWHERE, "(i)"),
-            SciKernelMapEntry.Make(kGlobalToLocal, SciVersionRange.SIG_EVERYWHERE, "o"),
+            SciKernelMapEntry.Make(kGlobalToLocal, SciVersionRange.SIG_SCI16(SIGFOR_ALL), "o"),
 #if ENABLE_SCI32
             SciKernelMapEntry.Make("GlobalToLocal", kGlobalToLocal32, SciVersionRange.SIG_SCI32(SIGFOR_ALL), "oo"),
 #endif
@@ -1200,7 +1215,7 @@ namespace NScumm.Sci.Engine
             SciKernelMapEntry.Make(kJoystick, SciVersionRange.SIG_EVERYWHERE, "i(.*)"), // subop
             SciKernelMapEntry.Make(kLastNode, SciVersionRange.SIG_EVERYWHERE, "l"),
             SciKernelMapEntry.Make(kLoad, SciVersionRange.SIG_EVERYWHERE, "ii(i*)"),
-            SciKernelMapEntry.Make(kLocalToGlobal, SciVersionRange.SIG_EVERYWHERE, "o"),
+            SciKernelMapEntry.Make(kLocalToGlobal, SciVersionRange.SIG_SCI16(SIGFOR_ALL), "o"),
 #if ENABLE_SCI32
             SciKernelMapEntry.Make("LocalToGlobal", kLocalToGlobal32, SciVersionRange.SIG_SCI32(SIGFOR_ALL), "oo"),
 #endif
@@ -1421,7 +1436,7 @@ namespace NScumm.Sci.Engine
             SciKernelMapEntry.Make(kList, SciVersionRange.SIG_SINCE_SCI21(SIGFOR_ALL), "(.*)", kList_subops),
             SciKernelMapEntry.Make(kMulDiv, SciVersionRange.SIG_EVERYWHERE, "iii"),
             SciKernelMapEntry.Make(kPlayVMD, SciVersionRange.SIG_EVERYWHERE, "(.*)", kPlayVMD_subops),
-            SciKernelMapEntry.Make(kRobot, SciVersionRange.SIG_EVERYWHERE, "(.*)"),
+            SciKernelMapEntry.Make(kRobot, SciVersionRange.SIG_EVERYWHERE, "(.*)",kRobot_subops),
             SciKernelMapEntry.Make(kSave, SciVersionRange.SIG_EVERYWHERE, "i(.*)", kSave_subops),
             SciKernelMapEntry.Make(kText, SciVersionRange.SIG_SINCE_SCI21MID(SIGFOR_ALL), "i(.*)", kText_subops),
             SciKernelMapEntry.Make(kAddPicAt, SciVersionRange.SIG_EVERYWHERE, "oiii"),
@@ -1889,11 +1904,11 @@ namespace NScumm.Sci.Engine
 #if ENABLE_SCI32
                 if (kernelName == "String")
                 {
-                    _kernelFunc_StringId = (ushort) id;
+                    _kernelFunc_StringId = (ushort)id;
                 }
 
-// HACK: Phantasmagoria Mac uses a modified kDoSound (which *nothing*
-// else seems to use)!
+                // HACK: Phantasmagoria Mac uses a modified kDoSound (which *nothing*
+                // else seems to use)!
                 if (SciEngine.Instance.Platform == Platform.Macintosh &&
                     SciEngine.Instance.GameId == SciGameId.PHANTASMAGORIA &&
                     kernelName == "DoSound")
@@ -1932,7 +1947,7 @@ namespace NScumm.Sci.Engine
                     if (kernelMap.subFunctions != null)
                     {
                         // Get version for subfunction identification
-                        var mySubVersion = (SciVersion) kernelMap.function(null, 0, StackPtr.Null).Offset;
+                        var mySubVersion = (SciVersion)kernelMap.function(null, 0, StackPtr.Null).Offset;
                         // Now check whats the highest subfunction-id for this version
                         SciKernelMapSubEntry kernelSubMap;
                         ushort subFunctionCount = 0;
@@ -1944,7 +1959,7 @@ namespace NScumm.Sci.Engine
                                 if ((kernelSubMap.toVersion == SciVersion.NONE) ||
                                     (kernelSubMap.toVersion >= mySubVersion))
                                     if (subFunctionCount <= kernelSubMap.id)
-                                        subFunctionCount = (ushort) (kernelSubMap.id + 1);
+                                        subFunctionCount = (ushort)(kernelSubMap.id + 1);
                         }
                         if (subFunctionCount == 0)
                             throw new InvalidOperationException(
@@ -2292,9 +2307,9 @@ namespace NScumm.Sci.Engine
 
         private void FindSelector(Expression<Func<SelectorCache, int>> selector)
         {
-            var exp = (MemberExpression) selector.Body;
+            var exp = (MemberExpression)selector.Body;
             var selectorName = exp.Member.Name.Replace('_', '-');
-            var field = (FieldInfo) exp.Member;
+            var field = (FieldInfo)exp.Member;
             var param = Expression.Parameter(typeof(SelectorCache));
             var lambdaExp = Expression.Lambda<Action<SelectorCache>>(
                 Expression.Assign(
@@ -2374,22 +2389,21 @@ namespace NScumm.Sci.Engine
             }
         }
 
-        public bool SignatureMatch(ushort[] signature, int argc, StackPtr argv)
+        public bool SignatureMatch(Ptr<ushort> sig, int argc, StackPtr argv)
         {
-            var sig = 0;
-            var nextSig = 0;
-            var curSig = nextSig;
-            while (nextSig < signature.Length && argc != 0)
+            ushort nextSig = sig.Value;
+            ushort curSig = nextSig;
+            while (nextSig != 0 && argc != 0)
             {
                 curSig = nextSig;
-                var type = FindRegType(argv[0]);
+                int type = FindRegType(argv[0]);
 
-                if ((type & SIG_IS_INVALID) != 0 && (0 == (signature[curSig] & SIG_IS_INVALID)))
+                if ((type & SIG_IS_INVALID) != 0 && ((curSig & SIG_IS_INVALID) == 0))
                     return false; // pointer is invalid and signature doesn't allow that?
 
-                if (0 == (type & ~SIG_IS_INVALID & signature[curSig]))
+                if (((type & ~SIG_IS_INVALID) & curSig) == 0)
                 {
-                    if ((type & ~SIG_IS_INVALID) == SIG_TYPE_ERROR && (signature[curSig] & SIG_IS_INVALID) != 0)
+                    if ((type & ~SIG_IS_INVALID) == SIG_TYPE_ERROR && (curSig & SIG_IS_INVALID) != 0)
                     {
                         // Type is unknown (error - usually because of a deallocated object or
                         // stale pointer) and the signature allows invalid pointers. In this case,
@@ -2401,14 +2415,14 @@ namespace NScumm.Sci.Engine
                     }
                 }
 
-                if (0 == (signature[curSig] & SIG_MORE_MAY_FOLLOW))
+                if ((curSig & SIG_MORE_MAY_FOLLOW) == 0)
                 {
-                    sig++;
-                    nextSig = sig;
+                    sig.Offset++;
+                    nextSig = sig.Value;
                 }
                 else
                 {
-                    signature[nextSig] |= SIG_IS_OPTIONAL; // more may follow . assumes followers are optional
+                    nextSig |= SIG_IS_OPTIONAL; // more may follow -> assumes followers are optional
                 }
                 argv++;
                 argc--;
@@ -2418,19 +2432,19 @@ namespace NScumm.Sci.Engine
             if (argc != 0)
                 return false;
             // Signature end reached?
-            if (signature[nextSig] == 0)
+            if (nextSig == 0)
                 return true;
             // current parameter is optional?
-            if ((signature[curSig] & SIG_IS_OPTIONAL) != 0)
+            if ((curSig & SIG_IS_OPTIONAL) != 0)
             {
                 // yes, check if nothing more is required
-                if (0 == (signature[curSig] & SIG_NEEDS_MORE))
+                if ((curSig & SIG_NEEDS_MORE) == 0)
                     return true;
             }
             else
             {
                 // no, check if next parameter is optional
-                if ((signature[nextSig] & SIG_IS_OPTIONAL) != 0)
+                if ((nextSig & SIG_IS_OPTIONAL) != 0)
                     return true;
             }
             // Too few arguments or more optional arguments required
@@ -2452,17 +2466,17 @@ namespace NScumm.Sci.Engine
                 return SIG_TYPE_ERROR;
 
             var result = 0;
-            if (!mobj.IsValidOffset((ushort) reg.Offset))
+            if (!mobj.IsValidOffset((ushort)reg.Offset))
                 result |= SIG_IS_INVALID;
 
             switch (mobj.Type)
             {
                 case SegmentType.SCRIPT:
-                    if (reg.Offset <= ((Script) mobj).BufSize &&
-                        reg.Offset >= (uint) -Script.SCRIPT_OBJECT_MAGIC_OFFSET &&
-                        ((Script) mobj).OffsetIsObject((int) reg.Offset))
+                    if (reg.Offset <= ((Script)mobj).BufSize &&
+                        reg.Offset >= (uint)-Script.SCRIPT_OBJECT_MAGIC_OFFSET &&
+                        ((Script)mobj).OffsetIsObject((int)reg.Offset))
                     {
-                        result |= ((Script) mobj).GetObject((ushort) reg.Offset) != null
+                        result |= ((Script)mobj).GetObject((ushort)reg.Offset) != null
                             ? SIG_TYPE_OBJECT
                             : SIG_TYPE_REFERENCE;
                     }
@@ -2560,7 +2574,7 @@ namespace NScumm.Sci.Engine
                 {
                     var slot = selectorRemap.slot;
                     if (slot >= names.Length)
-                        Array.Resize(ref names, (int) slot + 1);
+                        Array.Resize(ref names, (int)slot + 1);
                     names[slot] = selectorRemap.name;
                 }
             }
@@ -2595,7 +2609,7 @@ namespace NScumm.Sci.Engine
             // We need to initialize script 0 here, to make sure that it's always
             // located at segment 1.
             _segMan.InstantiateScript(0);
-            var sci2Offset = (ushort) (ResourceManager.GetSciVersion() >= SciVersion.V2 ? 64000 : 0);
+            var sci2Offset = (ushort)(ResourceManager.GetSciVersion() >= SciVersion.V2 ? 64000 : 0);
 
             // The Actor class contains the init, xLast and yLast selectors, which
             // we reference directly. It's always in script 998, so we need to
@@ -2604,7 +2618,7 @@ namespace NScumm.Sci.Engine
             {
                 ushort actorScript = 998;
 
-                if (_resMan.TestResource(new ResourceId(ResourceType.Script, (ushort) (actorScript + sci2Offset))) !=
+                if (_resMan.TestResource(new ResourceId(ResourceType.Script, (ushort)(actorScript + sci2Offset))) !=
                     null)
                 {
                     _segMan.InstantiateScript(actorScript + sci2Offset);
@@ -2627,11 +2641,11 @@ namespace NScumm.Sci.Engine
                                 $"illegalBits and xStep selectors aren't found in known locations. illegalBits = {illegalBitsSelectorPos}, xStep = {xStepSelectorPos}");
                         }
 
-                        var xLastSelectorPos = actorClass.GetVarSelector((ushort) (illegalBitsSelectorPos + 1));
-                        var yLastSelectorPos = actorClass.GetVarSelector((ushort) (illegalBitsSelectorPos + 2));
+                        var xLastSelectorPos = actorClass.GetVarSelector((ushort)(illegalBitsSelectorPos + 1));
+                        var yLastSelectorPos = actorClass.GetVarSelector((ushort)(illegalBitsSelectorPos + 2));
 
-                        if (selectorNames.Length < (uint) yLastSelectorPos + 1)
-                            selectorNames = new string[(int) yLastSelectorPos + 1];
+                        if (selectorNames.Length < (uint)yLastSelectorPos + 1)
+                            selectorNames = new string[(int)yLastSelectorPos + 1];
 
                         selectorNames[xLastSelectorPos] = "xLast";
                         selectorNames[yLastSelectorPos] = "yLast";
@@ -2647,7 +2661,7 @@ namespace NScumm.Sci.Engine
             {
                 if (
                     _resMan.TestResource(new ResourceId(ResourceType.Script,
-                        (ushort) (classReferences[i].script + sci2Offset))) == null)
+                        (ushort)(classReferences[i].script + sci2Offset))) == null)
                     continue;
 
                 _segMan.InstantiateScript(classReferences[i].script + sci2Offset);
@@ -2665,23 +2679,23 @@ namespace NScumm.Sci.Engine
                                 classReferences[i].className, selectorOffset + 1,
                                 targetClass.MethodCount);
 
-                        targetSelectorPos = targetClass.GetFuncSelector((int) selectorOffset);
+                        targetSelectorPos = targetClass.GetFuncSelector((int)selectorOffset);
                     }
                     else
                     {
                         // Add the global selectors to the selector ID
                         selectorOffset =
-                            (uint) (selectorOffset + ((ResourceManager.GetSciVersion() <= SciVersion.V1_LATE) ? 3 : 8));
+                            (uint)(selectorOffset + ((ResourceManager.GetSciVersion() <= SciVersion.V1_LATE) ? 3 : 8));
 
                         if (targetClass.VarCount < selectorOffset + 1)
                             Error("The {0} class has less than {1} variables ({2})",
                                 classReferences[i].className, selectorOffset + 1,
                                 targetClass.VarCount);
 
-                        targetSelectorPos = targetClass.GetVarSelector((ushort) selectorOffset);
+                        targetSelectorPos = targetClass.GetVarSelector((ushort)selectorOffset);
                     }
 
-                    if (selectorNames.Length < (uint) targetSelectorPos + 1)
+                    if (selectorNames.Length < (uint)targetSelectorPos + 1)
                         selectorNames = new string[targetSelectorPos + 1];
 
 
@@ -2699,7 +2713,7 @@ namespace NScumm.Sci.Engine
                 return _segMan.GetString(address);
 
             var _index = index;
-            var textres = _resMan.FindResource(new ResourceId(ResourceType.Text, (ushort) address.Offset), false);
+            var textres = _resMan.FindResource(new ResourceId(ResourceType.Text, (ushort)address.Offset), false);
 
             if (textres == null)
             {

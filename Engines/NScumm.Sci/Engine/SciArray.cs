@@ -77,7 +77,7 @@ namespace NScumm.Sci.Engine
         {
             if (count == 65535 /* -1 */)
             {
-                count = (ushort) (source.Size - sourceIndex);
+                count = (ushort)(source.Size - sourceIndex);
             }
 
             if (count == 0)
@@ -85,8 +85,8 @@ namespace NScumm.Sci.Engine
                 return;
             }
 
-            Resize((ushort) (targetIndex + count));
-            source.Resize((ushort) (sourceIndex + count));
+            Resize((ushort)(targetIndex + count));
+            source.Resize((ushort)(sourceIndex + count));
 
             System.Diagnostics.Debug.Assert(source._elementSize == _elementSize);
 
@@ -106,7 +106,7 @@ namespace NScumm.Sci.Engine
         {
             if (count == 65535 /* -1 */)
             {
-                count = (ushort) (Size - index);
+                count = (ushort)(Size - index);
             }
 
             if (count == 0)
@@ -114,42 +114,42 @@ namespace NScumm.Sci.Engine
                 return;
             }
 
-            Resize((ushort) (index + count));
+            Resize((ushort)(index + count));
 
             switch (_type)
             {
                 case SciArrayType.Int16:
-                {
-                    short fillValue = value.ToInt16();
-                    var target = new UShortAccess(_data, index * 2);
-                    while (count-- != 0)
                     {
-                        target.Value = (ushort) fillValue;
-                        target.Offset += 2;
+                        short fillValue = value.ToInt16();
+                        var target = new UShortAccess(_data, index * 2);
+                        while (count-- != 0)
+                        {
+                            target.Value = (ushort)fillValue;
+                            target.Offset += 2;
+                        }
+                        break;
                     }
-                    break;
-                }
                 case SciArrayType.ID:
-                {
-                    var target = new RegisterBytePtr(new BytePtr(_data, index * Register.Size));
-                    for (int i = 0; i < count; i++)
                     {
-                        target[i] = value;
+                        var target = new RegisterBytePtr(new BytePtr(_data, index * Register.Size));
+                        for (int i = 0; i < count; i++)
+                        {
+                            target[i] = value;
+                        }
+                        break;
                     }
-                    break;
-                }
                 case SciArrayType.Byte:
                 case SciArrayType.String:
-                {
-                    BytePtr target = new BytePtr(_data, index);
-                    byte fillValue = (byte) value.Offset;
-                    while (count-- != 0)
                     {
-                        target.Value = fillValue;
-                        target.Offset++;
+                        BytePtr target = new BytePtr(_data, index);
+                        byte fillValue = (byte)value.Offset;
+                        while (count-- != 0)
+                        {
+                            target.Value = fillValue;
+                            target.Offset++;
+                        }
+                        break;
                     }
-                    break;
-                }
                 case SciArrayType.Invalid:
                     Error("Attempted write to uninitialized SciArray");
                     break;
@@ -219,7 +219,7 @@ namespace NScumm.Sci.Engine
         public void Snug()
         {
             System.Diagnostics.Debug.Assert(_type == SciArrayType.String || _type == SciArrayType.Byte);
-            Resize((ushort) (_data.GetTextLength() + 1), true);
+            Resize((ushort)(_data.GetTextLength() + 1), true);
         }
 
         /// <summary>
@@ -240,7 +240,7 @@ namespace NScumm.Sci.Engine
             switch (_type)
             {
                 case SciArrayType.Int16:
-                    return Register.Make(0, (ushort) _data.ToInt16(2 * index));
+                    return Register.Make(0, (ushort)_data.ToInt16(2 * index));
                 case SciArrayType.Byte:
                 case SciArrayType.String:
                     return Register.Make(0, _data[index]);
@@ -275,7 +275,7 @@ namespace NScumm.Sci.Engine
                     break;
                 case SciArrayType.Byte:
                 case SciArrayType.String:
-                    _data[index] = (byte) value.ToInt16();
+                    _data[index] = (byte)value.ToInt16();
                     break;
                 case SciArrayType.ID:
                     new RegisterBytePtr(_data)[index] = value;
@@ -318,6 +318,30 @@ namespace NScumm.Sci.Engine
             }
         }
 
+        /// <summary>
+        /// Gets the value at the given index as an int16.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public short GetAsInt16(ushort index)
+        {
+            System.Diagnostics.Debug.Assert(_type == SciArrayType.Int16);
+
+            if (ResourceManager.GetSciVersion() >= SciVersion.V3)
+            {
+                Resize(index);
+            }
+            else
+            {
+
+                System.Diagnostics.Debug.Assert(index < _size);
+            }
+
+            Register value = new Register(new BytePtr(_data, index * Register.Size));
+            System.Diagnostics.Debug.Assert(value.IsNumber);
+            return value.ToInt16();
+        }
+
         public virtual void Destroy()
         {
             _data = null;
@@ -334,54 +358,54 @@ namespace NScumm.Sci.Engine
         /// <param name="values"></param>
         public void SetElements(ushort index, ushort count, StackPtr values)
         {
-            Resize((ushort) (index + count));
+            Resize((ushort)(index + count));
 
             switch (_type)
             {
                 case SciArrayType.Int16:
-                {
-                    StackPtr source = values;
-                    var target = new UShortAccess(_data, index);
-                    while (count-- != 0)
                     {
-                        if (!source[0].IsNumber)
+                        StackPtr source = values;
+                        var target = new UShortAccess(_data, index);
+                        while (count-- != 0)
                         {
-                            Error("Non-number {0} sent to int16 array", source[0]);
+                            if (!source[0].IsNumber)
+                            {
+                                Error("Non-number {0} sent to int16 array", source[0]);
+                            }
+                            target.Value = (ushort)source[0].ToInt16();
+                            target.Offset++;
+                            ++source;
                         }
-                        target.Value = (ushort) source[0].ToInt16();
-                        target.Offset++;
-                        ++source;
+                        break;
                     }
-                    break;
-                }
                 case SciArrayType.ID:
-                {
-                    StackPtr source = values;
-                    RegisterBytePtr target = new RegisterBytePtr(new BytePtr(_data, index * Register.Size));
-                    for (int i = 0; i < count; i++)
                     {
-                        target[i] = source[0];
-                        source++;
+                        StackPtr source = values;
+                        RegisterBytePtr target = new RegisterBytePtr(new BytePtr(_data, index * Register.Size));
+                        for (int i = 0; i < count; i++)
+                        {
+                            target[i] = source[0];
+                            source++;
+                        }
+                        break;
                     }
-                    break;
-                }
                 case SciArrayType.Byte:
                 case SciArrayType.String:
-                {
-                    StackPtr source = values;
-                    var target = new BytePtr(_data, index);
-                    while (count-- != 0)
                     {
-                        if (!source[0].IsNumber)
+                        StackPtr source = values;
+                        var target = new BytePtr(_data, index);
+                        while (count-- != 0)
                         {
-                            Error("Non-number {0} sent to byte or string array", source[0]);
+                            if (!source[0].IsNumber)
+                            {
+                                Error("Non-number {0} sent to byte or string array", source[0]);
+                            }
+                            target.Value = (byte)source[0].Offset;
+                            target.Offset++;
+                            ++source;
                         }
-                        target.Value = (byte) source[0].Offset;
-                        target.Offset++;
-                        ++source;
+                        break;
                     }
-                    break;
-                }
                 default:
                     Error("Attempted write to SciArray with invalid type {0}", _type);
                     break;
@@ -419,25 +443,25 @@ namespace NScumm.Sci.Engine
 
         public override void FreeAtAddress(SegManager segMan, Register subAddr)
         {
-            this[(int) subAddr.Offset].Destroy();
-            FreeEntry((int) subAddr.Offset);
+            this[(int)subAddr.Offset].Destroy();
+            FreeEntry((int)subAddr.Offset);
         }
 
         public override List<Register> ListAllOutgoingReferences(Register addr)
         {
             var refs = new List<Register>();
-            if (!IsValidEntry((int) addr.Offset))
+            if (!IsValidEntry((int)addr.Offset))
             {
                 // explicitly freed; ignore these references
                 Error("Invalid array referenced for outgoing references: {0}", addr);
             }
 
-            var array = this[(int) addr.Offset];
+            var array = this[(int)addr.Offset];
             if (array.Type == SciArrayType.ID)
             {
                 for (var i = 0; i < array.Size; i++)
                 {
-                    var value = array.GetAsID((ushort) i);
+                    var value = array.GetAsID((ushort)i);
                     if (value.IsPointer)
                         refs.Add(value);
                 }
@@ -450,7 +474,7 @@ namespace NScumm.Sci.Engine
         {
             SegmentRef ret = new SegmentRef();
 
-            SciArray array = this[(int) pointer.Offset];
+            SciArray array = this[(int)pointer.Offset];
             bool isRaw = array.Type != SciArrayType.ID;
 
             ret.isRaw = isRaw;

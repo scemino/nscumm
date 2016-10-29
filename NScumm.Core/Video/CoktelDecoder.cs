@@ -138,7 +138,7 @@ namespace NScumm.Core.Video
 
         public Surface Surface => !IsVideoLoaded ? null : _surface;
 
-        protected bool HasSurface => _surface.Pixels != null;
+        protected bool HasSurface => _surface.Pixels != BytePtr.Null;
 
         /** Return the current subtitle index. */
         public int SubtitleIndex => -1;

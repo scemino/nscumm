@@ -161,7 +161,7 @@ namespace NScumm.Sci.Graphics
             outRect.Clip(new Rect((short) scriptWidth, (short) scriptHeight));
 
             Register bitmapId = new Register();
-            SciBitmap bitmap = _segMan.AllocateBitmap(bitmapId, outRect.Width, outRect.Height, skipColor,
+            SciBitmap bitmap = _segMan.AllocateBitmap(out bitmapId, outRect.Width, outRect.Height, skipColor,
                 0, 0, (short) scriptWidth, (short) scriptHeight, 0, false, true);
 
             BytePtr pixels = bitmap.Pixels;

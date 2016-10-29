@@ -17,6 +17,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using NScumm.Core;
 using System;
 using System.IO;
 
@@ -53,7 +54,7 @@ namespace NScumm.Sci
         /// </summary>
         protected int DwWrote;
         protected Stream Src;
-        protected byte[] Dest;
+        protected BytePtr Dest;
 
         /// <summary>
         /// Gets a value indicationg whether or not all expected data has been unpacked to _dest
@@ -61,13 +62,13 @@ namespace NScumm.Sci
         /// </summary>
         protected bool IsFinished => (DwWrote == SzUnpacked) && (DwRead >= SzPacked);
 
-        public virtual ResourceErrorCodes Unpack(Stream src, byte[] dest, int nPacked, int nUnpacked)
+        public virtual ResourceErrorCodes Unpack(Stream src, BytePtr dest, int nPacked, int nUnpacked)
         {
             var offset = 0;
             while (nPacked != 0 && src.Position < src.Length)
             {
                 var chunk = Math.Min(1024, nPacked);
-                src.Read(dest, offset, chunk);
+                src.Read(dest.Data, dest.Offset + offset, chunk);
                 nPacked -= chunk;
                 offset += chunk;
             }
@@ -82,7 +83,7 @@ namespace NScumm.Sci
         /// <param name="dest">destination stream to write to</param>
         /// <param name="nPacked">size of packed data</param>
         /// <param name="nUnpacked">size of unpacked data</param>
-        protected virtual void Init(Stream src, byte[] dest, int nPacked, int nUnpacked)
+        protected virtual void Init(Stream src, BytePtr dest, int nPacked, int nUnpacked)
         {
             Src = src;
             Dest = dest;
@@ -143,7 +144,12 @@ namespace NScumm.Sci
         {
             while (NBits <= 24)
             {
-                DwBits |= (uint)Src.ReadByte() << (24 - NBits);
+                var src = (uint)Src.ReadByte();
+                if (src == uint.MaxValue)
+                {
+                    src = 0;
+                }
+                DwBits |= src << (24 - NBits);
                 NBits += 8;
                 DwRead++;
             }

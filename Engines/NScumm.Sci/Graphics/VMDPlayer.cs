@@ -428,7 +428,7 @@ namespace NScumm.Sci.Graphics
                 var scriptHeight = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
 
                 Register bitmapId = new Register();
-                SciBitmap vmdBitmap = _segMan.AllocateBitmap(bitmapId, vmdRect.Width, vmdRect.Height, 255, 0, 0,
+                SciBitmap vmdBitmap = _segMan.AllocateBitmap(out bitmapId, vmdRect.Width, vmdRect.Height, 255, 0, 0,
                     screenWidth, screenHeight, 0, false, false);
 
                 if (screenWidth != scriptWidth || screenHeight != scriptHeight)

@@ -1693,19 +1693,23 @@ namespace NScumm.Sci.Engine
                 divisions = (short) (argc > 9 ? argv[9].ToInt16() : -1);
             }
 
-// TODO: Reuse later for SCI2 and SCI3 implementation and then discard
-//	warning("kSetShowStyle: effect %d, plane: %04x:%04x (%s), sec: %d, "
-//			"dir: %d, prio: %d, animate: %d, ref frame: %d, black screen: %d, "
-//			"pFadeArray: %04x:%04x (%s), divisions: %d",
-//			type, PRINT_REG(planeObj), s._segMan.getObjectName(planeObj), seconds,
-//			back, priority, animate, refFrame, blackScreen,
-//			PRINT_REG(pFadeArray), s._segMan.getObjectName(pFadeArray), divisions);
+            if ((ResourceManager.GetSciVersion() < SciVersion.V2_1_MIDDLE && SciEngine.Instance.GameId != SciGameId.KQ7 && type == ShowStyleType.kShowStyleMorph) || type > ShowStyleType.kShowStyleMorph)
+            {
+                Error("Illegal show style {0} for plane {1}", type, planeObj);
+            }
+
+            // TODO: Reuse later for SCI2 and SCI3 implementation and then discard
+            //	warning("kSetShowStyle: effect %d, plane: %04x:%04x (%s), sec: %d, "
+            //			"dir: %d, prio: %d, animate: %d, ref frame: %d, black screen: %d, "
+            //			"pFadeArray: %04x:%04x (%s), divisions: %d",
+            //			type, PRINT_REG(planeObj), s._segMan.getObjectName(planeObj), seconds,
+            //			back, priority, animate, refFrame, blackScreen,
+            //			PRINT_REG(pFadeArray), s._segMan.getObjectName(pFadeArray), divisions);
 
             // NOTE: The order of planeObj and showStyle are reversed
             // because this is how SCI3 called the corresponding method
             // on the KernelMgr
-            throw new NotImplementedException("kernelSetShowStyle");
-            //SciEngine.Instance._gfxTransitions32.kernelSetShowStyle(argc, planeObj, type, seconds, back, priority, animate, refFrame, pFadeArray, divisions, blackScreen);
+            SciEngine.Instance._gfxTransitions32.KernelSetShowStyle((ushort)argc, planeObj, type, seconds, back, priority, animate, refFrame, pFadeArray, divisions, blackScreen);
 
             return s.r_acc;
         }
@@ -2111,7 +2115,7 @@ namespace NScumm.Sci.Engine
             bool useRemap = argc > 6 && argv[6].ToInt16() != 0;
 
             Register bitmapId = new Register();
-            SciBitmap bitmap = s._segMan.AllocateBitmap(bitmapId, width, height, (byte) skipColor, 0, 0, scaledWidth,
+            SciBitmap bitmap = s._segMan.AllocateBitmap(out bitmapId, width, height, (byte) skipColor, 0, 0, scaledWidth,
                 scaledHeight, 0, useRemap, true);
             bitmap.Pixels.Data.Set(bitmap.Pixels.Offset, (byte) backColor, width * height);
             return bitmap.Object;
@@ -2133,8 +2137,8 @@ namespace NScumm.Sci.Engine
             short alignX = (short) (argc > 7 ? argv[7].ToInt16() : -1);
             short alignY = (short) (argc > 8 ? argv[8].ToInt16() : -1);
 
-            Point position = new Point(x == -1 ? bitmap.Displace.X : x,
-                y == -1 ? bitmap.Displace.Y : y
+            Point position = new Point(x == -1 ? bitmap.Origin.X : x,
+                y == -1 ? bitmap.Origin.Y : y
             );
 
             position.X -= alignX == -1 ? view._displace.X : alignX;
@@ -2215,7 +2219,7 @@ namespace NScumm.Sci.Engine
         private static Register kBitmapSetDisplace(EngineState s, int argc, StackPtr argv)
         {
             SciBitmap bitmap = s._segMan.LookupBitmap(argv[0]);
-            bitmap.Displace = new Point(argv[1].ToInt16(), argv[2].ToInt16());
+            bitmap.Origin = new Point(argv[1].ToInt16(), argv[2].ToInt16());
             return s.r_acc;
         }
 

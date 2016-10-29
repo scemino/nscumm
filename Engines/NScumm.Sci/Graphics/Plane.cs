@@ -271,7 +271,7 @@ namespace NScumm.Sci.Graphics
             _created = SciEngine.Instance._gfxFrameout.GetScreenCount();
             _gameRect = gameRect;
             ConvertGameRectToPlaneRect();
-            _priority = (short) Math.Max(10000, SciEngine.Instance._gfxFrameout.GetPlanes().GetTopPlanePriority() + 1);
+            _priority = (short)Math.Max(10000, SciEngine.Instance._gfxFrameout.GetPlanes().GetTopPlanePriority() + 1);
             SetType();
             _screenRect = _planeRect;
         }
@@ -297,18 +297,18 @@ namespace NScumm.Sci.Graphics
             _redrawAllCount = SciEngine.Instance._gfxFrameout.GetScreenCount();
             _created = SciEngine.Instance._gfxFrameout.GetScreenCount();
             var segMan = SciEngine.Instance.EngineState._segMan;
-            _vanishingPoint.X = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.vanishingX);
-            _vanishingPoint.Y = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.vanishingY);
+            _vanishingPoint.X = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.vanishingX);
+            _vanishingPoint.Y = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.vanishingY);
 
-            _gameRect.Left = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.inLeft);
-            _gameRect.Top = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.inTop);
-            _gameRect.Right = (short) (SciEngine.ReadSelectorValue(segMan, @object, o => o.inRight) + 1);
-            _gameRect.Bottom = (short) (SciEngine.ReadSelectorValue(segMan, @object, o => o.inBottom) + 1);
+            _gameRect.Left = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.inLeft);
+            _gameRect.Top = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.inTop);
+            _gameRect.Right = (short)(SciEngine.ReadSelectorValue(segMan, @object, o => o.inRight) + 1);
+            _gameRect.Bottom = (short)(SciEngine.ReadSelectorValue(segMan, @object, o => o.inBottom) + 1);
             ConvertGameRectToPlaneRect();
 
-            _back = (byte) SciEngine.ReadSelectorValue(segMan, @object, o => o.back);
-            _priority = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.priority);
-            _pictureId = (PlanePictureCodes) SciEngine.ReadSelectorValue(segMan, @object, o => o.picture);
+            _back = (byte)SciEngine.ReadSelectorValue(segMan, @object, o => o.back);
+            _priority = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.priority);
+            _pictureId = (PlanePictureCodes)SciEngine.ReadSelectorValue(segMan, @object, o => o.picture);
             SetType();
 
             _mirrored = SciEngine.ReadSelectorValue(segMan, @object, o => o.mirrored) != 0;
@@ -928,7 +928,7 @@ namespace NScumm.Sci.Graphics
             var transparent = true;
             for (var celNo = 0; celNo < celCount; ++celNo)
             {
-                var celObj = CelObjPic.Create((int) pictureId, (short) celNo);
+                var celObj = CelObjPic.Create((int)pictureId, (short)celNo);
                 if (celCount == 1000)
                 {
                     celCount = celObj._celCount;
@@ -940,7 +940,7 @@ namespace NScumm.Sci.Graphics
 
                 var screenItem = new ScreenItem(_object, celObj._info)
                 {
-                    _pictureId = (int) pictureId,
+                    _pictureId = (int)pictureId,
                     _mirrorX = mirrorX,
                     _priority = celObj._priority,
                     _fixedPriority = true,
@@ -979,10 +979,10 @@ namespace NScumm.Sci.Graphics
 
         private void ConvertGameRectToPlaneRect()
         {
-            var screenWidth = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScreenWidth;
-            var screenHeight = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScreenHeight;
-            var scriptWidth = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
-            var scriptHeight = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
+            var screenWidth = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScreenWidth;
+            var screenHeight = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScreenHeight;
+            var scriptWidth = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
+            var scriptHeight = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
 
             var ratioX = new Rational(screenWidth, scriptWidth);
             var ratioY = new Rational(screenHeight, scriptHeight);
@@ -1016,17 +1016,17 @@ namespace NScumm.Sci.Graphics
         public void Update(Register @object)
         {
             SegManager segMan = SciEngine.Instance.EngineState._segMan;
-            _vanishingPoint.X = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.vanishingX);
-            _vanishingPoint.Y = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.vanishingY);
-            _gameRect.Left = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.inLeft);
-            _gameRect.Top = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.inTop);
-            _gameRect.Right = (short) (SciEngine.ReadSelectorValue(segMan, @object, o => o.inRight) + 1);
-            _gameRect.Bottom = (short) (SciEngine.ReadSelectorValue(segMan, @object, o => o.inBottom) + 1);
+            _vanishingPoint.X = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.vanishingX);
+            _vanishingPoint.Y = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.vanishingY);
+            _gameRect.Left = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.inLeft);
+            _gameRect.Top = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.inTop);
+            _gameRect.Right = (short)(SciEngine.ReadSelectorValue(segMan, @object, o => o.inRight) + 1);
+            _gameRect.Bottom = (short)(SciEngine.ReadSelectorValue(segMan, @object, o => o.inBottom) + 1);
             ConvertGameRectToPlaneRect();
 
-            _priority = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.priority);
+            _priority = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.priority);
             PlanePictureCodes pictureId =
-                (PlanePictureCodes) SciEngine.ReadSelectorValue(segMan, @object, o => o.picture);
+                (PlanePictureCodes)SciEngine.ReadSelectorValue(segMan, @object, o => o.picture);
             if (_pictureId != pictureId)
             {
                 _pictureId = pictureId;
@@ -1034,7 +1034,7 @@ namespace NScumm.Sci.Graphics
             }
 
             _mirrored = SciEngine.ReadSelectorValue(segMan, @object, o => o.mirrored) != 0;
-            _back = (byte) SciEngine.ReadSelectorValue(segMan, @object, o => o.back);
+            _back = (byte)SciEngine.ReadSelectorValue(segMan, @object, o => o.back);
         }
 
         /// <summary>
@@ -1144,9 +1144,9 @@ namespace NScumm.Sci.Graphics
 
         private void DeleteAllPics()
         {
-            for (var i = 0; i < _screenItemList.Count;)
+            for (var i = 0; i < _screenItemList.Count; i++)
             {
-                var screenItem = _screenItemList[i++];
+                var screenItem = _screenItemList[i];
                 if (screenItem == null || screenItem._celInfo.type != CelType.Pic) continue;
 
                 if (screenItem._created == 0)
@@ -1157,7 +1157,6 @@ namespace NScumm.Sci.Graphics
                 }
                 else
                 {
-                    i--;
                     _screenItemList.RemoveAt(i);
                 }
             }
@@ -1175,7 +1174,7 @@ namespace NScumm.Sci.Graphics
         public void AddPic(int pictureId, Point position, bool mirrorX)
         {
             DeletePic(pictureId);
-            AddPicInternal((PlanePictureCodes) pictureId, position, mirrorX);
+            AddPicInternal((PlanePictureCodes)pictureId, position, mirrorX);
             // NOTE: In SCI engine this method returned the pictureId of the
             // plane, but this return value was never used
         }

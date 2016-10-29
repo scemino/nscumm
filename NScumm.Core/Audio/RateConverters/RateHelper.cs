@@ -31,7 +31,7 @@ namespace NScumm.Core.Audio
         public static void ClampedAdd(ref short a, int b)
         {
             int val = a + b;
-            
+
             if (val > SampleMax)
                 val = SampleMax;
             else if (val < SampleMin)
@@ -42,7 +42,7 @@ namespace NScumm.Core.Audio
 
         public static short ClampedAdd(short a, int b)
         {
-            ClampedAdd(ref a,b);
+            ClampedAdd(ref a, b);
             return a;
         }
 
@@ -53,7 +53,7 @@ namespace NScumm.Core.Audio
             a.Value = tmp;
         }
 
-        public static IRateConverter MakeRateConverter(int inrate, int outrate, bool stereo, bool reverseStereo)
+        public static IRateConverter MakeRateConverter(int inrate, int outrate, bool stereo, bool reverseStereo = false)
         {
             if (inrate != outrate)
             {

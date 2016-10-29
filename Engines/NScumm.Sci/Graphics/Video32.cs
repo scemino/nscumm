@@ -15,10 +15,10 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-using NScumm.Sci.Engine;
-
 #if ENABLE_SCI32
+using NScumm.Sci.Engine;
+using NScumm.Sci.Video;
+
 namespace NScumm.Sci.Graphics
 {
     internal class Video32
@@ -26,9 +26,11 @@ namespace NScumm.Sci.Graphics
         public Video32(SegManager segMan, EventManager eventMan)
         {
             VMDPlayer = new VMDPlayer(segMan, eventMan);
+            RobotPlayer = new RobotDecoder(segMan);
         }
 
         public VMDPlayer VMDPlayer { get; }
+        public RobotDecoder RobotPlayer { get; }
     }
 }
 #endif

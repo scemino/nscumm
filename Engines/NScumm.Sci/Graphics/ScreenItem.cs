@@ -183,6 +183,10 @@ namespace NScumm.Sci.Graphics
          */
         int _z;
 
+        public ScreenItem()
+        {
+        }
+
         public ScreenItem(Register @object)
         {
             _object = @object;
@@ -485,7 +489,7 @@ namespace NScumm.Sci.Graphics
             }
 
             Rational scaleX = new Rational();
-            Rational scaleY = null;
+            Rational scaleY = new Rational();
 
             if ((_scale.signal & ScaleSignals32.kScaleSignalManual) != ScaleSignals32.kScaleSignalNone)
             {

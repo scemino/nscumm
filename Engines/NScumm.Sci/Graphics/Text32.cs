@@ -214,7 +214,7 @@ namespace NScumm.Sci.Graphics
                 _textRect = new Rect();
             }
 
-            _segMan.AllocateBitmap(_bitmap, _width, _height, _skipColor, 0, 0, _scaledWidth, _scaledHeight, 0, false,
+            _segMan.AllocateBitmap(out _bitmap, _width, _height, _skipColor, 0, 0, _scaledWidth, _scaledHeight, 0, false,
                 gc);
 
             Erase(bitmapRect, false);
@@ -336,7 +336,7 @@ namespace NScumm.Sci.Graphics
                 _textRect = new Rect();
             }
 
-            SciBitmap bitmap = _segMan.AllocateBitmap(_bitmap, _width, _height, _skipColor, 0, 0, _scaledWidth,
+            SciBitmap bitmap = _segMan.AllocateBitmap(out _bitmap, _width, _height, _skipColor, 0, 0, _scaledWidth,
                 _scaledHeight, 0, false, gc);
 
             // NOTE: The engine filled the sciBitmap pixels with 11 here, which is silly

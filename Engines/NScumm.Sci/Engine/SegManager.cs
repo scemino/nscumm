@@ -426,6 +426,19 @@ namespace NScumm.Sci.Engine
 //            }
         }
 
+        public void FreeBitmap(Register addr)
+        {
+            if (_heap[addr.Segment].Type != SegmentType.BITMAP)
+                Error("Attempt to free non-bitmap {0} as bitmap", addr);
+
+            BitmapTable bitmapTable = (BitmapTable)_heap[addr.Segment];
+
+            if (!bitmapTable.IsValidEntry((int)addr.Offset))
+                Error("Attempt to free invalid entry {0} as bitmap", addr);
+
+            bitmapTable.FreeEntry((int)addr.Offset);
+        }
+
         public bool FreeDynmem(Register addr)
         {
             if (addr.Segment < 1 || addr.Segment >= _heap.Count || _heap[addr.Segment] == null ||
@@ -460,7 +473,7 @@ namespace NScumm.Sci.Engine
             return array;
         }
 
-        public SciBitmap AllocateBitmap(Register addr, short width, short height, byte skipColor, short displaceX,
+        public SciBitmap AllocateBitmap(out Register addr, short width, short height, byte skipColor, short displaceX,
             short displaceY, short scaledWidth, short scaledHeight, int paletteSize, bool remap, bool gc)
         {
             BitmapTable table;

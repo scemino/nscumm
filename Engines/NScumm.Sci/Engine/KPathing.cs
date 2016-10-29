@@ -603,7 +603,7 @@ namespace NScumm.Sci.Engine
                 for (int pi = 0; pi < polygonSize; ++pi, polyv = polyv._next)
                 {
                     Point? intersection1;
-                    Point? intersection2;
+                    Point? intersection2 = new Point();
 
                     bool intersects = SegSegIntersect(workv, polyv, out intersection1);
                     if (!intersects)

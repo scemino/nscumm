@@ -88,7 +88,7 @@ namespace NScumm.Sci.Graphics
         /**
          * The currently displayed palette.
          */
-        private Palette _currentPalette;
+        private Palette _currentPalette = new Palette();
 
         /**
          * The unmodified source palette loaded by kPalette. Additional
@@ -101,7 +101,7 @@ namespace NScumm.Sci.Graphics
          * The palette to be used when the hardware is next updated.
          * On update, _nextPalette is transferred to _currentPalette.
          */
-        private Palette _nextPalette;
+        private Palette _nextPalette = new Palette();
 
         /**
          * The fade table records the expected intensity level of each pixel

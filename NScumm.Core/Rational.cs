@@ -52,7 +52,7 @@ namespace NScumm.Core
 
         public static implicit operator double(Rational rational)
         {
-            return (double) rational.Numerator / rational.Denominator;
+            return (double)rational.Numerator / rational.Denominator;
         }
 
         public Rational Inverse()
@@ -86,6 +86,16 @@ namespace NScumm.Core
             var denominator = left.Denominator / gcd2 * (right.Denominator / gcd1);
 
             return new Rational(num, denominator);
+        }
+
+        public static Rational operator /(int left, Rational right)
+        {
+            return new Rational(left) * right.Inverse();
+        }
+
+        public static Rational operator /(Rational left, Rational right)
+        {
+            return left * right.Inverse();
         }
 
         public static int Gcd(int a, int b)

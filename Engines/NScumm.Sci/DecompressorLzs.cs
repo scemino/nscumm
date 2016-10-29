@@ -24,22 +24,9 @@ using static NScumm.Core.DebugHelper;
 namespace NScumm.Sci
 {
     /// <summary>
-    /// DCL decompressor for SCI1.1
-    /// </summary>
-    internal class DecompressorDcl : Decompressor
-    {
-        public override ResourceErrorCodes Unpack(Stream src, BytePtr dest, int nPacked, int nUnpacked)
-        {
-            return Core.Common.DecompressorDCL.Decompress(src, dest, (uint)nPacked, (uint)nUnpacked) ?
-                ResourceErrorCodes.NONE : ResourceErrorCodes.DECOMPRESSION_ERROR;
-        }
-    }
-
-# if ENABLE_SCI32
-    /// <summary>
     /// STACpack decompressor for SCI32
     /// </summary>
-    internal class DecompressorLZS : Decompressor
+    internal class DecompressorLzs : Decompressor
     {
         //----------------------------------------------
         // STACpack/LZS decompressor for SCI32
@@ -48,9 +35,10 @@ namespace NScumm.Sci
         public override ResourceErrorCodes Unpack(Stream src, BytePtr dest, int nPacked, int nUnpacked)
         {
             Init(src, dest, nPacked, nUnpacked);
-            return UnpackLZS();
+            return UnpackLzs();
         }
-        protected ResourceErrorCodes UnpackLZS()
+
+        private ResourceErrorCodes UnpackLzs()
         {
             ushort offs = 0;
             uint clen;
@@ -58,9 +46,11 @@ namespace NScumm.Sci
             while (!IsFinished)
             {
                 if (GetBitsMsb(1) != 0)
-                { // Compressed bytes follow
+                {
+                    // Compressed bytes follow
                     if (GetBitsMsb(1) != 0)
-                    { // Seven bit offset follows
+                    {
+                        // Seven bit offset follows
                         offs = (ushort)GetBitsMsb(7);
                         if (offs == 0) // This is the end marker - a 7 bit offset of zero
                             break;
@@ -72,7 +62,8 @@ namespace NScumm.Sci
                         CopyComp(offs, clen);
                     }
                     else
-                    { // Eleven bit offset follows
+                    {
+                        // Eleven bit offset follows
                         offs = (ushort)GetBitsMsb(11);
                         if ((clen = GetCompLen()) == 0)
                         {
@@ -90,8 +81,6 @@ namespace NScumm.Sci
 
         private uint GetCompLen()
         {
-            uint clen;
-            int nibble;
             // The most probable cases are hardcoded
             switch (GetBitsMsb(2))
             {
@@ -112,7 +101,8 @@ namespace NScumm.Sci
                             return 7;
                         default:
                             // Ok, no shortcuts anymore - just get nibbles and add up
-                            clen = 8;
+                            uint clen = 8;
+                            int nibble;
                             do
                             {
                                 nibble = (int)GetBitsMsb(4);
@@ -130,6 +120,6 @@ namespace NScumm.Sci
             while ((clen--) != 0)
                 PutByte(Dest[hpos++]);
         }
+
     }
-#endif
 }

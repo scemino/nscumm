@@ -48,6 +48,7 @@ namespace NScumm.Sci.Engine
             int modifier_mask = ResourceManager.GetSciVersion() <= SciVersion.V01
                 ? SciEvent.SCI_KEYMOD_ALL
                 : SciEvent.SCI_KEYMOD_NO_FOOLOCK;
+            ushort modifiers = 0;
             SegManager segMan = s._segMan;
             Point mousePos;
 
@@ -65,34 +66,42 @@ namespace NScumm.Sci.Engine
             {
                 // In case we use a simulated event we query the current mouse position
                 mousePos = SciEngine.Instance._gfxCursor.Position;
-# if ENABLE_SCI32
-                if (ResourceManager.GetSciVersion() >= SciVersion.V2_1_EARLY)
-                    SciEngine.Instance._gfxCoordAdjuster.FromDisplayToScript(ref mousePos.Y, ref mousePos.X);
-#endif
+
                 // Limit the mouse cursor position, if necessary
                 SciEngine.Instance._gfxCursor.RefreshPosition();
 
                 SciEngine.WriteSelectorValue(segMan, obj, o => o.type, SciEvent.SCI_EVENT_KEYBOARD); // Keyboard event
-                SciEngine.WriteSelectorValue(segMan, obj, o => o.message, (ushort) g_debug_simulated_key);
+                SciEngine.WriteSelectorValue(segMan, obj, o => o.message, (ushort)g_debug_simulated_key);
                 SciEngine.WriteSelectorValue(segMan, obj, o => o.modifiers, SciEvent.SCI_KEYMOD_NUMLOCK); // Numlock on
-                SciEngine.WriteSelectorValue(segMan, obj, o => o.x, (ushort) mousePos.X);
-                SciEngine.WriteSelectorValue(segMan, obj, o => o.y, (ushort) mousePos.Y);
+                SciEngine.WriteSelectorValue(segMan, obj, o => o.x, (ushort)mousePos.X);
+                SciEngine.WriteSelectorValue(segMan, obj, o => o.y, (ushort)mousePos.Y);
                 g_debug_simulated_key = 0;
                 return Register.Make(0, 1);
             }
 
             curEvent = SciEngine.Instance.EventManager.GetSciEvent(mask);
 
+            if (s._delayedRestoreGame)
+            {
+                // delayed restore game from ScummVM menu got triggered
+                Savegame.gamestate_delayedrestore(s);
+                return Register.NULL_REG;
+            }
+
             // For a real event we use its associated mouse position
 # if ENABLE_SCI32
             if (ResourceManager.GetSciVersion() >= SciVersion.V2)
                 mousePos = curEvent.mousePosSci;
             else
+            {
 #endif
                 mousePos = curEvent.mousePos;
 
-            // Limit the mouse cursor position, if necessary
-            SciEngine.Instance._gfxCursor.RefreshPosition();
+                // Limit the mouse cursor position, if necessary
+                SciEngine.Instance._gfxCursor.RefreshPosition();
+#if ENABLE_SCI32
+            }
+#endif
 
             if (SciEngine.Instance.Vocabulary != null)
                 SciEngine.Instance.Vocabulary.parser_event = Register.NULL_REG; // Invalidate parser event
@@ -106,7 +115,31 @@ namespace NScumm.Sci.Engine
                 // explanation and a list of cursor position workarounds.
                 if (s._cursorWorkaroundRect.Contains(mousePos.X, mousePos.Y))
                 {
-                    s._cursorWorkaroundActive = false;
+                    // For OpenPandora and possibly other platforms, that support analog-stick control + touch screen
+                    // control at the same time: in case the cursor is currently at the coordinate set by the scripts,
+                    // we will count down instead of immediately disabling the workaround.
+                    // On OpenPandora the cursor position is set, but it's overwritten shortly afterwards by the
+                    // touch screen. In this case we would sometimes disable the workaround, simply because the touch
+                    // screen hasn't yet overwritten the position and thus the workaround would not work anymore.
+                    // On OpenPandora it would sometimes work and sometimes not without this.
+                    if (s._cursorWorkaroundPoint == mousePos)
+                    {
+                        // Cursor is still at the same spot as set by the scripts
+                        if (s._cursorWorkaroundPosCount > 0)
+                        {
+                            s._cursorWorkaroundPosCount--;
+                        }
+                        else
+                        {
+                            // Was for quite a bit of time at that spot, so disable workaround now
+                            s._cursorWorkaroundActive = false;
+                        }
+                    }
+                    else
+                    {
+                        // Cursor has moved, but is within the rect . disable workaround immediately
+                        s._cursorWorkaroundActive = false;
+                    }
                 }
                 else
                 {
@@ -115,10 +148,32 @@ namespace NScumm.Sci.Engine
                 }
             }
 
-            SciEngine.WriteSelectorValue(segMan, obj, o => o.x, (ushort) mousePos.X);
-            SciEngine.WriteSelectorValue(segMan, obj, o => o.y, (ushort) mousePos.Y);
+            SciEngine.WriteSelectorValue(segMan, obj, o => o.x, (ushort)mousePos.X);
+            SciEngine.WriteSelectorValue(segMan, obj, o => o.y, (ushort)mousePos.Y);
 
-            //s._gui.moveCursor(s.gfx_state.pointer_pos.x, s.gfx_state.pointer_pos.y);
+            // Get current keyboard modifiers, only keep relevant bits
+            modifiers = (ushort)(curEvent.modifiers & modifier_mask);
+            if (SciEngine.Instance.Platform == Core.IO.Platform.DOS)
+            {
+                // We are supposed to emulate SCI running in DOS
+
+                // We set the higher byte of the modifiers to 02h
+                // Original SCI also did that indirectly, because it asked BIOS for shift status
+                // via AH=0x02 INT16, which then sets the shift flags in AL
+                // AH is supposed to be destroyed in that case and it's not defined that 0x02
+                // is still in it on return. The value of AX was then set into the modifiers selector.
+                // At least one fan-made game (Betrayed Alliance) requires 0x02 to be in the upper byte,
+                // otherwise the darts game (script 111) will not work properly.
+
+                // It seems Sierra fixed this behaviour (effectively bug) in the SCI1 keyboard driver.
+                // SCI32 also resets the upper byte.
+
+                // This was verified in SSCI itself by creating a SCI game and checking behavior.
+                if (ResourceManager.GetSciVersion() <= SciVersion.V01)
+                {
+                    modifiers |= 0x0200;
+                }
+            }
 
             switch (curEvent.type)
             {
@@ -133,10 +188,10 @@ namespace NScumm.Sci.Engine
                     // Keyboard event
                     s.r_acc = Register.Make(0, 1);
 
-                    SciEngine.WriteSelectorValue(segMan, obj, o => o.message, (ushort) curEvent.character);
+                    SciEngine.WriteSelectorValue(segMan, obj, o => o.message, (ushort)curEvent.character);
                     // We only care about the translated character
                     SciEngine.WriteSelectorValue(segMan, obj, o => o.modifiers,
-                        (ushort) (curEvent.modifiers & modifier_mask));
+                        (ushort)(curEvent.modifiers & modifier_mask));
                     break;
 
                 case SciEvent.SCI_EVENT_MOUSE_RELEASE:
@@ -151,24 +206,9 @@ namespace NScumm.Sci.Engine
 
                     if ((mask & curEvent.type) != 0)
                     {
-                        int extra_bits = 0;
-
-                        switch (curEvent.data)
-                        {
-                            case 2:
-                                extra_bits = SciEvent.SCI_KEYMOD_LSHIFT | SciEvent.SCI_KEYMOD_RSHIFT;
-                                break;
-                            case 3:
-                                extra_bits = SciEvent.SCI_KEYMOD_CTRL;
-                                break;
-                            default:
-                                break;
-                        }
-
-                        SciEngine.WriteSelectorValue(segMan, obj, o => o.type, (ushort) curEvent.type);
+                        SciEngine.WriteSelectorValue(segMan, obj, o => o.type, (ushort)curEvent.type);
                         SciEngine.WriteSelectorValue(segMan, obj, o => o.message, 0);
-                        SciEngine.WriteSelectorValue(segMan, obj, o => o.modifiers,
-                            (ushort) ((curEvent.modifiers | extra_bits) & modifier_mask));
+                        SciEngine.WriteSelectorValue(segMan, obj, o => o.modifiers, modifiers);
                         s.r_acc = Register.Make(0, 1);
                     }
                     break;
@@ -177,8 +217,7 @@ namespace NScumm.Sci.Engine
                     // Return a null event
                     SciEngine.WriteSelectorValue(segMan, obj, o => o.type, SciEvent.SCI_EVENT_NONE);
                     SciEngine.WriteSelectorValue(segMan, obj, o => o.message, 0);
-                    SciEngine.WriteSelectorValue(segMan, obj, o => o.modifiers,
-                        (ushort) (curEvent.modifiers & modifier_mask));
+                    SciEngine.WriteSelectorValue(segMan, obj, o => o.modifiers, (ushort)modifiers);
                     s.r_acc = Register.NULL_REG;
                     break;
             }
@@ -229,7 +268,7 @@ namespace NScumm.Sci.Engine
             {
                 // Game is benchmarking, don't add a delay
             }
-            else
+            else if (ResourceManager.GetSciVersion() < SciVersion.V2)
             {
                 ServiceLocator.Platform.Sleep(10);
             }
@@ -245,13 +284,13 @@ namespace NScumm.Sci.Engine
 
             if (obj.Segment != 0)
             {
-                short x = (short) SciEngine.ReadSelectorValue(segMan, obj, o => o.x);
-                short y = (short) SciEngine.ReadSelectorValue(segMan, obj, o => o.y);
+                short x = (short)SciEngine.ReadSelectorValue(segMan, obj, o => o.x);
+                short y = (short)SciEngine.ReadSelectorValue(segMan, obj, o => o.y);
 
                 SciEngine.Instance._gfxCoordAdjuster.KernelGlobalToLocal(ref x, ref y, planeObject);
 
-                SciEngine.WriteSelectorValue(segMan, obj, o => o.x, (ushort) x);
-                SciEngine.WriteSelectorValue(segMan, obj, o => o.y, (ushort) y);
+                SciEngine.WriteSelectorValue(segMan, obj, o => o.x, (ushort)x);
+                SciEngine.WriteSelectorValue(segMan, obj, o => o.y, (ushort)y);
             }
 
             return s.r_acc;
@@ -272,13 +311,13 @@ namespace NScumm.Sci.Engine
 
             if (obj.Segment != 0)
             {
-                short x = (short) SciEngine.ReadSelectorValue(segMan, obj, o => o.x);
-                short y = (short) SciEngine.ReadSelectorValue(segMan, obj, o => o.y);
+                short x = (short)SciEngine.ReadSelectorValue(segMan, obj, o => o.x);
+                short y = (short)SciEngine.ReadSelectorValue(segMan, obj, o => o.y);
 
                 SciEngine.Instance._gfxCoordAdjuster.KernelLocalToGlobal(ref x, ref y, planeObject);
 
-                SciEngine.WriteSelectorValue(segMan, obj, o => o.x, (ushort) x);
-                SciEngine.WriteSelectorValue(segMan, obj, o => o.y, (ushort) y);
+                SciEngine.WriteSelectorValue(segMan, obj, o => o.x, (ushort)x);
+                SciEngine.WriteSelectorValue(segMan, obj, o => o.y, (ushort)y);
             }
 
             return s.r_acc;
@@ -293,7 +332,7 @@ namespace NScumm.Sci.Engine
             if (SciEngine.ReadSelectorValue(segMan, obj, o => o.type) == SciEvent.SCI_EVENT_KEYBOARD)
             {
                 // Keyboard
-                ushort message = (ushort) SciEngine.ReadSelectorValue(segMan, obj, o => o.message);
+                ushort message = (ushort)SciEngine.ReadSelectorValue(segMan, obj, o => o.message);
                 ushort eventType = SciEvent.SCI_EVENT_DIRECTION;
                 // Check if the game is using cursor views. These games allowed control
                 // of the mouse cursor via the keyboard controls (the so called
@@ -331,11 +370,11 @@ namespace NScumm.Sci.Engine
                 Error("kGlobalToLocal: Plane {0} not found", planeObj);
             }
 
-            short x = (short) (SciEngine.ReadSelectorValue(s._segMan, result, o => o.x) - plane._gameRect.Left);
-            short y = (short) (SciEngine.ReadSelectorValue(s._segMan, result, o => o.y) - plane._gameRect.Top);
+            short x = (short)(SciEngine.ReadSelectorValue(s._segMan, result, o => o.x) - plane._gameRect.Left);
+            short y = (short)(SciEngine.ReadSelectorValue(s._segMan, result, o => o.y) - plane._gameRect.Top);
 
-            SciEngine.WriteSelectorValue(s._segMan, result, o => o.x, (ushort) x);
-            SciEngine.WriteSelectorValue(s._segMan, result, o => o.y, (ushort) y);
+            SciEngine.WriteSelectorValue(s._segMan, result, o => o.x, (ushort)x);
+            SciEngine.WriteSelectorValue(s._segMan, result, o => o.y, (ushort)y);
 
             return Register.Make(0, visible);
         }
@@ -357,11 +396,11 @@ namespace NScumm.Sci.Engine
                 Error("kLocalToGlobal: Plane {0} not found", planeObj);
             }
 
-            short x = (short) (SciEngine.ReadSelectorValue(s._segMan, result, o => o.x) + plane._gameRect.Left);
-            short y = (short) (SciEngine.ReadSelectorValue(s._segMan, result, o => o.y) + plane._gameRect.Top);
+            short x = (short)(SciEngine.ReadSelectorValue(s._segMan, result, o => o.x) + plane._gameRect.Left);
+            short y = (short)(SciEngine.ReadSelectorValue(s._segMan, result, o => o.y) + plane._gameRect.Top);
 
-            SciEngine.WriteSelectorValue(s._segMan, result, o => o.x, (ushort) x);
-            SciEngine.WriteSelectorValue(s._segMan, result, o => o.y, (ushort) y);
+            SciEngine.WriteSelectorValue(s._segMan, result, o => o.x, (ushort)x);
+            SciEngine.WriteSelectorValue(s._segMan, result, o => o.y, (ushort)y);
 
             return Register.Make(0, visible);
         }
@@ -381,10 +420,10 @@ namespace NScumm.Sci.Engine
             var p = new UShortAccess(hotRects.ByteAt(0));
             for (var i = 0; i < numRects; ++i)
             {
-                rects[i].Left = (short) p[i * 4];
-                rects[i].Top = (short) p[i * 4 + 1];
-                rects[i].Right = (short) (p[i * 4 + 2] + 1);
-                rects[i].Bottom = (short) (p[i * 4 + 3] + 1);
+                rects[i].Left = (short)p[i * 4];
+                rects[i].Top = (short)p[i * 4 + 1];
+                rects[i].Right = (short)(p[i * 4 + 2] + 1);
+                rects[i].Bottom = (short)(p[i * 4 + 3] + 1);
             }
 
             SciEngine.Instance.EventManager.SetHotRectanglesActive(true);

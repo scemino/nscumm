@@ -185,7 +185,7 @@ namespace NScumm.Sci.Engine
                     _elementSize = sizeof(short);
                     break;
                 case SciArrayType.String:
-                    _elementSize = sizeof(char);
+                    _elementSize = sizeof(byte);
                     break;
                 case SciArrayType.Byte:
                     _elementSize = sizeof(byte);
@@ -433,6 +433,11 @@ namespace NScumm.Sci.Engine
         protected SciArrayType _type;
         protected int _size; // _size holds the number of entries that the scripts have requested
         protected byte _elementSize;
+
+        public void ByteCopy(SciArray source, ushort sourceOffset, ushort targetOffset, ushort count)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     internal sealed class ArrayTable : SegmentObjTable<SciArray>

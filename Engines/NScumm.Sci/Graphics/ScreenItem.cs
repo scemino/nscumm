@@ -183,10 +183,6 @@ namespace NScumm.Sci.Graphics
          */
         int _z;
 
-        public ScreenItem()
-        {
-        }
-
         public ScreenItem(Register @object)
         {
             _object = @object;
@@ -293,9 +289,9 @@ namespace NScumm.Sci.Graphics
         {
             SegManager segMan = SciEngine.Instance.EngineState._segMan;
 
-            int view = (int) SciEngine.ReadSelectorValue(segMan, @object, o => o.view);
-            short loopNo = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.loop);
-            short celNo = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.cel);
+            int view = (int)SciEngine.ReadSelectorValue(segMan, @object, o => o.view);
+            short loopNo = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.loop);
+            short celNo = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.cel);
 
             bool updateCel =
                     _celInfo.resourceId != view ||
@@ -317,27 +313,27 @@ namespace NScumm.Sci.Graphics
 
         private void SetFromObject(SegManager segMan, Register @object, bool updateCel, bool updateBitmap)
         {
-            _position.X = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.x);
-            _position.Y = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.y);
-            _scale.x = (int) SciEngine.ReadSelectorValue(segMan, @object, o => o.scaleX);
-            _scale.y = (int) SciEngine.ReadSelectorValue(segMan, @object, o => o.scaleY);
-            _scale.max = (int) SciEngine.ReadSelectorValue(segMan, @object, o => o.maxScale);
-            _scale.signal = (ScaleSignals32) (SciEngine.ReadSelectorValue(segMan, @object, o => o.scaleSignal) & 3);
+            _position.X = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.x);
+            _position.Y = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.y);
+            _scale.x = (int)SciEngine.ReadSelectorValue(segMan, @object, o => o.scaleX);
+            _scale.y = (int)SciEngine.ReadSelectorValue(segMan, @object, o => o.scaleY);
+            _scale.max = (int)SciEngine.ReadSelectorValue(segMan, @object, o => o.maxScale);
+            _scale.signal = (ScaleSignals32)(SciEngine.ReadSelectorValue(segMan, @object, o => o.scaleSignal) & 3);
 
             if (updateCel)
             {
-                _celInfo.resourceId = (int) SciEngine.ReadSelectorValue(segMan, @object, o => o.view);
-                _celInfo.loopNo = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.loop);
-                _celInfo.celNo = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.cel);
+                _celInfo.resourceId = (int)SciEngine.ReadSelectorValue(segMan, @object, o => o.view);
+                _celInfo.loopNo = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.loop);
+                _celInfo.celNo = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.cel);
 
-                if (_celInfo.resourceId <= (int) PlanePictureCodes.kPlanePic)
+                if (_celInfo.resourceId <= (int)PlanePictureCodes.kPlanePic)
                 {
                     // TODO: Enhance GfxView or ResourceManager to allow
                     // metadata for resources to be retrieved once, from a
                     // single location
                     ResourceManager.ResourceSource.Resource view =
                         SciEngine.Instance.ResMan.FindResource(
-                            new ResourceId(ResourceType.View, (ushort) _celInfo.resourceId), false);
+                            new ResourceId(ResourceType.View, (ushort)_celInfo.resourceId), false);
                     if (view == null)
                     {
                         Error("Failed to load resource {0}", _celInfo.resourceId);
@@ -345,19 +341,19 @@ namespace NScumm.Sci.Graphics
 
                     // NOTE: +2 because the header size field itself is excluded from
                     // the header size in the data
-                    ushort headerSize = (ushort) (view.data.ReadSci11EndianUInt16() + 2);
+                    ushort headerSize = (ushort)(view.data.ReadSci11EndianUInt16() + 2);
                     byte loopCount = view.data[2];
                     byte loopSize = view.data[12];
 
                     if (_celInfo.loopNo >= loopCount)
                     {
                         int maxLoopNo = loopCount - 1;
-                        _celInfo.loopNo = (short) maxLoopNo;
-                        SciEngine.WriteSelectorValue(segMan, @object, o => o.loop, (ushort) maxLoopNo);
+                        _celInfo.loopNo = (short)maxLoopNo;
+                        SciEngine.WriteSelectorValue(segMan, @object, o => o.loop, (ushort)maxLoopNo);
                     }
 
                     var loopData = new BytePtr(view.data, headerSize + _celInfo.loopNo * loopSize);
-                    sbyte seekEntry = (sbyte) loopData[0];
+                    sbyte seekEntry = (sbyte)loopData[0];
                     if (seekEntry != -1)
                     {
                         loopData = new BytePtr(view.data, headerSize + seekEntry * loopSize);
@@ -366,8 +362,8 @@ namespace NScumm.Sci.Graphics
                     if (_celInfo.celNo >= celCount)
                     {
                         int maxCelNo = celCount - 1;
-                        _celInfo.celNo = (short) maxCelNo;
-                        SciEngine.WriteSelectorValue(segMan, @object, o => o.cel, (ushort) maxCelNo);
+                        _celInfo.celNo = (short)maxCelNo;
+                        SciEngine.WriteSelectorValue(segMan, @object, o => o.cel, (ushort)maxCelNo);
                     }
                 }
             }
@@ -395,24 +391,24 @@ namespace NScumm.Sci.Graphics
             if (SciEngine.ReadSelectorValue(segMan, @object, o => o.fixPriority) != 0)
             {
                 _fixedPriority = true;
-                _priority = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.priority);
+                _priority = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.priority);
             }
             else
             {
                 _fixedPriority = false;
-                SciEngine.WriteSelectorValue(segMan, @object, o => o.priority, (ushort) _position.Y);
+                SciEngine.WriteSelectorValue(segMan, @object, o => o.priority, (ushort)_position.Y);
             }
 
-            _z = (int) SciEngine.ReadSelectorValue(segMan, @object, o => o.z);
-            _position.Y = (short) (_position.Y - _z);
+            _z = (int)SciEngine.ReadSelectorValue(segMan, @object, o => o.z);
+            _position.Y = (short)(_position.Y - _z);
 
             if (SciEngine.ReadSelectorValue(segMan, @object, o => o.useInsetRect) != 0)
             {
                 _useInsetRect = true;
-                _insetRect.Left = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.inLeft);
-                _insetRect.Top = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.inTop);
-                _insetRect.Right = (short) (SciEngine.ReadSelectorValue(segMan, @object, o => o.inRight) + 1);
-                _insetRect.Bottom = (short) (SciEngine.ReadSelectorValue(segMan, @object, o => o.inBottom) + 1);
+                _insetRect.Left = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.inLeft);
+                _insetRect.Top = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.inTop);
+                _insetRect.Right = (short)(SciEngine.ReadSelectorValue(segMan, @object, o => o.inRight) + 1);
+                _insetRect.Bottom = (short)(SciEngine.ReadSelectorValue(segMan, @object, o => o.inBottom) + 1);
             }
             else
             {
@@ -430,7 +426,7 @@ namespace NScumm.Sci.Graphics
                 return order;
             }
 
-            order = (_position.Y + _z).CompareTo((short) (other._position.Y + other._z));
+            order = (_position.Y + _z).CompareTo((short)(other._position.Y + other._z));
             if (order != 0)
             {
                 return order;
@@ -464,14 +460,14 @@ namespace NScumm.Sci.Graphics
 
         public void CalcRects(Plane plane)
         {
-            short scriptWidth = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
-            short scriptHeight = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
-            short screenWidth = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScreenWidth;
-            short screenHeight = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScreenHeight;
+            short scriptWidth = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
+            short scriptHeight = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
+            short screenWidth = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScreenWidth;
+            short screenHeight = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScreenHeight;
 
             CelObj celObj = GetCelObj();
 
-            Rect celRect = new Rect((short) celObj._width, (short) celObj._height);
+            Rect celRect = new Rect((short)celObj._width, (short)celObj._height);
             if (_useInsetRect)
             {
                 if (_insetRect.Intersects(celRect))
@@ -558,25 +554,25 @@ namespace NScumm.Sci.Graphics
                         }
                         else
                         {
-                            _screenItemRect.Left = (short) (_screenItemRect.Left * scaleX);
-                            _screenItemRect.Top = (short) (_screenItemRect.Top * scaleY);
+                            _screenItemRect.Left = (short)(_screenItemRect.Left * scaleX);
+                            _screenItemRect.Top = (short)(_screenItemRect.Top * scaleY);
 
                             if (scaleX.Numerator > scaleX.Denominator)
                             {
-                                _screenItemRect.Right = (short) (_screenItemRect.Right * scaleX);
+                                _screenItemRect.Right = (short)(_screenItemRect.Right * scaleX);
                             }
                             else
                             {
-                                _screenItemRect.Right = (short) ((_screenItemRect.Right - 1) * scaleX + 1);
+                                _screenItemRect.Right = (short)((_screenItemRect.Right - 1) * scaleX + 1);
                             }
 
                             if (scaleY.Numerator > scaleY.Denominator)
                             {
-                                _screenItemRect.Bottom = (short) (_screenItemRect.Bottom * scaleY);
+                                _screenItemRect.Bottom = (short)(_screenItemRect.Bottom * scaleY);
                             }
                             else
                             {
-                                _screenItemRect.Bottom = (short) (((_screenItemRect.Bottom - 1) * scaleY) + 1);
+                                _screenItemRect.Bottom = (short)(((_screenItemRect.Bottom - 1) * scaleY) + 1);
                             }
                         }
 
@@ -598,8 +594,8 @@ namespace NScumm.Sci.Graphics
                     }
                     else
                     {
-                        _scaledPosition.X = (short) ((_position.X * scriptToScreenX) - displaceX);
-                        _scaledPosition.Y = (short) ((_position.Y * scriptToScreenY) - displaceY);
+                        _scaledPosition.X = (short)((_position.X * scriptToScreenX) - displaceX);
+                        _scaledPosition.Y = (short)((_position.Y * scriptToScreenY) - displaceY);
                     }
 
                     _screenItemRect.Translate(_scaledPosition.X, _scaledPosition.Y);
@@ -615,18 +611,18 @@ namespace NScumm.Sci.Graphics
 
                         Helpers.Mulinc(ref temp, celToScreenX, new Rational());
 
-                        CelObjPic celObjPic = (CelObjPic) _celObj;
+                        CelObjPic celObjPic = (CelObjPic)_celObj;
                         if (celObjPic == null)
                         {
                             Error("Expected a CelObjPic");
                         }
-                        temp.Translate((short) ((celObjPic._relativePosition.X * scriptToScreenX) - displaceX), 0);
+                        temp.Translate((short)((celObjPic._relativePosition.X * scriptToScreenX) - displaceX), 0);
 
                         // TODO: This is weird.
                         int deltaX = plane._planeRect.Width - temp.Right - 1 - temp.Left;
 
-                        _scaledPosition.X = (short) (_scaledPosition.X + deltaX);
-                        _screenItemRect.Translate((short) deltaX, 0);
+                        _scaledPosition.X = (short)(_scaledPosition.X + deltaX);
+                        _screenItemRect.Translate((short)deltaX, 0);
                     }
 
                     _scaledPosition.X += plane._planeRect.Left;
@@ -656,8 +652,8 @@ namespace NScumm.Sci.Graphics
                         _screenItemRect.Bottom -= 1;
                     }
 
-                    _scaledPosition.X = (short) (_position.X - displaceX * scaleX);
-                    _scaledPosition.Y = (short) (_position.Y - (celObj._displace.Y * scaleY));
+                    _scaledPosition.X = (short)(_position.X - displaceX * scaleX);
+                    _scaledPosition.Y = (short)(_position.Y - (celObj._displace.Y * scaleY));
                     _screenItemRect.Translate(_scaledPosition.X, _scaledPosition.Y);
 
                     if (_mirrorX != celObj._mirrorX && _celInfo.type == CelType.Pic)
@@ -670,19 +666,19 @@ namespace NScumm.Sci.Graphics
                             temp.Right -= 1;
                         }
 
-                        CelObjPic celObjPic = (CelObjPic) _celObj;
+                        CelObjPic celObjPic = (CelObjPic)_celObj;
                         if (celObjPic == null)
                         {
                             Error("Expected a CelObjPic");
                         }
-                        temp.Translate((short) (celObjPic._relativePosition.X - (displaceX * scaleX)),
-                            (short) (celObjPic._relativePosition.Y - (celObj._displace.Y * scaleY)));
+                        temp.Translate((short)(celObjPic._relativePosition.X - (displaceX * scaleX)),
+                            (short)(celObjPic._relativePosition.Y - (celObj._displace.Y * scaleY)));
 
                         // TODO: This is weird.
                         int deltaX = plane._gameRect.Width - temp.Right - 1 - temp.Left;
 
-                        _scaledPosition.X = (short) (_scaledPosition.X + deltaX);
-                        _screenItemRect.Translate((short) deltaX, 0);
+                        _scaledPosition.X = (short)(_scaledPosition.X + deltaX);
+                        _screenItemRect.Translate((short)deltaX, 0);
                     }
 
                     _scaledPosition.X += plane._gameRect.Left;
@@ -712,7 +708,7 @@ namespace NScumm.Sci.Graphics
 
                 if (!_fixedPriority)
                 {
-                    _priority = (short) (_z + _position.Y);
+                    _priority = (short)(_z + _position.Y);
                 }
             }
             else
@@ -725,7 +721,7 @@ namespace NScumm.Sci.Graphics
         {
             CelObj celObj = GetCelObj();
 
-            Rect celObjRect = new Rect((short) celObj._width, (short) celObj._height);
+            Rect celObjRect = new Rect((short)celObj._width, (short)celObj._height);
             Rect nsRect;
 
             if (_useInsetRect)
@@ -772,7 +768,7 @@ namespace NScumm.Sci.Graphics
 
             if (_mirrorX != celObj._mirrorX && _celInfo.type != CelType.Pic)
             {
-                originX = (short) (celObj._width - originX - 1);
+                originX = (short)(celObj._width - originX - 1);
             }
 
             if (celObj._xResolution != LowRes.X || celObj._yResolution != LowRes.Y)
@@ -813,25 +809,25 @@ namespace NScumm.Sci.Graphics
                     }
                     else
                     {
-                        nsRect.Left = (short) (nsRect.Left * scaleX);
-                        nsRect.Top = (short) (nsRect.Top * scaleY);
+                        nsRect.Left = (short)(nsRect.Left * scaleX);
+                        nsRect.Top = (short)(nsRect.Top * scaleY);
 
                         if (scaleX.Numerator > scaleX.Denominator)
                         {
-                            nsRect.Right = (short) (nsRect.Right * scaleX);
+                            nsRect.Right = (short)(nsRect.Right * scaleX);
                         }
                         else
                         {
-                            nsRect.Right = (short) (((nsRect.Right - 1) * scaleX) + 1);
+                            nsRect.Right = (short)(((nsRect.Right - 1) * scaleX) + 1);
                         }
 
                         if (scaleY.Numerator > scaleY.Denominator)
                         {
-                            nsRect.Bottom = (short) (nsRect.Bottom * scaleY);
+                            nsRect.Bottom = (short)(nsRect.Bottom * scaleY);
                         }
                         else
                         {
-                            nsRect.Bottom = (short) (((nsRect.Bottom - 1) * scaleY) + 1);
+                            nsRect.Bottom = (short)(((nsRect.Bottom - 1) * scaleY) + 1);
                         }
                     }
                 }
@@ -839,11 +835,11 @@ namespace NScumm.Sci.Graphics
                 Rational celToScriptX = new Rational(scriptWidth, celObj._xResolution);
                 Rational celToScriptY = new Rational(scriptHeight, celObj._yResolution);
 
-                originX = (short) (originX * scaleX * celToScriptX);
-                originY = (short) (originY * scaleY * celToScriptY);
+                originX = (short)(originX * scaleX * celToScriptX);
+                originY = (short)(originY * scaleY * celToScriptY);
 
                 Helpers.Mulinc(ref nsRect, celToScriptX, celToScriptY);
-                nsRect.Translate((short) (_position.X - originX), (short) (_position.Y - originY));
+                nsRect.Translate((short)(_position.X - originX), (short)(_position.Y - originY));
             }
             else
             {
@@ -859,13 +855,13 @@ namespace NScumm.Sci.Graphics
                     nsRect.Bottom -= 1;
                 }
 
-                originX = (short) (originX * scaleX);
-                originY = (short) (originY * scaleY);
-                nsRect.Translate((short) (_position.X - originX), (short) (_position.Y - originY));
+                originX = (short)(originX * scaleX);
+                originY = (short)(originY * scaleY);
+                nsRect.Translate((short)(_position.X - originX), (short)(_position.Y - originY));
 
                 if (_mirrorX != celObj._mirrorX && _celInfo.type != CelType.Pic)
                 {
-                    nsRect.Translate((short) (plane._gameRect.Width - nsRect.Width), 0);
+                    nsRect.Translate((short)(plane._gameRect.Width - nsRect.Width), 0);
                 }
             }
 
@@ -877,7 +873,7 @@ namespace NScumm.Sci.Graphics
     {
         private int[] _unsorted = new int[250];
 
-        public ScreenItemList() : base(250)
+        public ScreenItemList() : base(250, o => new ScreenItem(o))
         {
         }
 

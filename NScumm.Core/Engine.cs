@@ -104,6 +104,11 @@ namespace NScumm.Core
         public GameSettings Settings { get; }
 
         /// <summary>
+        /// target name for saves
+        /// </summary>
+        protected string _targetName;
+
+        /// <summary>
         /// The pause level, 0 means 'running', a positive value indicates
         /// how often the engine has been paused(and hence how often it has
         /// to be un-paused before it resumes running). This makes it possible
@@ -118,7 +123,7 @@ namespace NScumm.Core
         /// The time when the engine was started. This value is used to calculate.
         /// </summary>
         private int _engineStartTime;
-
+        
         /// <summary>
         /// Initializes a new instance of the <see cref="T:NScumm.Queen.Engine"/> class.
         /// All Engine subclasses should consider overloading some or all of the following methods.
@@ -129,6 +134,7 @@ namespace NScumm.Core
         {
             Instance = this;
             OSystem = system;
+            _targetName = ConfigManager.Instance.ActiveDomainName;
             _engineStartTime = Environment.TickCount;
             Settings = settings;
             Mixer = new Mixer(44100);

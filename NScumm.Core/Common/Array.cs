@@ -37,15 +37,21 @@ namespace NScumm.Core.Common
     /// std::vector. However, there are some differences.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class Array<T>: IEnumerable<T> where T : new()
+    public class Array<T> : IEnumerable<T>
     {
         protected int _capacity;
         protected int _size;
         protected T[] _storage;
+        private Func<T> _factory;
 
         public bool Empty => _size == 0;
         public int Size => _size;
         public T[] Storage => _storage;
+
+        public Array(Func<T> factory)
+        {
+            _factory = factory;
+        }
 
         public T this[int index]
         {
@@ -66,7 +72,7 @@ namespace NScumm.Core.Common
         {
             Reserve(newSize);
             for (int i = _size; i < newSize; ++i)
-                _storage[i] = new T();
+                _storage[i] = _factory();
             _size = newSize;
         }
 
@@ -81,7 +87,10 @@ namespace NScumm.Core.Common
         private void InsertAux(int pos, T[] elements)
         {
             Reserve(RoundUpCapacity(_size + elements.Length));
+            Array.Copy(_storage, pos, _storage, pos + elements.Length, _size - pos);
             Array.Copy(elements, 0, _storage, pos, elements.Length);
+            // Finally, update the internal state
+            _size += elements.Length;
         }
 
         private static int RoundUpCapacity(int capacity)
@@ -120,6 +129,16 @@ namespace NScumm.Core.Common
             _storage = null;
             _capacity = 0;
             _size = 0;
+        }
+
+        /// <summary>
+        /// Inserts element before index.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="element"></param>
+        public void Insert(int index, T element)
+        {
+            InsertAux(index, new T[] { element });
         }
     }
 }

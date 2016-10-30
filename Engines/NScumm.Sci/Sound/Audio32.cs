@@ -28,6 +28,8 @@ using NScumm.Sci.Engine;
 using NScumm.Sci.Sound.Decoders;
 using NScumm.Sci.Video;
 using static NScumm.Core.DebugHelper;
+using static NScumm.Sci.ResourceManager.ResourceSource;
+using NScumm.Core.Common;
 
 namespace NScumm.Sci.Sound
 {
@@ -36,61 +38,61 @@ namespace NScumm.Sci.Sound
     /// </summary>
     internal class AudioChannel
     {
-        /**
-		 * The maximum channel volume.
-		 */
+        /// <summary>
+        /// The maximum channel volume.
+        /// </summary>
         private const int MaxVolume = 127;
 
-        /**
-         * The ID of the resource loaded into this channel.
-         */
+        /// <summary>
+        /// The ID of the resource loaded into this channel.
+        /// </summary>
         public ResourceId id;
 
-        /**
-         * The resource loaded into this channel.
-         */
-        public ResourceManager.ResourceSource.Resource resource;
+        /// <summary>
+        /// The resource loaded into this channel.
+        /// </summary>
+        public Resource resource;
 
-        /**
-         * Data stream containing the raw audio for the channel.
-         */
+        /// <summary>
+        /// Data stream containing the raw audio for the channel.
+        /// </summary>
         public Stream resourceStream;
 
-        /**
-         * The audio stream loaded into this channel.
-         * `SeekableAudioStream` is used here instead of
-         * `RewindableAudioStream` because
-         * `RewindableAudioStream` does not include the
-         * `getLength` function, which is needed to tell the
-         * game engine the duration of audio streams.
-         */
+        /// <summary>
+        /// The audio stream loaded into this channel.
+        /// `SeekableAudioStream` is used here instead of
+        /// `RewindableAudioStream` because
+        /// `RewindableAudioStream` does not include the
+        /// `getLength` function, which is needed to tell the
+        /// game engine the duration of audio streams.
+        /// </summary>
         public IAudioStream stream;
 
-        /**
-         * The converter used to transform and merge the input
-         * stream into the mixer's output buffer.
-         */
+        /// <summary>
+        /// The converter used to transform and merge the input
+        /// stream into the mixer's output buffer.
+        /// </summary>
         public IRateConverter converter;
 
-        /**
-         * Duration of the channel, in ticks.
-         */
+        /// <summary>
+        /// Duration of the channel, in ticks.
+        /// </summary>
         public uint duration;
 
-        /**
-         * The tick when the channel was started.
-         */
+        /// <summary>
+        /// The tick when the channel was started.
+        /// </summary>
         public uint startedAtTick;
 
-        /**
-         * The tick when the channel was paused.
-         */
+        /// <summary>
+        /// The tick when the channel was paused.
+        /// </summary>
         public uint pausedAtTick;
 
-        /**
-         * Whether or not the audio in this channel should loop
-         * infinitely.
-         */
+        /// <summary>
+        /// Whether or not the audio in this channel should loop
+        /// infinitely.
+        /// </summary>
         public bool loop;
 
         /**
@@ -239,22 +241,22 @@ namespace NScumm.Sci.Sound
         /// </summary>
         private byte _numActiveChannels;
 
-       /**
-         * Whether or not we are in the audio thread.
-         *
-         * This flag is used instead of passing a parameter to
-         * `freeUnusedChannels` because a parameter would
-         * require forwarding through the public method `stop`,
-         * and there is not currently any reason for this
-         * implementation detail to be exposed.
-         */
+        /**
+          * Whether or not we are in the audio thread.
+          *
+          * This flag is used instead of passing a parameter to
+          * `freeUnusedChannels` because a parameter would
+          * require forwarding through the public method `stop`,
+          * and there is not currently any reason for this
+          * implementation detail to be exposed.
+          */
         private bool _inAudioThread;
 
         /**
          * The list of resources from freed channels that need
          * to be unlocked from the main thread.
          */
-        private List<ResourceManager.ResourceSource.Resource> _resourcesToUnlock;
+        private Array<Resource> _resourcesToUnlock = new Array<Resource>(() => null);
 
         /**
          * The hardware DAC sample rate. Stored only for script
@@ -737,6 +739,180 @@ namespace NScumm.Sci.Sound
             }
         }
 
+        /// <summary>
+        /// Starts or resumes playback of an audio channel.
+        /// </summary>
+        /// <param name="channelIndex"></param>
+        /// <param name="resourceId"></param>
+        /// <param name="autoPlay"></param>
+        /// <param name="loop"></param>
+        /// <param name="volume"></param>
+        /// <param name="soundNode"></param>
+        /// <param name="monitor"></param>
+        public ushort Play(AudioChannelIndex channelIndex, ResourceId resourceId, bool autoPlay, bool loop, short volume, Register soundNode, bool monitor)
+        {
+            lock (_mutex)
+            {
+                AudioChannel channel;
+                ISeekableAudioStream stream;
+                FreeUnusedChannels();
+
+                if (channelIndex != AudioChannelIndex.NoExistingChannel)
+                {
+                    channel = GetChannel((int)channelIndex);
+                    stream = (ISeekableAudioStream)channel.stream;
+                    if (stream == null)
+                    {
+                        Error("[Audio32::play]: Unable to cast stream for resource {0}", resourceId.ToString());
+                    }
+
+                    if (channel.pausedAtTick != 0)
+                    {
+                        Resume((short)channelIndex);
+                        return (ushort)Math.Min(65534, 1 + stream.Length.Milliseconds * 60 / 1000);
+                    }
+
+                    Warning("Tried to resume channel {0} that was not paused", channel.id.ToString());
+                    return (ushort)Math.Min(65534, 1 + stream.Length.Milliseconds * 60 / 1000);
+                }
+
+                if (_numActiveChannels == _channels.Count)
+                {
+                    Warning("Audio mixer is full when trying to play {0}", resourceId.ToString());
+                    return 0;
+                }
+
+                // NOTE: SCI engine itself normally searches in this order:
+                //
+                // For Audio36:
+                //
+                // 1. First, request a FD using Audio36 name and use it as the
+                //    source FD for reading the audio resource data.
+                // 2a. If the returned FD is -1, or equals the audio map, or
+                //     equals the audio bundle, try to get the offset of the
+                //     data from the audio map, using the Audio36 name.
+                //
+                //     If the returned offset is -1, this is not a valid resource;
+                //     return 0. Otherwise, set the read offset for the FD to the
+                //     returned offset.
+                // 2b. Otherwise, use the FD as-is (it is a patch file), with zero
+                //     offset, and record it separately so it can be closed later.
+                //
+                // For plain audio:
+                //
+                // 1. First, request an Audio resource from the resource cache. If
+                //    one does not exist, make the same request for a Wave resource.
+                // 2a. If an audio resource was discovered, record its memory ID
+                //     and clear the streaming FD
+                // 2b. Otherwise, request an Audio FD. If one does not exist, make
+                //     the same request for a Wave FD. If neither exist, this is not
+                //     a valid resource; return 0. Otherwise, use the returned FD as
+                //     the streaming ID and set the memory ID to null.
+                //
+                // Once these steps are complete, the audio engine either has a file
+                // descriptor + offset that it can use to read streamed audio, or it
+                // has a memory ID that it can use to read cached audio.
+                //
+                // Here in ScummVM we just ask the resource manager to give us the
+                // resource and we get a seekable stream.
+
+                // TODO: This should be fixed to use streaming, which means
+                // fixing the resource manager to allow streaming, which means
+                // probably rewriting a bunch of the resource manager.
+                Resource resource = _resMan.FindResource(resourceId, true);
+                if (resource == null)
+                {
+                    return 0;
+                }
+
+                channelIndex = (AudioChannelIndex)_numActiveChannels++;
+
+                channel = GetChannel((int)channelIndex);
+                channel.id = resourceId;
+                channel.resource = resource;
+                channel.loop = loop;
+                channel.robot = false;
+                channel.fadeStartTick = 0;
+                channel.soundNode = soundNode;
+                channel.volume = volume < 0 || volume > MaxVolume ? (int)MaxVolume : volume;
+                // TODO: SCI3 introduces stereo audio
+                channel.pan = -1;
+
+                if (monitor)
+                {
+                    _monitoredChannelIndex = (short)channelIndex;
+                }
+
+                var headerStream = new MemoryStream(resource._header, 0, resource._headerSize);
+                var dataStream = channel.resourceStream = resource.MakeStream();
+
+                if (DetectSolAudio(headerStream))
+                {
+                    channel.stream = Sol.MakeSOLStream(headerStream, dataStream, false);
+                }
+                else if (DetectWaveAudio(dataStream))
+                {
+                    channel.stream = Wave.MakeWAVStream(dataStream, false);
+                }
+                else
+                {
+                    AudioFlags flags = AudioFlags.LittleEndian;
+                    if (_globalBitDepth == 16)
+                    {
+                        flags |= AudioFlags.Is16Bits;
+                    }
+                    else
+                    {
+                        flags |= AudioFlags.Unsigned;
+                    }
+
+                    if (_globalNumOutputChannels == 2)
+                    {
+                        flags |= AudioFlags.Stereo;
+                    }
+
+                    channel.stream = new RawStream(flags, _globalSampleRate, false, dataStream);
+                }
+
+                channel.converter = RateHelper.MakeRateConverter(channel.stream.Rate, Rate, channel.stream.IsStereo, false);
+
+                // NOTE: SCI engine sets up a decompression buffer here for the audio
+                // stream, plus writes information about the sample to the channel to
+                // convert to the correct hardware output format, and allocates the
+                // monitoring buffer to match the bitrate/samplerate/channels of the
+                // original stream. We do not need to do any of these things since we
+                // use audio streams, and allocate and fill the monitoring buffer
+                // when reading audio data from the stream.
+
+                stream = (ISeekableAudioStream)channel.stream;
+                if (stream == null)
+                {
+                    Error("[Audio32::play]: Unable to cast stream for resource {0}", resourceId.ToString());
+                }
+
+                channel.duration = /* round up */ (uint)(1 + (stream.Length.Milliseconds * 60 / 1000));
+
+                uint now = SciEngine.Instance.TickCount;
+                channel.pausedAtTick = autoPlay ? 0 : now;
+                channel.startedAtTick = now;
+
+                if (_numActiveChannels == 1)
+                {
+                    _startedAtTick = (int)now;
+                }
+
+                return (ushort)channel.duration;
+            }
+        }
+
+        public short Stop(ResourceId resourceId, Register soundNode)
+        {
+            lock (_mutex)
+            {
+                return Stop((AudioChannelIndex)FindChannelById(resourceId, soundNode));
+            }
+        }
+
         private bool DetectSolAudio(Stream stream)
         {
             var initialPosition = stream.Position;
@@ -898,7 +1074,7 @@ namespace NScumm.Sci.Sound
                 // unlock it whenever we are on the main thread again
                 if (_inAudioThread)
                 {
-                    _resourcesToUnlock.Add(channel.resource);
+                    _resourcesToUnlock.PushBack(channel.resource);
                 }
                 else
                 {
@@ -1014,13 +1190,18 @@ namespace NScumm.Sci.Sound
 
                     if (channel.robot)
                     {
-                        // TODO: Robot audio into output buffer
-                        continue;
-                    }
-
-                    if (channel.vmd)
-                    {
-                        // TODO: VMD audio into output buffer
+                        if (channel.stream.IsEndOfStream)
+                        {
+                            Stop((AudioChannelIndex)channelIndex--);
+                        }
+                        else
+                        {
+                            int channelSamplesWritten = WriteAudioInternal(channel.stream, channel.converter, buffer, numSamples, MaxVolume, MaxVolume, channel.loop);
+                            if (channelSamplesWritten > maxSamplesWritten)
+                            {
+                                maxSamplesWritten = channelSamplesWritten;
+                            }
+                        }
                         continue;
                     }
 

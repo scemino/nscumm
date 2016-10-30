@@ -54,6 +54,9 @@ namespace NScumm.Core
             new Dictionary<string, Dictionary<string, object>>(StringComparer.OrdinalIgnoreCase);
 
         private Dictionary<string, object> _activeDomain;
+        private string _activeDomainName;
+
+        public string ActiveDomainName => _activeDomainName;
 
         private ConfigManager()
         {

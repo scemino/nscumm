@@ -188,7 +188,7 @@ namespace NScumm.Sci.Video
         /// <summary>
         /// A map of frame numbers to byte offsets within `_stream`.
         /// </summary>
-        private Array<int> _recordPositions = new Array<int>();
+        private Array<int> _recordPositions = new Array<int>(() => 0);
 
         /// <summary>
         /// The offset of the Robot file within a
@@ -286,7 +286,7 @@ namespace NScumm.Sci.Video
         /// Scratch memory used to store the compressed robot
         /// video data for the current frame.
         /// </summary>
-        private Array<byte> _doVersion5Scratch = new Array<byte>();
+        private Array<byte> _doVersion5Scratch = new Array<byte>(() => 0);
 
         /// <summary>
         /// When set to a non-negative value, forces the next
@@ -304,19 +304,19 @@ namespace NScumm.Sci.Video
         /// <summary>
         /// A list of pointers to ScreenItems used by the robot.
         /// </summary>
-        private Array<ScreenItem> _screenItemList = new Array<ScreenItem>();
+        private Array<ScreenItem> _screenItemList = new Array<ScreenItem>(() => null);
 
         /// <summary>
         /// The positions of the various screen items in this
         /// robot, in screen coordinates.
         /// </summary>
-        private Array<short> _screenItemX = new Array<short>(), _screenItemY = new Array<short>();
+        private Array<short> _screenItemX = new Array<short>(() => 0), _screenItemY = new Array<short>(() => 0);
 
         /// <summary>
         /// The raw position values from the cel header for
         /// each screen item currently on-screen.
         /// </summary>
-        private Array<short> _originalScreenItemX = new Array<short>(), _originalScreenItemY = new Array<short>();
+        private Array<short> _originalScreenItemX = new Array<short>(() => 0), _originalScreenItemY = new Array<short>(() => 0);
 
         /// <summary>
         /// The duration of the current robot, in frames.
@@ -446,7 +446,7 @@ namespace NScumm.Sci.Video
         /// the fixed cels in the robot.Used for
         /// preallocation of cel memory.
         /// </summary>
-        private Array<uint> _maxCelArea = new Array<uint>();
+        private Array<uint> _maxCelArea = new Array<uint>(() => 0);
 
         /// <summary>
         /// The hunk palette to use when rendering the
@@ -459,13 +459,13 @@ namespace NScumm.Sci.Video
         /// A list of the raw video data sizes, in bytes,
         /// for each frame of the robot.
         /// </summary>
-        private Array<int> _videoSizes = new Array<int>();
+        private Array<int> _videoSizes = new Array<int>(() => 0);
 
         /// <summary>
         /// A list of cels that will be present for the
         /// entire duration of the robot animation.
         /// </summary>
-        private Array<Register> _fixedCels = new Array<Register>();
+        private Array<Register> _fixedCels = new Array<Register>(() => new Register());
 
         /// <summary>
         /// The decompressor for LZS-compressed cels.
@@ -492,14 +492,14 @@ namespace NScumm.Sci.Video
         /// A list of handles for each cel in the current
         /// frame.
         /// </summary>
-        private Array<CelHandleInfo> _celHandles = new Array<CelHandleInfo>();
+        private Array<CelHandleInfo> _celHandles = new Array<CelHandleInfo>(() => new CelHandleInfo());
 
         /// <summary>
         /// Scratch memory used to temporarily store
         /// decompressed cel data for vertically squashed
         /// cels.
         /// </summary>
-        private Array<byte> _celDecompressionBuffer = new Array<byte>();
+        private Array<byte> _celDecompressionBuffer = new Array<byte>(() => 0);
 
         /// <summary>
         /// The size, in bytes, of the squashed cel
@@ -1281,11 +1281,11 @@ namespace NScumm.Sci.Video
         private bool ReadPartialAudioRecordAndSubmit(int startFrame, int startPosition)
         {
             int audioPosition, audioSize;
-            bool success = ReadAudioDataFromRecord(startFrame, _audioBuffer,out audioPosition, out audioSize);
+            bool success = ReadAudioDataFromRecord(startFrame, _audioBuffer, out audioPosition, out audioSize);
             if (success)
             {
                 int relativeStartOffset = (startPosition - audioPosition) / 2;
-                _audioList.AddBlock(startPosition, audioSize - relativeStartOffset,new BytePtr(_audioBuffer, relativeStartOffset));
+                _audioList.AddBlock(startPosition, audioSize - relativeStartOffset, new BytePtr(_audioBuffer, relativeStartOffset));
             }
 
             return success;
@@ -1336,7 +1336,7 @@ namespace NScumm.Sci.Video
         {
             _videoSizes.Reserve(_numFramesTotal);
             _recordPositions.Reserve(_numFramesTotal);
-            var recordSizes = new Array<int>();
+            var recordSizes = new Array<int>(() => 0);
             recordSizes.Reserve(_numFramesTotal);
 
             switch (_version)
@@ -1440,6 +1440,7 @@ namespace NScumm.Sci.Video
             }
 
             _screenItemList.Reserve(kScreenItemListSize);
+            _maxCelArea.Reserve(kFixedCelListSize);
 
             // Fixed cel buffers are for version 5 and newer
             _fixedCels.Reserve(Math.Min(_maxCelsPerFrame, (short)kFixedCelListSize));
@@ -1609,11 +1610,11 @@ namespace NScumm.Sci.Video
 
             if (screenItemCount > oldScreenItemCount)
             {
-                _screenItemList.Reserve(screenItemCount);
-                _screenItemX.Reserve(screenItemCount);
-                _screenItemY.Reserve(screenItemCount);
-                _originalScreenItemX.Reserve(screenItemCount);
-                _originalScreenItemY.Reserve(screenItemCount);
+                _screenItemList.Resize(screenItemCount);
+                _screenItemX.Resize(screenItemCount);
+                _screenItemY.Resize(screenItemCount);
+                _originalScreenItemX.Resize(screenItemCount);
+                _originalScreenItemY.Resize(screenItemCount);
             }
 
 

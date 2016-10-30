@@ -204,6 +204,23 @@ namespace NScumm.Sci.Engine
         public bool _syncedAudioOptions;
 
         public ushort _palCycleToColor;
+        // see detection.cpp / SciEngine::loadGameState()
+        /// <summary>
+        /// boolean, that triggers delayed restore (triggered by ScummVM menu)
+        /// </summary>
+        public bool _delayedRestoreGame;
+        /// <summary>
+        /// the saved game id, that it supposed to get restored (triggered by ScummVM menu)
+        /// </summary>
+        public int _delayedRestoreGameId;
+        /// <summary>
+        /// is set, when the the delayed restore game was triggered from launcher
+        /// </summary>
+        public bool _delayedRestoreFromLauncher;
+        /// <summary>
+        /// When the cursor is reported to be at the previously set coordinate, we won't disable the workaround unless it happened for this many times
+        /// </summary>
+        public short _cursorWorkaroundPosCount;
 
         public ushort CurrentRoomNumber
         {
@@ -301,6 +318,11 @@ namespace NScumm.Sci.Engine
                 }
                 abortScriptProcessing = AbortGameState.None;
             }
+
+            // reset delayed restore game functionality
+            _delayedRestoreGame = false;
+            _delayedRestoreGameId = 0;
+            _delayedRestoreFromLauncher = false;
 
             executionStackBase = 0;
             _executionStackPosChanged = false;

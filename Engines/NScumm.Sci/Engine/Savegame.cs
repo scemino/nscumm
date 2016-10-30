@@ -24,27 +24,27 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
 {
-	// Savegame metadata
-	internal class SavegameMetadata
-	{
-		public string name;
-		public int version;
-		public string gameVersion;
-		public int saveDate;
-		public int saveTime;
-		public int playTime;
-		public ushort gameObjectOffset;
-		public ushort script0Size;
+    // Savegame metadata
+    internal class SavegameMetadata
+    {
+        public string name;
+        public int version;
+        public string gameVersion;
+        public int saveDate;
+        public int saveTime;
+        public int playTime;
+        public ushort gameObjectOffset;
+        public ushort script0Size;
 
-	    // Used by Shivers 1
-	    public ushort lowScore;
-	    public ushort highScore;
+        // Used by Shivers 1
+        public ushort lowScore;
+        public ushort highScore;
 
-	    // Used by MGDX
-	    public byte avatarId;
-	}
+        // Used by MGDX
+        public byte avatarId;
+    }
 
-	/*
+    /*
      * Savegame format history:
      *
      * Version - new/changed feature
@@ -69,209 +69,248 @@ namespace NScumm.Sci.Engine
      *
      */
 
-	internal static class Savegame
-	{
-		public const int CURRENT_SAVEGAME_VERSION = 33;
-		public const int MINIMUM_SAVEGAME_VERSION = 14;
+    internal static class Savegame
+    {
+        public const int CURRENT_SAVEGAME_VERSION = 33;
+        public const int MINIMUM_SAVEGAME_VERSION = 14;
 
-		public static bool get_savegame_metadata (Stream stream, out SavegameMetadata meta)
-		{
-			//assert(stream);
-			//assert(meta);
+        public static bool get_savegame_metadata(Stream stream, out SavegameMetadata meta)
+        {
+            //assert(stream);
+            //assert(meta);
 
-			meta = new SavegameMetadata ();
-			Serializer ser = new Serializer (stream, null);
-			sync_SavegameMetadata (ser, ref meta);
+            meta = new SavegameMetadata();
+            Serializer ser = new Serializer(stream, null);
+            sync_SavegameMetadata(ser, ref meta);
 
-			if ((meta.version < MINIMUM_SAVEGAME_VERSION) ||
-			             (meta.version > CURRENT_SAVEGAME_VERSION)) {
-				if (meta.version < MINIMUM_SAVEGAME_VERSION) {
-					Warning("Old savegame version detected- can't load");
-				} else {
+            if ((meta.version < MINIMUM_SAVEGAME_VERSION) ||
+                         (meta.version > CURRENT_SAVEGAME_VERSION))
+            {
+                if (meta.version < MINIMUM_SAVEGAME_VERSION)
+                {
+                    Warning("Old savegame version detected- can't load");
+                }
+                else
+                {
                     Warning($"Savegame version is {meta.version}- maximum supported is {CURRENT_SAVEGAME_VERSION}");
-				}
-				return false;
-			}
+                }
+                return false;
+            }
 
-			return true;
-		}
+            return true;
+        }
 
-		private static void sync_SavegameMetadata (Serializer s, ref SavegameMetadata obj)
-		{
-			var tmp = new StringBuilder ();
-			s.SyncString (tmp);
-			obj.name = tmp.ToString ();
-			s.SyncVersion (CURRENT_SAVEGAME_VERSION);
-			obj.version = s.Version;
-			s.SyncString (tmp);
-			obj.gameVersion = tmp.ToString ();
-			s.SyncAsInt32LE (ref obj.saveDate);
-			s.SyncAsInt32LE (ref obj.saveTime);
-			if (s.Version < 22) {
-				obj.gameObjectOffset = 0;
-				obj.script0Size = 0;
-			} else {
-				s.SyncAsUint16LE (ref obj.gameObjectOffset);
-				s.SyncAsUint16LE (ref obj.script0Size);
-			}
+        public static void gamestate_delayedrestore(EngineState s)
+        {
+            int savegameId = s._delayedRestoreGameId; // delayedRestoreGameId gets destroyed within gamestate_restore()!
+            var fileName = SciEngine.Instance.GetSavegameName(savegameId);
+            var @in = SciEngine.Instance.SaveFileManager.OpenForLoading(fileName);
 
-			// Playtime
-			obj.playTime = 0;
-			if (s.IsLoading) {
-				if (s.Version >= 26)
-					s.SyncAsInt32LE (ref obj.playTime);
-			} else {
-				obj.playTime = SciEngine.Instance.TotalPlayTime / 1000;
-				s.SyncAsInt32LE (ref obj.playTime);
-			}
-		}
+            if (@in != null)
+            {
+                // found a savegame file
+                gamestate_restore(s, @in);
+                @in.Dispose();
+                if (s.r_acc != Register.Make(0, 1))
+                {
+                    gamestate_afterRestoreFixUp(s, (short)savegameId);
+                    return;
+                }
+            }
 
-		internal static bool gamestate_save (EngineState s, Stream fh, string savename, string version)
-		{
-			DateTime curTime = DateTime.Now;
+            Error("Restoring gamestate '{0}' failed", fileName);
+        }
 
-			SavegameMetadata meta = new SavegameMetadata ();
-			meta.version = CURRENT_SAVEGAME_VERSION;
-			meta.name = savename;
-			meta.gameVersion = version;
-			meta.saveDate = ((curTime.Day & 0xFF) << 24) | (((curTime.Month + 1) & 0xFF) << 16) | ((curTime.Year + 1900) & 0xFFFF);
-			meta.saveTime = ((curTime.Hour & 0xFF) << 16) | (((curTime.Minute) & 0xFF) << 8) | ((curTime.Second) & 0xFF);
+        private static void sync_SavegameMetadata(Serializer s, ref SavegameMetadata obj)
+        {
+            var tmp = new StringBuilder();
+            s.SyncString(tmp);
+            obj.name = tmp.ToString();
+            s.SyncVersion(CURRENT_SAVEGAME_VERSION);
+            obj.version = s.Version;
+            s.SyncString(tmp);
+            obj.gameVersion = tmp.ToString();
+            s.SyncAsInt32LE(ref obj.saveDate);
+            s.SyncAsInt32LE(ref obj.saveTime);
+            if (s.Version < 22)
+            {
+                obj.gameObjectOffset = 0;
+                obj.script0Size = 0;
+            }
+            else
+            {
+                s.SyncAsUint16LE(ref obj.gameObjectOffset);
+                s.SyncAsUint16LE(ref obj.script0Size);
+            }
 
-			var script0 = SciEngine.Instance.ResMan.FindResource (new ResourceId (ResourceType.Script, 0), false);
-			meta.script0Size = (ushort)script0.size;
-			meta.gameObjectOffset = (ushort)SciEngine.Instance.GameObject.Offset;
+            // Playtime
+            obj.playTime = 0;
+            if (s.IsLoading)
+            {
+                if (s.Version >= 26)
+                    s.SyncAsInt32LE(ref obj.playTime);
+            }
+            else
+            {
+                obj.playTime = SciEngine.Instance.TotalPlayTime / 1000;
+                s.SyncAsInt32LE(ref obj.playTime);
+            }
+        }
 
-			// Checking here again
-			if (s.executionStackBase != 0) {
-				Warning("Cannot save from below kernel function");
-				return false;
-			}
+        internal static bool gamestate_save(EngineState s, Stream fh, string savename, string version)
+        {
+            DateTime curTime = DateTime.Now;
 
-			Serializer ser = new Serializer (null, fh);
-			sync_SavegameMetadata (ser, ref meta);
-			//Graphics.SaveThumbnail (fh);
-			s.SaveLoadWithSerializer (ser);		// FIXME: Error handling?
-			if (SciEngine.Instance._gfxPorts != null)
-				SciEngine.Instance._gfxPorts.SaveLoadWithSerializer (ser);
-			var voc = SciEngine.Instance.Vocabulary;
-			if (voc != null)
-				voc.SaveLoadWithSerializer (ser);
+            SavegameMetadata meta = new SavegameMetadata();
+            meta.version = CURRENT_SAVEGAME_VERSION;
+            meta.name = savename;
+            meta.gameVersion = version;
+            meta.saveDate = ((curTime.Day & 0xFF) << 24) | (((curTime.Month + 1) & 0xFF) << 16) | ((curTime.Year + 1900) & 0xFFFF);
+            meta.saveTime = ((curTime.Hour & 0xFF) << 16) | (((curTime.Minute) & 0xFF) << 8) | ((curTime.Second) & 0xFF);
 
-			// TODO: SSCI (at least JonesCD, presumably more) also stores the Menu state
+            var script0 = SciEngine.Instance.ResMan.FindResource(new ResourceId(ResourceType.Script, 0), false);
+            meta.script0Size = (ushort)script0.size;
+            meta.gameObjectOffset = (ushort)SciEngine.Instance.GameObject.Offset;
 
-			return true;
-		}
+            // Checking here again
+            if (s.executionStackBase != 0)
+            {
+                Warning("Cannot save from below kernel function");
+                return false;
+            }
 
-		internal static void gamestate_restore (EngineState s, Stream @in)
-		{
-			throw new NotImplementedException ();
-		}
+            Serializer ser = new Serializer(null, fh);
+            sync_SavegameMetadata(ser, ref meta);
+            //Graphics.SaveThumbnail (fh);
+            s.SaveLoadWithSerializer(ser);      // FIXME: Error handling?
+            if (SciEngine.Instance._gfxPorts != null)
+                SciEngine.Instance._gfxPorts.SaveLoadWithSerializer(ser);
+            var voc = SciEngine.Instance.Vocabulary;
+            if (voc != null)
+                voc.SaveLoadWithSerializer(ser);
 
-	    public static void gamestate_afterRestoreFixUp(EngineState engineState, short saveNo)
-	    {
-	        throw new NotImplementedException();
-	    }
-	}
+            // TODO: SSCI (at least JonesCD, presumably more) also stores the Menu state
 
-	public class Serializer
-	{
-		private const int LastVersion = int.MaxValue;
+            return true;
+        }
 
-		protected BinaryReader _loadStream;
-		protected BinaryWriter _saveStream;
-		protected int _version;
-		protected int _bytesSynced;
+        internal static void gamestate_restore(EngineState s, Stream @in)
+        {
+            throw new NotImplementedException();
+        }
 
-		public bool IsSaving { get { return (_saveStream != null); } }
+        public static void gamestate_afterRestoreFixUp(EngineState engineState, short saveNo)
+        {
+            throw new NotImplementedException();
+        }
+    }
 
-		public bool IsLoading { get { return (_loadStream != null); } }
+    public class Serializer
+    {
+        private const int LastVersion = int.MaxValue;
 
-		/// <summary>
-		/// Return the version of the savestate being serialized. Useful if the engine
-		/// needs to perform additional adjustments when loading old savestates.
-		/// </summary>
-		public int Version { get { return _version; } }
+        protected BinaryReader _loadStream;
+        protected BinaryWriter _saveStream;
+        protected int _version;
+        protected int _bytesSynced;
 
-		public Serializer (Stream @in, Stream @out)
-		{
-			_loadStream = @in != null ? new BinaryReader (@in) : null;
-			_saveStream = @out != null ? new BinaryWriter (@out) : null;
-		}
+        public bool IsSaving { get { return (_saveStream != null); } }
 
-		/// <summary>
-		/// Sync a C-string, by treating it as a zero-terminated byte sequence.
-		/// @todo Replace this method with a special Syncer class for Common::String
-		/// </summary>
-		/// <param name="str"></param>
-		/// <param name="minVersion"></param>
-		/// <param name="maxVersion"></param>
-		public void SyncString (StringBuilder str, int minVersion = 0, int maxVersion = LastVersion)
-		{
-			if (_version < minVersion || _version > maxVersion)
-				return; // Ignore anything which is not supposed to be present in this save game version
+        public bool IsLoading { get { return (_loadStream != null); } }
 
-			if (IsLoading) {
-				char c;
-				str.Clear ();
-				while ((c = _loadStream.ReadChar ()) != 0) {
-					str.Append (c);
-					_bytesSynced++;
-				}
-				_bytesSynced++;
-			} else {
-				_saveStream.Write (str.ToString ());
-				_saveStream.Write ((byte)0);
-				_bytesSynced += str.Length + 1;
-			}
-		}
+        /// <summary>
+        /// Return the version of the savestate being serialized. Useful if the engine
+        /// needs to perform additional adjustments when loading old savestates.
+        /// </summary>
+        public int Version { get { return _version; } }
 
-		/// <summary>
-		/// Sync the "version" of the savegame we are loading/creating.
-		/// </summary>
-		/// <param name="currentVersion">current format version, used when writing a new file</param>
-		/// <returns>true if the version of the savestate is not too new.</returns>
-		public bool SyncVersion (int currentVersion)
-		{
-			_version = currentVersion;
-			SyncAsInt32LE (ref _version);
-			return _version <= currentVersion;
-		}
+        public Serializer(Stream @in, Stream @out)
+        {
+            _loadStream = @in != null ? new BinaryReader(@in) : null;
+            _saveStream = @out != null ? new BinaryWriter(@out) : null;
+        }
 
-		public void SyncAsUint32LE (ref uint val, int minVersion = 0, int maxVersion = LastVersion)
-		{
-			if (_version < minVersion || _version > maxVersion)
-				return;
-			if (IsLoading)
-				val = _loadStream.ReadUInt32 ();
-			else {
-				_saveStream.Write (val);
-			}
-			_bytesSynced += 4;
-		}
+        /// <summary>
+        /// Sync a C-string, by treating it as a zero-terminated byte sequence.
+        /// @todo Replace this method with a special Syncer class for Common::String
+        /// </summary>
+        /// <param name="str"></param>
+        /// <param name="minVersion"></param>
+        /// <param name="maxVersion"></param>
+        public void SyncString(StringBuilder str, int minVersion = 0, int maxVersion = LastVersion)
+        {
+            if (_version < minVersion || _version > maxVersion)
+                return; // Ignore anything which is not supposed to be present in this save game version
 
-		public void SyncAsInt32LE (ref int val, int minVersion = 0, int maxVersion = LastVersion)
-		{
-			if (_version < minVersion || _version > maxVersion)
-				return;
-			if (IsLoading)
-				val = _loadStream.ReadInt32 ();
-			else {
-				_saveStream.Write (val);
-			}
-			_bytesSynced += 4;
-		}
+            if (IsLoading)
+            {
+                char c;
+                str.Clear();
+                while ((c = _loadStream.ReadChar()) != 0)
+                {
+                    str.Append(c);
+                    _bytesSynced++;
+                }
+                _bytesSynced++;
+            }
+            else
+            {
+                _saveStream.Write(str.ToString());
+                _saveStream.Write((byte)0);
+                _bytesSynced += str.Length + 1;
+            }
+        }
 
-		public void SyncAsUint16LE (ref ushort val, int minVersion = 0, int maxVersion = LastVersion)
-		{
-			if (_version < minVersion || _version > maxVersion)
-				return;
-			if (IsLoading)
-				val = _loadStream.ReadUInt16 ();
-			else {
-				_saveStream.Write (val);
-			}
-			_bytesSynced += 4;
-		}
+        /// <summary>
+        /// Sync the "version" of the savegame we are loading/creating.
+        /// </summary>
+        /// <param name="currentVersion">current format version, used when writing a new file</param>
+        /// <returns>true if the version of the savestate is not too new.</returns>
+        public bool SyncVersion(int currentVersion)
+        {
+            _version = currentVersion;
+            SyncAsInt32LE(ref _version);
+            return _version <= currentVersion;
+        }
+
+        public void SyncAsUint32LE(ref uint val, int minVersion = 0, int maxVersion = LastVersion)
+        {
+            if (_version < minVersion || _version > maxVersion)
+                return;
+            if (IsLoading)
+                val = _loadStream.ReadUInt32();
+            else
+            {
+                _saveStream.Write(val);
+            }
+            _bytesSynced += 4;
+        }
+
+        public void SyncAsInt32LE(ref int val, int minVersion = 0, int maxVersion = LastVersion)
+        {
+            if (_version < minVersion || _version > maxVersion)
+                return;
+            if (IsLoading)
+                val = _loadStream.ReadInt32();
+            else
+            {
+                _saveStream.Write(val);
+            }
+            _bytesSynced += 4;
+        }
+
+        public void SyncAsUint16LE(ref ushort val, int minVersion = 0, int maxVersion = LastVersion)
+        {
+            if (_version < minVersion || _version > maxVersion)
+                return;
+            if (IsLoading)
+                val = _loadStream.ReadUInt16();
+            else
+            {
+                _saveStream.Write(val);
+            }
+            _bytesSynced += 4;
+        }
 
         public void SyncAsInt16LE(ref short val, int minVersion = 0, int maxVersion = LastVersion)
         {
@@ -298,5 +337,5 @@ namespace NScumm.Sci.Engine
             }
             _bytesSynced += 4;
         }
-	}
+    }
 }

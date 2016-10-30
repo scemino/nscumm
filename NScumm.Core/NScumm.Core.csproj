@@ -48,6 +48,7 @@
     <Compile Include="Common\Disposable.cs" />
     <Compile Include="Common\Huffman.cs" />
     <Compile Include="Common\RandomSource.cs" />
+    <Compile Include="Common\Str.cs" />
     <Compile Include="DebugHelper.cs" />
     <Compile Include="Graphics\Graphics.cs" />
     <Compile Include="Graphics\ThumbnailHeader.cs" />
@@ -57,6 +58,7 @@
     <Compile Include="IEngine.cs" />
     <Compile Include="IFileStorage.cs" />
     <Compile Include="Image\Codecs\Codec.cs" />
+    <Compile Include="Image\Codecs\Indeo3Decoder.cs" />
     <Compile Include="IO\GameDetected.cs" />
     <Compile Include="IO\GameDetector.cs" />
     <Compile Include="IO\GameSettings.cs" />

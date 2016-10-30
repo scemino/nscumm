@@ -395,7 +395,7 @@ namespace NScumm.Sci.Graphics
 
                 if (!_showCursor)
                 {
-                    SciEngine.Instance._gfxCursor.KernelHide();
+                    SciEngine.Instance._gfxCursor32.Hide();
                 }
 
                 var vmdRect = new Rect(_x, _y, (short) (_x + _decoder.GetWidth()), (short) (_y + _decoder.GetHeight()));
@@ -427,7 +427,7 @@ namespace NScumm.Sci.Graphics
                 var scriptWidth = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
                 var scriptHeight = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
 
-                Register bitmapId = new Register();
+                Register bitmapId;
                 SciBitmap vmdBitmap = _segMan.AllocateBitmap(out bitmapId, vmdRect.Width, vmdRect.Height, 255, 0, 0,
                     screenWidth, screenHeight, 0, false, false);
 
@@ -439,7 +439,7 @@ namespace NScumm.Sci.Graphics
                 }
 
                 var vmdCelInfo = new CelInfo32();
-                vmdCelInfo.bitmap = vmdBitmap.Object;
+                vmdCelInfo.bitmap = bitmapId;
                 _decoder.SetSurfaceMemory(vmdBitmap.Pixels, vmdBitmap.Width, vmdBitmap.Height, 1);
 
                 if (_planeIsOwned)
@@ -485,9 +485,11 @@ namespace NScumm.Sci.Graphics
                     break;
                 }
 
-                SciEngine.Instance.EngineState.SpeedThrottler((int) _decoder.GetTimeToNextFrame());
-                SciEngine.Instance.EngineState._throttleTrigger = true;
-                if (_decoder.NeedsUpdate)
+                // Sleeping any more than 1/60th of a second will make the mouse feel
+                // very sluggish during VMD action sequences because the frame rate of
+                // VMDs is usually only 15fps
+                SciEngine.Instance.Sleep(Math.Min(10, (int) _decoder.GetTimeToNextFrame()));
+                while (_decoder.NeedsUpdate)
                 {
                     RenderFrame();
                 }
@@ -548,7 +550,6 @@ namespace NScumm.Sci.Graphics
                 }
             }
 
-            _decoder.PauseVideo(true);
             return stopFlag;
         }
 
@@ -604,7 +605,7 @@ namespace NScumm.Sci.Graphics
         private void FillPalette(Palette palette)
         {
             var vmdPalette = new Ptr<byte>(_decoder.Palette, _startColor);
-            for (var i = _startColor; i <= _endColor; ++i)
+            for (ushort i = _startColor; i <= _endColor; ++i)
             {
                 short r = vmdPalette.Value;
                 vmdPalette.Offset++;

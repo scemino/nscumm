@@ -589,9 +589,36 @@ namespace NScumm.Sci
             ScriptPatcher = new ScriptPatcher();
             var segMan = new SegManager(ResMan, ScriptPatcher);
 
-            // Initialize the game screen
-            _gfxScreen = new GfxScreen(ResMan);
-            _gfxScreen.IsUnditheringEnabled = ConfigManager.Instance.Get<bool>("disable_dithering");
+            // Read user option for forcing hires graphics
+            // Only show/selectable for:
+            //  - King's Quest 6 CD
+            //  - King's Quest 6 CD demo
+            //  - Gabriel Knight 1 CD
+            //  - Police Quest 4 CD
+            // TODO: Check, if Gabriel Knight 1 floppy supports high resolution
+            //
+            // Gabriel Knight 1 on Mac is hi-res only, so it should NOT get this option.
+            // Confirmed by [md5] and originally by clone2727.
+            // TODO: vs
+            //if (Common::checkGameGUIOption(GAMEOPTION_HIGH_RESOLUTION_GRAPHICS, ConfMan.get("guioptions")))
+            //{
+            //    // GAMEOPTION_HIGH_RESOLUTION_GRAPHICS is available for the currently detected game,
+            //    // so read the user option now.
+            //    // We need to do this, because the option's default is "true", but we don't want "true"
+            //    // for any game that does not have this option.
+            //    _forceHiresGraphics = ConfMan.getBool("enable_high_resolution_graphics");
+            //}
+
+            if (ResourceManager.GetSciVersion() < SciVersion.V2)
+            {
+                // Initialize the game screen
+                _gfxScreen = new GfxScreen(ResMan);
+                _gfxScreen.IsUnditheringEnabled = ConfigManager.Instance.Get<bool>("disable_dithering");
+            }
+            else
+            {
+                _gfxScreen = null;
+            }
 
             Kernel = new Kernel(ResMan, segMan);
             Kernel.Init();
@@ -656,7 +683,6 @@ namespace NScumm.Sci
             _soundCmd = new SoundCommandParser(ResMan, segMan, _audio, _features.DetectDoSoundType());
 
             SyncSoundSettings();
-            _soundCmd.SetMasterVolume(11);
             SyncIngameAudioOptions();
 
             // Load our Mac executable here for icon bar palettes and high-res fonts
@@ -673,26 +699,14 @@ namespace NScumm.Sci
             var directSaveSlotLoading = ConfigManager.Instance.Get<int>("save_slot");
             if (directSaveSlotLoading >= 0)
             {
-                // call GameObject::play (like normally)
-                InitStackBaseWithSelector(Selector(o => o.play));
-                // We set this, so that the game automatically quit right after init
-                EngineState.variables[Vm.VAR_GLOBAL][4] = Register.TRUE_REG;
+                EngineState._delayedRestoreGame = true;
+                EngineState._delayedRestoreGameId = directSaveSlotLoading;
+                EngineState._delayedRestoreFromLauncher = true;
 
                 // Jones only initializes its menus when restarting/restoring, thus set
                 // the gameIsRestarting flag here before initializing. Fixes bug #6536.
-                if (Instance.GameId == SciGameId.JONES)
+                if (GameId == SciGameId.JONES)
                     EngineState.gameIsRestarting = GameIsRestarting.RESTORE;
-
-                EngineState._executionStackPosChanged = false;
-                Run();
-
-                // As soon as we get control again, actually restore the game
-                Register[] restoreArgv = { Register.NULL_REG, Register.Make(0, (ushort)directSaveSlotLoading) };
-                // special call (argv[0] is NULL)
-                Kernel.kRestoreGame(EngineState, 2, new StackPtr(restoreArgv, 0));
-
-                // this indirectly calls GameObject::init, which will setup menu, text font/color codes etc.
-                //  without this games would be pretty badly broken
             }
 
             // Show any special warnings for buggy scripts with severe game bugs,
@@ -715,6 +729,18 @@ namespace NScumm.Sci
                                       "the latest patch for this game by Sierra to avoid possible " +
                                       "problems");
                 }
+            }
+
+            if (GameId == SciGameId.KQ7 && ConfigManager.Instance.Get<bool>("subtitles"))
+            {
+                ShowScummVMDialog("Subtitles are enabled, but subtitling in King's" +
+                                  " Quest 7 was unfinished and disabled in the release" +
+                                  " version of the game. ScummVM allows the subtitles" +
+                                  " to be re-enabled, but because they were removed from" +
+                                  " the original game, they do not always render" +
+                                  " properly or reflect the actual game speech." +
+                                  " This is not a ScummVM bug -- it is a problem with" +
+                                  " the game's assets.");
             }
 
             // Show a warning if the user has selected a General MIDI device, no GM patch exists
@@ -763,6 +789,36 @@ namespace NScumm.Sci
             RunGame();
 
             // TODO: ConfMan.flushToDisk();
+        }
+
+        public override void SaveGameState(int slot, string desc)
+        {
+            var fileName = $"{_targetName}.{slot:D3}";
+            ISaveFileManager saveFileMan = SaveFileManager;
+            var @out = saveFileMan.OpenForSaving(fileName);
+            string version = string.Empty;
+            if (@out == null)
+            {
+                Warning("Opening savegame \"{0}\" for writing failed", fileName);
+                // TODO: return Common::kWritingFailed;
+                return;
+            }
+
+            using (@out)
+            {
+                if (!Savegame.gamestate_save(EngineState, @out, desc, version))
+                {
+                    Warning("Saving the game state to '{0}' failed", fileName);
+                    // TODO: return Common::kWritingFailed;
+                    return;
+                }
+            }
+        }
+
+        public override void LoadGameState(int slot)
+        {
+            EngineState._delayedRestoreGameId = slot;
+            EngineState._delayedRestoreGame = true;
         }
 
         private bool GameHasFanMadePatch()
@@ -1120,19 +1176,16 @@ namespace NScumm.Sci
 #endif
 
             _gfxCache = new GfxCache(ResMan, _gfxScreen, _gfxPalette16);
-            _gfxCursor = new GfxCursor(ResMan, _gfxPalette16, _gfxScreen);
 
 #if ENABLE_SCI32
             if (ResourceManager.GetSciVersion() >= SciVersion.V2)
             {
                 // SCI32 graphic objects creation
                 _gfxCursor32 = new GfxCursor32();
-                _gfxCoordAdjuster = new GfxCoordAdjuster32(EngineState._segMan);
-                _gfxCursor.Init(_gfxCoordAdjuster, EventManager);
                 _gfxCompare = new GfxCompare(EngineState._segMan, _gfxCache, _gfxScreen, _gfxCoordAdjuster);
                 _gfxPaint32 = new GfxPaint32(EngineState._segMan);
                 _gfxTransitions32 = new GfxTransitions32(EngineState._segMan);
-                _gfxFrameout = new GfxFrameout(EngineState._segMan, _gfxTransitions32, ResMan, _gfxCoordAdjuster, _gfxScreen, _gfxPalette32, _gfxCursor32);
+                _gfxFrameout = new GfxFrameout(EngineState._segMan, _gfxPalette32, _gfxTransitions32, _gfxCursor32);
                 _gfxCursor32.Init(_gfxFrameout.CurrentBuffer);
                 _gfxText32 = new GfxText32(EngineState._segMan, _gfxCache);
                 _gfxControls32 = new GfxControls32(EngineState._segMan, _gfxCache, _gfxText32);
@@ -1142,6 +1195,7 @@ namespace NScumm.Sci
             {
 #endif
                 // SCI0-SCI1.1 graphic objects creation
+                _gfxCursor = new GfxCursor(ResMan, _gfxPalette16, _gfxScreen);
                 _gfxPorts = new GfxPorts(EngineState._segMan, _gfxScreen);
                 _gfxCoordAdjuster = new GfxCoordAdjuster16(_gfxPorts);
                 _gfxCursor.Init(_gfxCoordAdjuster, EventManager);

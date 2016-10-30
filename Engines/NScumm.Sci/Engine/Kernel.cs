@@ -700,6 +700,20 @@ namespace NScumm.Sci.Engine
             SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI32(0), 5, kRemapColorsBlockRange, "ii"),
         };
 
+        private static readonly SciKernelMapSubEntry[] kArray_subops = {
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI32(0), 0, kArrayNew,                  "ii"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI32(0), 1, kArrayGetSize,              "r"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI32(0), 2, kArrayGetElement,           "ri"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI32(0), 3, kArraySetElements,          "ri(.*)", Workarounds.kArraySetElements_workarounds),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI32(0), 4, kArrayFree,                 "r"                    ),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI32(0), 5, kArrayFill,                 "riii"                 ),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI32(0), 6, kArrayCopy,                 "ririi"                ),
+	        // there is no subop 7
+	        SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI32(0),  8, kArrayDuplicate,            "r"                    ),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI32(0),  9, kArrayGetData,              "[or]"                 ),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI3(0),  10, kArrayByteCopy,             "ririi"                ),
+        };
+
         private static readonly SciKernelMapSubEntry[] kBitmap_subops =
         {
             SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21(0), 0, kBitmapCreate, "iiii(i)(i)(i)"),
@@ -1082,15 +1096,22 @@ namespace NScumm.Sci.Engine
 
         private static readonly SciKernelMapSubEntry[] kPalette_subops =
         {
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0), 1, kPaletteSetFromResource, "i(i)"),
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0), 2, kPaletteSetFlag, "iii"),
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0), 3, kPaletteUnsetFlag, "iii",
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI16(0), 1, kPaletteSetFromResource, "i(i)"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI16(0), 2, kPaletteSetFlag, "iii"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI16(0), 3, kPaletteUnsetFlag, "iii",
                 Workarounds.kPaletteUnsetFlag_workarounds),
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0), 4, kPaletteSetIntensity, "iii(i)"),
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0), 5, kPaletteFindColor, "iii"),
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0), 6, kPaletteAnimate, "i*"),
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0), 7, kPaletteSave, ""),
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0), 8, kPaletteRestore, "[r0]"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI16(0), 4, kPaletteSetIntensity, "iii(i)"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI16(0), 5, kPaletteFindColor, "iii"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI16(0), 6, kPaletteAnimate, "i*"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI16(0), 7, kPaletteSave, ""),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI16(0), 8, kPaletteRestore, "[r0]"),
+#if ENABLE_SCI32
+	        SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI32(0), 1, kPaletteSetFromResource32,  "i(i)"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI32(0), 2, kPaletteSetFade,            "iii"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI32(0), 3, kPaletteFindColor32,        "iii"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI3(0),  4, kPaletteSetGamma,           "i"),
+#endif
+
         };
 
         private static readonly SciKernelMapEntry[] s_kernelMap =
@@ -1358,7 +1379,7 @@ namespace NScumm.Sci.Engine
             SciKernelMapEntry.Make("TextFonts", kDummy, SciVersionRange.SIG_UNTIL_SCI21EARLY(SIGFOR_ALL), "(.*)"),
             SciKernelMapEntry.Make(kAddPlane, SciVersionRange.SIG_EVERYWHERE, "o"),
             SciKernelMapEntry.Make(kAddScreenItem, SciVersionRange.SIG_EVERYWHERE, "o"),
-            SciKernelMapEntry.Make(kArray, SciVersionRange.SIG_EVERYWHERE, "(.*)"),
+            SciKernelMapEntry.Make(kArray, SciVersionRange.SIG_EVERYWHERE, "i(.*)", kArray_subops),
             SciKernelMapEntry.Make(kCreateTextBitmap, SciVersionRange.SIG_EVERYWHERE, "i(.*)"),
             SciKernelMapEntry.Make(kDeletePlane, SciVersionRange.SIG_EVERYWHERE, "o"),
             SciKernelMapEntry.Make(kDeleteScreenItem, SciVersionRange.SIG_EVERYWHERE, "o"),

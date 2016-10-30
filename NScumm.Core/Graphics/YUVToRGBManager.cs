@@ -69,7 +69,8 @@ namespace NScumm.Core.Graphics
                     _rgbToPix[b_2_pix_alloc + i + 512] = _rgbToPix[b_2_pix_alloc + 511];
                 }
             }
-            else {
+            else
+            {
                 // Set up entries 16-235 in rgb-to-pixel value tables
                 for (int i = 16; i < 236; i++)
                 {
@@ -201,7 +202,7 @@ namespace NScumm.Core.Graphics
                         return val;
                     });
 
-                    putPixel(dstPtr.Data, dstPtr.Offset+ d, value(ySrc[y]));
+                    putPixel(dstPtr.Data, dstPtr.Offset + d, value(ySrc[y]));
                     putPixel(dstPtr.Data, dstPtr.Offset + d + dstPitch, value(ySrc[y + yPitch]));
                     y++;
                     d += size;
@@ -216,6 +217,96 @@ namespace NScumm.Core.Graphics
                 y += (yPitch << 1) - yWidth;
                 u += uvPitch - halfWidth;
                 v += uvPitch - halfWidth;
+            }
+        }
+
+        public static void Convert410(Surface dst, LuminanceScale scale, BytePtr ySrc, BytePtr uSrc, BytePtr vSrc,
+            int yWidth, int yHeight, int yPitch, int uvPitch)
+        {
+            // Sanity checks
+            System.Diagnostics.Debug.Assert(dst != null && dst.Pixels != BytePtr.Null);
+            System.Diagnostics.Debug.Assert(dst.PixelFormat.GetBytesPerPixel() == 2 || dst.PixelFormat.GetBytesPerPixel() == 4);
+            System.Diagnostics.Debug.Assert(ySrc != BytePtr.Null && uSrc != BytePtr.Null && vSrc != BytePtr.Null);
+            System.Diagnostics.Debug.Assert((yWidth & 3) == 0);
+            System.Diagnostics.Debug.Assert((yHeight & 3) == 0);
+
+            YUVToRGBLookup lookup = GetLookup(dst.PixelFormat, scale);
+
+            // Use a templated function to avoid an if check on every pixel
+            if (dst.PixelFormat.GetBytesPerPixel() == 2)
+                ConvertYUV410ToRGB(dst.Pixels, dst.Pitch, lookup, _colorTab.Value, ySrc, uSrc, vSrc, yWidth, yHeight, yPitch, uvPitch, 2);
+            else
+                ConvertYUV410ToRGB(dst.Pixels, dst.Pitch, lookup, _colorTab.Value, ySrc, uSrc, vSrc, yWidth, yHeight, yPitch, uvPitch, 4);
+        }
+
+        private static void ConvertYUV410ToRGB(BytePtr dstPtr, int dstPitch, YUVToRGBLookup lookup, short[] colorTab, BytePtr ySrc, BytePtr uSrc, BytePtr vSrc, int yWidth, int yHeight, int yPitch, int uvPitch, int size)
+        {
+            // Keep the tables in pointers here to avoid a dereference on each pixel
+            Ptr<short> Cr_r_tab = new Ptr<short>(colorTab);
+            Ptr<short> Cr_g_tab = new Ptr<short>(Cr_r_tab, 256);
+            Ptr<short> Cb_g_tab = new Ptr<short>(Cr_g_tab, 256);
+            Ptr<short> Cb_b_tab = new Ptr<short>(Cb_g_tab, 256);
+            var rgbToPix = lookup.GetRGBToPix();
+
+            int quarterWidth = yWidth >> 2;
+
+            for (int y = 0; y < yHeight; y++)
+            {
+                for (int x = 0; x < quarterWidth; x++)
+                {
+                    // Perform bilinear interpolation on the the chroma values
+                    // Based on the algorithm found here: http://tech-algorithm.com/articles/bilinear-image-scaling/
+                    // Feel free to optimize further
+                    int targetY = y >> 2;
+                    int xDiff = 0;
+                    int yDiff = y & 3;
+                    int index = targetY * uvPitch + x;
+
+                    // Declare some variables for the following macros
+                    byte u, v;
+                    short cr_r, crb_g, cb_b;
+
+                    // READ_QUAD
+                    byte uA = uSrc[index];
+                    byte uB = uSrc[index + 1];
+                    byte uC = uSrc[index + uvPitch];
+                    byte uD = uSrc[index + uvPitch + 1];
+
+                    byte vA = vSrc[index];
+                    byte vB = vSrc[index + 1];
+                    byte vC = vSrc[index + uvPitch];
+                    byte vD = vSrc[index + uvPitch + 1];
+
+                    for (int i = 0; i < 4; i++)
+                    {
+                        // DO_INTERPOLATION
+                        u = (byte)((uA * (4 - xDiff) * (4 - yDiff) + uB * xDiff * (4 - yDiff) + uC * yDiff * (4 - xDiff) + uD * xDiff * yDiff) >> 4);
+                        v = (byte)((vA * (4 - xDiff) * (4 - yDiff) + vB * xDiff * (4 - yDiff) + vC * yDiff * (4 - xDiff) + vD * xDiff * yDiff) >> 4);
+
+                        cr_r = Cr_r_tab[v];
+                        crb_g = (short)(Cr_g_tab[v] + Cb_g_tab[u]);
+                        cb_b = Cb_b_tab[u];
+
+                        // PUT_PIXEL
+                        Ptr<uint> L = new Ptr<uint>(rgbToPix, ySrc.Value * 4);
+                        if (size == 2)
+                        {
+                            dstPtr.WriteUInt16(0, (ushort)(L[cr_r] | L[crb_g] | L[cb_b]));
+                        }
+                        else
+                        {
+                            dstPtr.WriteUInt32(0, L[cr_r] | L[crb_g] | L[cb_b]);
+                        }
+
+                        dstPtr += size;
+
+                        ySrc.Offset++;
+                        xDiff++;
+                    }
+                }
+
+                dstPtr.Offset += dstPitch - yWidth * size;
+                ySrc += yPitch - yWidth;
             }
         }
     }

@@ -120,15 +120,13 @@ namespace NScumm.Core.Video
                 Engine.Instance.Mixer.PauseHandle(_handle, true);
         }
 
-        // TODO:
         public void Start(Timestamp limit)
         {
             Stop();
-            throw new NotImplementedException();
             var stream = AudioStream;
             if (stream == null) throw new InvalidOperationException("stream should not be null");
 
-            //    stream = new LimitingAudioStream(stream, limit, false);
+            stream = new LimitingAudioStream(stream, limit, false);
 
             _handle = Engine.Instance.Mixer.PlayStream(SoundType, stream, -1, _muted ? 0 : Volume, Balance, true);
 

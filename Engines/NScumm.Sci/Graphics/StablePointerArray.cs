@@ -27,14 +27,17 @@ namespace NScumm.Sci.Graphics
     {
         private readonly T[] _items;
         private int _size;
+        private Func<T, T> _clone;
 
-        public StablePointerArray(int n)
+        public StablePointerArray(int n, Func<T, T> clone)
         {
             _items = new T[n];
+            _clone = clone;
         }
 
         public StablePointerArray(StablePointerArray<T> other, Func<T, T> clone)
         {
+            _clone = clone;
             _size = other._size;
             for (var i = 0; i < _size; ++i)
             {
@@ -136,6 +139,23 @@ namespace NScumm.Sci.Graphics
         public virtual void Sort()
         {
             Array.Sort(_items, 0, _size);
+        }
+
+        public void CopyFrom(StablePointerArray<T> other)
+        {
+            Clear();
+            _size = other._size;
+            for (var i = 0; i < _size; ++i)
+            {
+                if (other._items[i] == null)
+                {
+                    _items[i] = default(T);
+                }
+                else
+                {
+                    _items[i] = _clone(other._items[i]);
+                }
+            }
         }
     }
 }

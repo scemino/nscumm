@@ -33,7 +33,8 @@ namespace NScumm.Sci.Graphics
         Right = 2
     }
 
-    internal enum ScrollDirection {
+    internal enum ScrollDirection
+    {
         Up,
         Down
     }
@@ -173,7 +174,7 @@ namespace NScumm.Sci.Graphics
 
         public Register CreateFontBitmap(short width, short height, Rect rect, string text, byte foreColor,
             byte backColor, byte skipColor, int fontId, TextAlign alignment, short borderColor, bool dimmed,
-            bool doScaling,bool gc)
+            bool doScaling, bool gc)
         {
             _borderColor = borderColor;
             _text = text;
@@ -190,14 +191,14 @@ namespace NScumm.Sci.Graphics
 
             if (doScaling)
             {
-                short scriptWidth = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
-                short scriptHeight = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
+                short scriptWidth = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
+                short scriptHeight = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
 
                 var scaleX = new Rational(_scaledWidth, scriptWidth);
                 var scaleY = new Rational(_scaledHeight, scriptHeight);
 
-                _width = (short) (_width * scaleX);
-                _height = (short) (_height * scaleY);
+                _width = (short)(_width * scaleX);
+                _height = (short)(_height * scaleY);
                 Helpers.Mulinc(ref _textRect, scaleX, scaleY);
             }
 
@@ -221,7 +222,7 @@ namespace NScumm.Sci.Graphics
 
             if (_borderColor > -1)
             {
-                DrawFrame(bitmapRect, 1, (byte) _borderColor, false);
+                DrawFrame(bitmapRect, 1, (byte)_borderColor, false);
             }
 
             DrawTextBox();
@@ -260,13 +261,13 @@ namespace NScumm.Sci.Graphics
 
             if (dir == ScrollDirection.Up)
             {
-                lineRect.Bottom = (short) (lineRect.Top + h);
+                lineRect.Bottom = (short)(lineRect.Top + h);
             }
             else
             {
                 // It is unclear to me what the purpose of this bottom++ is.
                 // It does not seem to be the usual inc/exc issue.
-                lineRect.Top = (short) (lineRect.Top + (numLines - 1) * h);
+                lineRect.Top = (short)(lineRect.Top + (numLines - 1) * h);
                 lineRect.Bottom++;
             }
 
@@ -276,7 +277,7 @@ namespace NScumm.Sci.Graphics
             _drawPosition.Y = _textRect.Top;
             if (dir == ScrollDirection.Down)
             {
-                _drawPosition.Y = (short) (_drawPosition.Y + (numLines - 1) * h);
+                _drawPosition.Y = (short)(_drawPosition.Y + (numLines - 1) * h);
             }
 
             _foreColor = color;
@@ -290,11 +291,11 @@ namespace NScumm.Sci.Graphics
 
             if (_alignment == TextAlign.Center)
             {
-                _drawPosition.X = (short) (_drawPosition.X + (_textRect.Width - textWidth) / 2);
+                _drawPosition.X = (short)(_drawPosition.X + (_textRect.Width - textWidth) / 2);
             }
             else if (_alignment == TextAlign.Right)
             {
-                _drawPosition.X = (short) (_drawPosition.X + _textRect.Width - textWidth);
+                _drawPosition.X = (short)(_drawPosition.X + _textRect.Width - textWidth);
             }
 
             //_foreColor = fc;
@@ -310,21 +311,21 @@ namespace NScumm.Sci.Graphics
             _borderColor = borderColor;
             _text = text;
             _textRect = rect;
-            _foreColor = (byte) foreColor;
+            _foreColor = (byte)foreColor;
             _dimmed = dimmed;
 
             SetFont(fontId);
 
-            short scriptWidth = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
-            short scriptHeight = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
+            short scriptWidth = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
+            short scriptHeight = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
 
             Helpers.Mulinc(ref _textRect, new Rational(_scaledWidth, scriptWidth),
                 new Rational(_scaledHeight, scriptHeight));
 
             CelObjView view = CelObjView.Create(celInfo.resourceId, celInfo.loopNo, celInfo.celNo);
             _skipColor = view._transparentColor;
-            _width = (short) (view._width * _scaledWidth / view._xResolution);
-            _height = (short) (view._height * _scaledHeight / view._yResolution);
+            _width = (short)(view._width * _scaledWidth / view._xResolution);
+            _height = (short)(view._height * _scaledHeight / view._yResolution);
 
             Rect bitmapRect = new Rect(_width, _height);
             if (_textRect.Intersects(bitmapRect))
@@ -345,7 +346,7 @@ namespace NScumm.Sci.Graphics
 
             _backColor = _skipColor;
             Erase(bitmapRect, false);
-            _backColor = (byte) backColor;
+            _backColor = (byte)backColor;
 
             var scaledPos = new Point(0, 0);
             view.Draw(bitmap.Buffer, ref bitmapRect, ref scaledPos, false,
@@ -367,7 +368,7 @@ namespace NScumm.Sci.Graphics
                 {
                     if (borderColor != -1)
                     {
-                        DrawFrame(bitmapRect, 1, (byte) _borderColor, false);
+                        DrawFrame(bitmapRect, 1, (byte)_borderColor, false);
                     }
 
                     DrawTextBox();
@@ -380,8 +381,8 @@ namespace NScumm.Sci.Graphics
 
         public short GetTextCount(string text, int index, Rect textRect, bool doScaling)
         {
-            short scriptWidth = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
-            short scriptHeight = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
+            short scriptWidth = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
+            short scriptHeight = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
 
             Rect scaledRect = new Rect(textRect);
             if (doScaling)
@@ -395,14 +396,14 @@ namespace NScumm.Sci.Graphics
 
             int charIndex = index;
             short maxWidth = scaledRect.Width;
-            short lineCount = (short) ((scaledRect.Height - 2) / _font.Height);
+            short lineCount = (short)((scaledRect.Height - 2) / _font.Height);
             while (lineCount-- != 0)
             {
                 GetLongest(ref charIndex, maxWidth);
             }
 
             _text = oldText;
-            return (short) (charIndex - index);
+            return (short)(charIndex - index);
         }
 
         public short GetTextCount(string text, int index, int fontId, Rect textRect, bool doScaling)
@@ -411,13 +412,18 @@ namespace NScumm.Sci.Graphics
             return GetTextCount(text, index, textRect, doScaling);
         }
 
+        /// <summary>
+        /// Erases the given rect by filling with the background
+        /// color.
+        /// </summary>
+        /// <param name="rect"></param>
+        /// <param name="doScaling"></param>
         public void Erase(Rect rect, bool doScaling)
         {
-            throw new System.NotImplementedException();
-//            Rect targetRect = doScaling ? scaleRect(rect) : rect;
-//
-//            SciBitmap bitmap=new SciBitmap(_bitmap);
-//            bitmap.getBuffer().fillRect(targetRect, _backColor);
+            Rect targetRect = doScaling ? ScaleRect(rect) : rect;
+
+            SciBitmap bitmap = _segMan.LookupBitmap(_bitmap);
+            bitmap.Buffer.FillRect(targetRect, _backColor);
         }
 
         public void DrawTextBox()
@@ -452,11 +458,11 @@ namespace NScumm.Sci.Graphics
 
                 if (_alignment == TextAlign.Center)
                 {
-                    _drawPosition.X = (short) (_drawPosition.X + (textRectWidth - textWidth) / 2);
+                    _drawPosition.X = (short)(_drawPosition.X + (textRectWidth - textWidth) / 2);
                 }
                 else if (_alignment == TextAlign.Right)
                 {
-                    _drawPosition.X = (short) (_drawPosition.X + textRectWidth - textWidth);
+                    _drawPosition.X = (short)(_drawPosition.X + textRectWidth - textWidth);
                 }
 
                 DrawText(charIndex, length);
@@ -509,7 +515,7 @@ namespace NScumm.Sci.Graphics
 
                             ++t;
                             --length;
-                            value = (ushort) (10 * value + (valueChar - '0'));
+                            value = (ushort)(10 * value + (valueChar - '0'));
                         }
 
                         if (length == 0)
@@ -519,11 +525,11 @@ namespace NScumm.Sci.Graphics
 
                         if (controlChar == 'a')
                         {
-                            _alignment = (TextAlign) value;
+                            _alignment = (TextAlign)value;
                         }
                         else if (controlChar == 'c')
                         {
-                            _foreColor = (byte) value;
+                            _foreColor = (byte)value;
                         }
                         else if (controlChar == 'f')
                         {
@@ -552,7 +558,7 @@ namespace NScumm.Sci.Graphics
         private void DrawChar(char charIndex)
         {
             var bitmap = _segMan.GetHunkPointer(_bitmap);
-            var pixels = new BytePtr(bitmap, (int) bitmap.ReadSci11EndianUInt32(28));
+            var pixels = new BytePtr(bitmap, (int)bitmap.ReadSci11EndianUInt32(28));
 
             _font.DrawToBuffer(charIndex, _drawPosition.Y, _drawPosition.X, _foreColor, _dimmed, pixels, _width, _height);
             _drawPosition.X += _font.GetCharWidth(charIndex);
@@ -678,7 +684,7 @@ namespace NScumm.Sci.Graphics
         public short GetTextWidth(string text, int index, int length)
         {
             _text = text;
-            return (short) ScaleUpWidth(GetTextWidth(index, length));
+            return (short)ScaleUpWidth(GetTextWidth(index, length));
         }
 
         public short GetTextWidth(int index, int length)
@@ -752,8 +758,8 @@ namespace NScumm.Sci.Graphics
         private Rect ScaleRect(Rect rect)
         {
             Rect scaledRect = new Rect(rect);
-            short scriptWidth = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
-            short scriptHeight = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
+            short scriptWidth = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
+            short scriptHeight = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
             var scaleX = new Rational(_scaledWidth, scriptWidth);
             var scaleY = new Rational(_scaledHeight, scriptHeight);
             Helpers.Mulinc(ref scaledRect, scaleX, scaleY);
@@ -765,13 +771,13 @@ namespace NScumm.Sci.Graphics
             Rect targetRect = doScaling ? ScaleRect(rect) : rect;
 
             var bitmap = _segMan.GetHunkPointer(_bitmap);
-            var pixels = new BytePtr(bitmap, (int) bitmap.ReadSci11EndianUInt32(28) + rect.Top * _width + rect.Left);
+            var pixels = new BytePtr(bitmap, (int)bitmap.ReadSci11EndianUInt32(28) + rect.Top * _width + rect.Left);
 
             // NOTE: Not fully disassembled, but this should be right
             short rectWidth = targetRect.Width;
-            short sidesHeight = (short) (targetRect.Height - size * 2);
-            short centerWidth = (short) (rectWidth - size * 2);
-            short stride = (short) (_width - rectWidth);
+            short sidesHeight = (short)(targetRect.Height - size * 2);
+            short centerWidth = (short)(rectWidth - size * 2);
+            short stride = (short)(_width - rectWidth);
 
             for (short y = 0; y < size; ++y)
             {
@@ -811,10 +817,10 @@ namespace NScumm.Sci.Graphics
 
             Rect result = new Rect();
 
-            short scriptWidth = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
-            short scriptHeight = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
+            short scriptWidth = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
+            short scriptHeight = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
 
-            maxWidth = (short) (maxWidth * _scaledWidth / scriptWidth);
+            maxWidth = (short)(maxWidth * _scaledWidth / scriptWidth);
 
             _text = text;
 
@@ -822,7 +828,7 @@ namespace NScumm.Sci.Graphics
             {
                 if (maxWidth == 0)
                 {
-                    maxWidth = (short) (_scaledWidth * 3 / 5);
+                    maxWidth = (short)(_scaledWidth * 3 / 5);
                 }
 
                 result.Right = maxWidth;
@@ -866,7 +872,7 @@ namespace NScumm.Sci.Graphics
                     // by 1, which means that the rect was actually a pixel taller than
                     // the height of the font. This was not the case in the other branch,
                     // which decremented the bottom by 1 at the end of the loop.
-                    result.Bottom = (short) (_font.Height + 1);
+                    result.Bottom = (short)(_font.Height + 1);
                 }
             }
 
@@ -874,8 +880,8 @@ namespace NScumm.Sci.Graphics
             {
                 // NOTE: The original engine code also scaled top/left but these are
                 // always zero so there is no reason to do that.
-                result.Right = (short) (((result.Right - 1) * scriptWidth + _scaledWidth - 1) / _scaledWidth + 1);
-                result.Bottom = (short) (((result.Bottom - 1) * scriptHeight + _scaledHeight - 1) / _scaledHeight + 1);
+                result.Right = (short)(((result.Right - 1) * scriptWidth + _scaledWidth - 1) / _scaledWidth + 1);
+                result.Bottom = (short)(((result.Bottom - 1) * scriptHeight + _scaledHeight - 1) / _scaledHeight + 1);
             }
 
             return result;
@@ -898,7 +904,7 @@ namespace NScumm.Sci.Graphics
             ushort width = _font.GetCharWidth(charIndex);
             if (doScaling)
             {
-                width = (ushort) ScaleUpWidth(width);
+                width = (ushort)ScaleUpWidth(width);
             }
             return width;
         }
@@ -915,7 +921,7 @@ namespace NScumm.Sci.Graphics
             if (doScaling)
             {
                 bitmapStride =
-                    (short) (bitmapStride * _scaledWidth / SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth);
+                    (short)(bitmapStride * _scaledWidth / SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth);
                 targetRect = ScaleRect(rect);
             }
 
@@ -929,7 +935,7 @@ namespace NScumm.Sci.Graphics
             // function was never updated to match? Or maybe they exploit the
             // configurable stride length somewhere else to do stair stepping inverts...
             int invertSize = targetRect.Height * bitmapStride + targetRect.Width;
-            int bitmapSize = (int) bitmapData.ReadSci11EndianUInt32(12);
+            int bitmapSize = (int)bitmapData.ReadSci11EndianUInt32(12);
 
             if (invertSize >= bitmapSize)
             {
@@ -937,10 +943,10 @@ namespace NScumm.Sci.Graphics
             }
 
             // NOTE: Actual engine just added the bitmap header size hardcoded here
-            var pixel = new BytePtr(bitmapData, (int) bitmapData.ReadSci11EndianUInt32(28) +
+            var pixel = new BytePtr(bitmapData, (int)bitmapData.ReadSci11EndianUInt32(28) +
                                                 bitmapStride * targetRect.Top + targetRect.Left);
 
-            short stride = (short) (bitmapStride - targetRect.Width);
+            short stride = (short)(bitmapStride - targetRect.Width);
             short targetHeight = targetRect.Height;
             short targetWidth = targetRect.Width;
 

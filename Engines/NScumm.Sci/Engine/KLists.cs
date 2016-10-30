@@ -286,7 +286,7 @@ namespace NScumm.Sci.Engine
             Register dest = argv[1];
             Register order_func = argv[2];
 
-            int input_size = (short) SciEngine.ReadSelectorValue(segMan, source, o => o.size);
+            int input_size = (short)SciEngine.ReadSelectorValue(segMan, source, o => o.size);
             Register input_data = SciEngine.ReadSelector(segMan, source, o => o.elements);
             Register output_data = SciEngine.ReadSelector(segMan, dest, o => o.elements);
 
@@ -303,7 +303,7 @@ namespace NScumm.Sci.Engine
                 SciEngine.WriteSelector(segMan, dest, o => o.elements, output_data);
             }
 
-            SciEngine.WriteSelectorValue(segMan, dest, o => o.size, (ushort) input_size);
+            SciEngine.WriteSelectorValue(segMan, dest, o => o.size, (ushort)input_size);
 
             list = s._segMan.LookupList(input_data);
             node = s._segMan.LookupNode(list.first);
@@ -313,7 +313,7 @@ namespace NScumm.Sci.Engine
             int i = 0;
             while (node != null)
             {
-                Register[] @params = {node.value};
+                Register[] @params = { node.value };
 
                 SciEngine.InvokeSelector(s, order_func, o => o.doit, argc, argv, 1, new StackPtr(@params, 0));
                 temp_array[i].key = node.key;
@@ -410,7 +410,7 @@ namespace NScumm.Sci.Engine
         private static Register kArray(EngineState s, int argc, StackPtr argv)
         {
             if (s == null)
-                return Register.Make(0, (ushort) ResourceManager.GetSciVersion());
+                return Register.Make(0, (ushort)ResourceManager.GetSciVersion());
             Error("not supposed to call this");
             return Register.NULL_REG;
         }
@@ -418,7 +418,7 @@ namespace NScumm.Sci.Engine
         private static Register kArrayNew(EngineState s, int argc, StackPtr argv)
         {
             ushort size = argv[0].ToUInt16();
-            SciArrayType type = (SciArrayType) argv[1].ToUInt16();
+            SciArrayType type = (SciArrayType)argv[1].ToUInt16();
 
             if (type == SciArrayType.String)
             {
@@ -433,7 +433,13 @@ namespace NScumm.Sci.Engine
         private static Register kArrayGetSize(EngineState s, int argc, StackPtr argv)
         {
             SciArray array = s._segMan.LookupArray(argv[0]);
-            return Register.Make(0, (ushort) array.Size);
+            return Register.Make(0, (ushort)array.Size);
+        }
+
+        private static Register kArrayGetElement(EngineState s, int argc, StackPtr argv)
+        {
+            SciArray array = s._segMan.LookupArray(argv[0]);
+            return array.GetAsID(argv[1].ToUInt16());
         }
 
         private static Register kStringGetChar(EngineState s, int argc, StackPtr argv)
@@ -449,7 +455,7 @@ namespace NScumm.Sci.Engine
                     return Register.Make(0, 0);
                 }
 
-                return Register.Make(0, (byte) @string[index]);
+                return Register.Make(0, (byte)@string[index]);
             }
 
             SciArray array = s._segMan.LookupArray(argv[0]);
@@ -465,8 +471,14 @@ namespace NScumm.Sci.Engine
         private static Register kArraySetElements(EngineState s, int argc, StackPtr argv)
         {
             SciArray array = s._segMan.LookupArray(argv[0]);
-            array.SetElements(argv[1].ToUInt16(), (ushort) (argc - 2), argv + 2);
+            array.SetElements(argv[1].ToUInt16(), (ushort)(argc - 2), argv + 2);
             return argv[0];
+        }
+
+        private static Register kArrayFree(EngineState s, int argc, StackPtr argv)
+        {
+            s._segMan.FreeArray(argv[0]);
+            return s.r_acc;
         }
 
         private static Register kArrayFill(EngineState s, int argc, StackPtr argv)
@@ -507,19 +519,40 @@ namespace NScumm.Sci.Engine
             if (!s._segMan.IsArray(argv[0]))
             {
                 string source = s._segMan.GetString(argv[0]);
-                SciArray target = s._segMan.AllocateArray(SciArrayType.String, (ushort) source.Length, out targetHandle);
+                SciArray target = s._segMan.AllocateArray(SciArrayType.String, (ushort)source.Length, out targetHandle);
                 target.FromString(source);
             }
             else
             {
                 SciArray source = s._segMan.LookupArray(argv[0]);
-                SciArray target = s._segMan.AllocateArray(source.Type, (ushort) source.Size, out targetHandle);
+                SciArray target = s._segMan.AllocateArray(source.Type, (ushort)source.Size, out targetHandle);
                 target.Assign(source);
             }
 
             return targetHandle;
         }
 
+        private static Register kArrayGetData(EngineState s, int argc, StackPtr argv)
+        {
+            if (s._segMan.IsObject(argv[0]))
+            {
+                return SciEngine.ReadSelector(s._segMan, argv[0], o => o.data);
+            }
+
+            return argv[0];
+        }
+
+        private static Register kArrayByteCopy(EngineState s, int argc, StackPtr argv)
+        {
+            SciArray target = s._segMan.LookupArray(argv[0]);
+            ushort targetOffset = argv[1].ToUInt16();
+            SciArray source = s._segMan.LookupArray(argv[2]);
+            ushort sourceOffset = argv[3].ToUInt16();
+            ushort count = argv[4].ToUInt16();
+
+            target.ByteCopy(source, sourceOffset, targetOffset, count);
+            return argv[0];
+        }
 
         private static Register kListAt(EngineState s, int argc, StackPtr argv)
         {
@@ -538,7 +571,7 @@ namespace NScumm.Sci.Engine
             }
             Node curNode = s._segMan.LookupNode(curAddress);
             Register curObject = curNode.value;
-            short listIndex = (short) argv[1].ToUInt16();
+            short listIndex = (short)argv[1].ToUInt16();
             int curIndex = 0;
 
             while (curIndex != listIndex)
@@ -710,7 +743,7 @@ namespace NScumm.Sci.Engine
         private static Register kList(EngineState s, int argc, StackPtr argv)
         {
             if (s == null)
-                return Register.Make(0, (ushort) ResourceManager.GetSciVersion());
+                return Register.Make(0, (ushort)ResourceManager.GetSciVersion());
             Error("not supposed to call this");
             return Register.NULL_REG;
         }

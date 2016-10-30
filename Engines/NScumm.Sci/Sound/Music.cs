@@ -158,6 +158,7 @@ namespace NScumm.Sci.Sound
         public int dataInc;
         public int sampleLoopCounter;
         public bool stopAfterFading;
+        public bool isSample;
 
         public MusicEntry()
         {
@@ -531,6 +532,14 @@ namespace NScumm.Sci.Sound
         {
             foreach (var i in _playList)
             {
+#if ENABLE_SCI32
+                // The entire DAC will have been paused by the caller;
+                // do not pause the individual samples too
+                if (_soundVersion >= SciVersion.V2_1_EARLY && i.isSample)
+                {
+                    continue;
+                }
+#endif
                 SoundToggle(i, pause);
             }
         }
@@ -683,8 +692,20 @@ namespace NScumm.Sci.Sound
                 }
             }
 
-            if (pSnd.pStreamAud != null)
+            if (pSnd.isSample)
             {
+# if ENABLE_SCI32
+                if (_soundVersion >= SciVersion.V2_1_EARLY)
+                {
+                    SciEngine.Instance._audio32.Stop(new ResourceId(ResourceType.Audio, pSnd.resourceId), pSnd.soundObj);
+
+                    SciEngine.Instance._audio32.Play(AudioChannelIndex.NoExistingChannel, new ResourceId(ResourceType.Audio, pSnd.resourceId), true, pSnd.loop != 0 && pSnd.loop != 1, pSnd.volume, pSnd.soundObj, false);
+
+                    return;
+                }
+                else
+#endif
+
                 if (!_mixer.IsSoundHandleActive(pSnd.hCurrentAud))
                 {
                     if ((_currentlyPlayingSample != null) &&
@@ -1409,6 +1430,7 @@ namespace NScumm.Sci.Sound
                     pSnd.hCurrentAud = new SoundHandle();
                     pSnd.playBed = false;
                     pSnd.overridePriority = false;
+                    pSnd.isSample = true;
                 }
                 else
                 {

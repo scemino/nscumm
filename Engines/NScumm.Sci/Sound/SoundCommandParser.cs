@@ -123,7 +123,8 @@ namespace NScumm.Sci.Sound
                 {       // pause the whole playlist
                     _music.PauseAll(value != 0);
                 }
-                else {  // pause a playlist slot
+                else
+                {  // pause a playlist slot
                     MusicEntry musicSlot = _music.GetSlot(obj);
                     if (musicSlot == null)
                     {
@@ -184,7 +185,8 @@ namespace NScumm.Sci.Sound
 
                 SciEngine.WriteSelectorValue(_segMan, obj, o => o.flags, (ushort)(SciEngine.ReadSelectorValue(_segMan, obj, o => o.flags) & 0xFD));
             }
-            else {
+            else
+            {
                 // Scripted priority
                 musicSlot.overridePriority = true;
 
@@ -213,7 +215,8 @@ namespace NScumm.Sci.Sound
                 {
                     Warning($"kDoSound(setLoop): Slot not found ({obj}) and the song was requested to be looped");
                 }
-                else {
+                else
+                {
                     // Doesn't really matter
                 }
                 return;
@@ -222,7 +225,8 @@ namespace NScumm.Sci.Sound
             {
                 musicSlot.loop = 0xFFFF;
             }
-            else {
+            else
+            {
                 musicSlot.loop = 1; // actually plays the music once
             }
 
@@ -515,7 +519,8 @@ namespace NScumm.Sci.Sound
                 SciEngine.WriteSelectorValue(_segMan, obj, s => s.frame, 0);
                 SciEngine.WriteSelectorValue(_segMan, obj, s => s.signal, 0);
             }
-            else {
+            else
+            {
                 SciEngine.WriteSelectorValue(_segMan, obj, s => s.state, (ushort)SoundStatus.Playing);
             }
 
@@ -529,7 +534,8 @@ namespace NScumm.Sci.Sound
             {
                 musicSlot.priority = resourcePriority;
             }
-            else {
+            else
+            {
                 musicSlot.priority = (short)SciEngine.ReadSelectorValue(_segMan, obj, s => s.priority);
             }
 
@@ -633,8 +639,21 @@ namespace NScumm.Sci.Sound
                 if (_useDigitalSfx || newSound.soundRes == null)
                 {
                     int sampleLen;
-                    newSound.pStreamAud = _audio.GetAudioStream(newSound.resourceId, 65535, out sampleLen);
-                    newSound.soundType = SoundType.SFX;
+#if ENABLE_SCI32
+                    if (_soundVersion >= SciVersion.V2_1_EARLY)
+                    {
+                        newSound.isSample = SciEngine.Instance.ResMan.TestResource(new ResourceId(ResourceType.Audio, newSound.resourceId)) != null;
+                    }
+                    else
+                    {
+#endif
+                        newSound.pStreamAud = _audio.GetAudioStream(newSound.resourceId, 65535, out sampleLen);
+                        newSound.soundType = SoundType.SFX;
+                        newSound.isSample = newSound.pStreamAud != null;
+#if ENABLE_SCI32
+                    }
+#endif
+
                 }
             }
 
@@ -674,7 +693,8 @@ namespace NScumm.Sci.Sound
             {
                 SciEngine.WriteSelectorValue(_segMan, obj, s => s.state, (ushort)SoundStatus.Stopped);
             }
-            else {
+            else
+            {
                 SciEngine.WriteSelectorValue(_segMan, obj, s => s.handle, 0);
             }
 
@@ -755,7 +775,8 @@ namespace NScumm.Sci.Sound
                     {
                         ProcessStopSound(obj, true);
                     }
-                    else {
+                    else
+                    {
                         _music.UpdateAudioStreamTicker(musicSlot);
                     }
                 }
@@ -782,7 +803,8 @@ namespace NScumm.Sci.Sound
                         SciEngine.WriteSelectorValue(_segMan, obj, o => o.signal, (ushort)(musicSlot.dataInc + 127));
                     }
                 }
-                else {
+                else
+                {
                     // Sync the signal of the sound object
                     SciEngine.WriteSelectorValue(_segMan, obj, o => o.signal, musicSlot.signal);
                     // We need to do this especially because state selector needs to get updated
@@ -790,7 +812,8 @@ namespace NScumm.Sci.Sound
                         ProcessStopSound(obj, false);
                 }
             }
-            else {
+            else
+            {
                 // The sound slot has no data for the currently selected sound card.
                 // An example can be found during the mud wrestling scene in LSL5, room
                 // 730: sound 744 (a splat sound heard when Lana Luscious jumps in the
@@ -826,7 +849,8 @@ namespace NScumm.Sci.Sound
                 {
                     ProcessStopSound(obj, false);
                 }
-                else {
+                else
+                {
                     if (musicSlot.stopAfterFading)
                         ProcessStopSound(obj, false);
                 }

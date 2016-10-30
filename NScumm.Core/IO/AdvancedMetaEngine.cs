@@ -329,7 +329,7 @@ namespace NScumm.Core.IO
          */
         protected virtual ADGameDescription FallbackDetect(string directory, Dictionary<string, string> allFiles)
         {
-            throw new NotImplementedException();
+            return null;
         }
 
         public override List<ExtraGuiOption> GetExtraGuiOptions(string target)

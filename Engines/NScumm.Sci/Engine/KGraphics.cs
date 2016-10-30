@@ -105,7 +105,7 @@ namespace NScumm.Sci.Engine
             Register listReference = argc > 1 ? argv[1] : Register.NULL_REG;
 
             Register canBeHere = SciEngine.Instance._gfxCompare.KernelCanBeHere(curObject, listReference);
-            return Register.Make(0, (ushort) (canBeHere.IsNull ? 1 : 0));
+            return Register.Make(0, (ushort)(canBeHere.IsNull ? 1 : 0));
         }
 
         private static Register kCantBeHere(EngineState s, int argc, StackPtr argv)
@@ -123,12 +123,12 @@ namespace NScumm.Sci.Engine
             if (viewId == -1) // Happens in SCI32
                 return Register.NULL_REG;
             short loopNo = argv[1].ToInt16();
-            var celNo = (short) (argc >= 3 ? argv[2].ToInt16() : 0);
+            var celNo = (short)(argc >= 3 ? argv[2].ToInt16() : 0);
             short celHeight;
 
             celHeight = SciEngine.Instance._gfxCache.KernelViewGetCelHeight(viewId, loopNo, celNo);
 
-            return Register.Make(0, (ushort) celHeight);
+            return Register.Make(0, (ushort)celHeight);
         }
 
         private static Register kCelWide(EngineState s, int argc, StackPtr argv)
@@ -137,12 +137,12 @@ namespace NScumm.Sci.Engine
             if (viewId == -1) // Happens in SCI32
                 return Register.NULL_REG;
             short loopNo = argv[1].ToInt16();
-            var celNo = (short) (argc >= 3 ? argv[2].ToInt16() : 0);
+            var celNo = (short)(argc >= 3 ? argv[2].ToInt16() : 0);
             short celWidth;
 
             celWidth = SciEngine.Instance._gfxCache.KernelViewGetCelWidth(viewId, loopNo, celNo);
 
-            return Register.Make(0, (ushort) celWidth);
+            return Register.Make(0, (ushort)celWidth);
         }
 
 #if ENABLE_SCI32
@@ -154,7 +154,7 @@ namespace NScumm.Sci.Engine
             var celObj = CelObjView.Create(resourceId, loopNo, celNo);
             var ratio = new Rational(SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight,
                 celObj._yResolution);
-            return Register.Make(0, (ushort) Helpers.Mulru(celObj._height, ref ratio));
+            return Register.Make(0, (ushort)Helpers.Mulru(celObj._height, ref ratio));
         }
 
         private static Register kCelWide32(EngineState s, int argc, StackPtr argv)
@@ -164,14 +164,14 @@ namespace NScumm.Sci.Engine
             short celNo = argv[2].ToInt16();
             var celObj = CelObjView.Create(resourceId, loopNo, celNo);
             var ratio = new Rational(
-                SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth, (int) celObj._xResolution);
-            return Register.Make(0, (ushort) Helpers.Mulru(celObj._width, ref ratio));
+                SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth, (int)celObj._xResolution);
+            return Register.Make(0, (ushort)Helpers.Mulru(celObj._width, ref ratio));
         }
 
         private static Register kRemapColors32(EngineState s, int argc, StackPtr argv)
         {
             if (s == null)
-                return Register.Make(0, (ushort) ResourceManager.GetSciVersion());
+                return Register.Make(0, (ushort)ResourceManager.GetSciVersion());
             Error("not supposed to call this");
             return Register.NULL_REG;
         }
@@ -183,10 +183,10 @@ namespace NScumm.Sci.Engine
 
             if ((argc < 2) || (y != 1))
             {
-                return Register.Make(0, (ushort) SciEngine.Instance._gfxPorts.KernelCoordinateToPriority(y));
+                return Register.Make(0, (ushort)SciEngine.Instance._gfxPorts.KernelCoordinateToPriority(y));
             }
             short priority = argv[1].ToInt16();
-            return Register.Make(0, (ushort) SciEngine.Instance._gfxPorts.KernelPriorityToCoordinate((byte) priority));
+            return Register.Make(0, (ushort)SciEngine.Instance._gfxPorts.KernelPriorityToCoordinate((byte)priority));
         }
 
         private static Register kDirLoop(EngineState s, int argc, StackPtr argv)
@@ -231,7 +231,7 @@ namespace NScumm.Sci.Engine
             if ((argc != 2) || argv[1].IsNull)
                 reanimate = true;
 
-            SciEngine.Instance._gfxPorts.KernelDisposeWindow((ushort) windowId, reanimate);
+            SciEngine.Instance._gfxPorts.KernelDisposeWindow((ushort)windowId, reanimate);
             return s.r_acc;
         }
 
@@ -242,8 +242,8 @@ namespace NScumm.Sci.Engine
             short celNo = argv[2].ToInt16();
             ushort x = argv[3].ToUInt16();
             ushort y = argv[4].ToUInt16();
-            var priority = (short) (argc > 5 ? argv[5].ToInt16() : -1);
-            var paletteNo = (ushort) (argc > 6 ? argv[6].ToUInt16() : 0);
+            var priority = (short)(argc > 5 ? argv[5].ToInt16() : -1);
+            var paletteNo = (ushort)(argc > 6 ? argv[6].ToUInt16() : 0);
             bool hiresMode = false;
             Register upscaledHiresHandle = Register.NULL_REG;
             ushort scaleX = 128;
@@ -287,9 +287,9 @@ namespace NScumm.Sci.Engine
             // "changeDirItem" is used in the import windows of QFG2&3
             if ((objName == "changeDirI") || (objName == "changeDirItem"))
             {
-                var state = (int) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.state);
+                var state = (int)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.state);
                 SciEngine.WriteSelectorValue(s._segMan, controlObject, o => o.state,
-                    (ushort) (((ControlStateFlags) state | ControlStateFlags.DISABLED) & ~ControlStateFlags.ENABLED));
+                    (ushort)(((ControlStateFlags)state | ControlStateFlags.DISABLED) & ~ControlStateFlags.ENABLED));
             }
             if (objName == "DEdit")
             {
@@ -316,7 +316,7 @@ namespace NScumm.Sci.Engine
                 if (!changeDirButton.IsNull)
                 {
                     // check if checkDirButton is still enabled, in that case we are called the first time during that room
-                    if (((ControlStateFlags) SciEngine.ReadSelectorValue(s._segMan, changeDirButton, o => o.state) &
+                    if (((ControlStateFlags)SciEngine.ReadSelectorValue(s._segMan, changeDirButton, o => o.state) &
                          ControlStateFlags.DISABLED) == 0)
                     {
                         // TODO: showScummVMDialog("Characters saved inside ScummVM are shown " +
@@ -329,7 +329,7 @@ namespace NScumm.Sci.Engine
                 }
 
                 // For the SCI32 version of this, check kListAt().
-                s._chosenQfGImportItem = (int) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.mark);
+                s._chosenQfGImportItem = (int)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.mark);
             }
 
             _k_GenericDrawControl(s, controlObject, false);
@@ -351,7 +351,7 @@ namespace NScumm.Sci.Engine
                 flags = argv[1].ToUInt16();
                 if ((flags & K_DRAWPIC_FLAGS_ANIMATIONBLACKOUT) != 0)
                     animationBlackoutFlag = true;
-                animationNr = (short) (flags & 0xFF);
+                animationNr = (short)(flags & 0xFF);
                 if ((flags & K_DRAWPIC_FLAGS_MIRRORED) != 0)
                     mirroredFlag = true;
             }
@@ -377,7 +377,7 @@ namespace NScumm.Sci.Engine
 
             if (!controlObject.IsNull)
             {
-                var controlType = (ControlType) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.type);
+                var controlType = (ControlType)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.type);
 
                 switch (controlType)
                 {
@@ -400,7 +400,7 @@ namespace NScumm.Sci.Engine
         private static Register kGraph(EngineState s, int argc, StackPtr argv)
         {
             if (s == null)
-                return Register.Make(0, (ushort) ResourceManager.GetSciVersion());
+                return Register.Make(0, (ushort)ResourceManager.GetSciVersion());
             throw new InvalidOperationException("not supposed to call this");
         }
 
@@ -414,8 +414,8 @@ namespace NScumm.Sci.Engine
         private static Register kGraphDrawLine(EngineState s, int argc, StackPtr argv)
         {
             short color = AdjustGraphColor(argv[4].ToInt16());
-            short priority = argc > 5 ? argv[5].ToInt16() : (short) -1;
-            short control = argc > 6 ? argv[6].ToInt16() : (short) -1;
+            short priority = argc > 5 ? argv[5].ToInt16() : (short)-1;
+            short control = argc > 6 ? argv[6].ToInt16() : (short)-1;
 
             SciEngine.Instance._gfxPaint16.KernelGraphDrawLine(GetGraphPoint(argv), GetGraphPoint(argv + 2), color,
                 priority, control);
@@ -470,7 +470,7 @@ namespace NScumm.Sci.Engine
         private static Register kGraphSaveBox(EngineState s, int argc, StackPtr argv)
         {
             Rect rect = GetGraphRect(argv);
-            var screenMask = (ushort) (argv[4].ToUInt16() & (ushort) GfxScreenMasks.ALL);
+            var screenMask = (ushort)(argv[4].ToUInt16() & (ushort)GfxScreenMasks.ALL);
             return SciEngine.Instance._gfxPaint16.KernelGraphSaveBox(rect, screenMask);
         }
 
@@ -521,8 +521,8 @@ namespace NScumm.Sci.Engine
             int argextra = argc >= 13 ? 4 : 0; // Triggers in PQ3 and SCI1.1 games, argc 13 for DOS argc 15 for mac
             int style = argv[5 + argextra].ToInt16();
             int priority = argc > 6 + argextra ? argv[6 + argextra].ToInt16() : -1;
-            int colorPen = AdjustGraphColor((short) (argc > 7 + argextra ? argv[7 + argextra].ToInt16() : 0));
-            int colorBack = AdjustGraphColor((short) (argc > 8 + argextra ? argv[8 + argextra].ToInt16() : 255));
+            int colorPen = AdjustGraphColor((short)(argc > 7 + argextra ? argv[7 + argextra].ToInt16() : 0));
+            int colorBack = AdjustGraphColor((short)(argc > 8 + argextra ? argv[8 + argextra].ToInt16() : 255));
 
             if (argc >= 13)
                 rect2 = new Rect(argv[5].ToInt16(), argv[4].ToInt16(), argv[7].ToInt16(), argv[6].ToInt16());
@@ -534,35 +534,35 @@ namespace NScumm.Sci.Engine
                 title = SciEngine.Instance.StrSplit(title, null);
             }
 
-            return SciEngine.Instance._gfxPorts.KernelNewWindow(rect1, rect2, (ushort) style, (short) priority,
-                (short) colorPen, (short) colorBack, title);
+            return SciEngine.Instance._gfxPorts.KernelNewWindow(rect1, rect2, (ushort)style, (short)priority,
+                (short)colorPen, (short)colorBack, title);
         }
 
         private static Register kNumCels(EngineState s, int argc, StackPtr argv)
         {
             Register @object = argv[0];
-            var viewId = (int) SciEngine.ReadSelectorValue(s._segMan, @object, o => o.view);
-            var loopNo = (short) SciEngine.ReadSelectorValue(s._segMan, @object, o => o.loop);
+            var viewId = (int)SciEngine.ReadSelectorValue(s._segMan, @object, o => o.view);
+            var loopNo = (short)SciEngine.ReadSelectorValue(s._segMan, @object, o => o.loop);
             short celCount;
 
             celCount = SciEngine.Instance._gfxCache.KernelViewGetCelCount(viewId, loopNo);
 
             DebugC(DebugLevels.Graphics, "NumCels(view.{0}, {1}) = {2}", viewId, loopNo, celCount);
 
-            return Register.Make(0, (ushort) celCount);
+            return Register.Make(0, (ushort)celCount);
         }
 
         private static Register kNumLoops(EngineState s, int argc, StackPtr argv)
         {
             Register @object = argv[0];
-            var viewId = (int) SciEngine.ReadSelectorValue(s._segMan, @object, o => o.view);
+            var viewId = (int)SciEngine.ReadSelectorValue(s._segMan, @object, o => o.view);
             short loopCount;
 
             loopCount = SciEngine.Instance._gfxCache.KernelViewGetLoopCount(viewId);
 
             DebugC(DebugLevels.Graphics, "NumLoops(view.{0}) = {1}", viewId, loopCount);
 
-            return Register.Make(0, (ushort) loopCount);
+            return Register.Make(0, (ushort)loopCount);
         }
 
         private static Register kOnControl(EngineState s, int argc, StackPtr argv)
@@ -577,7 +577,7 @@ namespace NScumm.Sci.Engine
             }
             else
             {
-                screenMask = (GfxScreenMasks) argv[0].ToUInt16();
+                screenMask = (GfxScreenMasks)argv[0].ToUInt16();
                 argBase = 1;
             }
             rect.Left = argv[argBase].ToInt16();
@@ -589,8 +589,8 @@ namespace NScumm.Sci.Engine
             }
             else
             {
-                rect.Right = (short) (rect.Left + 1);
-                rect.Bottom = (short) (rect.Top + 1);
+                rect.Right = (short)(rect.Left + 1);
+                rect.Bottom = (short)(rect.Top + 1);
             }
             ushort result = SciEngine.Instance._gfxCompare.KernelOnControl(screenMask, rect);
             return Register.Make(0, result);
@@ -599,7 +599,7 @@ namespace NScumm.Sci.Engine
         private static Register kPalette(EngineState s, int argc, StackPtr argv)
         {
             if (s == null)
-                return Register.Make(0, (ushort) ResourceManager.GetSciVersion());
+                return Register.Make(0, (ushort)ResourceManager.GetSciVersion());
             throw new InvalidOperationException("not supposed to call this");
         }
 
@@ -622,8 +622,8 @@ namespace NScumm.Sci.Engine
 
         private static Register kPaletteSetFlag(EngineState s, int argc, StackPtr argv)
         {
-            var fromColor = (ushort) ScummHelper.Clip(argv[0].ToUInt16(), 1, 255);
-            var toColor = (ushort) ScummHelper.Clip(argv[1].ToUInt16(), 1, 255);
+            var fromColor = (ushort)ScummHelper.Clip(argv[0].ToUInt16(), 1, 255);
+            var toColor = (ushort)ScummHelper.Clip(argv[1].ToUInt16(), 1, 255);
             ushort flags = argv[2].ToUInt16();
             SciEngine.Instance._gfxPalette16.KernelSetFlag(fromColor, toColor, flags);
             return s.r_acc;
@@ -631,8 +631,8 @@ namespace NScumm.Sci.Engine
 
         private static Register kPaletteUnsetFlag(EngineState s, int argc, StackPtr argv)
         {
-            var fromColor = (ushort) ScummHelper.Clip(argv[0].ToUInt16(), 1, 255);
-            var toColor = (ushort) ScummHelper.Clip(argv[1].ToUInt16(), 1, 255);
+            var fromColor = (ushort)ScummHelper.Clip(argv[0].ToUInt16(), 1, 255);
+            var toColor = (ushort)ScummHelper.Clip(argv[1].ToUInt16(), 1, 255);
             ushort flags = argv[2].ToUInt16();
             SciEngine.Instance._gfxPalette16.KernelUnsetFlag(fromColor, toColor, flags);
             return s.r_acc;
@@ -640,8 +640,8 @@ namespace NScumm.Sci.Engine
 
         private static Register kPaletteSetIntensity(EngineState s, int argc, StackPtr argv)
         {
-            var fromColor = (ushort) ScummHelper.Clip(argv[0].ToUInt16(), 1, 255);
-            var toColor = (ushort) ScummHelper.Clip(argv[1].ToUInt16(), 1, 255);
+            var fromColor = (ushort)ScummHelper.Clip(argv[0].ToUInt16(), 1, 255);
+            var toColor = (ushort)ScummHelper.Clip(argv[1].ToUInt16(), 1, 255);
             ushort intensity = argv[2].ToUInt16();
             bool setPalette = (argc < 4) || argv[3].IsNull;
 
@@ -658,7 +658,7 @@ namespace NScumm.Sci.Engine
             ushort r = argv[0].ToUInt16();
             ushort g = argv[1].ToUInt16();
             ushort b = argv[2].ToUInt16();
-            return Register.Make(0, (ushort) SciEngine.Instance._gfxPalette16.KernelFindColor(r, g, b));
+            return Register.Make(0, (ushort)SciEngine.Instance._gfxPalette16.KernelFindColor(r, g, b));
         }
 
         private static Register kPaletteAnimate(EngineState s, int argc, StackPtr argv)
@@ -675,7 +675,7 @@ namespace NScumm.Sci.Engine
                 ushort fromColor = argv[argNr].ToUInt16();
                 ushort toColor = argv[argNr + 1].ToUInt16();
                 short speed = argv[argNr + 2].ToInt16();
-                if (SciEngine.Instance._gfxPalette16.KernelAnimate((byte) fromColor, (byte) toColor, speed))
+                if (SciEngine.Instance._gfxPalette16.KernelAnimate((byte)fromColor, (byte)toColor, speed))
                     paletteChanged = true;
             }
             if (paletteChanged)
@@ -712,7 +712,7 @@ namespace NScumm.Sci.Engine
         private static Register kPalVary(EngineState s, int argc, StackPtr argv)
         {
             if (s == null)
-                return Register.Make(0, (ushort) ResourceManager.GetSciVersion());
+                return Register.Make(0, (ushort)ResourceManager.GetSciVersion());
             throw new InvalidOperationException("not supposed to call this");
         }
 
@@ -720,8 +720,8 @@ namespace NScumm.Sci.Engine
         {
             int paletteId = argv[0].ToUInt16();
             ushort ticks = argv[1].ToUInt16();
-            var stepStop = (ushort) (argc >= 3 ? argv[2].ToUInt16() : 64);
-            var direction = (ushort) (argc >= 4 ? argv[3].ToUInt16() : 1);
+            var stepStop = (ushort)(argc >= 3 ? argv[2].ToUInt16() : 64);
+            var direction = (ushort)(argc >= 4 ? argv[3].ToUInt16() : 1);
             if (SciEngine.Instance._gfxPalette16.KernelPalVaryInit(paletteId, ticks, stepStop, direction))
                 return Register.SIGNAL_REG;
             return Register.NULL_REG;
@@ -729,17 +729,17 @@ namespace NScumm.Sci.Engine
 
         private static Register kPalVaryReverse(EngineState s, int argc, StackPtr argv)
         {
-            var ticks = (short) (argc >= 1 ? argv[0].ToUInt16() : -1);
-            var stepStop = (short) (argc >= 2 ? argv[1].ToUInt16() : 0);
-            var direction = (short) (argc >= 3 ? argv[2].ToInt16() : -1);
+            var ticks = (short)(argc >= 1 ? argv[0].ToUInt16() : -1);
+            var stepStop = (short)(argc >= 2 ? argv[1].ToUInt16() : 0);
+            var direction = (short)(argc >= 3 ? argv[2].ToInt16() : -1);
 
             return Register.Make(0,
-                (ushort) SciEngine.Instance._gfxPalette16.KernelPalVaryReverse(ticks, stepStop, direction));
+                (ushort)SciEngine.Instance._gfxPalette16.KernelPalVaryReverse(ticks, stepStop, direction));
         }
 
         private static Register kPalVaryGetCurrentStep(EngineState s, int argc, StackPtr argv)
         {
-            return Register.Make(0, (ushort) SciEngine.Instance._gfxPalette16.KernelPalVaryGetCurrentStep());
+            return Register.Make(0, (ushort)SciEngine.Instance._gfxPalette16.KernelPalVaryGetCurrentStep());
         }
 
         private static Register kPalVaryDeinit(EngineState s, int argc, StackPtr argv)
@@ -752,7 +752,7 @@ namespace NScumm.Sci.Engine
         {
             int paletteId = argv[0].ToUInt16();
             short currentStep = SciEngine.Instance._gfxPalette16.KernelPalVaryChangeTarget(paletteId);
-            return Register.Make(0, (ushort) currentStep);
+            return Register.Make(0, (ushort)currentStep);
         }
 
         private static Register kPalVaryChangeTicks(EngineState s, int argc, StackPtr argv)
@@ -771,16 +771,16 @@ namespace NScumm.Sci.Engine
 
         private static Register kPicNotValid(EngineState s, int argc, StackPtr argv)
         {
-            var newPicNotValid = (short) (argc > 0 ? argv[0].ToInt16() : -1);
+            var newPicNotValid = (short)(argc > 0 ? argv[0].ToInt16() : -1);
 
-            return Register.Make(0, (ushort) SciEngine.Instance._gfxScreen.KernelPicNotValid(newPicNotValid));
+            return Register.Make(0, (ushort)SciEngine.Instance._gfxScreen.KernelPicNotValid(newPicNotValid));
         }
 
         private static Register kPriCoord(EngineState s, int argc, StackPtr argv)
         {
             short priority = argv[0].ToInt16();
 
-            return Register.Make(0, (ushort) SciEngine.Instance._gfxPorts.KernelPriorityToCoordinate((byte) priority));
+            return Register.Make(0, (ushort)SciEngine.Instance._gfxPorts.KernelPriorityToCoordinate((byte)priority));
         }
 
         // Early variant of the SCI32 kRemapColors kernel function, used in the demo of QFG4
@@ -791,22 +791,22 @@ namespace NScumm.Sci.Engine
             switch (operation)
             {
                 case 0:
-                {
-                    // remap by percent
-                    ushort percent = argv[1].ToUInt16();
-                    SciEngine.Instance._gfxRemap16.ResetRemapping();
-                    SciEngine.Instance._gfxRemap16.SetRemappingPercent(254, (byte) percent);
-                }
+                    {
+                        // remap by percent
+                        ushort percent = argv[1].ToUInt16();
+                        SciEngine.Instance._gfxRemap16.ResetRemapping();
+                        SciEngine.Instance._gfxRemap16.SetRemappingPercent(254, (byte)percent);
+                    }
                     break;
                 case 1:
-                {
-                    // remap by range
-                    ushort from = argv[1].ToUInt16();
-                    ushort to = argv[2].ToUInt16();
-                    ushort @base = argv[3].ToUInt16();
-                    SciEngine.Instance._gfxRemap16.ResetRemapping();
-                    SciEngine.Instance._gfxRemap16.SetRemappingRange(254, (byte) from, (byte) to, (byte) @base);
-                }
+                    {
+                        // remap by range
+                        ushort from = argv[1].ToUInt16();
+                        ushort to = argv[2].ToUInt16();
+                        ushort @base = argv[3].ToUInt16();
+                        SciEngine.Instance._gfxRemap16.ResetRemapping();
+                        SciEngine.Instance._gfxRemap16.SetRemappingRange(254, (byte)from, (byte)to, (byte)@base);
+                    }
                     break;
                 case 2: // turn remapping off (unused)
                     throw new InvalidOperationException("Unused subop kRemapColors(2) has been called");
@@ -823,7 +823,7 @@ namespace NScumm.Sci.Engine
             }
             else
             {
-                byte color = (byte) argv[0].ToUInt16();
+                byte color = (byte)argv[0].ToUInt16();
                 SciEngine.Instance._gfxRemap32.RemapOff(color);
             }
             return s.r_acc;
@@ -895,38 +895,38 @@ namespace NScumm.Sci.Engine
                     SciEngine.Instance._gfxCursor.KernelSetPos(pos);
                     break;
                 case 4:
-                {
-                    short top, left, bottom, right;
+                    {
+                        short top, left, bottom, right;
 
-                    if (ResourceManager.GetSciVersion() >= SciVersion.V2)
-                    {
-                        top = argv[1].ToInt16();
-                        left = argv[0].ToInt16();
-                        bottom = argv[3].ToInt16();
-                        right = argv[2].ToInt16();
-                    }
-                    else
-                    {
-                        top = argv[0].ToInt16();
-                        left = argv[1].ToInt16();
-                        bottom = argv[2].ToInt16();
-                        right = argv[3].ToInt16();
-                    }
-                    // bottom/right needs to be included into our movezone, because we compare it like any regular Common::Rect
-                    bottom++;
-                    right++;
+                        if (ResourceManager.GetSciVersion() >= SciVersion.V2)
+                        {
+                            top = argv[1].ToInt16();
+                            left = argv[0].ToInt16();
+                            bottom = argv[3].ToInt16();
+                            right = argv[2].ToInt16();
+                        }
+                        else
+                        {
+                            top = argv[0].ToInt16();
+                            left = argv[1].ToInt16();
+                            bottom = argv[2].ToInt16();
+                            right = argv[3].ToInt16();
+                        }
+                        // bottom/right needs to be included into our movezone, because we compare it like any regular Common::Rect
+                        bottom++;
+                        right++;
 
-                    if ((right >= left) && (bottom >= top))
-                    {
-                        Rect rect = new Rect(left, top, right, bottom);
-                        SciEngine.Instance._gfxCursor.KernelSetMoveZone(rect);
+                        if ((right >= left) && (bottom >= top))
+                        {
+                            Rect rect = new Rect(left, top, right, bottom);
+                            SciEngine.Instance._gfxCursor.KernelSetMoveZone(rect);
+                        }
+                        else
+                        {
+                            Warning("kSetCursor: Ignoring invalid mouse zone (%i, %i)-(%i, %i)", left, top, right, bottom);
+                        }
+                        break;
                     }
-                    else
-                    {
-                        Warning("kSetCursor: Ignoring invalid mouse zone (%i, %i)-(%i, %i)", left, top, right, bottom);
-                    }
-                    break;
-                }
                 case 9: // case for kq5cd, we are getting calling with 4 additional 900d parameters
                 case 5:
                 // Fallthrough
@@ -951,10 +951,10 @@ namespace NScumm.Sci.Engine
                     break;
                 case 10:
                     // Freddy pharkas, when using the whiskey glass to read the prescription (bug #3034973)
-                    SciEngine.Instance._gfxCursor.KernelSetZoomZone((byte) argv[0].ToUInt16(),
+                    SciEngine.Instance._gfxCursor.KernelSetZoomZone((byte)argv[0].ToUInt16(),
                         new Rect(argv[1].ToInt16(), argv[2].ToInt16(), argv[3].ToInt16(), argv[4].ToInt16()),
                         argv[5].ToUInt16(), argv[6].ToUInt16(), argv[7].ToUInt16(),
-                        argv[8].ToUInt16(), (byte) argv[9].ToUInt16());
+                        argv[8].ToUInt16(), (byte)argv[9].ToUInt16());
                     break;
                 default:
                     Error("kSetCursor: Unhandled case: {0} arguments given", argc);
@@ -1017,8 +1017,8 @@ namespace NScumm.Sci.Engine
 
         private static Register kShakeScreen(EngineState s, int argc, StackPtr argv)
         {
-            var shakeCount = (short) (argc > 0 ? argv[0].ToUInt16() : 1);
-            var directions = (short) (argc > 1 ? argv[1].ToUInt16() : 1);
+            var shakeCount = (short)(argc > 0 ? argv[0].ToUInt16() : 1);
+            var directions = (short)(argc > 1 ? argv[1].ToUInt16() : 1);
 
             SciEngine.Instance._gfxScreen.KernelShakeScreen(shakeCount, directions);
             return s.r_acc;
@@ -1108,8 +1108,8 @@ namespace NScumm.Sci.Engine
             ushort languageSplitter = 0;
             string splitText = SciEngine.Instance.StrSplitLanguage(text, languageSplitter, sep);
 
-            SciEngine.Instance._gfxText16.KernelTextSize(splitText, languageSplitter, (short) fontNr,
-                (short) maxwidth, out textWidth, out textHeight);
+            SciEngine.Instance._gfxText16.KernelTextSize(splitText, languageSplitter, (short)fontNr,
+                (short)maxwidth, out textWidth, out textHeight);
 
             // One of the game texts in LB2 German contains loads of spaces in
             // its end. We trim the text here, otherwise the graphics code will
@@ -1127,21 +1127,21 @@ namespace NScumm.Sci.Engine
                     // Copy over the trimmed string...
                     s._segMan.Strcpy(argv[1], text);
                     // ...and recalculate bounding box dimensions
-                    SciEngine.Instance._gfxText16.KernelTextSize(splitText, languageSplitter, (short) fontNr,
-                        (short) maxwidth, out textWidth, out textHeight);
+                    SciEngine.Instance._gfxText16.KernelTextSize(splitText, languageSplitter, (short)fontNr,
+                        (short)maxwidth, out textWidth, out textHeight);
                 }
             }
 
             DebugC(DebugLevels.Strings, "GetTextSize '{0}' . {1}x{2}", text, textWidth, textHeight);
             if (ResourceManager.GetSciVersion() <= SciVersion.V1_1)
             {
-                d[2] = Register.Make(0, (ushort) textHeight);
-                d[3] = Register.Make(0, (ushort) textWidth);
+                d[2] = Register.Make(0, (ushort)textHeight);
+                d[3] = Register.Make(0, (ushort)textWidth);
             }
             else
             {
-                d[2] = Register.Make(0, (ushort) textWidth);
-                d[3] = Register.Make(0, (ushort) textHeight);
+                d[2] = Register.Make(0, (ushort)textWidth);
+                d[3] = Register.Make(0, (ushort)textHeight);
             }
 
             return s.r_acc;
@@ -1153,14 +1153,21 @@ namespace NScumm.Sci.Engine
 
             s.Wait(sleep_time);
 
+            if (s._delayedRestoreGame)
+            {
+                // delayed restore game from ScummVM menu got triggered
+                Savegame.gamestate_delayedrestore(s);
+                return Register.NULL_REG;
+            }
+
             return s.r_acc;
         }
 
 
         private static void kDirLoopWorker(Register @object, ushort angle, EngineState s, int argc, StackPtr argv)
         {
-            var viewId = (int) SciEngine.ReadSelectorValue(s._segMan, @object, o => o.view);
-            var signal = (ViewSignals) SciEngine.ReadSelectorValue(s._segMan, @object, o => o.signal);
+            var viewId = (int)SciEngine.ReadSelectorValue(s._segMan, @object, o => o.view);
+            var signal = (ViewSignals)SciEngine.ReadSelectorValue(s._segMan, @object, o => o.signal);
 
             if (signal.HasFlag(ViewSignals.DoesntTurn))
                 return;
@@ -1207,7 +1214,7 @@ namespace NScumm.Sci.Engine
                     return;
             }
 
-            SciEngine.WriteSelectorValue(s._segMan, @object, o => o.loop, (ushort) useLoop);
+            SciEngine.WriteSelectorValue(s._segMan, @object, o => o.loop, (ushort)useLoop);
         }
 
         private static short AdjustGraphColor(short color)
@@ -1219,7 +1226,7 @@ namespace NScumm.Sci.Engine
             // at least FillBox (only one of the functions using adjustGraphColor)
             // behaves like this.
             if (SciEngine.Instance.ResMan.ViewType == ViewType.Ega)
-                return (short) (color & 0x0F); // 0 - 15
+                return (short)(color & 0x0F); // 0 - 15
             return color;
         }
 
@@ -1243,11 +1250,11 @@ namespace NScumm.Sci.Engine
 
         private static void _k_GenericDrawControl(EngineState s, Register controlObject, bool hilite)
         {
-            var type = (ControlType) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.type);
-            var style = (short) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.state);
-            var x = (short) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.nsLeft);
-            var y = (short) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.nsTop);
-            int fontId = (short) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.font);
+            var type = (ControlType)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.type);
+            var style = (short)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.state);
+            var x = (short)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.nsLeft);
+            var y = (short)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.nsTop);
+            int fontId = (short)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.font);
             Register textReference = SciEngine.ReadSelector(s._segMan, controlObject, o => o.text);
             string text = string.Empty;
             Rect rect;
@@ -1262,8 +1269,8 @@ namespace NScumm.Sci.Engine
             bool isAlias = false;
 
             rect = kControlCreateRect(x, y,
-                (short) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.nsRight),
-                (short) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.nsBottom));
+                (short)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.nsRight),
+                (short)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.nsBottom));
 
             if (!textReference.IsNull)
                 text = s._segMan.GetString(textReference);
@@ -1287,49 +1294,49 @@ namespace NScumm.Sci.Engine
                 case ControlType.BUTTON:
                     DebugC(DebugLevels.Graphics, "drawing button {0} to {1},{2}", controlObject, x, y);
                     SciEngine.Instance._gfxControls16.KernelDrawButton(rect, controlObject, splitText, languageSplitter,
-                        fontId, (ControlStateFlags) style, hilite);
+                        fontId, (ControlStateFlags)style, hilite);
                     return;
 
                 case ControlType.TEXT:
-                    alignment = (short) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.mode);
+                    alignment = (short)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.mode);
                     DebugC(DebugLevels.Graphics, "drawing text {0} ('{1}') to {2},{3}, mode={4}", controlObject, text, x,
                         y, alignment);
                     SciEngine.Instance._gfxControls16.KernelDrawText(rect, controlObject, splitText, languageSplitter,
-                        fontId, alignment, (ControlStateFlags) style, hilite);
+                        fontId, alignment, (ControlStateFlags)style, hilite);
                     s.r_acc = SciEngine.Instance._gfxText16.AllocAndFillReferenceRectArray();
                     return;
 
                 case ControlType.TEXTEDIT:
-                    mode = (short) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.mode);
-                    maxChars = (short) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.max);
-                    cursorPos = (short) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.cursor);
+                    mode = (short)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.mode);
+                    maxChars = (short)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.max);
+                    cursorPos = (short)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.cursor);
                     if (cursorPos > text.Length)
                     {
                         // if cursor is outside of text, adjust accordingly
-                        cursorPos = (short) text.Length;
-                        SciEngine.WriteSelectorValue(s._segMan, controlObject, o => o.cursor, (ushort) cursorPos);
+                        cursorPos = (short)text.Length;
+                        SciEngine.WriteSelectorValue(s._segMan, controlObject, o => o.cursor, (ushort)cursorPos);
                     }
                     DebugC(DebugLevels.Graphics, "drawing edit control {0} (text {1}, '{2}') to {3},{4}", controlObject,
                         textReference, text, x, y);
                     SciEngine.Instance._gfxControls16.KernelDrawTextEdit(rect, controlObject, splitText,
-                        languageSplitter, fontId, mode, (ControlStateFlags) style, cursorPos, maxChars, hilite);
+                        languageSplitter, fontId, mode, (ControlStateFlags)style, cursorPos, maxChars, hilite);
                     return;
 
                 case ControlType.ICON:
-                    viewId = (int) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.view);
-                {
-                    var l = (int) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.loop);
-                    loopNo = (short) ((l & 0x80) != 0 ? l - 256 : l);
-                    var c = (int) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.cel);
-                    celNo = (short) ((c & 0x80) != 0 ? c - 256 : c);
-                    // Check if the control object specifies a priority selector (like in Jones)
-                    Register tmp;
-                    if (SciEngine.LookupSelector(s._segMan, controlObject, o => o.priority, null, out tmp) ==
-                        SelectorType.Variable)
-                        priority = (short) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.priority);
-                    else
-                        priority = -1;
-                }
+                    viewId = (int)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.view);
+                    {
+                        var l = (int)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.loop);
+                        loopNo = (short)((l & 0x80) != 0 ? l - 256 : l);
+                        var c = (int)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.cel);
+                        celNo = (short)((c & 0x80) != 0 ? c - 256 : c);
+                        // Check if the control object specifies a priority selector (like in Jones)
+                        Register tmp;
+                        if (SciEngine.LookupSelector(s._segMan, controlObject, o => o.priority, null, out tmp) ==
+                            SelectorType.Variable)
+                            priority = (short)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.priority);
+                        else
+                            priority = -1;
+                    }
                     DebugC(DebugLevels.Graphics, "drawing icon control {0} to {1},{2}", controlObject, x, y - 1);
                     SciEngine.Instance._gfxControls16.KernelDrawIcon(rect, controlObject, viewId, loopNo, celNo,
                         priority, style, hilite);
@@ -1340,13 +1347,13 @@ namespace NScumm.Sci.Engine
                     if (type == ControlType.LIST_ALIAS)
                         isAlias = true;
 
-                    maxChars = (short) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.x);
+                    maxChars = (short)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.x);
                     // max chars per entry
-                    cursorOffset = (ushort) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.cursor);
+                    cursorOffset = (ushort)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.cursor);
                     if (SciEngine.Selector(o => o.topString) != -1)
                     {
                         // Games from early SCI1 onwards use topString
-                        upperOffset = (ushort) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.topString);
+                        upperOffset = (ushort)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.topString);
                     }
                     else
                     {
@@ -1354,9 +1361,9 @@ namespace NScumm.Sci.Engine
                         Register tmp;
                         if (SciEngine.LookupSelector(s._segMan, controlObject, o => o.brTop, null, out tmp) ==
                             SelectorType.Variable)
-                            upperOffset = (ushort) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.brTop);
+                            upperOffset = (ushort)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.brTop);
                         else
-                            upperOffset = (ushort) SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.lsTop);
+                            upperOffset = (ushort)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.lsTop);
                     }
 
                     // Count string entries in NULL terminated string list
@@ -1394,7 +1401,7 @@ namespace NScumm.Sci.Engine
                     DebugC(DebugLevels.Graphics, "drawing list control {0} to {1},{2}, diff {3}", controlObject, x, y,
                         SCI_MAX_SAVENAME_LENGTH);
                     SciEngine.Instance._gfxControls16.KernelDrawList(rect, controlObject, maxChars, listCount,
-                        listEntries, fontId, (ControlStateFlags) style, upperPos, cursorPos, isAlias, hilite);
+                        listEntries, fontId, (ControlStateFlags)style, upperPos, cursorPos, isAlias, hilite);
                     return;
 
                 case ControlType.DUMMY:
@@ -1421,7 +1428,7 @@ namespace NScumm.Sci.Engine
         {
             int paletteId = argv[0].ToUInt16();
             int time = argc > 1 ? argv[1].ToInt16() * 60 : 0;
-            short percent = (short) (argc > 2 ? argv[2].ToInt16() : 100);
+            short percent = (short)(argc > 2 ? argv[2].ToInt16() : 100);
             short fromColor;
             short toColor;
 
@@ -1442,14 +1449,14 @@ namespace NScumm.Sci.Engine
         private static Register kPalVarySetPercent(EngineState s, int argc, StackPtr argv)
         {
             int time = argc > 0 ? argv[0].ToInt16() * 60 : 0;
-            short percent = (short) (argc > 1 ? argv[1].ToInt16() : 0);
+            short percent = (short)(argc > 1 ? argv[1].ToInt16() : 0);
             SciEngine.Instance._gfxPalette32.SetVaryPercent(percent, time, -1, -1);
             return s.r_acc;
         }
 
         private static Register kPalVaryGetPercent(EngineState s, int argc, StackPtr argv)
         {
-            return Register.Make(0, (ushort) SciEngine.Instance._gfxPalette32.GetVaryPercent());
+            return Register.Make(0, (ushort)SciEngine.Instance._gfxPalette32.GetVaryPercent());
         }
 
         private static Register kPalVaryOff(EngineState s, int argc, StackPtr argv)
@@ -1462,7 +1469,7 @@ namespace NScumm.Sci.Engine
         {
             int paletteId = argv[0].ToUInt16();
             SciEngine.Instance._gfxPalette32.KernelPalVaryMergeTarget(paletteId);
-            return Register.Make(0, (ushort) SciEngine.Instance._gfxPalette32.GetVaryPercent());
+            return Register.Make(0, (ushort)SciEngine.Instance._gfxPalette32.GetVaryPercent());
         }
 
         private static Register kPalVarySetTime(EngineState s, int argc, StackPtr argv)
@@ -1476,21 +1483,21 @@ namespace NScumm.Sci.Engine
         {
             int paletteId = argv[0].ToUInt16();
             SciEngine.Instance._gfxPalette32.KernelPalVarySetTarget(paletteId);
-            return Register.Make(0, (ushort) SciEngine.Instance._gfxPalette32.GetVaryPercent());
+            return Register.Make(0, (ushort)SciEngine.Instance._gfxPalette32.GetVaryPercent());
         }
 
         private static Register kPalVarySetStart(EngineState s, int argc, StackPtr argv)
         {
             int paletteId = argv[0].ToUInt16();
             SciEngine.Instance._gfxPalette32.KernelPalVarySetStart(paletteId);
-            return Register.Make(0, (ushort) SciEngine.Instance._gfxPalette32.GetVaryPercent());
+            return Register.Make(0, (ushort)SciEngine.Instance._gfxPalette32.GetVaryPercent());
         }
 
         private static Register kPalVaryMergeStart(EngineState s, int argc, StackPtr argv)
         {
             int paletteId = argv[0].ToUInt16();
             SciEngine.Instance._gfxPalette32.KernelPalVaryMergeStart(paletteId);
-            return Register.Make(0, (ushort) SciEngine.Instance._gfxPalette32.GetVaryPercent());
+            return Register.Make(0, (ushort)SciEngine.Instance._gfxPalette32.GetVaryPercent());
         }
 
 #if ENABLE_SCI32
@@ -1505,15 +1512,15 @@ namespace NScumm.Sci.Engine
             }
 
             string text = s._segMan.GetString(argv[1]);
-            short maxWidth = (short) (argc > 3 ? argv[3].ToInt16() : 0);
+            short maxWidth = (short)(argc > 3 ? argv[3].ToInt16() : 0);
             bool doScaling = argc <= 4 || argv[4].ToInt16() != 0;
 
             Rect textRect = SciEngine.Instance._gfxText32.GetTextSize(text, maxWidth, doScaling);
             var r = rect.Value;
-            r[0] = Register.Make(0, (ushort) textRect.Left);
-            r[1] = Register.Make(0, (ushort) textRect.Top);
-            r[2] = Register.Make(0, (ushort) (textRect.Right - 1));
-            r[3] = Register.Make(0, (ushort) (textRect.Bottom - 1));
+            r[0] = Register.Make(0, (ushort)textRect.Left);
+            r[1] = Register.Make(0, (ushort)textRect.Top);
+            r[2] = Register.Make(0, (ushort)(textRect.Right - 1));
+            r[3] = Register.Make(0, (ushort)(textRect.Bottom - 1));
             return s.r_acc;
         }
 
@@ -1535,7 +1542,7 @@ namespace NScumm.Sci.Engine
         {
             SegManager segMan = s._segMan;
 
-            short subop = (short) argv[0].ToUInt16();
+            short subop = (short)argv[0].ToUInt16();
 
             short width = 0;
             short height = 0;
@@ -1543,8 +1550,8 @@ namespace NScumm.Sci.Engine
 
             if (subop == 0)
             {
-                width = (short) argv[1].ToUInt16();
-                height = (short) argv[2].ToUInt16();
+                width = (short)argv[1].ToUInt16();
+                height = (short)argv[2].ToUInt16();
                 @object = argv[3];
             }
             else if (subop == 1)
@@ -1558,31 +1565,31 @@ namespace NScumm.Sci.Engine
             }
 
             string text = segMan.GetString(SciEngine.ReadSelector(segMan, @object, o => o.text));
-            short foreColor = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.fore);
-            short backColor = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.back);
-            short skipColor = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.skip);
-            int fontId = (int) SciEngine.ReadSelectorValue(segMan, @object, o => o.font);
-            short borderColor = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.borderColor);
-            short dimmed = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.dimmed);
+            short foreColor = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.fore);
+            short backColor = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.back);
+            short skipColor = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.skip);
+            int fontId = (int)SciEngine.ReadSelectorValue(segMan, @object, o => o.font);
+            short borderColor = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.borderColor);
+            short dimmed = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.dimmed);
 
             Rect rect = new Rect(
-                (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.textLeft),
-                (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.textTop),
-                (short) (SciEngine.ReadSelectorValue(segMan, @object, o => o.textRight) + 1),
-                (short) (SciEngine.ReadSelectorValue(segMan, @object, o => o.textBottom) + 1));
+                (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.textLeft),
+                (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.textTop),
+                (short)(SciEngine.ReadSelectorValue(segMan, @object, o => o.textRight) + 1),
+                (short)(SciEngine.ReadSelectorValue(segMan, @object, o => o.textBottom) + 1));
 
             if (subop == 0)
             {
-                TextAlign alignment = (TextAlign) SciEngine.ReadSelectorValue(segMan, @object, o => o.mode);
-                return SciEngine.Instance._gfxText32.CreateFontBitmap(width, height, rect, text, (byte) foreColor,
-                    (byte) backColor, (byte) skipColor, fontId, alignment, borderColor, dimmed != 0, true, true);
+                TextAlign alignment = (TextAlign)SciEngine.ReadSelectorValue(segMan, @object, o => o.mode);
+                return SciEngine.Instance._gfxText32.CreateFontBitmap(width, height, rect, text, (byte)foreColor,
+                    (byte)backColor, (byte)skipColor, fontId, alignment, borderColor, dimmed != 0, true, true);
             }
             CelInfo32 celInfo = new CelInfo32
             {
                 type = CelType.View,
-                resourceId = (int) SciEngine.ReadSelectorValue(segMan, @object, o => o.view),
-                loopNo = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.loop),
-                celNo = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.cel)
+                resourceId = (int)SciEngine.ReadSelectorValue(segMan, @object, o => o.view),
+                loopNo = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.loop),
+                celNo = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.cel)
             };
             return SciEngine.Instance._gfxText32.CreateFontBitmap(celInfo, rect, text, foreColor, backColor, fontId,
                 skipColor, borderColor, dimmed != 0, true);
@@ -1617,7 +1624,7 @@ namespace NScumm.Sci.Engine
 
         private static Register kGetHighPlanePri(EngineState s, int argc, StackPtr argv)
         {
-            return Register.Make(0, (ushort) SciEngine.Instance._gfxFrameout.KernelGetHighPlanePri());
+            return Register.Make(0, (ushort)SciEngine.Instance._gfxFrameout.KernelGetHighPlanePri());
         }
 
         private static Register kIsHiRes(EngineState s, int argc, StackPtr argv)
@@ -1655,7 +1662,7 @@ namespace NScumm.Sci.Engine
         /// <returns></returns>
         private static Register kSetShowStyle(EngineState s, int argc, StackPtr argv)
         {
-            ShowStyleType type = (ShowStyleType) argv[0].ToUInt16();
+            ShowStyleType type = (ShowStyleType)argv[0].ToUInt16();
             Register planeObj = argv[1];
             short seconds = argv[2].ToInt16();
             // NOTE: This value seems to indicate whether the transition is an
@@ -1676,21 +1683,21 @@ namespace NScumm.Sci.Engine
             {
                 blackScreen = 0;
                 pFadeArray = Register.NULL_REG;
-                divisions = (short) (argc > 7 ? argv[7].ToInt16() : -1);
+                divisions = (short)(argc > 7 ? argv[7].ToInt16() : -1);
             }
             // SCI 2.1mid–2.1late
             else if (ResourceManager.GetSciVersion() < SciVersion.V3)
             {
                 blackScreen = 0;
                 pFadeArray = argc > 7 ? argv[7] : Register.NULL_REG;
-                divisions = (short) (argc > 8 ? argv[8].ToInt16() : -1);
+                divisions = (short)(argc > 8 ? argv[8].ToInt16() : -1);
             }
             // SCI 3
             else
             {
                 blackScreen = argv[7].ToInt16();
                 pFadeArray = argc > 8 ? argv[8] : Register.NULL_REG;
-                divisions = (short) (argc > 9 ? argv[9].ToInt16() : -1);
+                divisions = (short)(argc > 9 ? argv[9].ToInt16() : -1);
             }
 
             if ((ResourceManager.GetSciVersion() < SciVersion.V2_1_MIDDLE && SciEngine.Instance.GameId != SciGameId.KQ7 && type == ShowStyleType.kShowStyleMorph) || type > ShowStyleType.kShowStyleMorph)
@@ -1768,7 +1775,7 @@ namespace NScumm.Sci.Engine
         private static Register kPalCycle(EngineState s, int argc, StackPtr argv)
         {
             if (s == null)
-                return Register.Make(0, (ushort) ResourceManager.GetSciVersion());
+                return Register.Make(0, (ushort)ResourceManager.GetSciVersion());
             Error("not supposed to call this");
             return Register.NULL_REG;
         }
@@ -1778,7 +1785,7 @@ namespace NScumm.Sci.Engine
             ushort fromColor = argv[0].ToUInt16();
             ushort toColor = argv[1].ToUInt16();
             short direction = argv[2].ToInt16();
-            ushort delay = (ushort) (argc > 3 ? argv[3].ToUInt16() : 0);
+            ushort delay = (ushort)(argc > 3 ? argv[3].ToUInt16() : 0);
 
             SciEngine.Instance._gfxPalette32.SetCycle(fromColor, toColor, direction, delay);
             return s.r_acc;
@@ -1787,9 +1794,9 @@ namespace NScumm.Sci.Engine
         private static Register kPalCycleDoCycle(EngineState s, int argc, StackPtr argv)
         {
             ushort fromColor = argv[0].ToUInt16();
-            short speed = (short) (argc > 1 ? argv[1].ToInt16() : 1);
+            short speed = (short)(argc > 1 ? argv[1].ToInt16() : 1);
 
-            SciEngine.Instance._gfxPalette32.DoCycle((byte) fromColor, speed);
+            SciEngine.Instance._gfxPalette32.DoCycle((byte)fromColor, speed);
             return s.r_acc;
         }
 
@@ -1802,7 +1809,7 @@ namespace NScumm.Sci.Engine
             else
             {
                 ushort fromColor = argv[0].ToUInt16();
-                SciEngine.Instance._gfxPalette32.CyclePause((byte) fromColor);
+                SciEngine.Instance._gfxPalette32.CyclePause((byte)fromColor);
             }
             return s.r_acc;
         }
@@ -1816,7 +1823,7 @@ namespace NScumm.Sci.Engine
             else
             {
                 ushort fromColor = argv[0].ToUInt16();
-                SciEngine.Instance._gfxPalette32.CycleOn((byte) fromColor);
+                SciEngine.Instance._gfxPalette32.CycleOn((byte)fromColor);
             }
             return s.r_acc;
         }
@@ -1830,7 +1837,7 @@ namespace NScumm.Sci.Engine
             else
             {
                 ushort fromColor = argv[0].ToUInt16();
-                SciEngine.Instance._gfxPalette32.CycleOff((byte) fromColor);
+                SciEngine.Instance._gfxPalette32.CycleOff((byte)fromColor);
             }
             return s.r_acc;
         }
@@ -1839,13 +1846,13 @@ namespace NScumm.Sci.Engine
         {
             SciEngine.Instance._gfxText32.SetFont(argv[1].ToUInt16());
             string text = s._segMan.GetString(argv[0]);
-            return Register.Make(0, (ushort) SciEngine.Instance._gfxText32.GetStringWidth(text));
+            return Register.Make(0, (ushort)SciEngine.Instance._gfxText32.GetStringWidth(text));
         }
 
         private static Register kText(EngineState s, int argc, StackPtr argv)
         {
             if (s == null)
-                return Register.Make(0, (ushort) ResourceManager.GetSciVersion());
+                return Register.Make(0, (ushort)ResourceManager.GetSciVersion());
             Error("not supposed to call this");
             return Register.NULL_REG;
         }
@@ -1909,13 +1916,13 @@ namespace NScumm.Sci.Engine
                     break;
             }
 
-            return Register.Make(0, (ushort) result);
+            return Register.Make(0, (ushort)result);
         }
 
         private static Register kScrollWindow(EngineState s, int argc, StackPtr argv)
         {
             if (s == null)
-                return Register.Make(0, (ushort) ResourceManager.GetSciVersion());
+                return Register.Make(0, (ushort)ResourceManager.GetSciVersion());
             Error("not supposed to call this");
             return Register.NULL_REG;
         }
@@ -1926,22 +1933,22 @@ namespace NScumm.Sci.Engine
             ushort maxNumEntries = argv[1].ToUInt16();
 
             SegManager segMan = s._segMan;
-            short borderColor = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.borderColor);
-            TextAlign alignment = (TextAlign) SciEngine.ReadSelectorValue(segMan, @object, o => o.mode);
-            int fontId = (int) SciEngine.ReadSelectorValue(segMan, @object, o => o.font);
-            short backColor = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.back);
-            short foreColor = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.fore);
+            short borderColor = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.borderColor);
+            TextAlign alignment = (TextAlign)SciEngine.ReadSelectorValue(segMan, @object, o => o.mode);
+            int fontId = (int)SciEngine.ReadSelectorValue(segMan, @object, o => o.font);
+            short backColor = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.back);
+            short foreColor = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.fore);
             Register plane = SciEngine.ReadSelector(segMan, @object, o => o.plane);
 
             Rect rect = new Rect();
-            rect.Left = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.nsLeft);
-            rect.Top = (short) SciEngine.ReadSelectorValue(segMan, @object, o => o.nsTop);
-            rect.Right = (short) (SciEngine.ReadSelectorValue(segMan, @object, o => o.nsRight) + 1);
-            rect.Bottom = (short) (SciEngine.ReadSelectorValue(segMan, @object, o => o.nsBottom) + 1);
+            rect.Left = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.nsLeft);
+            rect.Top = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.nsTop);
+            rect.Right = (short)(SciEngine.ReadSelectorValue(segMan, @object, o => o.nsRight) + 1);
+            rect.Bottom = (short)(SciEngine.ReadSelectorValue(segMan, @object, o => o.nsBottom) + 1);
             Point position = new Point(rect.Left, rect.Top);
 
-            return SciEngine.Instance._gfxControls32.MakeScrollWindow(rect, position, plane, (byte) foreColor,
-                (byte) backColor, fontId, alignment, borderColor, maxNumEntries);
+            return SciEngine.Instance._gfxControls32.MakeScrollWindow(rect, position, plane, (byte)foreColor,
+                (byte)backColor, fontId, alignment, borderColor, maxNumEntries);
         }
 
         private static Register kScrollWindowAdd(EngineState s, int argc, StackPtr argv)
@@ -1951,7 +1958,7 @@ namespace NScumm.Sci.Engine
             string text = s._segMan.GetString(argv[1]);
             int fontId = argv[2].ToInt16();
             short color = argv[3].ToInt16();
-            TextAlign alignment = (TextAlign) argv[4].ToInt16();
+            TextAlign alignment = (TextAlign)argv[4].ToInt16();
             bool scrollTo = argc <= 5 || argv[5].ToUInt16() != 0;
 
             return scrollWindow.Add(text, fontId, color, alignment, scrollTo);
@@ -1961,7 +1968,7 @@ namespace NScumm.Sci.Engine
         {
             ScrollWindow scrollWindow = SciEngine.Instance._gfxControls32.GetScrollWindow(argv[0]);
 
-            ushort where = (ushort) (argv[1].ToUInt16() * scrollWindow.Where);
+            ushort where = (ushort)(argv[1].ToUInt16() * scrollWindow.Where);
 
             return Register.Make(0, where);
         }
@@ -1984,7 +1991,7 @@ namespace NScumm.Sci.Engine
             string newText = s._segMan.GetString(argv[2]);
             int fontId = argv[3].ToInt16();
             short color = argv[4].ToInt16();
-            TextAlign alignment = (TextAlign) argv[5].ToInt16();
+            TextAlign alignment = (TextAlign)argv[5].ToInt16();
             bool scrollTo = argc <= 6 || argv[6].ToUInt16() != 0;
 
             return scrollWindow.Modify(entryId, newText, fontId, color, alignment, scrollTo);
@@ -2075,10 +2082,10 @@ namespace NScumm.Sci.Engine
             // of setting the fontHeight on the font manager, in
             // which case we could just get the font directly ourselves.
             SciEngine.Instance._gfxText32.SetFont(argv[0].ToUInt16());
-            GfxText32._yResolution = (short) ((SciEngine.Instance._gfxText32._font.Height *
+            GfxText32._yResolution = (short)((SciEngine.Instance._gfxText32._font.Height *
                                                 SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight +
                                                 GfxText32._yResolution - 1) / GfxText32._yResolution);
-            return Register.Make(0, (ushort) GfxText32._yResolution);
+            return Register.Make(0, (ushort)GfxText32._yResolution);
         }
 
         private static Register kSetFontRes(EngineState s, int argc, StackPtr argv)
@@ -2091,7 +2098,7 @@ namespace NScumm.Sci.Engine
         private static Register kFont(EngineState s, int argc, StackPtr argv)
         {
             if (s == null)
-                return Register.Make(0, (ushort) ResourceManager.GetSciVersion());
+                return Register.Make(0, (ushort)ResourceManager.GetSciVersion());
             Error("not supposed to call this");
             return Register.NULL_REG;
         }
@@ -2099,7 +2106,7 @@ namespace NScumm.Sci.Engine
         private static Register kBitmap(EngineState s, int argc, StackPtr argv)
         {
             if (s == null)
-                return Register.Make(0, (ushort) ResourceManager.GetSciVersion());
+                return Register.Make(0, (ushort)ResourceManager.GetSciVersion());
             Error("not supposed to call this");
             return Register.NULL_REG;
         }
@@ -2115,9 +2122,9 @@ namespace NScumm.Sci.Engine
             bool useRemap = argc > 6 && argv[6].ToInt16() != 0;
 
             Register bitmapId = new Register();
-            SciBitmap bitmap = s._segMan.AllocateBitmap(out bitmapId, width, height, (byte) skipColor, 0, 0, scaledWidth,
+            SciBitmap bitmap = s._segMan.AllocateBitmap(out bitmapId, width, height, (byte)skipColor, 0, 0, scaledWidth,
                 scaledHeight, 0, useRemap, true);
-            bitmap.Pixels.Data.Set(bitmap.Pixels.Offset, (byte) backColor, width * height);
+            bitmap.Pixels.Data.Set(bitmap.Pixels.Offset, (byte)backColor, width * height);
             return bitmap.Object;
         }
 
@@ -2132,10 +2139,10 @@ namespace NScumm.Sci.Engine
             SciBitmap bitmap = s._segMan.LookupBitmap(argv[0]);
             CelObjView view = CelObjView.Create(argv[1].ToUInt16(), argv[2].ToInt16(), argv[3].ToInt16());
 
-            short x = (short) (argc > 4 ? argv[4].ToInt16() : 0);
-            short y = (short) (argc > 5 ? argv[5].ToInt16() : 0);
-            short alignX = (short) (argc > 7 ? argv[7].ToInt16() : -1);
-            short alignY = (short) (argc > 8 ? argv[8].ToInt16() : -1);
+            short x = (short)(argc > 4 ? argv[4].ToInt16() : 0);
+            short y = (short)(argc > 5 ? argv[5].ToInt16() : 0);
+            short alignX = (short)(argc > 7 ? argv[7].ToInt16() : -1);
+            short alignY = (short)(argc > 8 ? argv[8].ToInt16() : -1);
 
             Point position = new Point(x == -1 ? bitmap.Origin.X : x,
                 y == -1 ? bitmap.Origin.Y : y
@@ -2145,8 +2152,8 @@ namespace NScumm.Sci.Engine
             position.Y -= alignY == -1 ? view._displace.Y : alignY;
 
             Rect drawRect = new Rect(position.X, position.Y,
-                (short) (position.X + view._width), (short) (position.Y + view._height));
-            drawRect.Clip(new Rect((short) bitmap.Width, (short) bitmap.Height));
+                (short)(position.X + view._width), (short)(position.Y + view._height));
+            drawRect.Clip(new Rect((short)bitmap.Width, (short)bitmap.Height));
             view.Draw(bitmap.Buffer, ref drawRect, ref position, view._mirrorX);
             return s.r_acc;
         }
@@ -2159,13 +2166,13 @@ namespace NScumm.Sci.Engine
             string text = s._segMan.GetString(argv[1]);
             Rect textRect = new Rect(argv[2].ToInt16(),
                 argv[3].ToInt16(),
-                (short) (argv[4].ToInt16() + 1),
-                (short) (argv[5].ToInt16() + 1));
+                (short)(argv[4].ToInt16() + 1),
+                (short)(argv[5].ToInt16() + 1));
             short foreColor = argv[6].ToInt16();
             short backColor = argv[7].ToInt16();
             short skipColor = argv[8].ToInt16();
-            int fontId = (int) argv[9].ToUInt16();
-            TextAlign alignment = (TextAlign) argv[10].ToInt16();
+            int fontId = (int)argv[9].ToUInt16();
+            TextAlign alignment = (TextAlign)argv[10].ToInt16();
             short borderColor = argv[11].ToInt16();
             bool dimmed = argv[12].ToUInt16() != 0;
 
@@ -2175,10 +2182,10 @@ namespace NScumm.Sci.Engine
             // textRect.left < sciBitmap.width
             // textRect.top < sciBitmap.height
             // Then clips. But this seems stupid.
-            textRect.Clip(new Rect((short) bitmap.Width, (short) bitmap.Height));
+            textRect.Clip(new Rect((short)bitmap.Width, (short)bitmap.Height));
 
             Register textBitmapObject = SciEngine.Instance._gfxText32.CreateFontBitmap(textRect.Width, textRect.Height,
-                new Rect(textRect.Width, textRect.Height), text, (byte) foreColor, (byte) backColor, (byte) skipColor,
+                new Rect(textRect.Width, textRect.Height), text, (byte)foreColor, (byte)backColor, (byte)skipColor,
                 fontId, alignment, borderColor, dimmed, false, false);
             CelObjMem textCel = new CelObjMem(textBitmapObject);
             var p = new Point(textRect.Left, textRect.Top);
@@ -2195,10 +2202,10 @@ namespace NScumm.Sci.Engine
             SciBitmap bitmap = s._segMan.LookupBitmap(argv[0]);
             Rect fillRect = new Rect(argv[1].ToInt16(),
                 argv[2].ToInt16(),
-                (short) (argv[3].ToInt16() + 1),
-                (short) (argv[4].ToInt16() + 1));
+                (short)(argv[3].ToInt16() + 1),
+                (short)(argv[4].ToInt16() + 1));
 
-            bitmap.Buffer.FillRect(fillRect, (uint) argv[5].ToInt16());
+            bitmap.Buffer.FillRect(fillRect, (uint)argv[5].ToInt16());
             return s.r_acc;
         }
 
@@ -2281,10 +2288,10 @@ namespace NScumm.Sci.Engine
             if (argc == 10)
             {
                 priority = argv[5].ToInt16();
-                color = (byte) argv[6].ToUInt16();
-                style = (LineStyle) argv[7].ToInt16();
+                color = (byte)argv[6].ToUInt16();
+                style = (LineStyle)argv[7].ToInt16();
                 pattern = argv[8].ToUInt16();
-                thickness = (byte) argv[9].ToUInt16();
+                thickness = (byte)argv[9].ToUInt16();
             }
             else
             {
@@ -2327,10 +2334,10 @@ namespace NScumm.Sci.Engine
             if (argc == 11)
             {
                 priority = argv[6].ToInt16();
-                color = (byte) argv[7].ToUInt16();
-                style = (LineStyle) argv[8].ToInt16();
+                color = (byte)argv[7].ToUInt16();
+                style = (LineStyle)argv[8].ToInt16();
                 pattern = argv[9].ToUInt16();
-                thickness = (byte) argv[10].ToUInt16();
+                thickness = (byte)argv[10].ToUInt16();
             }
             else
             {
@@ -2366,7 +2373,7 @@ namespace NScumm.Sci.Engine
 
         private static Register kSetPalStyleRange(EngineState s, int argc, StackPtr argv)
         {
-            SciEngine.Instance._gfxFrameout.KernelSetPalStyleRange((byte) argv[0].ToUInt16(), (byte) argv[1].ToUInt16());
+            SciEngine.Instance._gfxTransitions32.KernelSetPalStyleRange((byte)argv[0].ToUInt16(), (byte)argv[1].ToUInt16());
             return s.r_acc;
         }
 
@@ -2380,43 +2387,43 @@ namespace NScumm.Sci.Engine
         private static void ShowScummVMDialog(string message)
         {
             throw new NotImplementedException();
-//            GUI::MessageDialog dialog(message, "OK");
-//            dialog.runModal();
+            //            GUI::MessageDialog dialog(message, "OK");
+            //            dialog.runModal();
         }
 
         private static Register kBaseSetter32(EngineState s, int argc, StackPtr argv)
         {
             Register @object = argv[0];
 
-            int viewId = (int) SciEngine.ReadSelectorValue(s._segMan, @object, o => o.view);
-            short loopNo = (short) SciEngine.ReadSelectorValue(s._segMan, @object, o => o.loop);
-            short celNo = (short) SciEngine.ReadSelectorValue(s._segMan, @object, o => o.cel);
-            short x = (short) SciEngine.ReadSelectorValue(s._segMan, @object, o => o.x);
-            short y = (short) SciEngine.ReadSelectorValue(s._segMan, @object, o => o.y);
+            int viewId = (int)SciEngine.ReadSelectorValue(s._segMan, @object, o => o.view);
+            short loopNo = (short)SciEngine.ReadSelectorValue(s._segMan, @object, o => o.loop);
+            short celNo = (short)SciEngine.ReadSelectorValue(s._segMan, @object, o => o.cel);
+            short x = (short)SciEngine.ReadSelectorValue(s._segMan, @object, o => o.x);
+            short y = (short)SciEngine.ReadSelectorValue(s._segMan, @object, o => o.y);
 
             CelObjView celObj = CelObjView.Create(viewId, loopNo, celNo);
 
-            short scriptWidth = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
+            short scriptWidth = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
             Rational scaleX = new Rational(scriptWidth, celObj._xResolution);
 
             short brLeft;
 
             if (celObj._mirrorX)
             {
-                brLeft = (short) (x - (celObj._width - celObj._origin.X) * scaleX);
+                brLeft = (short)(x - (celObj._width - celObj._origin.X) * scaleX);
             }
             else
             {
-                brLeft = (short) (x - (celObj._origin.X * scaleX));
+                brLeft = (short)(x - (celObj._origin.X * scaleX));
             }
 
-            short brRight = (short) (brLeft + (celObj._width * scaleX) - 1);
+            short brRight = (short)(brLeft + (celObj._width * scaleX) - 1);
 
-            SciEngine.WriteSelectorValue(s._segMan, @object, o => o.brLeft, (ushort) brLeft);
-            SciEngine.WriteSelectorValue(s._segMan, @object, o => o.brRight, (ushort) brRight);
-            SciEngine.WriteSelectorValue(s._segMan, @object, o => o.brBottom, (ushort) (y + 1));
+            SciEngine.WriteSelectorValue(s._segMan, @object, o => o.brLeft, (ushort)brLeft);
+            SciEngine.WriteSelectorValue(s._segMan, @object, o => o.brRight, (ushort)brRight);
+            SciEngine.WriteSelectorValue(s._segMan, @object, o => o.brBottom, (ushort)(y + 1));
             SciEngine.WriteSelectorValue(s._segMan, @object, o => o.brTop,
-                (ushort) (y + 1 - SciEngine.ReadSelectorValue(s._segMan,
+                (ushort)(y + 1 - SciEngine.ReadSelectorValue(s._segMan,
                               @object, o => o.yStep)));
 
             return s.r_acc;
@@ -2427,44 +2434,44 @@ namespace NScumm.Sci.Engine
             switch (argc)
             {
                 case 1:
-                {
-                    if (argv[0].ToInt16() == -2)
                     {
-                        SciEngine.Instance._gfxCursor32.ClearRestrictedArea();
-                    }
-                    else
-                    {
-                        if (argv[0].IsNull)
+                        if (argv[0].ToInt16() == -2)
                         {
-                            SciEngine.Instance._gfxCursor32.Hide();
+                            SciEngine.Instance._gfxCursor32.ClearRestrictedArea();
                         }
                         else
                         {
-                            SciEngine.Instance._gfxCursor32.Show();
+                            if (argv[0].IsNull)
+                            {
+                                SciEngine.Instance._gfxCursor32.Hide();
+                            }
+                            else
+                            {
+                                SciEngine.Instance._gfxCursor32.Show();
+                            }
                         }
+                        break;
                     }
-                    break;
-                }
                 case 2:
-                {
-                    Point position = new Point(argv[0].ToInt16(), argv[1].ToInt16());
-                    SciEngine.Instance._gfxCursor32.SetPosition(position);
-                    break;
-                }
+                    {
+                        Point position = new Point(argv[0].ToInt16(), argv[1].ToInt16());
+                        SciEngine.Instance._gfxCursor32.SetPosition(position);
+                        break;
+                    }
                 case 3:
-                {
-                    SciEngine.Instance._gfxCursor32.SetView(argv[0].ToUInt16(), argv[1].ToInt16(), argv[2].ToInt16());
-                    break;
-                }
+                    {
+                        SciEngine.Instance._gfxCursor32.SetView(argv[0].ToUInt16(), argv[1].ToInt16(), argv[2].ToInt16());
+                        break;
+                    }
                 case 4:
-                {
-                    Rect restrictRect = new Rect(argv[0].ToInt16(),
-                        argv[1].ToInt16(),
-                        (short) (argv[2].ToInt16() + 1),
-                        (short) (argv[3].ToInt16() + 1));
-                    SciEngine.Instance._gfxCursor32.SetRestrictedArea(restrictRect);
-                    break;
-                }
+                    {
+                        Rect restrictRect = new Rect(argv[0].ToInt16(),
+                            argv[1].ToInt16(),
+                            (short)(argv[2].ToInt16() + 1),
+                            (short)(argv[3].ToInt16() + 1));
+                        SciEngine.Instance._gfxCursor32.SetRestrictedArea(restrictRect);
+                        break;
+                    }
                 default:
                     Error("kSetCursor: Invalid number of arguments ({0})", argc);
                     break;
@@ -2502,13 +2509,13 @@ namespace NScumm.Sci.Engine
 
         private static Register kShakeScreen32(EngineState s, int argc, StackPtr argv)
         {
-            SciEngine.Instance._gfxFrameout.ShakeScreen(argv[0].ToInt16(), (ShakeDirection) argv[1].ToInt16());
+            SciEngine.Instance._gfxFrameout.ShakeScreen(argv[0].ToInt16(), (ShakeDirection)argv[1].ToInt16());
             return s.r_acc;
         }
 
         private static Register kRemapColorsByRange(EngineState s, int argc, StackPtr argv)
         {
-            byte color = (byte) argv[0].ToUInt16();
+            byte color = (byte)argv[0].ToUInt16();
             short from = argv[1].ToInt16();
             short to = argv[2].ToInt16();
             short @base = argv[3].ToInt16();
@@ -2521,7 +2528,7 @@ namespace NScumm.Sci.Engine
 
         private static Register kRemapColorsByPercent(EngineState s, int argc, StackPtr argv)
         {
-            byte color = (byte) argv[0].ToUInt16();
+            byte color = (byte)argv[0].ToUInt16();
             short percent = argv[1].ToInt16();
             // NOTE: There is an optional last parameter after `percent`
             // which was only used by the priority map debugger, which
@@ -2532,18 +2539,18 @@ namespace NScumm.Sci.Engine
 
         private static Register kRemapColorsToGray(EngineState s, int argc, StackPtr argv)
         {
-            byte color = (byte) argv[0].ToUInt16();
+            byte color = (byte)argv[0].ToUInt16();
             short gray = argv[1].ToInt16();
             // NOTE: There is an optional last parameter after `gray`
             // which was only used by the priority map debugger, which
             // does not exist in release versions of SSCI
-            SciEngine.Instance._gfxRemap32.RemapToGray(color, (sbyte) gray);
+            SciEngine.Instance._gfxRemap32.RemapToGray(color, (sbyte)gray);
             return s.r_acc;
         }
 
         private static Register kRemapColorsToPercentGray(EngineState s, int argc, StackPtr argv)
         {
-            byte color = (byte) argv[0].ToUInt16();
+            byte color = (byte)argv[0].ToUInt16();
             short gray = argv[1].ToInt16();
             short percent = argv[2].ToInt16();
             // NOTE: There is an optional last parameter after `percent`
@@ -2555,9 +2562,47 @@ namespace NScumm.Sci.Engine
 
         private static Register kRemapColorsBlockRange(EngineState s, int argc, StackPtr argv)
         {
-            byte from = (byte) argv[0].ToUInt16();
-            byte count = (byte) argv[1].ToUInt16();
+            byte from = (byte)argv[0].ToUInt16();
+            byte count = (byte)argv[1].ToUInt16();
             SciEngine.Instance._gfxRemap32.BlockRange(from, count);
+            return s.r_acc;
+        }
+
+        private static Register kPaletteSetFromResource32(EngineState s, int argc, StackPtr argv)
+        {
+            int paletteId = argv[0].ToUInt16();
+            SciEngine.Instance._gfxPalette32.LoadPalette(paletteId);
+            return s.r_acc;
+        }
+
+        private static Register kPaletteSetFade(EngineState s, int argc, StackPtr argv)
+        {
+            ushort fromColor = argv[0].ToUInt16();
+            ushort toColor = argv[1].ToUInt16();
+            ushort percent = argv[2].ToUInt16();
+            SciEngine.Instance._gfxPalette32.SetFade(percent, (byte)fromColor, toColor);
+            return s.r_acc;
+        }
+
+        private static Register kPaletteFindColor32(EngineState s, int argc, StackPtr argv)
+        {
+            byte r = (byte)argv[0].ToUInt16();
+            byte g = (byte)argv[1].ToUInt16();
+            byte b = (byte)argv[2].ToUInt16();
+            return Register.Make(0, (ushort)SciEngine.Instance._gfxPalette32.MatchColor(r, g, b));
+        }
+
+        /*
+ * Used in SCI3. SCI3 contains 6 gamma look-up tables, with the first
+ * table (gamma = 0) being the default one.
+ */
+        private static Register kPaletteSetGamma(EngineState s, int argc, StackPtr argv)
+        {
+            byte gamma = (byte)argv[0].ToUInt16();
+            System.Diagnostics.Debug.Assert(gamma <= 6);
+
+            Warning("TODO: kPaletteSetGamma({0})", gamma);
+
             return s.r_acc;
         }
 #endif

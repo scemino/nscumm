@@ -17,6 +17,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using NScumm.Core;
 using System.IO;
 using static NScumm.Core.DebugHelper;
 
@@ -25,13 +26,13 @@ namespace NScumm.Sci
     /// <summary>
     /// STACpack decompressor for SCI32
     /// </summary>
-    internal class DecompressorLzs: Decompressor
+    internal class DecompressorLzs : Decompressor
     {
         //----------------------------------------------
         // STACpack/LZS decompressor for SCI32
         // Based on Andre Beck's code from http://micky.ibh.de/~beck/stuff/lzs4i4l/
         //----------------------------------------------
-        public override ResourceErrorCodes Unpack(Stream src, byte[] dest, int nPacked, int nUnpacked)
+        public override ResourceErrorCodes Unpack(Stream src, BytePtr dest, int nPacked, int nUnpacked)
         {
             Init(src, dest, nPacked, nUnpacked);
             return UnpackLzs();
@@ -44,16 +45,16 @@ namespace NScumm.Sci
 
             while (!IsFinished)
             {
-                if (GetBitsMsb(1)!=0)
+                if (GetBitsMsb(1) != 0)
                 {
                     // Compressed bytes follow
-                    if (GetBitsMsb(1)!=0)
+                    if (GetBitsMsb(1) != 0)
                     {
                         // Seven bit offset follows
-                        offs = (ushort) GetBitsMsb(7);
-                        if (offs==0) // This is the end marker - a 7 bit offset of zero
+                        offs = (ushort)GetBitsMsb(7);
+                        if (offs == 0) // This is the end marker - a 7 bit offset of zero
                             break;
-                        if ((clen = GetCompLen())==0)
+                        if ((clen = GetCompLen()) == 0)
                         {
                             Warning("lzsDecomp: length mismatch");
                             return ResourceErrorCodes.DECOMPRESSION_ERROR;
@@ -63,8 +64,8 @@ namespace NScumm.Sci
                     else
                     {
                         // Eleven bit offset follows
-                        offs = (ushort) GetBitsMsb(11);
-                        if ((clen = GetCompLen())==0)
+                        offs = (ushort)GetBitsMsb(11);
+                        if ((clen = GetCompLen()) == 0)
                         {
                             Warning("lzsDecomp: length mismatch");
                             return ResourceErrorCodes.DECOMPRESSION_ERROR;
@@ -104,8 +105,8 @@ namespace NScumm.Sci
                             int nibble;
                             do
                             {
-                                nibble = (int) GetBitsMsb(4);
-                                clen = (uint) (clen+nibble);
+                                nibble = (int)GetBitsMsb(4);
+                                clen = (uint)(clen + nibble);
                             } while (nibble == 0xf);
                             return clen;
                     }
@@ -116,7 +117,7 @@ namespace NScumm.Sci
         {
             int hpos = DwWrote - offs;
 
-            while ((clen--)!=0)
+            while ((clen--) != 0)
                 PutByte(Dest[hpos++]);
         }
 

@@ -24,6 +24,7 @@ using System.Linq;
 using NScumm.Core;
 using NScumm.Core.Graphics;
 using NScumm.Sci.Engine;
+using NScumm.Core.Common;
 
 namespace NScumm.Sci.Graphics
 {
@@ -59,6 +60,16 @@ namespace NScumm.Sci.Graphics
          */
         public Rect rect;
 
+        public DrawItem()
+        {
+        }
+
+        public DrawItem(DrawItem item)
+        {
+            screenItem = item.screenItem;
+            rect = item.rect;
+        }
+
         public int CompareTo(DrawItem other)
         {
             return screenItem.CompareTo(other.screenItem);
@@ -67,7 +78,7 @@ namespace NScumm.Sci.Graphics
 
     internal class DrawList : StablePointerArray<DrawItem>
     {
-        public DrawList() : base(250)
+        public DrawList() : base(250, o => new DrawItem(o))
         {
         }
 
@@ -84,13 +95,17 @@ namespace NScumm.Sci.Graphics
 
     internal class RectList : StablePointerArray<Rect>
     {
-        public RectList() : base(200)
+        public RectList() : base(200, o => new Rect(o))
         {
         }
     }
 
-    internal class PlaneList : List<Plane>
+    internal class PlaneList : Array<Plane>
     {
+        public PlaneList() : base(() => null)
+        {
+        }
+
         public Plane FindByObject(Register @object)
         {
             var plane = this.FirstOrDefault(o => Equals(o._object, @object));
@@ -99,9 +114,9 @@ namespace NScumm.Sci.Graphics
 
         public short GetTopPlanePriority()
         {
-            if (Count > 0)
+            if (Size > 0)
             {
-                return this[Count - 1]._priority;
+                return this[Size - 1]._priority;
             }
 
             return 0;
@@ -126,7 +141,7 @@ namespace NScumm.Sci.Graphics
 
         public int FindIndexByObject(Register @object)
         {
-            for (var i = 0; i < Count; ++i)
+            for (var i = 0; i < Size; ++i)
             {
                 if (this[i] != null && this[i]._object == @object)
                 {
@@ -135,6 +150,37 @@ namespace NScumm.Sci.Graphics
             }
 
             return -1;
+        }
+
+        public void Erase(Plane plane)
+        {
+            for (int i = 0; i < Size; i++)
+            {
+                if (this[i] == plane)
+                {
+                    RemoveAt(i);
+                    break;
+                }
+            }
+        }
+
+        public void Add(Plane plane)
+        {
+            for (var i = 0; i < Size; i++)
+            {
+                if (this[i]._priority > plane._priority)
+                {
+                    Insert(i, plane);
+                    return;
+                }
+            }
+
+            PushBack(plane);
+        }
+
+        public void Sort()
+        {
+            Array.Sort(_storage, 0, Size);
         }
     }
 
@@ -287,7 +333,7 @@ namespace NScumm.Sci.Graphics
             _planeRect = other._planeRect;
             _gameRect = other._gameRect;
             _screenRect = other._screenRect;
-            _screenItemList = other._screenItemList;
+            _screenItemList.CopyFrom(other._screenItemList);
         }
 
         public Plane(Register @object)
@@ -805,7 +851,7 @@ namespace NScumm.Sci.Graphics
         private void BreakDrawListByPlanes(DrawList drawList, PlaneList planeList)
         {
             int nextPlaneIndex = planeList.FindIndexByObject(_object) + 1;
-            var planeCount = planeList.Count;
+            var planeCount = planeList.Size;
 
             for (var i = 0; i < drawList.Count; ++i)
             {
@@ -837,7 +883,7 @@ namespace NScumm.Sci.Graphics
         private void BreakEraseListByPlanes(RectList eraseList, PlaneList planeList)
         {
             int nextPlaneIndex = planeList.FindIndexByObject(_object) + 1;
-            var planeCount = planeList.Count;
+            var planeCount = planeList.Size;
 
             for (var i = 0; i < eraseList.Count; ++i)
             {

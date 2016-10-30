@@ -368,7 +368,7 @@ namespace NScumm.Sci.Graphics
                         // - sierra allowed item id to be 0, which didn't make any sense
                         do
                         {
-                            switch (curEvent.data)
+                            switch (curEvent.character)
                             {
                                 case SciEvent.SCI_KEY_ESC:
                                     _curMenuId = curItemEntry.menuId; _curItemId = curItemEntry.id;
@@ -400,11 +400,11 @@ namespace NScumm.Sci.Graphics
                                 newMenuId = newItemEntry.menuId; newItemId = newItemEntry.id;
 
                                 // if we do this step again because of a separator line . don't repeat left/right, but go down
-                                switch (curEvent.data)
+                                switch (curEvent.character)
                                 {
                                     case SciEvent.SCI_KEY_LEFT:
                                     case SciEvent.SCI_KEY_RIGHT:
-                                        curEvent.data = SciEvent.SCI_KEY_DOWN;
+                                        curEvent.character = SciEvent.SCI_KEY_DOWN;
                                         break;
                                 }
                             }

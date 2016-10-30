@@ -27,6 +27,8 @@ namespace NScumm.Core.Video
 {
     public abstract class CoktelDecoder
     {
+        public static readonly uint VideoCodecIndeo3 = ScummHelper.MakeTag('i', 'v', '3', '2');
+
         private class State
         {
             /** Set accordingly to what was done. */
@@ -99,7 +101,7 @@ namespace NScumm.Core.Video
         protected bool _ownSurface;
         protected Surface _surface;
 
-        protected List<Rect> _dirtyRects;
+        protected List<Rect> _dirtyRects = new List<Rect>();
 
         protected Rational _frameRate;
 
@@ -120,7 +122,10 @@ namespace NScumm.Core.Video
         byte[] _videoBuffer;
         uint _videoBufferSize;
 
-        public bool IsVideoLoaded => _stream != null;
+        /// <summary>
+        /// Has a video been loaded?
+        /// </summary>
+        public abstract bool IsVideoLoaded { get; }
 
         public bool IsSoundEnabled => _soundEnabled;
 
@@ -182,6 +187,8 @@ namespace NScumm.Core.Video
 
         public CoktelDecoder(IMixer mixer, SoundType soundType)
         {
+            _mixer = mixer;
+            _soundType = soundType;
             _ownSurface = true;
             _frameRate = new Rational(12);
         }
@@ -391,7 +398,7 @@ namespace NScumm.Core.Video
         {
             var srcRect = rect;
 
-            rect.Clip((short) dstSurf.Width, (short) dstSurf.Height);
+            rect.Clip((short)dstSurf.Width, (short)dstSurf.Height);
             var dst = dstSurf.GetBasePtr(rect.Left, rect.Top);
             for (var i = 0; i < rect.Height; i++)
             {
@@ -406,7 +413,7 @@ namespace NScumm.Core.Video
         {
             Rect srcRect = rect;
 
-            rect.Clip((short) dstSurf.Width, (short) dstSurf.Height);
+            rect.Clip((short)dstSurf.Width, (short)dstSurf.Height);
 
             BytePtr dst = dstSurf.GetBasePtr(rect.Left, rect.Top);
             for (int i = 0; i < rect.Height; i++)
@@ -421,8 +428,8 @@ namespace NScumm.Core.Video
 
                     if ((pixCount & 0x80) != 0)
                     {
-                        pixCount = (short) Math.Min((pixCount & 0x7F) + 1, srcRect.Width - pixWritten);
-                        short copyCount = (short) ScummHelper.Clip(rect.Width - pixWritten, 0, pixCount);
+                        pixCount = (short)Math.Min((pixCount & 0x7F) + 1, srcRect.Width - pixWritten);
+                        short copyCount = (short)ScummHelper.Clip(rect.Width - pixWritten, 0, pixCount);
 
                         if (src.Value != 0xFF)
                         {
@@ -440,10 +447,10 @@ namespace NScumm.Core.Video
                     else
                     {
                         // "Hole"
-                        short copyCount = (short) ScummHelper.Clip(rect.Width - pixWritten, 0, pixCount + 1);
+                        short copyCount = (short)ScummHelper.Clip(rect.Width - pixWritten, 0, pixCount + 1);
 
                         dstRow.Offset += copyCount;
-                        pixWritten = (short) (pixWritten + pixCount + 1);
+                        pixWritten = (short)(pixWritten + pixCount + 1);
                     }
                 }
 
@@ -457,7 +464,7 @@ namespace NScumm.Core.Video
         {
             var srcRect = rect;
 
-            rect.Clip((short) dstSurf.Width, (short) dstSurf.Height);
+            rect.Clip((short)dstSurf.Width, (short)dstSurf.Height);
 
             var dst = dstSurf.GetBasePtr(rect.Left, rect.Top);
             for (var i = 0; i < rect.Height; i++)
@@ -485,7 +492,7 @@ namespace NScumm.Core.Video
         {
             var srcRect = rect;
 
-            rect.Clip((short) dstSurf.Width, (short) dstSurf.Height);
+            rect.Clip((short)dstSurf.Width, (short)dstSurf.Height);
 
             var height = rect.Height;
 
@@ -509,7 +516,7 @@ namespace NScumm.Core.Video
         {
             var srcRect = rect;
 
-            rect.Clip((short) dstSurf.Width, (short) dstSurf.Height);
+            rect.Clip((short)dstSurf.Width, (short)dstSurf.Height);
 
             var dst = dstSurf.GetBasePtr(rect.Left, rect.Top);
             for (var i = 0; i < rect.Height; i++)
@@ -527,8 +534,8 @@ namespace NScumm.Core.Video
                         // Data
                         short copyCount;
 
-                        pixCount = (short) Math.Min((pixCount & 0x7F) + 1, srcRect.Width - pixWritten);
-                        copyCount = (short) ScummHelper.Clip(rect.Width - pixWritten, 0, pixCount);
+                        pixCount = (short)Math.Min((pixCount & 0x7F) + 1, srcRect.Width - pixWritten);
+                        copyCount = (short)ScummHelper.Clip(rect.Width - pixWritten, 0, pixCount);
                         Array.Copy(src.Data, src.Offset, dstRow.Data, dstRow.Offset, copyCount);
 
                         pixWritten += pixCount;
@@ -554,7 +561,7 @@ namespace NScumm.Core.Video
 
             var srcRect = rect;
 
-            rect.Clip((short) dstSurf.Width, (short) dstSurf.Height);
+            rect.Clip((short)dstSurf.Width, (short)dstSurf.Height);
 
             var dst = dstSurf.GetBasePtr(rect.Left, rect.Top);
             for (var i = 0; i < rect.Height; i += 2)
@@ -570,7 +577,7 @@ namespace NScumm.Core.Video
                     if ((pixCount & 0x80) != 0)
                     {
                         // Data
-                        pixCount = (short) Math.Min((pixCount & 0x7F) + 1, srcRect.Width - pixWritten);
+                        pixCount = (short)Math.Min((pixCount & 0x7F) + 1, srcRect.Width - pixWritten);
                         Array.Copy(src.Data, src.Offset, dstRow.Data, dstRow.Offset, pixCount);
                         Array.Copy(src.Data, src.Offset, dstRow.Data, dstRow.Offset + dstSurf.Pitch, pixCount);
 
@@ -628,13 +635,13 @@ namespace NScumm.Core.Video
             if (whence == SeekOrigin.Current)
                 frame += _curFrame;
             else if (whence == SeekOrigin.End)
-                frame = (int) (_frameCount - frame - 1);
+                frame = (int)(_frameCount - frame - 1);
             else if (whence == SeekOrigin.Begin)
                 frame--;
             else
                 return false;
 
-            if ((frame < -1) || (frame >= (int) _frameCount))
+            if ((frame < -1) || (frame >= (int)_frameCount))
                 // Out of range
                 return false;
 
@@ -714,7 +721,7 @@ namespace NScumm.Core.Video
                     dest.Value = src.Value;
                     src.Offset++;
                     dest.Offset++;
-                    bufPos1 = (ushort) ((bufPos1 + 1) % 4096);
+                    bufPos1 = (ushort)((bufPos1 + 1) % 4096);
                     frameLength--;
                     srcSize--;
                     continue;
@@ -724,7 +731,7 @@ namespace NScumm.Core.Video
                 System.Diagnostics.Debug.Assert(srcSize >= 2);
 
                 var tmp = src.ToUInt16();
-                var chunkLength = (ushort) (((tmp & 0xF00) >> 8) + 3);
+                var chunkLength = (ushort)(((tmp & 0xF00) >> 8) + 3);
 
                 src.Offset += 2;
                 srcSize -= 2;
@@ -734,12 +741,12 @@ namespace NScumm.Core.Video
                 {
                     System.Diagnostics.Debug.Assert(srcSize >= 1);
 
-                    chunkLength = (ushort) (src.Value + 0x12);
+                    chunkLength = (ushort)(src.Value + 0x12);
                     src.Offset++;
                     srcSize--;
                 }
 
-                var bufPos2 = (ushort) ((tmp & 0xFF) + ((tmp >> 4) & 0x0F00));
+                var bufPos2 = (ushort)((tmp & 0xFF) + ((tmp >> 4) & 0x0F00));
                 if ((tmp + chunkLength >= 4096) ||
                     (chunkLength + bufPos1 >= 4096))
                 {
@@ -747,15 +754,15 @@ namespace NScumm.Core.Video
                     {
                         dest.Value = buf[bufPos2];
                         buf[bufPos1] = buf[bufPos2];
-                        bufPos1 = (ushort) ((bufPos1 + 1) % 4096);
-                        bufPos2 = (ushort) ((bufPos2 + 1) % 4096);
+                        bufPos1 = (ushort)((bufPos1 + 1) % 4096);
+                        bufPos2 = (ushort)((bufPos2 + 1) % 4096);
                     }
                 }
                 else if ((tmp + chunkLength < bufPos1) ||
                          (chunkLength + bufPos1 < bufPos2))
                 {
                     Array.Copy(buf, bufPos2, dest.Data, dest.Offset, chunkLength);
-                    Array.Copy(buf, bufPos2, dest.Data, dest.Offset + bufPos1, chunkLength);
+                    Array.Copy(buf, bufPos2, buf, bufPos1, chunkLength);
 
                     dest.Offset += chunkLength;
                     bufPos1 += chunkLength;
@@ -803,7 +810,7 @@ namespace NScumm.Core.Video
                     // Verbatim copy
                     tmp &= 0x7F;
 
-                    var copyCount = (short) Math.Max(0, Math.Min(destLen, tmp * 2));
+                    var copyCount = (short)Math.Max(0, Math.Min(destLen, tmp * 2));
                     Array.Copy(srcPtr.Data, srcPtr.Offset, destPtr.Data, destPtr.Offset, copyCount);
 
                     srcPtr.Offset += tmp * 2;

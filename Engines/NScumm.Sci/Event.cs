@@ -21,6 +21,8 @@ using System.Collections.Generic;
 using System.Linq;
 using NScumm.Core.Input;
 using NScumm.Core;
+using NScumm.Sci.Graphics;
+using System;
 
 namespace NScumm.Sci
 {
@@ -91,42 +93,44 @@ namespace NScumm.Sci
 
         public const int SCI_KEYMOD_ALL = 0xFF;
 
-        public short type;
-        public short data;
-        public short modifiers;
-        /**
-         * For keyboard events: 'data' after applying
-         * the effects of 'modifiers', e.g. if
-         *   type == SCI_EVT_KEYBOARD
-         *   data == 'a'
-         *   buckybits == SCI_EVM_LSHIFT
-         * then
-         *   character == 'A'
-         * For 'Alt', characters are interpreted by their
-         * PC keyboard scancodes.
-         */
-        public short character;
+        public ushort type;
+        public ushort modifiers;
+        /// <summary>
+        /// For keyboard events: the actual character of the key that was pressed
+        /// For 'Alt', characters are interpreted by their
+        /// PC keyboard scancodes.
+        /// </summary>
+        public ushort character;
 
-        /**
-         * The mouse position at the time the event was created.
-         *
-         * These are display coordinates!
-         */
+        /// <summary>
+        /// The mouse position at the time the event was created,
+        /// in display coordinates.
+        /// </summary>
         public Point mousePos;
 
 #if ENABLE_SCI32
-        /**
-         * The mouse position at the time the event was created,
-         * in script coordinates.
-         */
+        /// <summary>
+        /// The mouse position at the time the event was created,
+        /// in script coordinates.
+        /// </summary>
         public Point mousePosSci;
-#endif
 
+        public short hotRectangleIndex;
 
-        public SciEvent(short type, short data, short modifiers, short character, Point mousePos)
+        public SciEvent(ushort type, ushort modifiers, ushort character, Point mousePos, Point mousePosSci, short hotRectangleIndex)
         {
             this.type = type;
-            this.data = data;
+            this.modifiers = modifiers;
+            this.character = character;
+            this.mousePos = mousePos;
+            this.mousePosSci = mousePosSci;
+            this.hotRectangleIndex = hotRectangleIndex;
+        }
+#endif
+
+        public SciEvent(ushort type, ushort modifiers, ushort character, Point mousePos)
+        {
+            this.type = type;
             this.modifiers = modifiers;
             this.character = character;
             this.mousePos = mousePos;
@@ -147,8 +151,12 @@ namespace NScumm.Sci
 
         public SciEvent GetSciEvent(int mask)
         {
-            SciEvent @event = new SciEvent(0, 0, 0, 0, new Point(0, 0));
+#if ENABLE_SCI32
+            SciEvent @event = new SciEvent(SciEvent.SCI_EVENT_NONE, 0, 0, new Point(), new Point(), -1);
+#else
 
+            SciEvent @event = new SciEvent(SciEvent.SCI_EVENT_NONE, 0, 0, new Point());
+#endif
             UpdateScreen();
 
             // Get all queued events from graphics driver
@@ -187,8 +195,13 @@ namespace NScumm.Sci
 
         private SciEvent GetScummVmEvent()
         {
+#if ENABLE_SCI32
+            SciEvent input = new SciEvent(SciEvent.SCI_EVENT_NONE, 0, 0, new Point(), new Point(), -1);
+            SciEvent noEvent = new SciEvent(SciEvent.SCI_EVENT_NONE, 0, 0, new Point(), new Point(), -1);
+#else
             SciEvent input = new SciEvent(SciEvent.SCI_EVENT_NONE, 0, 0, 0, new Point(0, 0));
             SciEvent noEvent = new SciEvent(SciEvent.SCI_EVENT_NONE, 0, 0, 0, new Point(0, 0));
+#endif
 
             var im = SciEngine.Instance.System.InputManager;
 
@@ -202,44 +215,45 @@ namespace NScumm.Sci
             // via pollEvent.
             // We also adjust the position based on the scaling of the screen.
             Point mousePos = im.GetMousePosition();
-            SciEngine.Instance._gfxScreen.AdjustBackUpscaledCoordinates(ref mousePos.Y, ref mousePos.X);
 
+#if ENABLE_SCI32
+            if (ResourceManager.GetSciVersion() >= SciVersion.V2)
+            {
+                var screen = SciEngine.Instance._gfxFrameout.CurrentBuffer;
+
+                // This will clamp `mousePos` according to the restricted zone,
+                // so any cursor or screen item associated with the mouse position
+                // does not bounce when it hits the edge (or ignore the edge)
+                SciEngine.Instance._gfxCursor32.DeviceMoved(mousePos);
+
+                Point mousePosSci = mousePos;
+                var rx = new Rational(screen.ScriptWidth, screen.ScreenWidth);
+                var ry = new Rational(screen.ScriptHeight, screen.ScreenHeight);
+                Helpers.Mulru(ref mousePosSci, ref rx, ref ry);
+                noEvent.mousePosSci = input.mousePosSci = mousePosSci;
+
+                if (_hotRectanglesActive)
+                {
+                    CheckHotRectangles(mousePosSci);
+                }
+            }
+            else
+            {
+#endif
+                SciEngine.Instance._gfxScreen.AdjustBackUpscaledCoordinates(ref mousePos.Y, ref mousePos.X);
+#if ENABLE_SCI32
+            }
+#endif
             noEvent.mousePos = input.mousePos = mousePos;
 
             // TODO:
             var state = im.GetState();
-            //if (state.GetKeys().Count==0)
-            //{
-            //    int modifiers = em->getModifierState();
-            //    noEvent.modifiers =
-            //        ((modifiers & Common::KBD_ALT) ? SCI_KEYMOD_ALT : 0) |
-            //        ((modifiers & Common::KBD_CTRL) ? SCI_KEYMOD_CTRL : 0) |
-            //        ((modifiers & Common::KBD_SHIFT) ? SCI_KEYMOD_LSHIFT | SCI_KEYMOD_RSHIFT : 0);
 
-            //    return noEvent;
-            //}
-            //if (ev.type == Common::EVENT_QUIT)
-            //{
-            //    input.type = SCI_EVENT_QUIT;
-            //    return input;
-            //}
-
-            // Handle mouse events
-            //for (int i = 0; i < mouseEventMappings.Length; i++)
-            //{
-            //    if (mouseEventMappings[i].commonType == ev.type)
-            //    {
-            //        input.type = mouseEventMappings[i].sciType;
-            //        input.data = mouseEventMappings[i].data;
-            //        return input;
-            //    }
-            //}
             if (_oldState.IsLeftButtonDown)
             {
                 if (!state.IsLeftButtonDown)
                 {
                     input.type = SciEvent.SCI_EVENT_MOUSE_RELEASE;
-                    input.data = 1;
                     _oldState = state;
                     return input;
                 }
@@ -249,7 +263,6 @@ namespace NScumm.Sci
                 if (state.IsLeftButtonDown)
                 {
                     input.type = SciEvent.SCI_EVENT_MOUSE_PRESS;
-                    input.data = 1;
                     _oldState = state;
                     return input;
                 }
@@ -259,7 +272,7 @@ namespace NScumm.Sci
                 if (!state.IsRightButtonDown)
                 {
                     input.type = SciEvent.SCI_EVENT_MOUSE_RELEASE;
-                    input.data = 2;
+                    input.modifiers |= (SciEvent.SCI_KEYMOD_RSHIFT | SciEvent.SCI_KEYMOD_LSHIFT); // this value was hardcoded in the mouse interrupt handler
                     _oldState = state;
                     return input;
                 }
@@ -269,117 +282,31 @@ namespace NScumm.Sci
                 if (state.IsRightButtonDown)
                 {
                     input.type = SciEvent.SCI_EVENT_MOUSE_PRESS;
-                    input.data = 2;
+                    input.modifiers |= (SciEvent.SCI_KEYMOD_RSHIFT | SciEvent.SCI_KEYMOD_LSHIFT); // this value was hardcoded in the mouse interrupt handler
                     _oldState = state;
                     return input;
                 }
             }
             _oldState = state;
 
-            // If we reached here, make sure that it's a keydown event
-            //if (ev.type != Common::EVENT_KEYDOWN)
-            //    return noEvent;
 
-            //// Check for Control-D (debug console)
-            //if (ev.kbd.hasFlags(Common::KBD_CTRL | Common::KBD_SHIFT) && ev.kbd.keycode == Common::KEYCODE_d)
-            //{
-            //    // Open debug console
-            //    Console* con = g_sci->getSciDebugger();
-            //    con->attach();
-            //    return noEvent;
-            //}
-
-            //// Process keyboard events
-
-            //int modifiers = em->getModifierState();
-            //bool numlockOn = (ev.kbd.flags & Common::KBD_NUM);
-
-            //input.data = ev.kbd.keycode;
-            //input.character = ev.kbd.ascii;
 
             var keys = state.GetKeys().ToList();
             if (keys.Count != 0)
             {
                 if (keys[0] >= KeyCode.D0 && keys[0] <= KeyCode.D9)
                 {
-                    input.character = (short) (keys[0] - KeyCode.D0 + '0');
+                    input.character = (ushort)(keys[0] - KeyCode.D0 + '0');
                 }
                 else
                 {
-                    input.character = (short) keys[0];
+                    input.character = (ushort)keys[0];
                 }
             }
             im.ResetKeys();
             input.type = SciEvent.SCI_EVENT_KEYBOARD;
 
-            //input.modifiers =
-            //    ((modifiers & Common::KBD_ALT) ? SCI_KEYMOD_ALT : 0) |
-            //    ((modifiers & Common::KBD_CTRL) ? SCI_KEYMOD_CTRL : 0) |
-            //    ((modifiers & Common::KBD_SHIFT) ? SCI_KEYMOD_LSHIFT | SCI_KEYMOD_RSHIFT : 0);
 
-            //// Caps lock and Scroll lock have been removed, cause we already handle upper
-            //// case keys ad Scroll lock doesn't seem to be used anywhere
-            ////((ev.kbd.flags & Common::KBD_CAPS) ? SCI_KEYMOD_CAPSLOCK : 0) |
-            ////((ev.kbd.flags & Common::KBD_SCRL) ? SCI_KEYMOD_SCRLOCK : 0) |
-
-            //if (!(input.data & 0xFF00))
-            //{
-            //    // Directly accept most common keys without conversion
-            //    if ((input.character >= 0x80) && (input.character <= 0xFF))
-            //    {
-            //        // If there is no extended font, we will just clear the
-            //        // current event.
-            //        // Sierra SCI actually accepted those characters, but
-            //        // didn't display them inside text edit controls because
-            //        // the characters were missing inside the font(s).
-            //        // We filter them out for non-multilingual games because
-            //        // of that.
-            //        if (!_fontIsExtended)
-            //            return noEvent;
-            //        // Convert 8859-1 characters to DOS (cp850/437) for
-            //        // multilingual SCI01 games
-            //        input.character = codepagemap_88591toDOS[input.character & 0x7f];
-            //    }
-            //    if (input.data == Common::KEYCODE_TAB)
-            //    {
-            //        input.character = input.data = SCI_KEY_TAB;
-            //        if (modifiers & Common::KBD_SHIFT)
-            //            input.character = SCI_KEY_SHIFT_TAB;
-            //    }
-            //    if (input.data == Common::KEYCODE_DELETE)
-            //        input.data = input.character = SCI_KEY_DELETE;
-            //}
-            //else if ((input.data >= Common::KEYCODE_F1) && input.data <= Common::KEYCODE_F10)
-            //{
-            //    // SCI_K_F1 == 59 << 8
-            //    // SCI_K_SHIFT_F1 == 84 << 8
-            //    input.character = input.data = SCI_KEY_F1 + ((input.data - Common::KEYCODE_F1) << 8);
-            //    if (modifiers & Common::KBD_SHIFT)
-            //        input.character = input.data + 0x1900;
-            //}
-            //else {
-            //    // Special keys that need conversion
-            //    for (int i = 0; i < ARRAYSIZE(keyMappings); i++)
-            //    {
-            //        if (keyMappings[i].scummVMKey == ev.kbd.keycode)
-            //        {
-            //            input.character = input.data = numlockOn ? keyMappings[i].sciKeyNumlockOn : keyMappings[i].sciKeyNumlockOff;
-            //            break;
-            //        }
-            //    }
-            //}
-
-            //// When Ctrl AND Alt are pressed together with a regular key, Linux will give us control-key, Windows will give
-            ////  us the actual key. My opinion is that windows is right, because under DOS the keys worked the same, anyway
-            ////  we support the other case as well
-            //if ((modifiers & Common::KBD_ALT) && input.character > 0 && input.character < 27)
-            //    input.character += 96; // 0x01 -> 'a'
-
-            //// Scancodify if appropriate
-            //if (modifiers & Common::KBD_ALT)
-            //    input.character = altify(input.character);
-            //if (getSciVersion() <= SCI_VERSION_1_MIDDLE && (modifiers & Common::KBD_CTRL) && input.character > 0 && input.character < 27)
-            //    input.character += 96; // 0x01 -> 'a'
 
             // If no actual key was pressed (e.g. if only a modifier key was pressed),
             // ignore the event
@@ -387,6 +314,11 @@ namespace NScumm.Sci
                 return noEvent;
 
             return input;
+        }
+
+        private void CheckHotRectangles(Point mousePosSci)
+        {
+            throw new NotImplementedException();
         }
 
         public void UpdateScreen()

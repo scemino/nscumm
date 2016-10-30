@@ -49,7 +49,7 @@ namespace NScumm.Sci
             _compression = nCompression;
         }
 
-        public override ResourceErrorCodes Unpack(Stream src, byte[] dest, int nPacked, int nUnpacked)
+        public override ResourceErrorCodes Unpack(Stream src, BytePtr dest, int nPacked, int nUnpacked)
         {
             byte[] buffer = null;
 
@@ -74,7 +74,7 @@ namespace NScumm.Sci
             return ResourceErrorCodes.NONE;
         }
 
-        private void ReorderPic(byte[] src, byte[] dest, int dsize)
+        private void ReorderPic(byte[] src, BytePtr dest, int dsize)
         {
             ushort view_size, view_start, cdata_size;
             int i;
@@ -142,7 +142,7 @@ namespace NScumm.Sci
             DecodeRLE(seeker, new ByteAccess(cdata), writer, view_size);
         }
 
-        private void ReorderView(byte[] src, byte[] dest)
+        private void ReorderView(byte[] src, BytePtr dest)
         {
             var seeker = new ByteAccess(src);
             var writer = new ByteAccess(dest);
@@ -354,7 +354,7 @@ namespace NScumm.Sci
             return size;
         }
 
-        private ResourceErrorCodes UnpackLZW1(Stream src, byte[] dest, int nPacked, int nUnpacked)
+        private ResourceErrorCodes UnpackLZW1(Stream src, BytePtr dest, int nPacked, int nUnpacked)
         {
             Init(src, dest, nPacked, nUnpacked);
 
@@ -445,7 +445,7 @@ namespace NScumm.Sci
             return DwWrote == SzUnpacked ? 0 : ResourceErrorCodes.DECOMPRESSION_ERROR;
         }
 
-        private ResourceErrorCodes UnpackLZW(Stream src, byte[] dest, int nPacked, int nUnpacked)
+        private ResourceErrorCodes UnpackLZW(Stream src, BytePtr dest, int nPacked, int nUnpacked)
         {
             Init(src, dest, nPacked, nUnpacked);
 
@@ -519,7 +519,7 @@ namespace NScumm.Sci
             return DwWrote == SzUnpacked ? 0 : ResourceErrorCodes.DECOMPRESSION_ERROR;
         }
 
-        protected override void Init(Stream src, byte[] dest, int nPacked, int nUnpacked)
+        protected override void Init(Stream src, BytePtr dest, int nPacked, int nUnpacked)
         {
             base.Init(src, dest, nPacked, nUnpacked);
 

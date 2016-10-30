@@ -24,6 +24,7 @@ using NScumm.Core.Audio.Decoders;
 using NScumm.Core.Common;
 using NScumm.Core.Graphics;
 using static NScumm.Core.DebugHelper;
+using NScumm.Core.Image.Codecs;
 
 namespace NScumm.Core.Video
 {
@@ -105,24 +106,32 @@ namespace NScumm.Core.Video
         byte _blitMode;
         byte _bytesPerPixel;
 
+        /// <summary>
+        /// Position of the first frame's data within the stream.
+        /// </summary>
         uint _firstFramePos;
-
-        ///< Position of the first frame's data within the stream.
+        
+        /// /// <summary>
+        /// Size of the video buffers.
+        /// </summary>
         int _videoBufferSize;
 
-        ///< Size of the video buffers.
+        /// <summary>
+        /// Video buffers.
+        /// </summary>
         BytePtr[] _videoBuffer = new BytePtr[3];
 
-        ///< Video buffers.
+        /// <summary>
+        /// Size of the video buffers filled.
+        /// </summary>
         int[] _videoBufferLen = new int[3];
 
-        ///< Size of the video buffers filled.
         Surface[] _8bppSurface = new Surface[3];
 
         ///< Fake 8bpp surfaces over the video buffers.
         bool _externalCodec;
 
-        Image.Codecs.Codec _codec;
+        Codec _codec;
 
         int _subtitle;
 
@@ -158,6 +167,8 @@ namespace NScumm.Core.Video
             }
         }
 
+        public override bool IsVideoLoaded => _stream != null;
+
         public override bool LoadStream(Stream stream)
         {
             Close();
@@ -171,7 +182,7 @@ namespace NScumm.Core.Video
 
             headerLength = br.ReadUInt16();
             handle = br.ReadUInt16();
-            _version = (byte) br.ReadUInt16();
+            _version = (byte)br.ReadUInt16();
 
             // Version checking
             if (headerLength == 50)
@@ -211,7 +222,7 @@ namespace NScumm.Core.Video
 
             _bytesPerPixel = 1;
             if ((_version & 4) != 0)
-                _bytesPerPixel = (byte) (handle + 1);
+                _bytesPerPixel = (byte)(handle + 1);
 
             if (_bytesPerPixel > 3)
             {
@@ -231,7 +242,7 @@ namespace NScumm.Core.Video
             if ((_features & Features.Palette) != 0)
             {
                 for (int i = 0; i < 768; i++)
-                    _palette[i] = (byte) (br.ReadByte() << 2);
+                    _palette[i] = (byte)(br.ReadByte() << 2);
 
                 _paletteDirty = true;
             }
@@ -239,7 +250,7 @@ namespace NScumm.Core.Video
             uint videoBufferSize1 = br.ReadUInt32();
             uint videoBufferSize2 = br.ReadUInt32();
 
-            _videoBufferSize = (int) Math.Max(videoBufferSize1, videoBufferSize2);
+            _videoBufferSize = (int)Math.Max(videoBufferSize1, videoBufferSize2);
 
             if (_hasVideo)
             {
@@ -310,7 +321,7 @@ namespace NScumm.Core.Video
                     {
                         File file = new File();
 
-                        file.offset = (int) (_stream.Position + 20);
+                        file.offset = (int)(_stream.Position + 20);
                         file.size = _frames[i].parts[j].size;
                         file.realSize = br.ReadInt32();
 
@@ -336,7 +347,6 @@ namespace NScumm.Core.Video
             return true;
         }
 
-
         private bool ReadFrameTable(out int numFiles)
         {
             numFiles = 0;
@@ -345,6 +355,7 @@ namespace NScumm.Core.Video
             _frames = new Frame[_frameCount];
             for (ushort i = 0; i < _frameCount; i++)
             {
+                _frames[i] = new Frame();
                 _frames[i].parts = new Part[_partsPerFrame];
                 _stream.Seek(2, SeekOrigin.Current); // Unknown
                 _frames[i].offset = br.ReadInt32();
@@ -357,7 +368,8 @@ namespace NScumm.Core.Video
 
                 for (ushort j = 0; j < _partsPerFrame; j++)
                 {
-                    _frames[i].parts[j].type = (PartType) br.ReadByte();
+                    _frames[i].parts[j] = new Part();
+                    _frames[i].parts[j].type = (PartType)br.ReadByte();
                     _frames[i].parts[j].field_1 = br.ReadByte();
                     _frames[i].parts[j].size = br.ReadInt32();
 
@@ -406,19 +418,18 @@ namespace NScumm.Core.Video
             return true;
         }
 
-
         private bool AssessAudioProperties()
         {
             bool supportedFormat = true;
 
             _features |= Features.Sound;
 
-            _soundStereo = (byte) ((_soundFlags & 0x8000) != 0 ? 1 : ((_soundFlags & 0x200) != 0 ? 2 : 0));
+            _soundStereo = (byte)((_soundFlags & 0x8000) != 0 ? 1 : ((_soundFlags & 0x200) != 0 ? 2 : 0));
 
             if (_soundSliceSize < 0)
             {
                 _soundBytesPerSample = 2;
-                _soundSliceSize = (short) -_soundSliceSize;
+                _soundSliceSize = (short)-_soundSliceSize;
 
                 if ((_soundFlags & 0x10) != 0)
                 {
@@ -476,7 +487,6 @@ namespace NScumm.Core.Video
             return true;
         }
 
-
         private bool AssessVideoProperties()
         {
             _isPaletted = true;
@@ -500,8 +510,8 @@ namespace NScumm.Core.Video
             {
                 int n = (_flags & 0x80) != 0 ? 2 : 3;
 
-                _blitMode = (byte) (_bytesPerPixel - 1);
-                _bytesPerPixel = (byte) n;
+                _blitMode = (byte)(_bytesPerPixel - 1);
+                _bytesPerPixel = (byte)n;
 
                 _isPaletted = false;
             }
@@ -541,29 +551,27 @@ namespace NScumm.Core.Video
 
         private bool OpenExternalCodec()
         {
-            throw new NotImplementedException();
-//            _codec = null;
-//
-//            if (_externalCodec)
-//            {
-//                if (_videoCodec == kVideoCodecIndeo3)
-//                {
-//                    _isPaletted = false;
-//
-//                    _codec = new Image.Indeo3Decoder(_width, _height);
-//
-//                }
-//                else
-//                {
-//                    Warning("VMDDecoder::openExternalCodec(): Unknown video codec FourCC \"{0}\"",
-//                        Tag2str(_videoCodec));
-//                    return false;
-//                }
-//            }
-//
-//            return true;
-        }
+            _codec = null;
 
+            if (_externalCodec)
+            {
+                if (_videoCodec == VideoCodecIndeo3)
+                {
+                    _isPaletted = false;
+
+                    _codec = new Indeo3Decoder(_width, _height);
+
+                }
+                else
+                {
+                    Warning("VMDDecoder::openExternalCodec(): Unknown video codec FourCC \"{0}\"",
+                        Str.Tag2String(_videoCodec));
+                    return false;
+                }
+            }
+
+            return true;
+        }
 
         public override bool ReloadStream(Stream stream)
         {
@@ -644,7 +652,7 @@ namespace NScumm.Core.Video
             var br = new BinaryReader(_stream);
             for (ushort i = 0; i < _partsPerFrame; i++)
             {
-                int pos = (int) _stream.Position;
+                int pos = (int)_stream.Position;
 
                 Part part = _frames[_curFrame].parts[i];
 
@@ -685,7 +693,7 @@ namespace NScumm.Core.Video
 
                         if (_soundEnabled)
                         {
-                            if ((uint) _curFrame < _soundLastFilledFrame)
+                            if ((uint)_curFrame < _soundLastFilledFrame)
                                 EmptySoundSlice(_soundDataSize * _soundBytesPerSample);
 
                             if (_soundStage == SoundStage.Loaded)
@@ -725,7 +733,7 @@ namespace NScumm.Core.Video
                         byte count = br.ReadByte();
 
                         for (int j = 0; j < (count + 1) * 3; j++)
-                            _palette[index * 3 + j] = (byte) (br.ReadByte() << 2);
+                            _palette[index * 3 + j] = (byte)(br.ReadByte() << 2);
 
                         _stream.Seek((255 - count) * 3, SeekOrigin.Current);
 
@@ -779,7 +787,7 @@ namespace NScumm.Core.Video
                     _soundStage = SoundStage.None;
             }
 
-            if (((uint) _curFrame == _frameCount - 1) && (_soundStage == (SoundStage) 2))
+            if (((uint)_curFrame == _frameCount - 1) && (_soundStage == (SoundStage)2))
             {
                 _audioStream.Finish();
                 _soundStage = SoundStage.Finished;
@@ -807,8 +815,8 @@ namespace NScumm.Core.Video
                 if (codecSurf == null)
                     return false;
 
-                rect = new Rect((short) _x, (short) _y, (short) (_x + codecSurf.Width), (short) (_y + codecSurf.Height));
-                rect.Clip(new Rect((short) _x, (short) _y, (short) (_x + _width), (short) (_y + _height)));
+                rect = new Rect((short)_x, (short)_y, (short)(_x + codecSurf.Width), (short)(_y + codecSurf.Height));
+                rect.Clip(new Rect((short)_x, (short)_y, (short)(_x + _width), (short)(_y + _height)));
 
                 RenderBlockWhole(_surface, codecSurf.Pixels, ref rect);
                 return true;
@@ -851,8 +859,8 @@ namespace NScumm.Core.Video
             Surface surface = _surface;
             if (_blitMode == 0)
             {
-                blockRect = new Rect((short) (blockRect.Left + _x), (short) (blockRect.Top + _y),
-                    (short) (blockRect.Right + _x), (short) (blockRect.Bottom + _y));
+                blockRect = new Rect((short)(blockRect.Left + _x), (short)(blockRect.Top + _y),
+                    (short)(blockRect.Right + _x), (short)(blockRect.Bottom + _y));
             }
             else
             {
@@ -880,8 +888,8 @@ namespace NScumm.Core.Video
                 else if (_bytesPerPixel == 3)
                     Blit24(surface, ref blockRect);
 
-                blockRect = new Rect((short) (blockRect.Left + _x), (short) (blockRect.Top + _y),
-                    (short) (blockRect.Right + _x), (short) (blockRect.Bottom + _y));
+                blockRect = new Rect((short)(blockRect.Left + _x), (short)(blockRect.Top + _y),
+                    (short)(blockRect.Right + _x), (short)(blockRect.Bottom + _y));
             }
 
             rect = blockRect;
@@ -895,37 +903,37 @@ namespace NScumm.Core.Video
 
             if (_blitMode == 0)
             {
-                realRect = new Rect((short) (realRect.Left - _x), (short) (realRect.Top - _y),
-                    (short) (realRect.Right - _x), (short) (realRect.Bottom - _y));
+                realRect = new Rect((short)(realRect.Left - _x), (short)(realRect.Top - _y),
+                    (short)(realRect.Right - _x), (short)(realRect.Bottom - _y));
 
-                fakeRect = new Rect((short) (fakeRect.Left - _x), (short) (fakeRect.Top - _y),
-                    (short) (fakeRect.Right - _x), (short) (fakeRect.Bottom - _y));
+                fakeRect = new Rect((short)(fakeRect.Left - _x), (short)(fakeRect.Top - _y),
+                    (short)(fakeRect.Right - _x), (short)(fakeRect.Bottom - _y));
             }
             else if (_blitMode == 1)
             {
-                realRect = new Rect((short) (rect.Left / _bytesPerPixel), rect.Top,
-                    (short) (rect.Right / _bytesPerPixel), rect.Bottom);
+                realRect = new Rect((short)(rect.Left / _bytesPerPixel), rect.Top,
+                    (short)(rect.Right / _bytesPerPixel), rect.Bottom);
 
-                realRect = new Rect((short) (realRect.Left - _x), (short) (realRect.Top - _y),
-                    (short) (realRect.Right - _x), (short) (realRect.Bottom - _y));
+                realRect = new Rect((short)(realRect.Left - _x), (short)(realRect.Top - _y),
+                    (short)(realRect.Right - _x), (short)(realRect.Bottom - _y));
 
-                fakeRect = new Rect((short) (fakeRect.Left - _x * _bytesPerPixel), (short) (fakeRect.Top - _y),
-                    (short) (fakeRect.Right - _x * _bytesPerPixel), (short) (fakeRect.Bottom - _y));
+                fakeRect = new Rect((short)(fakeRect.Left - _x * _bytesPerPixel), (short)(fakeRect.Top - _y),
+                    (short)(fakeRect.Right - _x * _bytesPerPixel), (short)(fakeRect.Bottom - _y));
             }
             else if (_blitMode == 2)
             {
-                fakeRect = new Rect((short) (rect.Left * _bytesPerPixel), rect.Top,
-                    (short) (rect.Right * _bytesPerPixel), rect.Bottom);
+                fakeRect = new Rect((short)(rect.Left * _bytesPerPixel), rect.Top,
+                    (short)(rect.Right * _bytesPerPixel), rect.Bottom);
 
-                realRect = new Rect((short) (realRect.Left - _x), (short) (realRect.Top - _y),
-                    (short) (realRect.Right - _x), (short) (realRect.Bottom - _y));
+                realRect = new Rect((short)(realRect.Left - _x), (short)(realRect.Top - _y),
+                    (short)(realRect.Right - _x), (short)(realRect.Bottom - _y));
 
-                fakeRect = new Rect((short) (fakeRect.Left - _x * _bytesPerPixel), (short) (fakeRect.Top - _y),
-                    (short) (fakeRect.Right - _x * _bytesPerPixel), (short) (fakeRect.Bottom - _y));
+                fakeRect = new Rect((short)(fakeRect.Left - _x * _bytesPerPixel), (short)(fakeRect.Top - _y),
+                    (short)(fakeRect.Right - _x * _bytesPerPixel), (short)(fakeRect.Bottom - _y));
             }
 
-            realRect.Clip(new Rect((short) _surface.Width, (short) _surface.Height));
-            fakeRect.Clip(new Rect((short) (_surface.Width * _bytesPerPixel), (short) _surface.Height));
+            realRect.Clip(new Rect((short)_surface.Width, (short)_surface.Height));
+            fakeRect.Clip(new Rect((short)(_surface.Width * _bytesPerPixel), (short)_surface.Height));
 
             if (!realRect.IsValidRect || realRect.IsEmpty)
                 return false;
@@ -935,14 +943,13 @@ namespace NScumm.Core.Video
             return true;
         }
 
-
         private void Blit16(Surface srcSurf, ref Rect rect)
         {
-            rect = new Rect((short) (rect.Left / 2), rect.Top, (short) (rect.Right / 2), rect.Bottom);
+            rect = new Rect((short)(rect.Left / 2), rect.Top, (short)(rect.Right / 2), rect.Bottom);
 
             Rect srcRect = rect;
 
-            rect.Clip((short) _surface.Width, (short) _surface.Height);
+            rect.Clip((short)_surface.Width, (short)_surface.Height);
 
             PixelFormat pixelFormat = PixelFormat;
 
@@ -961,16 +968,16 @@ namespace NScumm.Core.Video
                 {
                     ushort data = srcRow.ToUInt16();
 
-                    byte r = (byte) (((data & 0x7C00) >> 10) << 3);
-                    byte g = (byte) (((data & 0x03E0) >> 5) << 3);
-                    byte b = (byte) (((data & 0x001F) >> 0) << 3);
+                    byte r = (byte)(((data & 0x7C00) >> 10) << 3);
+                    byte g = (byte)(((data & 0x03E0) >> 5) << 3);
+                    byte b = (byte)(((data & 0x001F) >> 0) << 3);
 
                     int c = pixelFormat.RGBToColor(r, g, b);
                     if ((r == 0) && (g == 0) && (b == 0))
                         c = 0;
 
                     if (_surface.BytesPerPixel == 2)
-                        dstRow.WriteUInt16(0, (ushort) c);
+                        dstRow.WriteUInt16(0, (ushort)c);
                     else if (_surface.BytesPerPixel == 4)
                         dstRow.WriteInt32(0, c);
                 }
@@ -982,11 +989,11 @@ namespace NScumm.Core.Video
 
         private void Blit24(Surface srcSurf, ref Rect rect)
         {
-            rect = new Rect((short) (rect.Left / 3), rect.Top, (short) (rect.Right / 3), rect.Bottom);
+            rect = new Rect((short)(rect.Left / 3), rect.Top, (short)(rect.Right / 3), rect.Bottom);
 
             Rect srcRect = rect;
 
-            rect.Clip((short) _surface.Width, (short) _surface.Height);
+            rect.Clip((short)_surface.Width, (short)_surface.Height);
 
             PixelFormat pixelFormat = PixelFormat;
 
@@ -1012,7 +1019,7 @@ namespace NScumm.Core.Video
                         c = 0;
 
                     if (_surface.BytesPerPixel == 2)
-                        dstRow.WriteUInt16(0, (ushort) c);
+                        dstRow.WriteUInt16(0, (ushort)c);
                     else if (_surface.BytesPerPixel == 4)
                         dstRow.WriteInt32(0, c);
                 }
@@ -1081,7 +1088,7 @@ namespace NScumm.Core.Video
 
         private byte EvaluateMask(int mask, bool[] fillInfo, out byte max)
         {
-            max = (byte) Math.Min(_soundSlicesCount - 1, 31);
+            max = (byte)Math.Min(_soundSlicesCount - 1, 31);
 
             byte n = 0;
             for (var i = 0; i < max; i++)
@@ -1099,7 +1106,6 @@ namespace NScumm.Core.Video
 
             return n;
         }
-
 
         private IAudioStream Create8bitRaw(Stream stream)
         {

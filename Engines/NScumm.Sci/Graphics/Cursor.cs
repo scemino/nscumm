@@ -582,6 +582,9 @@ namespace NScumm.Sci.Graphics
                 {
                     var s = SciEngine.Instance.EngineState;
                     s._cursorWorkaroundActive = true;
+                    // At least on OpenPandora it seems that the cursor is actually set, but a bit afterwards
+                    // touch screen controls will overwrite the position. More information see kGetEvent in kevent.cpp.
+                    s._cursorWorkaroundPosCount = 5; // should be enough for OpenPandora
                     s._cursorWorkaroundPoint = pos;
                     s._cursorWorkaroundRect = new Rect(workaround.rectLeft, workaround.rectTop, workaround.rectRight, workaround.rectBottom);
                     return;

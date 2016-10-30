@@ -55,30 +55,33 @@ namespace NScumm.Sci.Graphics
         kShowStyleMorph = 15
     }
 
+    /// <summary>
+    /// Frameout class, kFrameout and relevant functions for SCI32 games.
+    /// Roughly equivalent to GraphicsMgr in the actual SCI engine.
+    /// </summary>
     internal class GfxFrameout
     {
-        /**
-         * Whether palMorphFrameOut should be used instead of
-         * frameOut for rendering. Used by kMorphOn to
-         * explicitly enable palMorphFrameOut for one frame.
-         */
+        /// <summary>
+        /// Whether palMorphFrameOut should be used instead of
+        /// frameOut for rendering. Used by kMorphOn to
+        /// explicitly enable palMorphFrameOut for one frame.
+        /// </summary>
         public bool _palMorphIsOn;
         public bool _isHiRes;
-        private GfxCoordAdjuster32 _coordAdjuster;
         private GfxPalette32 _palette;
-        private ResourceManager _resMan;
-        private GfxScreen _screen;
         private SegManager _segMan;
-        /**
-         * Optimization to avoid the more expensive object name
-         * comparision on every call to kAddScreenItem and
-         * kRemoveScreenItem.
-         */
+        
+        /// <summary>
+        /// Optimization to avoid the more expensive object name
+        /// comparision on every call to kAddScreenItem and
+        /// kRemoveScreenItem.
+        /// </summary>
         private bool _benchmarkingFinished;
-        /**
-         * Whether or not calls to kFrameOut should be framerate
-         * limited to 60fps.
-         */
+
+        /// <summary>
+        /// Whether or not calls to kFrameOut should be framerate
+        /// limited to 60fps.
+        /// </summary>
         private bool _throttleFrameOut;
 
         private static readonly int[][] dissolveSequences =
@@ -108,11 +111,6 @@ namespace NScumm.Sci.Graphics
          * video throttling.
          */
         private byte _throttleState;
-
-        /**
-         * TODO: Documentation
-         */
-        private sbyte[] _styleRanges = new sbyte[256];
 
         /**
          * The internal display pixel buffer. During frameOut,
@@ -188,24 +186,22 @@ namespace NScumm.Sci.Graphics
          */
         private readonly PlaneList _planes = new PlaneList();
 
-        private Ptr<int> _dissolveSequenceSeeds;
-        private Ptr<short> _defaultDivisions;
-        private Ptr<short> _defaultUnknownC;
-
         private GfxTransitions32 _transitions;
         private GfxCursor32 _cursor = new GfxCursor32();
 
         public Buffer CurrentBuffer => _currentBuffer;
         public PlaneList VisiblePlanes => _visiblePlanes;
 
-        public GfxFrameout(SegManager segMan, GfxTransitions32 transitions, ResourceManager resMan, GfxCoordAdjuster coordAdjuster, GfxScreen screen, GfxPalette32 palette, GfxCursor32 gfxCursor32)
+        public GfxFrameout(SegManager segMan, GfxPalette32 palette, GfxTransitions32 transitions, GfxCursor32 cursor)
         {
+            _isHiRes = GameIsHiRes();
             _palette = palette;
-            _visiblePlanes = new PlaneList();
-            _resMan = resMan;
-            _screen = screen;
+            _cursor = cursor;
             _segMan = segMan;
             _transitions = transitions;
+            _throttleFrameOut = true;
+            _visiblePlanes = new PlaneList();
+
             if (SciEngine.Instance.GameId == SciGameId.PHANTASMAGORIA)
             {
                 _currentBuffer = new Buffer(630, 450, BytePtr.Null);
@@ -218,42 +214,10 @@ namespace NScumm.Sci.Graphics
             {
                 _currentBuffer = new Buffer(320, 200, BytePtr.Null);
             }
-            _currentBuffer = new Buffer(screen.DisplayWidth, screen.DisplayHeight, BytePtr.Null);
-            _screenRect = new Rect((short)screen.DisplayWidth, (short)screen.DisplayHeight);
-            _currentBuffer.SetPixels(new byte[screen.DisplayWidth * screen.DisplayHeight]);
-
-            for (int i = 0; i < 236; i += 2)
-            {
-                _styleRanges[i] = 0;
-                _styleRanges[i + 1] = -1;
-            }
-            for (int i = 236; i < _styleRanges.Length; ++i)
-            {
-                _styleRanges[i] = 0;
-            }
-
-            // TODO: Make hires detection work uniformly across all SCI engine
-            // versions (this flag is normally passed by SCI::MakeGraphicsMgr
-            // to the GraphicsMgr constructor depending upon video configuration,
-            // so should be handled upstream based on game configuration instead
-            // of here)
-            if (ResourceManager.GetSciVersion() >= SciVersion.V2_1_EARLY && _resMan.DetectHires())
-            {
-                _isHiRes = true;
-            }
-
-            if (ResourceManager.GetSciVersion() < SciVersion.V2_1_MIDDLE)
-            {
-                _dissolveSequenceSeeds = dissolveSequences[0];
-                _defaultDivisions = divisionsDefaults[0];
-                _defaultUnknownC = unknownCDefaults[0];
-            }
-            else
-            {
-                _dissolveSequenceSeeds = dissolveSequences[1];
-                _defaultDivisions = divisionsDefaults[1];
-                _defaultUnknownC = unknownCDefaults[1];
-            }
+            _currentBuffer.SetPixels(new byte[_currentBuffer.ScreenWidth * _currentBuffer.ScreenHeight]);
+            _screenRect = new Rect((short)_currentBuffer.ScreenWidth, (short)_currentBuffer.ScreenHeight);
+            // TODO: vs
+            // InitGraphics(_currentBuffer.ScreenWidth, _currentBuffer.ScreenHeight, _isHiRes);
 
             switch (SciEngine.Instance.GameId)
             {
@@ -272,22 +236,30 @@ namespace NScumm.Sci.Graphics
                     // default script width for other games is 320x200
                     break;
             }
-
-            // TODO: Nothing in the renderer really uses this. Currently,
-            // the cursor renderer does, and kLocalToGlobal/kGlobalToLocal
-            // do, but in the real engine (1) the cursor is handled in
-            // frameOut, and (2) functions do a very simple lookup of the
-            // plane and arithmetic with the plane's gameRect. In
-            // principle, CoordAdjuster could be reused for
-            // convertGameRectToPlaneRect, but it is not super clear yet
-            // what the benefit would be to do that.
-            _coordAdjuster = (GfxCoordAdjuster32)coordAdjuster;
-
-            // TODO: Script resolution is hard-coded per game;
-            // also this must be set or else the engine will crash
-            _coordAdjuster.SetScriptsResolution(_currentBuffer.ScriptWidth, _currentBuffer.ScriptHeight);
         }
 
+        public bool GameIsHiRes()
+        {
+            // QFG4 is always low resolution
+            if (SciEngine.Instance.GameId == SciGameId.QFG4)
+            {
+                return false;
+            }
+
+            // GK1 DOS floppy is low resolution only, but GK1 Mac floppy is high
+            // resolution only
+            if (SciEngine.Instance.GameId == SciGameId.GK1 &&
+                !SciEngine.Instance.IsCd &&
+                SciEngine.Instance.Platform != Core.IO.Platform.Macintosh)
+            {
+
+                return false;
+            }
+
+            // All other games are either high resolution by default, or have a
+            // user-defined toggle
+            return ConfigManager.Instance.Get<bool>("enable_high_resolution_graphics");
+        }
 
         public void DeleteScreenItem(ScreenItem screenItem)
         {
@@ -339,7 +311,7 @@ namespace NScumm.Sci.Graphics
 
             if (plane._created != 0)
             {
-                _planes.Remove(plane);
+                _planes.Erase(plane);
             }
             else
             {
@@ -492,7 +464,7 @@ namespace NScumm.Sci.Graphics
             {
                 // NOTE: The original engine calls some `AbortPlane` function that
                 // just ends up doing this anyway so we skip the extra indirection
-                _planes.Remove(plane);
+                _planes.Erase(plane);
             }
             else
             {
@@ -514,11 +486,11 @@ namespace NScumm.Sci.Graphics
 
             // NOTE: The original engine allocated these as static arrays of 100
             // pointers to ScreenItemList / RectList
-            var screenItemLists = new Array<DrawList>();
-            var eraseLists = new Array<RectList>();
+            var screenItemLists = new Array<DrawList>(() => new DrawList());
+            var eraseLists = new Array<RectList>(() => new RectList());
 
-            screenItemLists.Resize(_planes.Count);
-            eraseLists.Resize(_planes.Count);
+            screenItemLists.Resize(_planes.Size);
+            eraseLists.Resize(_planes.Size);
 
             if (SciEngine.Instance._gfxRemap32.RemapCount > 0 && _remapOccurred)
             {
@@ -542,7 +514,7 @@ namespace NScumm.Sci.Graphics
             _remapOccurred = _palette.UpdateForFrame();
             _frameNowVisible = false;
 
-            for (int i = 0; i < _planes.Count; ++i)
+            for (int i = 0; i < _planes.Size; ++i)
             {
                 DrawEraseList(eraseLists[i], _planes[i]);
                 DrawScreenItemList(screenItemLists[i]);
@@ -618,7 +590,7 @@ namespace NScumm.Sci.Graphics
             // inside the next loop in SCI2.1mid
             _frameNowVisible = false;
 
-            for (int i = 0; i < _planes.Count; ++i)
+            for (int i = 0; i < _planes.Size; ++i)
             {
                 DrawEraseList(eraseLists[i], _planes[i]);
                 DrawScreenItemList(screenItemLists[i]);
@@ -725,19 +697,19 @@ namespace NScumm.Sci.Graphics
             byte throttleTime;
             if (_throttleState == 2)
             {
-                throttleTime = 17;
+                throttleTime = 16;
                 _throttleState = 0;
             }
             else
             {
-                throttleTime = 16;
+                throttleTime = 17;
                 ++_throttleState;
             }
 
             SciEngine.Instance.EngineState.SpeedThrottler(throttleTime);
             SciEngine.Instance.EngineState._throttleTrigger = true;
         }
-        
+
         private void AlterVmap(Palette palette1, Palette palette2, sbyte style, sbyte[] styleRanges)
         {
             byte[] clut = new byte[256];
@@ -797,7 +769,6 @@ namespace NScumm.Sci.Graphics
                 }
             }
 
-            // NOTE: This is currBuffer.ptr in SCI engine
             BytePtr pixels = _currentBuffer.Pixels;
 
             for (int pixelIndex = 0, numPixels = _currentBuffer.ScreenWidth * _currentBuffer.ScreenHeight;
@@ -856,7 +827,7 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        void MergeToShowList(Rect drawRect, RectList showList, int overdrawThreshold)
+        private void MergeToShowList(Rect drawRect, RectList showList, int overdrawThreshold)
         {
             RectList mergeList = new RectList();
             mergeList.Add(drawRect);
@@ -934,7 +905,7 @@ namespace NScumm.Sci.Graphics
          * and lower rects.
          */
 
-        int SplitRectsForRender(Rect middleRect, Rect showRect, Rect[] outRects)
+        private int SplitRectsForRender(Rect middleRect, Rect showRect, Rect[] outRects)
         {
             if (!middleRect.Intersects(showRect))
             {
@@ -1043,7 +1014,7 @@ namespace NScumm.Sci.Graphics
                 eraseList.Add(eraseRect);
             }
 
-            var planeCount = _planes.Count;
+            var planeCount = _planes.Size;
             for (var outerPlaneIndex = 0; outerPlaneIndex < planeCount; ++outerPlaneIndex)
             {
                 Plane outerPlane = _planes[outerPlaneIndex];
@@ -1171,7 +1142,7 @@ namespace NScumm.Sci.Graphics
             }
 
             // Some planes may have been deleted, so re-retrieve count
-            planeCount = _planes.Count;
+            planeCount = _planes.Size;
 
             for (var outerIndex = 0; outerIndex < planeCount; ++outerIndex)
             {
@@ -1521,11 +1492,11 @@ namespace NScumm.Sci.Graphics
 
             // NOTE: The original engine allocated these as static arrays of 100
             // pointers to ScreenItemList / RectList
-            var screenItemLists = new Array<DrawList>();
-            var eraseLists = new Array<RectList>();
+            var screenItemLists = new Array<DrawList>(() => new DrawList());
+            var eraseLists = new Array<RectList>(() => new RectList());
 
-            screenItemLists.Resize(_planes.Count);
-            eraseLists.Resize(_planes.Count);
+            screenItemLists.Resize(_planes.Size);
+            eraseLists.Resize(_planes.Size);
 
             if (SciEngine.Instance._gfxRemap32.RemapCount > 0 && _remapOccurred)
             {
@@ -1554,7 +1525,7 @@ namespace NScumm.Sci.Graphics
             // it once.
             _frameNowVisible = false;
 
-            for (var i = 0; i < _planes.Count; ++i)
+            for (var i = 0; i < _planes.Size; ++i)
             {
                 DrawEraseList(eraseLists[i], _planes[i]);
                 DrawScreenItemList(screenItemLists[i]);
@@ -1680,19 +1651,6 @@ namespace NScumm.Sci.Graphics
                     SciEngine.WriteSelectorValue(_segMan, screenItem._object, o => o.y,
                         (ushort)(SciEngine.ReadSelectorValue(_segMan, screenItem._object, o => o.y) + deltaY));
                 }
-            }
-        }
-
-        public void KernelSetPalStyleRange(byte fromColor, byte toColor)
-        {
-            if (toColor > fromColor)
-            {
-                return;
-            }
-
-            for (int i = fromColor; i < toColor; ++i)
-            {
-                _styleRanges[i] = 0;
             }
         }
 

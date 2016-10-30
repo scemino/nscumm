@@ -217,22 +217,22 @@ namespace NScumm.Sci.Graphics
         /// by the Morph show style.
         /// </summary>
         public sbyte[] _styleRanges = new sbyte[256];
-        /**
-	 * Default sequence values for pixel dissolve
-	 * transition bit masks.
-	 */
-        int[] _dissolveSequenceSeeds;
+        /// <summary>
+        /// Default sequence values for pixel dissolve
+        /// transition bit masks.
+        /// </summary>
+        private int[] _dissolveSequenceSeeds;
 
         /// <summary>
         /// The list of PlaneShowStyles that are
         /// currently active.
         /// </summary>
-        List<PlaneShowStyle> _showStyles = new List<PlaneShowStyle>();
+        private List<PlaneShowStyle> _showStyles = new List<PlaneShowStyle>();
 
         /// <summary>
         /// A list of active plane scrolls.
         /// </summary>
-        List<PlaneScroll> _scrolls = new List<PlaneScroll>();
+        private List<PlaneScroll> _scrolls = new List<PlaneScroll>();
 
         private static readonly int[][] dissolveSequences = {
             /* SCI2.1early- */ new int[]{ 3, 6, 12, 20, 48, 96, 184, 272, 576, 1280, 3232, 6912, 13568, 24576, 46080 },
@@ -247,7 +247,7 @@ namespace NScumm.Sci.Graphics
         /// Default values for `PlaneShowStyle::divisions`
 	    /// for the current SCI version.
         /// </summary>
-        short[] _defaultDivisions;
+        private short[] _defaultDivisions;
 
         public bool HasShowStyles { get { return _showStyles.Count > 0; } }
 
@@ -278,24 +278,241 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        private void Throttle()
+        public void ProcessScrolls()
         {
-            byte throttleTime;
-            if (_throttleState == 2)
+            throw new NotImplementedException();
+            //foreach (var it in _scrolls)
+            //{
+            //    bool finished = ProcessScroll(it);
+            //    if (finished)
+            //    {
+            //        it = _scrolls.Remove(it);
+            //    }
+            //    else
+            //    {
+            //        ++it;
+            //    }
+            //}
+
+            //Throttle();
+        }
+
+        // TODO: 10-argument version is only in SCI3; argc checks are currently wrong for this version
+        // and need to be fixed in future
+        public void KernelSetShowStyle(ushort argc, Register planeObj, ShowStyleType type, short seconds, short back, short priority, short animate, short frameOutNow, Register pFadeArray, short divisions, short blackScreen)
+        {
+            bool hasDivisions = false;
+            bool hasFadeArray = false;
+
+            // KQ7 2.0b uses a mismatched version of the Styler script (SCI2.1early script
+            // for SCI2.1mid engine), so the calls it makes to kSetShowStyle are wrong and
+            // put `divisions` where `pFadeArray` is supposed to be
+            if (ResourceManager.GetSciVersion() == SciVersion.V2_1_MIDDLE && SciEngine.Instance.GameId == SciGameId.KQ7)
             {
-                throttleTime = 34;
-                _throttleState = 0;
+                hasDivisions = argc > 7;
+                hasFadeArray = false;
+                divisions = argc > 7 ? pFadeArray.ToInt16() : (short)-1;
+                pFadeArray = Register.NULL_REG;
+            }
+            else if (ResourceManager.GetSciVersion() < SciVersion.V2_1_MIDDLE)
+            {
+                hasDivisions = argc > 7;
+                hasFadeArray = false;
+            }
+            else if (ResourceManager.GetSciVersion() < SciVersion.V3)
+            {
+                hasDivisions = argc > 8;
+                hasFadeArray = argc > 7;
             }
             else
             {
-                throttleTime = 33;
-                ++_throttleState;
+                hasDivisions = argc > 9;
+                hasFadeArray = argc > 8;
             }
 
-            SciEngine.Instance.EngineState.SpeedThrottler(throttleTime);
-            SciEngine.Instance.EngineState._throttleTrigger = true;
+            bool isFadeUp;
+            short color;
+            if (back != -1)
+            {
+                isFadeUp = false;
+                color = back;
+            }
+            else
+            {
+                isFadeUp = true;
+                color = 0;
+            }
+
+            Plane plane = SciEngine.Instance._gfxFrameout.GetPlanes().FindByObject(planeObj);
+            if (plane == null)
+            {
+                Error("Plane {0} is not present in active planes list", planeObj);
+            }
+
+            bool createNewEntry = true;
+            PlaneShowStyle entry = FindShowStyleForPlane(planeObj);
+            if (entry != null)
+            {
+                bool useExisting = true;
+
+                if (ResourceManager.GetSciVersion() < SciVersion.V2_1_MIDDLE)
+                {
+                    useExisting = plane._gameRect.Width == entry.width && plane._gameRect.Height == entry.height;
+                }
+
+                if (useExisting)
+                {
+                    useExisting = entry.divisions == (hasDivisions ? divisions : _defaultDivisions[(int)type]);
+                }
+
+                if (useExisting)
+                {
+                    createNewEntry = false;
+                    isFadeUp = true;
+                    entry.currentStep = 0;
+                }
+                else
+                {
+                    isFadeUp = true;
+                    color = entry.color;
+                    DeleteShowStyle(_showStyles, FindIteratorForPlane(planeObj));
+                    entry = null;
+                }
+            }
+
+            if (type == ShowStyleType.kShowStyleNone)
+            {
+                if (createNewEntry == false)
+                {
+                    DeleteShowStyle(_showStyles, FindIteratorForPlane(planeObj));
+                }
+
+                return;
+            }
+
+            if (createNewEntry)
+            {
+                entry = new PlaneShowStyle();
+                // NOTE: SCI2.1 engine tests if allocation returned a null pointer
+                // but then only avoids setting currentStep if this is so. Since
+                // this is a nonsensical approach, we do not do that here
+                entry.currentStep = 0;
+                entry.processed = false;
+                entry.divisions = hasDivisions ? divisions : _defaultDivisions[(int)type];
+                entry.plane = planeObj;
+                entry.fadeColorRangesCount = 0;
+
+                if (ResourceManager.GetSciVersion() < SciVersion.V2_1_MIDDLE)
+                {
+                    // for pixel dissolve
+                    entry.bitmap = Register.NULL_REG;
+                    entry.bitmapScreenItem = null;
+
+                    // for wipe
+                    Array.Clear(entry.screenItems, 0, entry.screenItems.Length);
+                    entry.width = plane._gameRect.Width;
+                    entry.height = plane._gameRect.Height;
+                }
+                else
+                {
+                    entry.fadeColorRanges = null;
+                    if (hasFadeArray)
+                    {
+                        // NOTE: SCI2.1mid engine does no check to verify that an array is
+                        // successfully retrieved, and SegMan will cause a fatal error
+                        // if we try to use a memory segment that is not an array
+                        SciArray table = _segMan.LookupArray(pFadeArray);
+
+                        int rangeCount = table.Size;
+                        entry.fadeColorRangesCount = (byte)rangeCount;
+
+                        // NOTE: SCI engine code always allocates memory even if the range
+                        // table has no entries, but this does not really make sense, so
+                        // we avoid the allocation call in this case
+                        if (rangeCount > 0)
+                        {
+                            entry.fadeColorRanges = new ushort[rangeCount];
+                            for (var i = 0; i < rangeCount; ++i)
+                            {
+                                entry.fadeColorRanges[i] = (ushort)table.GetAsInt16((ushort)i);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // NOTE: The original engine had no nullptr check and would just crash
+            // if it got to here
+            if (entry == null)
+            {
+                Error("Cannot edit non-existing ShowStyle entry");
+            }
+
+            entry.fadeUp = isFadeUp;
+            entry.color = color;
+            entry.nextTick = SciEngine.Instance.TickCount;
+            entry.type = type;
+            entry.animate = animate != 0;
+            entry.delay = (seconds * 60 + entry.divisions - 1) / entry.divisions;
+
+            if (entry.delay == 0)
+            {
+                Error("ShowStyle has no duration");
+            }
+
+            if (frameOutNow != 0)
+            {
+                // Creates a reference frame for the pixel dissolves to use
+                SciEngine.Instance._gfxFrameout.FrameOut(false);
+            }
+
+            if (createNewEntry)
+            {
+                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1_EARLY)
+                {
+                    switch (entry.type)
+                    {
+                        case ShowStyleType.kShowStyleIrisOut:
+                        case ShowStyleType.kShowStyleIrisIn:
+                            Configure21EarlyIris(entry, priority);
+                            break;
+                        case ShowStyleType.kShowStyleDissolve:
+                            Configure21EarlyDissolve(entry, priority, plane._gameRect);
+                            break;
+                        default:
+                            // do nothing
+                            break;
+                    }
+                }
+
+                _showStyles.Add(entry);
+            }
         }
 
+        /// <summary>
+        /// Sets the range that will be used by
+        /// `GfxFrameout::palMorphFrameOut` to alter
+        /// palette entries.
+        /// </summary>
+        /// <param name="fromColor"></param>
+        /// <param name="toColor"></param>
+        public void KernelSetPalStyleRange(byte fromColor, byte toColor)
+        {
+            if (toColor > fromColor)
+            {
+                return;
+            }
+
+            for (int i = fromColor; i <= toColor; ++i)
+            {
+                _styleRanges[i] = 0;
+            }
+        }
+
+        /// <summary>
+        /// Processes all active show styles in a loop
+        /// until they are finished.
+        /// </summary>
         public void ProcessShowStyles()
         {
             uint now = SciEngine.Instance.TickCount;
@@ -345,6 +562,34 @@ namespace NScumm.Sci.Graphics
                     Throttle();
                 }
             } while (continueProcessing && doFrameOut);
+        }
+
+        /// <summary>
+        /// Processes show styles that are applied
+        /// through `GfxFrameout::palMorphFrameOut`.
+        /// </summary>
+        /// <param name="showStyle"></param>
+        public void ProcessEffects(PlaneShowStyle showStyle)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void Throttle()
+        {
+            byte throttleTime;
+            if (_throttleState == 2)
+            {
+                throttleTime = 34;
+                _throttleState = 0;
+            }
+            else
+            {
+                throttleTime = 33;
+                ++_throttleState;
+            }
+
+            SciEngine.Instance.EngineState.SpeedThrottler(throttleTime);
+            SciEngine.Instance.EngineState._throttleTrigger = true;
         }
 
         private int DeleteShowStyle(List<PlaneShowStyle> showStyles, int index)
@@ -713,11 +958,6 @@ namespace NScumm.Sci.Graphics
             return true;
         }
 
-        public void ProcessEffects(PlaneShowStyle showStyle)
-        {
-            throw new NotImplementedException();
-        }
-
         private bool ProcessPixelDissolve21Early(PlaneShowStyle showStyle)
         {
             bool unchanged = true;
@@ -832,217 +1072,6 @@ namespace NScumm.Sci.Graphics
             }
 
             return false;
-        }
-
-        public void ProcessScrolls()
-        {
-            throw new NotImplementedException();
-            //foreach (var it in _scrolls)
-            //{
-            //    bool finished = ProcessScroll(it);
-            //    if (finished)
-            //    {
-            //        it = _scrolls.Remove(it);
-            //    }
-            //    else
-            //    {
-            //        ++it;
-            //    }
-            //}
-
-            //Throttle();
-        }
-
-        // TODO: 10-argument version is only in SCI3; argc checks are currently wrong for this version
-        // and need to be fixed in future
-        public void KernelSetShowStyle(ushort argc, Register planeObj, ShowStyleType type, short seconds, short back, short priority, short animate, short frameOutNow, Register pFadeArray, short divisions, short blackScreen)
-        {
-            bool hasDivisions = false;
-            bool hasFadeArray = false;
-
-            // KQ7 2.0b uses a mismatched version of the Styler script (SCI2.1early script
-            // for SCI2.1mid engine), so the calls it makes to kSetShowStyle are wrong and
-            // put `divisions` where `pFadeArray` is supposed to be
-            if (ResourceManager.GetSciVersion() == SciVersion.V2_1_MIDDLE && SciEngine.Instance.GameId == SciGameId.KQ7)
-            {
-                hasDivisions = argc > 7;
-                hasFadeArray = false;
-                divisions = argc > 7 ? pFadeArray.ToInt16() : (short)-1;
-                pFadeArray = Register.NULL_REG;
-            }
-            else if (ResourceManager.GetSciVersion() < SciVersion.V2_1_MIDDLE)
-            {
-                hasDivisions = argc > 7;
-                hasFadeArray = false;
-            }
-            else if (ResourceManager.GetSciVersion() < SciVersion.V3)
-            {
-                hasDivisions = argc > 8;
-                hasFadeArray = argc > 7;
-            }
-            else
-            {
-                hasDivisions = argc > 9;
-                hasFadeArray = argc > 8;
-            }
-
-            bool isFadeUp;
-            short color;
-            if (back != -1)
-            {
-                isFadeUp = false;
-                color = back;
-            }
-            else
-            {
-                isFadeUp = true;
-                color = 0;
-            }
-
-            Plane plane = SciEngine.Instance._gfxFrameout.GetPlanes().FindByObject(planeObj);
-            if (plane == null)
-            {
-                Error("Plane {0} is not present in active planes list", planeObj);
-            }
-
-            bool createNewEntry = true;
-            PlaneShowStyle entry = FindShowStyleForPlane(planeObj);
-            if (entry != null)
-            {
-                bool useExisting = true;
-
-                if (ResourceManager.GetSciVersion() < SciVersion.V2_1_MIDDLE)
-                {
-                    useExisting = plane._gameRect.Width == entry.width && plane._gameRect.Height == entry.height;
-                }
-
-                if (useExisting)
-                {
-                    useExisting = entry.divisions == (hasDivisions ? divisions : _defaultDivisions[(int)type]);
-                }
-
-                if (useExisting)
-                {
-                    createNewEntry = false;
-                    isFadeUp = true;
-                    entry.currentStep = 0;
-                }
-                else
-                {
-                    isFadeUp = true;
-                    color = entry.color;
-                    DeleteShowStyle(_showStyles, FindIteratorForPlane(planeObj));
-                    entry = null;
-                }
-            }
-
-            if (type == ShowStyleType.kShowStyleNone)
-            {
-                if (createNewEntry == false)
-                {
-                    DeleteShowStyle(_showStyles, FindIteratorForPlane(planeObj));
-                }
-
-                return;
-            }
-
-            if (createNewEntry)
-            {
-                entry = new PlaneShowStyle();
-                // NOTE: SCI2.1 engine tests if allocation returned a null pointer
-                // but then only avoids setting currentStep if this is so. Since
-                // this is a nonsensical approach, we do not do that here
-                entry.currentStep = 0;
-                entry.processed = false;
-                entry.divisions = hasDivisions ? divisions : _defaultDivisions[(int)type];
-                entry.plane = planeObj;
-                entry.fadeColorRangesCount = 0;
-
-                if (ResourceManager.GetSciVersion() < SciVersion.V2_1_MIDDLE)
-                {
-                    // for pixel dissolve
-                    entry.bitmap = Register.NULL_REG;
-                    entry.bitmapScreenItem = null;
-
-                    // for wipe
-                    Array.Clear(entry.screenItems, 0, entry.screenItems.Length);
-                    entry.width = plane._gameRect.Width;
-                    entry.height = plane._gameRect.Height;
-                }
-                else
-                {
-                    entry.fadeColorRanges = null;
-                    if (hasFadeArray)
-                    {
-                        // NOTE: SCI2.1mid engine does no check to verify that an array is
-                        // successfully retrieved, and SegMan will cause a fatal error
-                        // if we try to use a memory segment that is not an array
-                        SciArray table = _segMan.LookupArray(pFadeArray);
-
-                        int rangeCount = table.Size;
-                        entry.fadeColorRangesCount = (byte)rangeCount;
-
-                        // NOTE: SCI engine code always allocates memory even if the range
-                        // table has no entries, but this does not really make sense, so
-                        // we avoid the allocation call in this case
-                        if (rangeCount > 0)
-                        {
-                            entry.fadeColorRanges = new ushort[rangeCount];
-                            for (var i = 0; i < rangeCount; ++i)
-                            {
-                                entry.fadeColorRanges[i] = (ushort)table.GetAsInt16((ushort)i);
-                            }
-                        }
-                    }
-                }
-            }
-
-            // NOTE: The original engine had no nullptr check and would just crash
-            // if it got to here
-            if (entry == null)
-            {
-                Error("Cannot edit non-existing ShowStyle entry");
-            }
-
-            entry.fadeUp = isFadeUp;
-            entry.color = color;
-            entry.nextTick = SciEngine.Instance.TickCount;
-            entry.type = type;
-            entry.animate = animate != 0;
-            entry.delay = (seconds * 60 + entry.divisions - 1) / entry.divisions;
-
-            if (entry.delay == 0)
-            {
-                Error("ShowStyle has no duration");
-            }
-
-            if (frameOutNow != 0)
-            {
-                // Creates a reference frame for the pixel dissolves to use
-                SciEngine.Instance._gfxFrameout.FrameOut(false);
-            }
-
-            if (createNewEntry)
-            {
-                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1_EARLY)
-                {
-                    switch (entry.type)
-                    {
-                        case ShowStyleType.kShowStyleIrisOut:
-                        case ShowStyleType.kShowStyleIrisIn:
-                            Configure21EarlyIris(entry, priority);
-                            break;
-                        case ShowStyleType.kShowStyleDissolve:
-                            Configure21EarlyDissolve(entry, priority, plane._gameRect);
-                            break;
-                        default:
-                            // do nothing
-                            break;
-                    }
-                }
-
-                _showStyles.Add(entry);
-            }
         }
 
         private void Configure21EarlyDissolve(PlaneShowStyle entry, short priority, Rect _gameRect)

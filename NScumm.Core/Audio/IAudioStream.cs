@@ -53,7 +53,7 @@ namespace NScumm.Core.Audio
     /// Generic audio input stream. Subclasses of this are used to feed arbitrary
     /// sampled audio data into ScummVM's audio mixer.
     /// </summary>
-    public interface IAudioStream: IDisposable
+    public interface IAudioStream : IDisposable
     {
         /// <summary>
         /// Fill the given buffer with up to numSamples samples. Returns the actual
@@ -112,7 +112,7 @@ namespace NScumm.Core.Audio
     /// to its initial state. Note that rewinding itself is not required to
     /// be working when the stream is being played by Mixer!
     /// </summary>
-    public interface IRewindableAudioStream: IAudioStream
+    public interface IRewindableAudioStream : IAudioStream
     {
         /// <summary>
         /// Rewinds the stream to its start.
@@ -146,6 +146,47 @@ namespace NScumm.Core.Audio
         public static bool Seek(this ISeekableAudioStream stream, int where)
         {
             return stream.Seek(new Timestamp(where, stream.Rate));
+        }
+    }
+
+    public class LimitingAudioStream : IAudioStream
+    {
+        private bool _disposeAfterUse;
+        private IAudioStream _parentStream;
+        private int _totalSamples;
+        private int _samplesRead;
+
+        public LimitingAudioStream(IAudioStream parentStream, Timestamp length, bool disposeAfterUse)
+        {
+            _parentStream = parentStream;
+            _disposeAfterUse = disposeAfterUse;
+            _totalSamples = length.ConvertToFramerate(Rate).TotalNumberOfFrames * NumChannels;
+        }
+
+        public bool IsEndOfData => _parentStream.IsEndOfData || ReachedLimit;
+
+        public bool IsEndOfStream => _parentStream.IsEndOfStream || ReachedLimit;
+
+        public bool IsStereo => _parentStream.IsStereo;
+
+        public int Rate => _parentStream.Rate;
+
+        private bool ReachedLimit => _samplesRead >= _totalSamples;
+
+        private int NumChannels => IsStereo ? 2 : 1;
+
+        public void Dispose()
+        {
+            if (_disposeAfterUse)
+                _parentStream.Dispose();
+        }
+
+        public int ReadBuffer(short[] buffer, int numSamples)
+        {
+            // Cap us off so we don't read past _totalSamples
+            int samplesRead = _parentStream.ReadBuffer(buffer, Math.Min(numSamples, _totalSamples - _samplesRead));
+            _samplesRead += samplesRead;
+            return samplesRead;
         }
     }
 }

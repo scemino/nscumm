@@ -199,9 +199,9 @@ namespace NScumm.Sci.Graphics
             LoadPalette(999);
         }
 
-        private bool LoadPalette(int resourceId)
+        public bool LoadPalette(int resourceId)
         {
-            var palResource = _resMan.FindResource(new ResourceId(ResourceType.Palette, (ushort) resourceId), false);
+            var palResource = _resMan.FindResource(new ResourceId(ResourceType.Palette, (ushort)resourceId), false);
 
             if (palResource == null)
             {
@@ -272,7 +272,7 @@ namespace NScumm.Sci.Graphics
 
         private Palette GetPaletteFromResourceInternal(int resourceId)
         {
-            var palResource = _resMan.FindResource(new ResourceId(ResourceType.Palette, (ushort) resourceId), false);
+            var palResource = _resMan.FindResource(new ResourceId(ResourceType.Palette, (ushort)resourceId), false);
 
             if (palResource == null)
             {
@@ -290,12 +290,12 @@ namespace NScumm.Sci.Graphics
 
             if (fromColor > -1)
             {
-                _varyFromColor = (byte) fromColor;
+                _varyFromColor = (byte)fromColor;
             }
             if (toColor > -1)
             {
                 System.Diagnostics.Debug.Assert(toColor < 256);
-                _varyToColor = (byte) toColor;
+                _varyToColor = (byte)toColor;
             }
         }
 
@@ -346,11 +346,11 @@ namespace NScumm.Sci.Graphics
             // actually be executed
             if (fromColor > -1)
             {
-                _varyFromColor = (byte) fromColor;
+                _varyFromColor = (byte)fromColor;
             }
             if (fromColorAlternate > -1)
             {
-                _varyFromColor = (byte) fromColorAlternate;
+                _varyFromColor = (byte)fromColorAlternate;
             }
         }
 
@@ -519,9 +519,9 @@ namespace NScumm.Sci.Graphics
 
         private void ApplyVary()
         {
-            while (SciEngine.Instance.TickCount - _varyLastTick > (uint) _varyTime && _varyDirection != 0)
+            while (SciEngine.Instance.TickCount - _varyLastTick > (uint)_varyTime && _varyDirection != 0)
             {
-                _varyLastTick = (uint) (_varyLastTick + _varyTime);
+                _varyLastTick = (uint)(_varyLastTick + _varyTime);
 
                 if (_varyPercent == _varyTargetPercent)
                 {
@@ -567,11 +567,11 @@ namespace NScumm.Sci.Graphics
 
                         int color;
                         color = targetColor.R - sourceColor.R;
-                        computedColor.R = (byte) ((color * _varyPercent / 100) + sourceColor.R);
+                        computedColor.R = (byte)((color * _varyPercent / 100) + sourceColor.R);
                         color = targetColor.G - sourceColor.G;
-                        computedColor.G = (byte) (((color * _varyPercent) / 100) + sourceColor.G);
+                        computedColor.G = (byte)(((color * _varyPercent) / 100) + sourceColor.G);
                         color = targetColor.B - sourceColor.B;
-                        computedColor.B = (byte) (((color * _varyPercent) / 100) + sourceColor.B);
+                        computedColor.B = (byte)(((color * _varyPercent) / 100) + sourceColor.B);
                         computedColor.used = sourceColor.used;
 
                         _nextPalette.colors[i] = computedColor;
@@ -602,7 +602,7 @@ namespace NScumm.Sci.Graphics
                     while (cycler.delay + cycler.lastUpdateTick < SciEngine.Instance.TickCount)
                     {
                         DoCycleInternal(cycler, 1);
-                        cycler.lastUpdateTick = (uint) (cycler.lastUpdateTick + cycler.delay);
+                        cycler.lastUpdateTick = (uint)(cycler.lastUpdateTick + cycler.delay);
                     }
                 }
 
@@ -623,9 +623,9 @@ namespace NScumm.Sci.Graphics
 
                 Color color = _nextPalette.colors[i];
 
-                color.R = (byte) Math.Min(255, color.R * _fadeTable[i] / 100);
-                color.G = (byte) Math.Min(255, color.G * _fadeTable[i] / 100);
-                color.B = (byte) Math.Min(255, color.B * _fadeTable[i] / 100);
+                color.R = (byte)Math.Min(255, color.R * _fadeTable[i] / 100);
+                color.G = (byte)Math.Min(255, color.G * _fadeTable[i] / 100);
+                color.B = (byte)Math.Min(255, color.B * _fadeTable[i] / 100);
             }
         }
 
@@ -636,14 +636,14 @@ namespace NScumm.Sci.Graphics
 
             if (cycler.direction == 0)
             {
-                currentCycle = (short) ((currentCycle - (speed % numColorsToCycle)) + numColorsToCycle);
+                currentCycle = (short)((currentCycle - (speed % numColorsToCycle)) + numColorsToCycle);
             }
             else
             {
-                currentCycle = (short) (currentCycle + speed);
+                currentCycle = (short)(currentCycle + speed);
             }
 
-            cycler.currentCycle = (byte) (currentCycle % numColorsToCycle);
+            cycler.currentCycle = (byte)(currentCycle % numColorsToCycle);
         }
 
         public void SetCycle(ushort fromColor, ushort toColor, short direction, ushort delay)
@@ -694,12 +694,12 @@ namespace NScumm.Sci.Graphics
                 ClearCycleMap(cycler.fromColor, cycler.numColorsToCycle);
             }
 
-            ushort numColorsToCycle = (ushort) (1 + ((byte) toColor) - fromColor);
-            cycler.fromColor = (byte) fromColor;
-            cycler.numColorsToCycle = (byte) numColorsToCycle;
-            cycler.currentCycle = (byte) fromColor;
+            ushort numColorsToCycle = (ushort)(1 + ((byte)toColor) - fromColor);
+            cycler.fromColor = (byte)fromColor;
+            cycler.numColorsToCycle = (byte)numColorsToCycle;
+            cycler.currentCycle = (byte)fromColor;
             cycler.direction = direction < 0 ? PalCyclerDirection.PalCycleBackward : PalCyclerDirection.PalCycleForward;
-            cycler.delay = (short) delay;
+            cycler.delay = (short)delay;
             cycler.lastUpdateTick = SciEngine.Instance.TickCount;
             cycler.numTimesPaused = 0;
 
@@ -853,7 +853,7 @@ namespace NScumm.Sci.Graphics
                 PalCycler cycler = _cyclers[cyclerIndex];
                 if (cycler != null)
                 {
-                    cycler.currentCycle = (byte) ((cycler.currentCycle + 1) % cycler.numColorsToCycle);
+                    cycler.currentCycle = (byte)((cycler.currentCycle + 1) % cycler.numColorsToCycle);
                     // Disassembly was not fully evaluated to verify this is exactly the same
                     // as the code from applyCycles, but it appeared to be at a glance
                     for (int j = 0; j < cycler.numColorsToCycle; j++)
@@ -863,6 +863,41 @@ namespace NScumm.Sci.Graphics
                     }
                 }
             }
+        }
+
+        public short MatchColor(byte r, byte g, byte b)
+        {
+            short bestIndex = 0;
+            int bestDifference = 0xFFFFF;
+            int difference;
+
+            for (int i = 0, channelDifference; i < SciEngine.Instance._gfxRemap32.StartColor; ++i)
+            {
+                difference = _currentPalette.colors[i].R - r;
+                difference *= difference;
+                if (bestDifference <= difference)
+                {
+                    continue;
+                }
+
+                channelDifference = _currentPalette.colors[i].G - g;
+                difference += channelDifference * channelDifference;
+                if (bestDifference <= difference)
+                {
+                    continue;
+                }
+
+                channelDifference = _currentPalette.colors[i].B - b;
+                difference += channelDifference * channelDifference;
+                if (bestDifference <= difference)
+                {
+                    continue;
+                }
+                bestDifference = difference;
+                bestIndex = (short)i;
+            }
+
+            return bestIndex;
         }
     }
 }

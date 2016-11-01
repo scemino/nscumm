@@ -35,7 +35,7 @@ namespace NScumm.Sci.Engine
         Invalid = 5
     }
 
-    internal class SciArray
+    internal class SciArray : IDisposable
     {
         public SciArray()
         {
@@ -240,12 +240,11 @@ namespace NScumm.Sci.Engine
             switch (_type)
             {
                 case SciArrayType.Int16:
-                    return Register.Make(0, (ushort)_data.ToInt16(2 * index));
+                case SciArrayType.ID:
+                    return new RegisterBytePtr(_data)[index];
                 case SciArrayType.Byte:
                 case SciArrayType.String:
                     return Register.Make(0, _data[index]);
-                case SciArrayType.ID:
-                    return new RegisterBytePtr(_data)[index];
                 default:
                     Error("Invalid array type {0}", _type);
                     return Register.NULL_REG;
@@ -271,14 +270,12 @@ namespace NScumm.Sci.Engine
             switch (_type)
             {
                 case SciArrayType.Int16:
-                    _data.WriteInt16(index * 2, value.ToInt16());
+                case SciArrayType.ID:
+                    new RegisterBytePtr(_data)[index] = value;
                     break;
                 case SciArrayType.Byte:
                 case SciArrayType.String:
                     _data[index] = (byte)value.ToInt16();
-                    break;
-                case SciArrayType.ID:
-                    new RegisterBytePtr(_data)[index] = value;
                     break;
                 default:
                     Error("Invalid array type {0}", _type);
@@ -342,7 +339,7 @@ namespace NScumm.Sci.Engine
             return value.ToInt16();
         }
 
-        public virtual void Destroy()
+        public void Dispose()
         {
             _data = null;
             _type = SciArrayType.Invalid;
@@ -444,12 +441,6 @@ namespace NScumm.Sci.Engine
     {
         public ArrayTable() : base(SegmentType.ARRAY)
         {
-        }
-
-        public override void FreeAtAddress(SegManager segMan, Register subAddr)
-        {
-            this[(int)subAddr.Offset].Destroy();
-            FreeEntry((int)subAddr.Offset);
         }
 
         public override List<Register> ListAllOutgoingReferences(Register addr)

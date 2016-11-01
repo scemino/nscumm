@@ -22,7 +22,6 @@ using System.Linq;
 using NScumm.Core.Input;
 using NScumm.Core;
 using NScumm.Sci.Graphics;
-using System;
 
 namespace NScumm.Sci
 {
@@ -35,6 +34,10 @@ namespace NScumm.Sci
         public const int SCI_EVENT_KEYBOARD = 1 << 2;
         public const int SCI_EVENT_DIRECTION = (1 << 6);
         public const int SCI_EVENT_SAID = (1 << 7);
+#if ENABLE_SCI32
+        public const int SCI_EVENT_HOT_RECTANGLE = (1 << 8);
+#endif
+
         /*Fake values for other events*/
         public const int SCI_EVENT_QUIT = (1 << 11);
         public const int SCI_EVENT_PEEK = (1 << 15);
@@ -316,9 +319,33 @@ namespace NScumm.Sci
             return input;
         }
 
-        private void CheckHotRectangles(Point mousePosSci)
+        private void CheckHotRectangles(Point mousePosition)
         {
-            throw new NotImplementedException();
+            int lastActiveRectIndex = _activeRectIndex;
+            _activeRectIndex = -1;
+
+            for (short i = 0; i < (short)_hotRects.Length; ++i)
+            {
+                if (_hotRects[i].Contains(mousePosition))
+                {
+                    _activeRectIndex = i;
+                    if (i != lastActiveRectIndex)
+                    {
+                        var hotRectEvent = new SciEvent(SciEvent.SCI_EVENT_HOT_RECTANGLE, 0, 0, new Point(), new Point(), i);
+                        _events.Insert(0, hotRectEvent);
+                        break;
+                    }
+
+                    lastActiveRectIndex = _activeRectIndex;
+                }
+            }
+
+            if (lastActiveRectIndex != _activeRectIndex && lastActiveRectIndex != -1)
+            {
+                _activeRectIndex = -1;
+                var hotRectEvent = new SciEvent(SciEvent.SCI_EVENT_HOT_RECTANGLE, 0, 0, new Point(), new Point(), -1);
+                _events.Insert(0, hotRectEvent);
+            }
         }
 
         public void UpdateScreen()
@@ -342,7 +369,7 @@ namespace NScumm.Sci
 
         private bool _hotRectanglesActive;
         private Rect[] _hotRects;
-        private int _activeRectIndex;
+        private short _activeRectIndex;
 
         public void SetHotRectanglesActive(bool active)
         {

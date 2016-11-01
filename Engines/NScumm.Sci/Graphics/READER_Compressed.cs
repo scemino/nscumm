@@ -33,7 +33,7 @@ namespace NScumm.Sci.Graphics
         private readonly uint _uncompressedDataOffset;
         private short _y;
         private readonly short _sourceHeight;
-        private readonly byte _transparentColor;
+        private readonly byte _skipColor;
         private readonly short _maxWidth;
 
         public READER_Compressed(CelObj celObj, short maxWidth)
@@ -41,7 +41,7 @@ namespace NScumm.Sci.Graphics
             _resource = celObj.GetResPointer();
             _y = -1;
             _sourceHeight = (short) celObj._height;
-            _transparentColor = celObj._transparentColor;
+            _skipColor = celObj._skipColor;
             _maxWidth = maxWidth;
             Debug.Assert(maxWidth <= celObj._width);
 
@@ -84,7 +84,7 @@ namespace NScumm.Sci.Graphics
                     // Fill with skip color
                     if ((controlByte & 0x40) != 0)
                     {
-                        _buffer.Set(i, _transparentColor, length);
+                        _buffer.Set(i, _skipColor, length);
                         // Next value is fill color
                     }
                     else

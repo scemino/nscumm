@@ -43,6 +43,14 @@ namespace NScumm.Core
             return ServiceLocator.FileStorage.OpenFileRead(path);
         }
 
+        public static bool FileExists(string filename)
+        {
+            var dir = ServiceLocator.FileStorage.GetDirectoryName(Instance.Settings.Game.Path);
+            var path = ScummHelper.LocatePath(dir, filename);
+            if (path == null) return false;
+            return true;
+        }
+
         public static IEnumerable<string> EnumerateFiles(string pattern)
         {
             var files = ServiceLocator.FileStorage.EnumerateFiles(

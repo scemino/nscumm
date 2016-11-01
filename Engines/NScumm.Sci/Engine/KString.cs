@@ -922,7 +922,7 @@ namespace NScumm.Sci.Engine
                     {
                         value = segMan.GetString(arg);
                     }
-                    return string.Format(fmt, value);
+                    return value;
                 }
                 else
                 {
@@ -976,18 +976,16 @@ namespace NScumm.Sci.Engine
             return Register.NULL_REG;
         }
 
-        // Possibly kStringTranslate?
-        private static Register kStringTrn(EngineState s, int argc, StackPtr argv)
+        private static Register kStringReplaceSubstring(EngineState s, int argc, StackPtr argv)
         {
-            Warning("kStringTrn (argc = {0})", argc);
-            return Register.NULL_REG;
+            Error("TODO: kStringReplaceSubstring not implemented");
+            return argv[3];
         }
 
-        // Possibly kStringTranslateExclude?
-        private static Register kStringTrnExclude(EngineState s, int argc, StackPtr argv)
+        private static Register kStringReplaceSubstringEx(EngineState s, int argc, StackPtr argv)
         {
-            Warning("kStringTrnExclude (argc = {0})", argc);
-            return Register.NULL_REG;
+            Error("TODO: kStringReplaceSubstringEx not implemented");
+            return argv[3];
         }
 #endif
     }

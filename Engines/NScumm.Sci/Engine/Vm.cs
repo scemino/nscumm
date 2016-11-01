@@ -207,7 +207,7 @@ namespace NScumm.Sci.Engine
         public override bool Equals(object obj)
         {
             if (!(obj is StackPtr)) return false;
-            return Equals((StackPtr) obj);
+            return Equals((StackPtr)obj);
         }
 
         public bool Equals(StackPtr other)
@@ -227,7 +227,7 @@ namespace NScumm.Sci.Engine
 
         int IComparable.CompareTo(object obj)
         {
-            var other = (StackPtr) obj;
+            var other = (StackPtr)obj;
             return CompareTo(other);
         }
 
@@ -243,7 +243,7 @@ namespace NScumm.Sci.Engine
 
         public void SetSegment(int index, ushort segment)
         {
-            _entries[_index + index] = Register.Make(segment, (ushort) _entries[_index + index].Offset);
+            _entries[_index + index] = Register.Make(segment, (ushort)_entries[_index + index].Offset);
         }
 
         public void SetOffset(int index, ushort offset)
@@ -301,11 +301,11 @@ namespace NScumm.Sci.Engine
             fp = sp = sp_;
             argc = argc_;
             variables_argp = argp_;
-            variables_argp[0] = Register.Make(0, (ushort) argc); // The first argument is argc
+            variables_argp[0] = Register.Make(0, (ushort)argc); // The first argument is argc
             if (localsSegment_ != 0xFFFF)
                 local_segment = localsSegment_;
             else
-                local_segment = (ushort) pc_.Segment;
+                local_segment = (ushort)pc_.Segment;
             debugSelector = debugSelector_;
             debugExportId = debugExportId_;
             debugLocalCallOffset = debugLocalCallOffset_;
@@ -525,7 +525,7 @@ namespace NScumm.Sci.Engine
                     stackType = ExecStackType.CALL;
                     curSP = sp;
                     // TODO: Will this offset suffice for large SCI3 scripts?
-                    curFP = Register32.Make(funcp.Segment, (ushort) funcp.Offset);
+                    curFP = Register32.Make(funcp.Segment, (ushort)funcp.Offset);
                     sp = CALL_SP_CARRY; // Destroy sp, as it will be carried over
                 }
 
@@ -604,7 +604,7 @@ namespace NScumm.Sci.Engine
 
                 if (s._executionStackPosChanged)
                 {
-                    scr = s._segMan.GetScriptIfLoaded((ushort) s.xs.pc.Segment);
+                    scr = s._segMan.GetScriptIfLoaded((ushort)s.xs.pc.Segment);
                     if (scr == null)
                         throw new InvalidOperationException($"No script in segment {s.xs.pc.Segment}");
                     s.xs = s._executionStack.Last();
@@ -654,7 +654,7 @@ namespace NScumm.Sci.Engine
                 // Get opcode
                 byte extOpcode;
                 s.xs.pc.IncOffset(ReadPMachineInstruction(scr.GetBuf(s.xs.pc.Offset), out extOpcode, opparams));
-                byte opcode = (byte) (extOpcode >> 1);
+                byte opcode = (byte)(extOpcode >> 1);
 #if DEBUG
                 //var method = s.xs.debugSelector != -1 ? SciEngine.Instance.Kernel.GetSelectorName(s.xs.debugSelector) : "N/A";
                 //Debug($"{opcodeNames[opcode]}: {opparams[0]}, {opparams[1]}, {opparams[2]}, {opparams[3]}, acc = {s.r_acc}, script {scr.ScriptNumber}, local script {local_script.ScriptNumber}");
@@ -681,7 +681,7 @@ namespace NScumm.Sci.Engine
                 {
                     case op_bnot: // 0x00 (00)
                         // Binary not
-                        s.r_acc = Register.Make(0, (ushort) (0xffff ^ s.r_acc.RequireUInt16()));
+                        s.r_acc = Register.Make(0, (ushort)(0xffff ^ s.r_acc.RequireUInt16()));
                         break;
 
                     case op_add: // 0x01 (01)
@@ -729,7 +729,7 @@ namespace NScumm.Sci.Engine
                         break;
 
                     case op_neg: // 0x0b (11)
-                        s.r_acc = Register.Make(0, (ushort) (-s.r_acc.RequireInt16()));
+                        s.r_acc = Register.Make(0, (ushort)(-s.r_acc.RequireInt16()));
                         break;
 
                     case op_not: // 0x0c (12)
@@ -823,7 +823,7 @@ namespace NScumm.Sci.Engine
 
                     case op_ldi: // 0x1a (26)
                         // Load data immediate
-                        s.r_acc = Register.Make(0, (ushort) opparams[0]);
+                        s.r_acc = Register.Make(0, (ushort)opparams[0]);
                         break;
 
                     case op_push: // 0x1b (27)
@@ -857,71 +857,71 @@ namespace NScumm.Sci.Engine
                         break;
 
                     case op_call:
-                    {
-                        // 0x20 (32)
-                        // Call a script subroutine
-                        int argc = (opparams[1] >> 1) // Given as offset, but we need count
-                                   + 1 + s.r_rest;
-                        StackPtr call_base = s.xs.sp - argc;
-                        s.xs.sp[1] = Register.IncOffset(s.xs.sp[1], s.r_rest);
-
-                        int localCallOffset = s.xs.pc.Offset + opparams[0];
-
-                        ExecStack xstack = new ExecStack(s.xs.objp, s.xs.objp, s.xs.sp,
-                            (call_base[0].RequireUInt16()) + s.r_rest, call_base,
-                            s.xs.local_segment, Register32.Make(s.xs.pc.Segment, localCallOffset),
-                            -1, -1, localCallOffset, s._executionStack.Count - 1,
-                            ExecStackType.CALL);
-
-                        s._executionStack.Add(xstack);
-                        xs_new = s._executionStack.Last();
-
-                        s.r_rest = 0; // Used up the &rest adjustment
-                        s.xs.sp = call_base;
-
-                        s._executionStackPosChanged = true;
-                        break;
-                    }
-
-                    case op_callk:
-                    {
-                        // 0x21 (33)
-                        // Run the garbage collector, if needed
-                        if (s.gcCountDown-- <= 0)
                         {
-                            s.gcCountDown = s.scriptGCInterval;
-                            Gc.Run(s);
+                            // 0x20 (32)
+                            // Call a script subroutine
+                            int argc = (opparams[1] >> 1) // Given as offset, but we need count
+                                       + 1 + s.r_rest;
+                            StackPtr call_base = s.xs.sp - argc;
+                            s.xs.sp[1] = Register.IncOffset(s.xs.sp[1], s.r_rest);
+
+                            int localCallOffset = s.xs.pc.Offset + opparams[0];
+
+                            ExecStack xstack = new ExecStack(s.xs.objp, s.xs.objp, s.xs.sp,
+                                (call_base[0].RequireUInt16()) + s.r_rest, call_base,
+                                s.xs.local_segment, Register32.Make(s.xs.pc.Segment, localCallOffset),
+                                -1, -1, localCallOffset, s._executionStack.Count - 1,
+                                ExecStackType.CALL);
+
+                            s._executionStack.Add(xstack);
+                            xs_new = s._executionStack.Last();
+
+                            s.r_rest = 0; // Used up the &rest adjustment
+                            s.xs.sp = call_base;
+
+                            s._executionStackPosChanged = true;
+                            break;
                         }
 
-                        // Call kernel function
-                        s.xs.sp -= (opparams[1] >> 1) + 1;
+                    case op_callk:
+                        {
+                            // 0x21 (33)
+                            // Run the garbage collector, if needed
+                            if (s.gcCountDown-- <= 0)
+                            {
+                                s.gcCountDown = s.scriptGCInterval;
+                                Gc.Run(s);
+                            }
 
-                        bool oldScriptHeader = ResourceManager.GetSciVersion() == SciVersion.V0_EARLY;
-                        if (!oldScriptHeader)
-                            s.xs.sp -= s.r_rest;
+                            // Call kernel function
+                            s.xs.sp -= (opparams[1] >> 1) + 1;
 
-                        int argc = s.xs.sp[0].RequireUInt16();
+                            bool oldScriptHeader = ResourceManager.GetSciVersion() == SciVersion.V0_EARLY;
+                            if (!oldScriptHeader)
+                                s.xs.sp -= s.r_rest;
 
-                        if (!oldScriptHeader)
-                            argc += s.r_rest;
+                            int argc = s.xs.sp[0].RequireUInt16();
 
-                        CallKernelFunc(s, opparams[0], argc);
+                            if (!oldScriptHeader)
+                                argc += s.r_rest;
 
-                        if (!oldScriptHeader)
-                            s.r_rest = 0;
+                            CallKernelFunc(s, opparams[0], argc);
 
-                        // Calculate xs again: The kernel function might
-                        // have spawned a new VM
+                            if (!oldScriptHeader)
+                                s.r_rest = 0;
 
-                        xs_new = s._executionStack.Last();
-                        s._executionStackPosChanged = true;
+                            // Calculate xs again: The kernel function might
+                            // have spawned a new VM
 
-                        // If a game is being loaded, stop processing
-                        if (s.abortScriptProcessing != AbortGameState.None)
-                            return; // Stop processing
+                            xs_new = s._executionStack.Last();
+                            s._executionStackPosChanged = true;
 
-                        break;
-                    }
+                            // If a game is being loaded, stop processing
+                            if (s.abortScriptProcessing != AbortGameState.None)
+                                return; // Stop processing
+
+                            break;
+                        }
 
                     case op_callb: // 0x22 (34)
                         // Call base script
@@ -930,8 +930,8 @@ namespace NScumm.Sci.Engine
                         s.xs.sp -= temp;
 
                         s.xs.sp.IncOffset(0, s.r_rest);
-                        xs_new = execute_method(s, 0, (ushort) opparams[0], s_temp, s.xs.objp,
-                            (ushort) s.xs.sp[0].Offset, s.xs.sp);
+                        xs_new = execute_method(s, 0, (ushort)opparams[0], s_temp, s.xs.objp,
+                            (ushort)s.xs.sp[0].Offset, s.xs.sp);
                         s.r_rest = 0; // Used up the &rest adjustment
                         if (xs_new != null) // in case of error, keep old stack
                             s._executionStackPosChanged = true;
@@ -944,8 +944,8 @@ namespace NScumm.Sci.Engine
                         s.xs.sp -= temp;
 
                         s.xs.sp.IncOffset(0, s.r_rest);
-                        xs_new = execute_method(s, (ushort) opparams[0], (ushort) opparams[1], s_temp, s.xs.objp,
-                            (ushort) s.xs.sp[0].Offset, s.xs.sp);
+                        xs_new = execute_method(s, (ushort)opparams[0], (ushort)opparams[1], s_temp, s.xs.objp,
+                            (ushort)s.xs.sp[0].Offset, s.xs.sp);
                         s.r_rest = 0; // Used up the &rest adjustment
                         if (xs_new != null) // in case of error, keep old stack
                             s._executionStackPosChanged = true;
@@ -1003,7 +1003,7 @@ namespace NScumm.Sci.Engine
 
                         s.xs.sp.IncOffset(1, s.r_rest);
                         xs_new = SendSelector(s, s.r_acc, s.r_acc, s_temp,
-                            (opparams[0] >> 1) + (ushort) s.r_rest, s.xs.sp);
+                            (opparams[0] >> 1) + (ushort)s.r_rest, s.xs.sp);
 
                         if (xs_new != null && xs_new != s.xs)
                             s._executionStackPosChanged = true;
@@ -1035,8 +1035,8 @@ namespace NScumm.Sci.Engine
 
                     case op_class: // 0x28 (40)
                         // Get class address
-                        s.r_acc = s._segMan.GetClassAddress((ushort) opparams[0], ScriptLoadType.LOCK,
-                            (ushort) s.xs.pc.Segment);
+                        s.r_acc = s._segMan.GetClassAddress((ushort)opparams[0], ScriptLoadType.LOCK,
+                            (ushort)s.xs.pc.Segment);
                         break;
 
                     case 0x29: // (41)
@@ -1049,7 +1049,7 @@ namespace NScumm.Sci.Engine
 
                         s.xs.sp.IncOffset(1, s.r_rest);
                         xs_new = SendSelector(s, s.xs.objp, s.xs.objp,
-                            s_temp, (opparams[0] >> 1) + (ushort) s.r_rest,
+                            s_temp, (opparams[0] >> 1) + (ushort)s.r_rest,
                             s.xs.sp);
 
                         if (xs_new != null && xs_new != s.xs)
@@ -1060,8 +1060,8 @@ namespace NScumm.Sci.Engine
 
                     case op_super: // 0x2b (43)
                         // Send to any class
-                        r_temp = s._segMan.GetClassAddress((ushort) opparams[0], ScriptLoadType.LOAD,
-                            (ushort) s.xs.pc.Segment);
+                        r_temp = s._segMan.GetClassAddress((ushort)opparams[0], ScriptLoadType.LOAD,
+                            (ushort)s.xs.pc.Segment);
 
                         if (!r_temp.IsPointer)
                             throw new InvalidOperationException("[VM]: Invalid superclass in object");
@@ -1070,7 +1070,7 @@ namespace NScumm.Sci.Engine
 
                         s.xs.sp.IncOffset(1, s.r_rest);
                         xs_new = SendSelector(s, r_temp, s.xs.objp, s_temp,
-                            (opparams[1] >> 1) + (ushort) s.r_rest,
+                            (opparams[1] >> 1) + (ushort)s.r_rest,
                             s.xs.sp);
 
                         if (xs_new != null && xs_new != s.xs)
@@ -1082,8 +1082,8 @@ namespace NScumm.Sci.Engine
 
                     case op_rest: // 0x2c (44)
                         // Pushes all or part of the parameter variable list on the stack
-                        temp = (ushort) opparams[0]; // First argument
-                        s.r_rest = (short) Math.Max(s.xs.argc - temp + 1, 0);
+                        temp = (ushort)opparams[0]; // First argument
+                        s.r_rest = (short)Math.Max(s.xs.argc - temp + 1, 0);
                         // +1 because temp counts the paramcount while argc doesn't
 
                         for (; temp <= s.xs.argc; temp++)
@@ -1093,18 +1093,18 @@ namespace NScumm.Sci.Engine
 
                     case op_lea: // 0x2d (45)
                         // Load Effective Address
-                        temp = (ushort) opparams[0] >> 1;
+                        temp = (ushort)opparams[0] >> 1;
                         var_number = temp & 0x03; // Get variable type
 
                         // Get variable block offset
-                        r_temp = Register.Make((ushort) s.variablesSegment[var_number],
-                            (ushort) (s.variables[var_number] - s.variablesBase[var_number]));
+                        r_temp = Register.Make((ushort)s.variablesSegment[var_number],
+                            (ushort)(s.variables[var_number] - s.variablesBase[var_number]));
 
                         if ((temp & 0x08) != 0) // Add accumulator offset if requested
                             r_temp = Register.IncOffset(r_temp, s.r_acc.RequireInt16());
 
                         r_temp = Register.IncOffset(r_temp, opparams[1]); // Add index
-                        r_temp = Register.Make(r_temp.Segment, (ushort) (r_temp.Offset * 2)); // variables are 16 bit
+                        r_temp = Register.Make(r_temp.Segment, (ushort)(r_temp.Offset * 2)); // variables are 16 bit
                         // That's the immediate address now
                         s.r_acc = r_temp;
                         break;
@@ -1130,14 +1130,14 @@ namespace NScumm.Sci.Engine
                         break;
 
                     case op_aTop: // 0x32 (50)
-                        // Accumulator To Property
-                    {
-                        var prop = validate_property(s, obj, opparams[0]);
-                        prop[0] = s.r_acc;
+                                  // Accumulator To Property
+                        {
+                            var prop = validate_property(s, obj, opparams[0]);
+                            prop[0] = s.r_acc;
 #if ENABLE_SCI32
-                        SciEngine.UpdateInfoFlagViewVisible(obj, opparams[0] >> 1);
+                            SciEngine.UpdateInfoFlagViewVisible(obj, opparams[0] >> 1);
 #endif
-                    }
+                        }
                         break;
 
                     case op_pTos: // 0x33 (51)
@@ -1146,59 +1146,59 @@ namespace NScumm.Sci.Engine
                         break;
 
                     case op_sTop: // 0x34 (52)
-                        // Stack To Property
-                    {
-                        var prop = validate_property(s, obj, opparams[0]);
-                        prop[0] = POP32();
+                                  // Stack To Property
+                        {
+                            var prop = validate_property(s, obj, opparams[0]);
+                            prop[0] = POP32();
 #if ENABLE_SCI32
-                        SciEngine.UpdateInfoFlagViewVisible(obj, opparams[0] >> 1);
+                            SciEngine.UpdateInfoFlagViewVisible(obj, opparams[0] >> 1);
 #endif
-                    }
+                        }
                         break;
 
                     case op_ipToa: // 0x35 (53)
                     case op_dpToa: // 0x36 (54)
                     case op_ipTos: // 0x37 (55)
                     case op_dpTos: // 0x38 (56)
-                    {
-                        // Increment/decrement a property and copy to accumulator,
-                        // or push to stack
-                        StackPtr opProperty = validate_property(s, obj, opparams[0]);
-                        if ((opcode & 1) != 0)
-                            opProperty[0] += 1;
-                        else
-                            opProperty[0] -= 1;
+                        {
+                            // Increment/decrement a property and copy to accumulator,
+                            // or push to stack
+                            StackPtr opProperty = validate_property(s, obj, opparams[0]);
+                            if ((opcode & 1) != 0)
+                                opProperty[0] += 1;
+                            else
+                                opProperty[0] -= 1;
 #if ENABLE_SCI32
-                        SciEngine.UpdateInfoFlagViewVisible(obj, opparams[0] >> 1);
+                            SciEngine.UpdateInfoFlagViewVisible(obj, opparams[0] >> 1);
 #endif
-                        if (opcode == op_ipToa || opcode == op_dpToa)
-                            s.r_acc = opProperty[0];
-                        else
-                            PUSH32(opProperty[0]);
-                        break;
-                    }
+                            if (opcode == op_ipToa || opcode == op_dpToa)
+                                s.r_acc = opProperty[0];
+                            else
+                                PUSH32(opProperty[0]);
+                            break;
+                        }
 
                     case op_lofsa: // 0x39 (57)
                     case op_lofss: // 0x3a (58)
                         // Load offset to accumulator or push to stack
-                        r_temp = Register.Make((ushort) s.xs.pc.Segment, (ushort) r_temp.Offset);
+                        r_temp = Register.Make((ushort)s.xs.pc.Segment, (ushort)r_temp.Offset);
 
                         switch (SciEngine.Instance.Features.DetectLofsType())
                         {
                             case SciVersion.V0_EARLY:
-                                r_temp = Register.Make(r_temp.Segment, (ushort) (s.xs.pc.Offset + opparams[0]));
+                                r_temp = Register.Make(r_temp.Segment, (ushort)(s.xs.pc.Offset + opparams[0]));
                                 break;
                             case SciVersion.V1_MIDDLE:
-                                r_temp = Register.Make(r_temp.Segment, (ushort) opparams[0]);
+                                r_temp = Register.Make(r_temp.Segment, (ushort)opparams[0]);
                                 break;
                             case SciVersion.V1_1:
-                                r_temp = Register.Make(r_temp.Segment, (ushort) (opparams[0] + local_script.ScriptSize));
+                                r_temp = Register.Make(r_temp.Segment, (ushort)(opparams[0] + local_script.ScriptSize));
                                 break;
                             case SciVersion.V3:
                                 // In theory this can break if the variant with a one-byte argument is
                                 // used. For now, assume it doesn't happen.
                                 r_temp = Register.Make(r_temp.Segment,
-                                    (ushort) local_script.RelocateOffsetSci3((uint) (s.xs.pc.Offset - 2)));
+                                    (ushort)local_script.RelocateOffsetSci3((uint)(s.xs.pc.Offset - 2)));
                                 break;
                             default:
                                 throw new InvalidOperationException("Unknown lofs type");
@@ -1408,7 +1408,7 @@ namespace NScumm.Sci.Engine
         {
             int offset = 0;
             extOpcode = src[offset++]; // Get "extended" opcode (lower bit has special meaning)
-            byte opcode = (byte) (extOpcode >> 1); // get the actual opcode
+            byte opcode = (byte)(extOpcode >> 1); // get the actual opcode
 
             Array.Clear(opparams, 0, 4);
 
@@ -1421,14 +1421,14 @@ namespace NScumm.Sci.Engine
                         opparams[i] = src[offset++];
                         break;
                     case opcode_format.Script_SByte:
-                        opparams[i] = (sbyte) src[offset++];
+                        opparams[i] = (sbyte)src[offset++];
                         break;
                     case opcode_format.Script_Word:
-                        opparams[i] = (short) src.Data.ReadSci11EndianUInt16(src.Offset + offset);
+                        opparams[i] = (short)src.Data.ReadSci11EndianUInt16(src.Offset + offset);
                         offset += 2;
                         break;
                     case opcode_format.Script_SWord:
-                        opparams[i] = (short) src.Data.ReadSci11EndianUInt16(src.Offset + offset);
+                        opparams[i] = (short)src.Data.ReadSci11EndianUInt16(src.Offset + offset);
                         offset += 2;
                         break;
 
@@ -1447,7 +1447,7 @@ namespace NScumm.Sci.Engine
                         }
                         else
                         {
-                            opparams[i] = (short) src.Data.ReadSci11EndianUInt16(src.Offset + offset);
+                            opparams[i] = (short)src.Data.ReadSci11EndianUInt16(src.Offset + offset);
                             offset += 2;
                         }
                         break;
@@ -1456,11 +1456,11 @@ namespace NScumm.Sci.Engine
                     case opcode_format.Script_SRelative:
                         if ((extOpcode & 1) != 0)
                         {
-                            opparams[i] = (sbyte) src[offset++];
+                            opparams[i] = (sbyte)src[offset++];
                         }
                         else
                         {
-                            opparams[i] = (short) src.Data.ReadSci11EndianUInt16(src.Offset + offset);
+                            opparams[i] = (short)src.Data.ReadSci11EndianUInt16(src.Offset + offset);
                             offset += 2;
                         }
                         break;
@@ -1538,7 +1538,7 @@ namespace NScumm.Sci.Engine
             // Call kernel function
             if (kernelCall.subFunctionCount == 0)
             {
-                argv[-1] = Register.Make(0, (ushort) argc); // The first argument is argc
+                argv[-1] = Register.Make(0, (ushort)argc); // The first argument is argc
                 AddKernelCallToExecStack(s, kernelCallNr, argc, argv);
                 Debug($"Call {kernelCall.name}");
                 s.r_acc = kernelCall.function(s, argc, argv);
@@ -1594,18 +1594,18 @@ namespace NScumm.Sci.Engine
                     switch (solution.type)
                     {
                         case SciWorkaroundType.NONE:
-                        {
-                            kernel.SignatureDebug(kernelSubCall.signature, argc, argv);
-                            int callNameLen = kernelCall.name.Length;
-                            if (string.CompareOrdinal(kernelCall.name, 0, kernelSubCall.name, 0, callNameLen) == 0)
                             {
-                                var subCallName = kernelSubCall.name.Substring(callNameLen);
+                                kernel.SignatureDebug(kernelSubCall.signature, argc, argv);
+                                int callNameLen = kernelCall.name.Length;
+                                if (string.CompareOrdinal(kernelCall.name, 0, kernelSubCall.name, 0, callNameLen) == 0)
+                                {
+                                    var subCallName = kernelSubCall.name.Substring(callNameLen);
+                                    throw new InvalidOperationException(
+                                        $"[VM] k{kernelCall.name}({subCallName}): signature mismatch via method {originReply.objectName}::{originReply.methodName} (room {s.CurrentRoomNumber}, script {originReply.scriptNr}, localCall {originReply.localCallOffset:X})");
+                                }
                                 throw new InvalidOperationException(
-                                    $"[VM] k{kernelCall.name}({subCallName}): signature mismatch via method {originReply.objectName}::{originReply.methodName} (room {s.CurrentRoomNumber}, script {originReply.scriptNr}, localCall {originReply.localCallOffset:X})");
+                                    $"[VM] k{kernelSubCall.name}: signature mismatch via method {originReply.objectName}::{originReply.methodName} (room {s.CurrentRoomNumber}, script {originReply.scriptNr}, localCall {originReply.localCallOffset:X})");
                             }
-                            throw new InvalidOperationException(
-                                $"[VM] k{kernelSubCall.name}: signature mismatch via method {originReply.objectName}::{originReply.methodName} (room {s.CurrentRoomNumber}, script {originReply.scriptNr}, localCall {originReply.localCallOffset:X})");
-                        }
                         case SciWorkaroundType.IGNORE: // don't do kernel call, leave acc alone
                             return;
                         case SciWorkaroundType.STILLCALL: // call kernel anyway
@@ -1667,15 +1667,15 @@ namespace NScumm.Sci.Engine
                     switch (type)
                     {
                         case VAR_TEMP:
-                        {
-                            // Uninitialized read on a temp
-                            //  We need to find correct replacements for each situation manually
-                            SciTrackOriginReply originReply;
-                            SciWorkaroundSolution solution = Workarounds.TrackOriginAndFindWorkaround(index,
-                                Workarounds.UninitializedReadWorkarounds, out originReply);
-                            if (solution.type == SciWorkaroundType.NONE)
                             {
-# if RELEASE_BUILD
+                                // Uninitialized read on a temp
+                                //  We need to find correct replacements for each situation manually
+                                SciTrackOriginReply originReply;
+                                SciWorkaroundSolution solution = Workarounds.TrackOriginAndFindWorkaround(index,
+                                    Workarounds.UninitializedReadWorkarounds, out originReply);
+                                if (solution.type == SciWorkaroundType.NONE)
+                                {
+#if RELEASE_BUILD
 // If we are running an official ScummVM release . fake 0 in unknown cases
                                     Warning("Uninitialized read for temp %d from method %s::%s (room %d, script %d, localCall %x)",
                                     index, originReply.objectName.c_str(), originReply.methodName.c_str(), s.currentRoomNumber(),
@@ -1684,14 +1684,14 @@ namespace NScumm.Sci.Engine
                                     s.variables[type][index] = Resgister.NULL_REG;
                                     break;
 #else
-                                throw new InvalidOperationException(
-                                    $"Uninitialized read for temp {index} from method {originReply.objectName}::{originReply.methodName} (room {s.CurrentRoomNumber}, script {originReply.scriptNr}, localCall {originReply.localCallOffset:X})");
+                                    throw new InvalidOperationException(
+                                        $"Uninitialized read for temp {index} from method {originReply.objectName}::{originReply.methodName} (room {s.CurrentRoomNumber}, script {originReply.scriptNr}, localCall {originReply.localCallOffset:X})");
 #endif
+                                }
+                                //assert(solution.type == WORKAROUND_FAKE);
+                                s.variables[type][index] = Register.Make(0, solution.value);
+                                break;
                             }
-                            //assert(solution.type == WORKAROUND_FAKE);
-                            s.variables[type][index] = Register.Make(0, solution.value);
-                            break;
-                        }
                         case VAR_PARAM:
                             // Out-of-bounds read for a parameter that goes onto stack and hits an uninitialized temp
                             //  We return 0 currently in that case
@@ -1772,12 +1772,19 @@ namespace NScumm.Sci.Engine
                         SciEngine.Instance.UpdateScummVmAudioOptions();
                     }
                 }
+
+#if ENABLE_SCI32
+                if (type == VAR_GLOBAL && index == GlobalVarTextSpeed && ResourceManager.GetSciVersion() >= SciVersion.V2)
+                {
+                    ConfigManager.Instance.Set<int>("talkspeed", (8 - value.ToInt16()) * 255 / 8);
+                }
+#endif
             }
         }
 
         private static bool validate_variable(StackPtr r, StackPtr stack_base, int type, int max, int index)
         {
-            string[] names = {"global", "local", "temp", "param"};
+            string[] names = { "global", "local", "temp", "param" };
 
             if (index < 0 || index >= max)
             {
@@ -1827,6 +1834,11 @@ namespace NScumm.Sci.Engine
                     {
                         // write?
                         var[0] = xs.variables_argp[1];
+
+#if ENABLE_SCI32
+                        SciEngine.UpdateInfoFlagViewVisible(s._segMan.GetObject(xs.varp.obj), xs.varp.varindex);
+#endif
+
                     }
                     else // No, read
                     {
@@ -1841,7 +1853,7 @@ namespace NScumm.Sci.Engine
             Register calling_obj, ushort argc, StackPtr argp)
         {
             int seg = s._segMan.GetScriptSegment(script);
-            Script scr = s._segMan.GetScriptIfLoaded((ushort) seg);
+            Script scr = s._segMan.GetScriptIfLoaded((ushort)seg);
 
             if (scr == null || scr.IsMarkedAsDeleted)
             {
@@ -1857,8 +1869,8 @@ namespace NScumm.Sci.Engine
             // Check if a breakpoint is set on this method
             // TODO: SciEngine.Instance.CheckExportBreakpoint(script, pubfunct);
 
-            ExecStack xstack = new ExecStack(calling_obj, calling_obj, sp, argc, argp, (ushort) seg,
-                Register32.Make(seg, (ushort) exportAddr), -1, pubfunct, -1,
+            ExecStack xstack = new ExecStack(calling_obj, calling_obj, sp, argc, argp, (ushort)seg,
+                Register32.Make(seg, (ushort)exportAddr), -1, pubfunct, -1,
                 s._executionStack.Count - 1, ExecStackType.CALL);
             s._executionStack.Add(xstack);
             return s._executionStack.Last();
@@ -1868,7 +1880,7 @@ namespace NScumm.Sci.Engine
         // 16 bit:
         private static void PUSH(int v)
         {
-            PUSH32(Register.Make(0, (ushort) v));
+            PUSH32(Register.Make(0, (ushort)v));
         }
 
         // 32 bit:
@@ -1896,7 +1908,7 @@ namespace NScumm.Sci.Engine
 
         private static StackPtr validate_property(EngineState s, SciObject obj, int index)
         {
-            Register[] dummyReg = new[] {Register.NULL_REG};
+            Register[] dummyReg = new[] { Register.NULL_REG };
 
             // A static dummy reg_t, which we return if obj or index turn out to be
             // invalid. Note that we cannot just return NULL_REG, because client code
@@ -1912,7 +1924,7 @@ namespace NScumm.Sci.Engine
             else
                 index >>= 1;
 
-            if (index < 0 || (uint) index >= obj.VarCount)
+            if (index < 0 || (uint)index >= obj.VarCount)
             {
                 // This is same way sierra does it and there are some games, that contain such scripts like
                 //  iceman script 998 (fred::canBeHere, executed right at the start)

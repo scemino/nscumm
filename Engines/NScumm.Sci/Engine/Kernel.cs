@@ -668,6 +668,7 @@ namespace NScumm.Sci.Engine
             SciKernelMapSubEntry.Make(SciVersionRange.SIG_THRU_SCI21MID(0), 5, kArrayFill, "rii"),
             SciKernelMapSubEntry.Make(SciVersionRange.SIG_THRU_SCI21MID(0), 6, kArrayCopy, "ririi"),
             SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI32(0), 7, kStringCompare, "rr(i)"),
+
             SciKernelMapSubEntry.Make(SciVersionRange.SIG_UNTIL_SCI21MID(0), 8, kArrayDuplicate, "r"),
             SciKernelMapSubEntry.Make(SciVersionRange.SIG_UNTIL_SCI21MID(0), 9, kStringGetData, "[0or]"),
             SciKernelMapSubEntry.Make(SciVersionRange.SIG_UNTIL_SCI21MID(0), 10, kStringLen, "r"),
@@ -677,8 +678,9 @@ namespace NScumm.Sci.Engine
             SciKernelMapSubEntry.Make(SciVersionRange.SIG_UNTIL_SCI21MID(0), 14, kStringTrim, "ri(i)"),
             SciKernelMapSubEntry.Make(SciVersionRange.SIG_UNTIL_SCI21MID(0), 15, kStringUpper, "r"),
             SciKernelMapSubEntry.Make(SciVersionRange.SIG_UNTIL_SCI21MID(0), 16, kStringLower, "r"),
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_UNTIL_SCI21MID(0), 17, kStringTrn, "rrrr"),
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_UNTIL_SCI21MID(0), 18, kStringTrnExclude, "rrrr"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_UNTIL_SCI21MID(0), 17, kStringReplaceSubstring, "rrrr"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_UNTIL_SCI21MID(0), 18, kStringReplaceSubstringEx, "rrrr"),
+
             SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21LATE(0), 8, kStringLen, "r"),
             SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21LATE(0), 9, kStringFormat, "r(.*)"),
             SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21LATE(0), 10, kStringFormatAt, "rr(.*)"),
@@ -686,8 +688,8 @@ namespace NScumm.Sci.Engine
             SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21LATE(0), 12, kStringTrim, "ri(i)"),
             SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21LATE(0), 13, kStringUpper, "r"),
             SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21LATE(0), 14, kStringLower, "r"),
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21LATE(0), 15, kStringTrn, "rrrr"),
-            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21LATE(0), 16, kStringTrnExclude, "rrrr"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21LATE(0), 15, kStringReplaceSubstring, "rrrr"),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI21LATE(0), 16, kStringReplaceSubstringEx, "rrrr"),
         };
 
         private static readonly SciKernelMapSubEntry[] kRemapColors_subops =
@@ -1832,7 +1834,7 @@ namespace NScumm.Sci.Engine
 
                         _kernelNames.AddRange(sci2_default_knames.Take(kKernelEntriesGk2Demo));
                         // OnMe is IsOnMe here, but they should be compatible
-                        _kernelNames[0x23] = "Robot"; // Graph in SCI2
+                        _kernelNames[0x23] = SciEngine.Instance.GameId == SciGameId.LSL6HIRES ? "Empty" : "Robot"; // Graph in SCI2
                         _kernelNames[0x2e] = "Priority"; // DisposeTextBitmap in SCI2
                     }
                     else

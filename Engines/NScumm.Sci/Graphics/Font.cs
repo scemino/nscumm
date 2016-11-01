@@ -146,5 +146,35 @@ namespace NScumm.Sci.Graphics
         {
             return chr < _numChars ? new ByteAccess(_resourceData, _chars[chr].offset + 2) : null;
         }
+
+# if ENABLE_SCI32
+        public override void DrawToBuffer(ushort chr, short top, short left, byte color, bool greyedOutput,
+            BytePtr buffer, short bufWidth, short bufHeight)
+        {
+            int charWidth = Math.Min(GetCharWidth(chr), bufWidth - left);
+            int charHeight = Math.Min(GetCharHeight(chr), bufHeight - top);
+            byte b = 0, mask = 0xFF;
+            int y = 0;
+            short greyedTop = top;
+
+            var pIn = GetCharData(chr);
+            for (int i = 0; i < charHeight; i++, y++)
+            {
+                if (greyedOutput)
+                    mask = (byte)(((greyedTop++) % 2) != 0 ? 0xAA : 0x55);
+                for (int done = 0; done < charWidth; done++)
+                {
+                    if ((done & 7) == 0) // fetching next data byte
+                        b = (byte)(pIn[1] & mask); pIn.Offset++;
+                    if ((b & 0x80) != 0)
+                    {   // if MSB is set - paint it
+                        int offset = (top + y) * bufWidth + (left + done);
+                        buffer[offset] = color;
+                    }
+                    b = (byte)(b << 1);
+                }
+            }
+        }
+#endif
     }
 }

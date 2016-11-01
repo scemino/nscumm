@@ -157,14 +157,12 @@ namespace NScumm.Sci.Graphics
          */
         public ushort _xResolution, _yResolution;
 
-        public Point _displace;
-
         /**
          * The skip (transparent) color for the cel. When
          * compositing, any pixels matching this color will not
          * be copied to the buffer.
          */
-        public byte _transparentColor;
+        public byte _skipColor;
 
         /**
          * Whether or not this cel has any transparent regions.
@@ -199,7 +197,7 @@ namespace NScumm.Sci.Graphics
         {
             _celHeaderOffset = src._celHeaderOffset;
             _compressionType = src._compressionType;
-            _displace = src._displace;
+            _origin = src._origin;
             _height = src._height;
             _hunkPaletteOffset = src._hunkPaletteOffset;
             _info = src._info.Clone();
@@ -208,7 +206,7 @@ namespace NScumm.Sci.Graphics
             _yResolution = src._yResolution;
             _xResolution = src._xResolution;
             _transparent = src._transparent;
-            _transparentColor = src._transparentColor;
+            _skipColor = src._skipColor;
             _width = src._width;
         }
 
@@ -567,7 +565,7 @@ namespace NScumm.Sci.Graphics
             var mapper = mapperFactory();
             var scaler = scalerFactory(this, (short) (targetRect.Left - scaledPosition.X + targetRect.Width),
                 scaledPosition);
-            var renderer = new Renderer(mapper, scaler, _transparentColor, false);
+            var renderer = new Renderer(mapper, scaler, _skipColor, false);
             renderer.Draw(target, targetRect);
         }
 
@@ -576,7 +574,7 @@ namespace NScumm.Sci.Graphics
         {
             var mapper = mapperFactory();
             var scaler = scalerFactory(this, targetRect, scaledPosition);
-            var renderer = new Renderer(mapper, scaler, _transparentColor, _drawBlackLines);
+            var renderer = new Renderer(mapper, scaler, _skipColor, _drawBlackLines);
             renderer.Draw(target, targetRect);
         }
 

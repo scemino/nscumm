@@ -533,12 +533,12 @@ namespace NScumm.Sci.Graphics
                         }
                     }
 
-                    int displaceX = celObj._displace.X;
-                    int displaceY = celObj._displace.Y;
+                    int displaceX = celObj._origin.X;
+                    int displaceY = celObj._origin.Y;
 
                     if (_mirrorX != celObj._mirrorX && _celInfo.type != CelType.Pic)
                     {
-                        displaceX = celObj._width - celObj._displace.X - 1;
+                        displaceX = celObj._width - celObj._origin.X - 1;
                     }
 
                     if (!scaleX.IsOne || !scaleY.IsOne)
@@ -636,10 +636,10 @@ namespace NScumm.Sci.Graphics
                 {
                     // low resolution coordinates
 
-                    int displaceX = celObj._displace.X;
+                    int displaceX = celObj._origin.X;
                     if (_mirrorX != celObj._mirrorX && _celInfo.type != CelType.Pic)
                     {
-                        displaceX = celObj._width - celObj._displace.X - 1;
+                        displaceX = celObj._width - celObj._origin.X - 1;
                     }
 
                     if (!scaleX.IsOne || !scaleY.IsOne)
@@ -653,7 +653,7 @@ namespace NScumm.Sci.Graphics
                     }
 
                     _scaledPosition.X = (short)(_position.X - displaceX * scaleX);
-                    _scaledPosition.Y = (short)(_position.Y - (celObj._displace.Y * scaleY));
+                    _scaledPosition.Y = (short)(_position.Y - (celObj._origin.Y * scaleY));
                     _screenItemRect.Translate(_scaledPosition.X, _scaledPosition.Y);
 
                     if (_mirrorX != celObj._mirrorX && _celInfo.type == CelType.Pic)
@@ -672,7 +672,7 @@ namespace NScumm.Sci.Graphics
                             Error("Expected a CelObjPic");
                         }
                         temp.Translate((short)(celObjPic._relativePosition.X - (displaceX * scaleX)),
-                            (short)(celObjPic._relativePosition.Y - (celObj._displace.Y * scaleY)));
+                            (short)(celObjPic._relativePosition.Y - (celObj._origin.Y * scaleY)));
 
                         // TODO: This is weird.
                         int deltaX = plane._gameRect.Width - temp.Right - 1 - temp.Left;

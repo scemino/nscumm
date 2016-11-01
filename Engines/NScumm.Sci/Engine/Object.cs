@@ -24,7 +24,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
 {
-    internal class SciObject
+    internal class SciObject: IDisposable
     {
         public const int InfoFlagClone = 0x0001;
 #if ENABLE_SCI32
@@ -219,6 +219,19 @@ namespace NScumm.Sci.Engine
         {
             _offset = ResourceManager.GetSciVersion() < SciVersion.V1_1 ? (ushort) 0 : (ushort) 5;
             _baseMethod = new List<ushort>();
+        }
+
+        public void Dispose()
+        {
+            if (ResourceManager.GetSciVersion() == SciVersion.V3)
+            {
+                // FIXME: memory leak! Commented out because of reported heap
+                // corruption by MSVC (e.g. in LSL7, when it starts)
+                //free(_baseVars);
+                //_baseVars = 0;
+                //free(_propertyOffsetsSci3);
+                //_propertyOffsetsSci3 = 0;
+            }
         }
 
         public bool RelocateSci3(int segment, uint location, int offset, int scriptSize)

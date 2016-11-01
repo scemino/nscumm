@@ -34,8 +34,8 @@ namespace NScumm.Sci.Graphics
         {
             _info.type = CelType.Color;
             _info.color = color;
-            _displace.X = 0;
-            _displace.Y = 0;
+            _origin.X = 0;
+            _origin.Y = 0;
             _xResolution = SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
             _yResolution = SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
             _hunkPaletteOffset = 0;

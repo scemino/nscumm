@@ -1,7 +1,7 @@
 ﻿//  Author:
 //       scemino <scemino74@gmail.com>
 //
-//  Copyright (c) 2015 
+//  Copyright (c) 2016 
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -44,120 +44,118 @@ namespace NScumm.Sci.Graphics
     /// </summary>
     internal class GfxText32
     {
-        /**
-	 * The size of the x-dimension of the coordinate system
-	 * used by the text renderer. Static since it was global in SSCI.
-	 */
+        /// <summary>
+        /// The size of the x-dimension of the coordinate system
+        /// used by the text renderer. Static since it was global in SSCI.</summary>
         public static short _xResolution;
 
-        /**
-         * The size of the y-dimension of the coordinate system
-         * used by the text renderer. Static since it was global in SSCI.
-         */
+        /// <summary>
+        /// The size of the y-dimension of the coordinate system
+        /// used by the text renderer. Static since it was global in SSCI.
+        /// </summary>
         public static short _yResolution;
 
-        /**
-         * The memory handle of the currently active bitmap.
-         */
+        /// <summary>
+        /// The memory handle of the currently active bitmap.
+        /// </summary>
         public Register _bitmap;
 
-        /**
-         * The size of the x-dimension of the coordinate system
-         * used by the text renderer. Static since it was global in SSCI.
-         */
-        public static short _scaledWidth;
-
-        /**
-         * The size of the y-dimension of the coordinate system
-         * used by the text renderer. Static since it was global in SSCI.
-         */
-        public static short _scaledHeight;
-
-        /**
-         * The currently active font resource used to write text
-         * into the bitmap.
-         *
-         * @note SCI engine builds the font table directly
-         * inside of FontMgr; we use GfxFont instead.
-         */
+        /// <summary>
+        /// The currently active font resource used to write text
+        /// into the bitmap.
+        /// 
+        /// @note SCI engine builds the font table directly
+        /// inside of FontMgr; we use GfxFont instead.
+        /// </summary>
         public GfxFont _font;
 
         private SegManager _segMan;
         private GfxCache _cache;
 
-        /**
-         * The resource ID of the default font used by the game.
-         *
-         * @todo Check all SCI32 games to learn what their
-         * default font is.
-         */
+        /// <summary>
+        /// The resource ID of the default font used by the game.
+        /// 
+        /// @todo Check all SCI32 games to learn what their
+        /// default font is.
+        /// </summary>
         private static short _defaultFontId;
 
-        /**
-         * The width and height of the currently active text
-         * bitmap, in text-system coordinates.
-         *
-         * @note These are unsigned in the actual engine.
-         */
+        /// <summary>
+        /// The width and height of the currently active text
+        /// bitmap, in text-system coordinates.
+        /// 
+        /// @note These are unsigned in the actual engine.
+        /// </summary>
         private short _width, _height;
 
-        /**
-         * The color used to draw text.
-         */
+        /// <summary>
+        /// The color used to draw text.
+        /// </summary>
         private byte _foreColor;
 
-        /**
-         * The background color of the text box.
-         */
+        /// <summary>
+        /// The background color of the text box.
+        /// </summary>
         private byte _backColor;
 
-        /**
-         * The transparent color of the text box. Used when
-         * compositing the bitmap onto the screen.
-         */
+        /// <summary>
+        /// The transparent color of the text box. Used when
+        /// compositing the bitmap onto the screen.
+        /// </summary>
         private byte _skipColor;
 
-        /**
-         * The rect where the text is drawn within the bitmap.
-         * This rect is clipped to the dimensions of the bitmap.
-         */
+        /// <summary>
+        /// The rect where the text is drawn within the bitmap.
+        /// This rect is clipped to the dimensions of the bitmap.
+        /// </summary>
         private Rect _textRect;
 
-        /**
-         * The text being drawn to the currently active text
-         * bitmap.
-         */
+        /// <summary>
+        /// The text being drawn to the currently active text
+        /// bitmap.
+        /// </summary>
         private string _text;
 
-        /**
-         * The font being used to draw the text.
-         */
+        /// <summary>
+        /// The font being used to draw the text.
+        /// </summary>
         private int _fontId;
 
-        /**
-         * The color of the text box border.
-         */
+        /// <summary>
+        /// The color of the text box border.
+        /// </summary>
         private short _borderColor;
 
-        /**
-         * TODO: Document
-         */
+        /// <summary>
+        /// TODO: Document
+        /// </summary>
         private bool _dimmed;
 
-        /**
-         * The text alignment for the drawn text.
-         */
+        /// <summary>
+        /// The text alignment for the drawn text.
+        /// </summary>
         private TextAlign _alignment;
 
-        /**
-         * The position of the text draw cursor.
-         */
+        /// <summary>
+        /// The position of the text draw cursor.
+        /// </summary>
         private Point _drawPosition;
 
         public GfxText32(SegManager segMan, GfxCache fonts)
         {
             _segMan = segMan;
             _cache = fonts;
+            _bitmap = Register.NULL_REG;
+
+            _fontId = _defaultFontId;
+            _font = _cache.GetFont(_defaultFontId);
+
+            if (_xResolution == 0)
+            {
+                // initialize the statics
+                _xResolution = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
+                _yResolution = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
+            }
         }
 
         public void SetFont(int fontId)
@@ -194,8 +192,8 @@ namespace NScumm.Sci.Graphics
                 short scriptWidth = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
                 short scriptHeight = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
 
-                var scaleX = new Rational(_scaledWidth, scriptWidth);
-                var scaleY = new Rational(_scaledHeight, scriptHeight);
+                var scaleX = new Rational(_xResolution, scriptWidth);
+                var scaleY = new Rational(_yResolution, scriptHeight);
 
                 _width = (short)(_width * scaleX);
                 _height = (short)(_height * scaleY);
@@ -215,7 +213,7 @@ namespace NScumm.Sci.Graphics
                 _textRect = new Rect();
             }
 
-            _segMan.AllocateBitmap(out _bitmap, _width, _height, _skipColor, 0, 0, _scaledWidth, _scaledHeight, 0, false,
+            _segMan.AllocateBitmap(out _bitmap, _width, _height, _skipColor, 0, 0, _xResolution, _yResolution, 0, false,
                 gc);
 
             Erase(bitmapRect, false);
@@ -319,13 +317,13 @@ namespace NScumm.Sci.Graphics
             short scriptWidth = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
             short scriptHeight = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
 
-            Helpers.Mulinc(ref _textRect, new Rational(_scaledWidth, scriptWidth),
-                new Rational(_scaledHeight, scriptHeight));
+            Helpers.Mulinc(ref _textRect, new Rational(_xResolution, scriptWidth),
+                new Rational(_yResolution, scriptHeight));
 
             CelObjView view = CelObjView.Create(celInfo.resourceId, celInfo.loopNo, celInfo.celNo);
-            _skipColor = view._transparentColor;
-            _width = (short)(view._width * _scaledWidth / view._xResolution);
-            _height = (short)(view._height * _scaledHeight / view._yResolution);
+            _skipColor = view._skipColor;
+            _width = (short)(view._width * _xResolution / view._xResolution);
+            _height = (short)(view._height * _yResolution / view._yResolution);
 
             Rect bitmapRect = new Rect(_width, _height);
             if (_textRect.Intersects(bitmapRect))
@@ -337,8 +335,8 @@ namespace NScumm.Sci.Graphics
                 _textRect = new Rect();
             }
 
-            SciBitmap bitmap = _segMan.AllocateBitmap(out _bitmap, _width, _height, _skipColor, 0, 0, _scaledWidth,
-                _scaledHeight, 0, false, gc);
+            SciBitmap bitmap = _segMan.AllocateBitmap(out _bitmap, _width, _height, _skipColor, 0, 0, _xResolution,
+                _yResolution, 0, false, gc);
 
             // NOTE: The engine filled the sciBitmap pixels with 11 here, which is silly
             // because then it just erased the sciBitmap using the skip color. So we don't
@@ -350,8 +348,8 @@ namespace NScumm.Sci.Graphics
 
             var scaledPos = new Point(0, 0);
             view.Draw(bitmap.Buffer, ref bitmapRect, ref scaledPos, false,
-                new Rational(_scaledWidth, view._xResolution),
-                new Rational(_scaledHeight, view._yResolution));
+                new Rational(_xResolution, view._xResolution),
+                new Rational(_yResolution, view._yResolution));
 
             if (_backColor != skipColor && _foreColor != skipColor)
             {
@@ -378,7 +376,6 @@ namespace NScumm.Sci.Graphics
             return _bitmap;
         }
 
-
         public short GetTextCount(string text, int index, Rect textRect, bool doScaling)
         {
             short scriptWidth = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
@@ -387,8 +384,8 @@ namespace NScumm.Sci.Graphics
             Rect scaledRect = new Rect(textRect);
             if (doScaling)
             {
-                Helpers.Mulinc(ref scaledRect, new Rational(_scaledWidth, scriptWidth),
-                    new Rational(_scaledHeight, scriptHeight));
+                Helpers.Mulinc(ref scaledRect, new Rational(_xResolution, scriptWidth),
+                    new Rational(_yResolution, scriptHeight));
             }
 
             string oldText = _text;
@@ -478,6 +475,244 @@ namespace NScumm.Sci.Graphics
             DrawTextBox();
         }
 
+        public short GetTextWidth(string text, int index, int length)
+        {
+            _text = text;
+            return (short)ScaleUpWidth(GetTextWidth(index, length));
+        }
+
+        public short GetTextWidth(int index, int length)
+        {
+            short width = 0;
+
+            var t = index;
+
+            GfxFont font = _font;
+
+            char currentChar = _text[t++];
+            while (length > 0 && currentChar != '\0')
+            {
+                // Control codes are in the format `|<code><value>|`
+                if (currentChar == '|')
+                {
+                    // NOTE: Original engine code changed the global state of the
+                    // FontMgr here upon encountering any color, alignment, or
+                    // font control code.
+                    // To avoid requiring all callers to manually restore these
+                    // values on every call, we ignore control codes other than
+                    // font change (since alignment and color do not change the
+                    // width of characters), and simply update the font pointer
+                    // on stack instead of the member property font.
+                    currentChar = _text[t++];
+                    --length;
+
+                    if (length > 0 && currentChar == 'f')
+                    {
+                        int fontId = 0;
+                        do
+                        {
+                            currentChar = _text[t++];
+                            --length;
+
+                            fontId = fontId * 10 + currentChar - '0';
+                        } while (length > 0 && _text[t] >= '0' && _text[t] <= '9');
+
+                        if (length > 0)
+                        {
+                            font = _cache.GetFont(fontId);
+                        }
+                    }
+
+                    // Forward through any more unknown control character data
+                    while (length > 0 && _text[t] != '|')
+                    {
+                        ++t;
+                        --length;
+                    }
+                    if (length > 0)
+                    {
+                        ++t;
+                        --length;
+                    }
+                }
+                else
+                {
+                    width += font.GetCharWidth(currentChar);
+                }
+
+                if (length <= 0) continue;
+
+                currentChar = t < _text.Length ? _text[t++] : '\0';
+                --length;
+            }
+
+            return width;
+        }
+
+        public Rect GetTextSize(string text, short maxWidth, bool doScaling)
+        {
+            // NOTE: Like most of the text rendering code, this function was pretty
+            // weird in the original engine. The initial result rectangle was actually
+            // a 1x1 rectangle (0, 0, 0, 0), which was then "fixed" after the main
+            // text size loop finished running by subtracting 1 from the right and
+            // bottom edges. Like other functions in SCI32, this has been converted
+            // to use exclusive rects with inclusive rounding.
+
+            Rect result = new Rect();
+
+            short scriptWidth = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
+            short scriptHeight = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
+
+            maxWidth = (short)(maxWidth * _xResolution / scriptWidth);
+
+            _text = text;
+
+            if (maxWidth >= 0)
+            {
+                if (maxWidth == 0)
+                {
+                    maxWidth = (short)(_xResolution * 3 / 5);
+                }
+
+                result.Right = maxWidth;
+
+                short textWidth = 0;
+                if (_text.Length > 0)
+                {
+                    var rawText = 0;
+                    var sourceText = 0;
+                    int charIndex = 0;
+                    int nextCharIndex = 0;
+                    while (rawText < _text.Length)
+                    {
+                        int length = GetLongest(ref nextCharIndex, result.Width);
+                        textWidth = Math.Max(textWidth, GetTextWidth(charIndex, length));
+                        charIndex = nextCharIndex;
+                        rawText = sourceText + charIndex;
+                        // TODO: Due to getLongest and getTextWidth not having side
+                        // effects, it is possible that the currently loaded font's
+                        // height is wrong for this line if it was changed inline
+                        result.Bottom += _font.Height;
+                    }
+                }
+
+                if (textWidth < maxWidth)
+                {
+                    result.Right = textWidth;
+                }
+            }
+            else
+            {
+                result.Right = GetTextWidth(0, 10000);
+
+                if (ResourceManager.GetSciVersion() < SciVersion.V2_1_MIDDLE)
+                {
+                    result.Bottom = 0;
+                }
+                else
+                {
+                    // NOTE: In the original engine code, the bottom was not decremented
+                    // by 1, which means that the rect was actually a pixel taller than
+                    // the height of the font. This was not the case in the other branch,
+                    // which decremented the bottom by 1 at the end of the loop.
+                    result.Bottom = (short)(_font.Height + 1);
+                }
+            }
+
+            if (doScaling)
+            {
+                // NOTE: The original engine code also scaled top/left but these are
+                // always zero so there is no reason to do that.
+                result.Right = (short)(((result.Right - 1) * scriptWidth + _xResolution - 1) / _xResolution + 1);
+                result.Bottom = (short)(((result.Bottom - 1) * scriptHeight + _yResolution - 1) / _yResolution + 1);
+            }
+
+            return result;
+        }
+
+        public int ScaleUpWidth(int value)
+        {
+            int scriptWidth = SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
+            return (value * scriptWidth + _xResolution - 1) / _xResolution;
+        }
+
+        public int ScaleUpHeight(byte value)
+        {
+            int scriptHeight = SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
+            return (value * scriptHeight + _yResolution - 1) / _yResolution;
+        }
+
+        public ushort GetCharWidth(char charIndex, bool doScaling)
+        {
+            ushort width = _font.GetCharWidth(charIndex);
+            if (doScaling)
+            {
+                width = (ushort)ScaleUpWidth(width);
+            }
+            return width;
+        }
+
+        public short GetStringWidth(string text)
+        {
+            return GetTextWidth(text, 0, 10000);
+        }
+
+        public void InvertRect(Register bitmapId, short bitmapStride, Rect rect, byte foreColor, byte backColor,
+            bool doScaling)
+        {
+            Rect targetRect = rect;
+            if (doScaling)
+            {
+                bitmapStride =
+                    (short)(bitmapStride * _xResolution / SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth);
+                targetRect = ScaleRect(rect);
+            }
+
+            var bitmap = _segMan.LookupBitmap(bitmapId);
+
+            // NOTE: SCI code is super weird here; it seems to be trying to look at the
+            // entire size of the bitmap including the header, instead of just the pixel
+            // data size. We just look at the pixel size. This function generally is an
+            // odd duck since the stride dimension for a bitmap is built in to the bitmap
+            // header, so perhaps it was once an unheadered bitmap format and this
+            // function was never updated to match? Or maybe they exploit the
+            // configurable stride length somewhere else to do stair stepping inverts...
+            int invertSize = targetRect.Height * bitmapStride + targetRect.Width;
+            int bitmapSize = bitmap.DataSize;
+
+            if (invertSize >= bitmapSize)
+            {
+                Error("InvertRect too big: {0} >= {1}", invertSize, bitmapSize);
+            }
+
+            // NOTE: Actual engine just added the bitmap header size hardcoded here
+            var pixel = new BytePtr(bitmap.Pixels, bitmapStride * targetRect.Top + targetRect.Left);
+
+            short stride = (short)(bitmapStride - targetRect.Width);
+            short targetHeight = targetRect.Height;
+            short targetWidth = targetRect.Width;
+
+            for (var y = 0; y < targetHeight; ++y)
+            {
+                for (var x = 0; x < targetWidth; ++x)
+                {
+                    if (pixel.Value == foreColor)
+                    {
+                        pixel.Value = backColor;
+                    }
+                    else if (pixel.Value == backColor)
+                    {
+                        pixel.Value = foreColor;
+                    }
+
+                    pixel.Offset++;
+                }
+
+                pixel.Offset += stride;
+            }
+        }
+
+
         private void DrawText(int index, int length)
         {
             System.Diagnostics.Debug.Assert(index + length <= _text.Length);
@@ -557,8 +792,8 @@ namespace NScumm.Sci.Graphics
 
         private void DrawChar(char charIndex)
         {
-            var bitmap = _segMan.GetHunkPointer(_bitmap);
-            var pixels = new BytePtr(bitmap, (int)bitmap.ReadSci11EndianUInt32(28));
+            var bitmap = _segMan.LookupBitmap(_bitmap);
+            var pixels = bitmap.Pixels;
 
             _font.DrawToBuffer(charIndex, _drawPosition.Y, _drawPosition.X, _foreColor, _dimmed, pixels, _width, _height);
             _drawPosition.X += _font.GetCharWidth(charIndex);
@@ -580,7 +815,7 @@ namespace NScumm.Sci.Graphics
 
             while (t++ < _text.Length)
             {
-                var currentChar = _text[t];
+                var currentChar = t < _text.Length ? _text[t] : '\0';
                 // NOTE: In the original engine, the font, color, and alignment were
                 // reset here to their initial values
 
@@ -681,108 +916,36 @@ namespace NScumm.Sci.Graphics
             return length;
         }
 
-        public short GetTextWidth(string text, int index, int length)
-        {
-            _text = text;
-            return (short)ScaleUpWidth(GetTextWidth(index, length));
-        }
-
-        public short GetTextWidth(int index, int length)
-        {
-            short width = 0;
-
-            var t = index;
-
-            GfxFont font = _font;
-
-            char currentChar = _text[t++];
-            while (length > 0 && currentChar != '\0')
-            {
-                // Control codes are in the format `|<code><value>|`
-                if (currentChar == '|')
-                {
-                    // NOTE: Original engine code changed the global state of the
-                    // FontMgr here upon encountering any color, alignment, or
-                    // font control code.
-                    // To avoid requiring all callers to manually restore these
-                    // values on every call, we ignore control codes other than
-                    // font change (since alignment and color do not change the
-                    // width of characters), and simply update the font pointer
-                    // on stack instead of the member property font.
-                    currentChar = _text[t++];
-                    --length;
-
-                    if (length > 0 && currentChar == 'f')
-                    {
-                        int fontId = 0;
-                        do
-                        {
-                            currentChar = _text[t++];
-                            --length;
-
-                            fontId = fontId * 10 + currentChar - '0';
-                        } while (length > 0 && _text[t] >= '0' && _text[t] <= '9');
-
-                        if (length > 0)
-                        {
-                            font = _cache.GetFont(fontId);
-                        }
-                    }
-
-                    // Forward through any more unknown control character data
-                    while (length > 0 && _text[t] != '|')
-                    {
-                        ++t;
-                        --length;
-                    }
-                    if (length > 0)
-                    {
-                        ++t;
-                        --length;
-                    }
-                }
-                else
-                {
-                    width += font.GetCharWidth(currentChar);
-                }
-
-                if (length <= 0) continue;
-
-                currentChar = _text[t++];
-                --length;
-            }
-
-            return width;
-        }
-
         private Rect ScaleRect(Rect rect)
         {
             Rect scaledRect = new Rect(rect);
             short scriptWidth = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
             short scriptHeight = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
-            var scaleX = new Rational(_scaledWidth, scriptWidth);
-            var scaleY = new Rational(_scaledHeight, scriptHeight);
+            var scaleX = new Rational(_xResolution, scriptWidth);
+            var scaleY = new Rational(_yResolution, scriptHeight);
             Helpers.Mulinc(ref scaledRect, scaleX, scaleY);
             return scaledRect;
         }
 
-        void DrawFrame(Rect rect, short size, byte color, bool doScaling)
+        private void DrawFrame(Rect rect, short size, byte color, bool doScaling)
         {
             Rect targetRect = doScaling ? ScaleRect(rect) : rect;
 
-            var bitmap = _segMan.GetHunkPointer(_bitmap);
-            var pixels = new BytePtr(bitmap, (int)bitmap.ReadSci11EndianUInt32(28) + rect.Top * _width + rect.Left);
+            var bitmap = _segMan.LookupBitmap(_bitmap);
+            var pixels = new BytePtr(bitmap.Pixels, rect.Top * _width + rect.Left);
 
             // NOTE: Not fully disassembled, but this should be right
             short rectWidth = targetRect.Width;
+            short heightRemaining = targetRect.Height;
             short sidesHeight = (short)(targetRect.Height - size * 2);
             short centerWidth = (short)(rectWidth - size * 2);
             short stride = (short)(_width - rectWidth);
 
-            for (short y = 0; y < size; ++y)
+            for (short y = 0; y < size && y < heightRemaining; ++y)
             {
                 pixels.Data.Set(pixels.Offset, color, rectWidth);
                 pixels.Offset += _width;
+                --heightRemaining;
             }
             for (short y = 0; y < sidesHeight; ++y)
             {
@@ -799,174 +962,11 @@ namespace NScumm.Sci.Graphics
                 }
                 pixels.Offset += stride;
             }
-            for (short y = 0; y < size; ++y)
+            for (short y = 0; y < size && y < heightRemaining; ++y)
             {
                 pixels.Data.Set(pixels.Offset, color, rectWidth);
                 pixels.Offset += _width;
-            }
-        }
-
-        public Rect GetTextSize(string text, short maxWidth, bool doScaling)
-        {
-            // NOTE: Like most of the text rendering code, this function was pretty
-            // weird in the original engine. The initial result rectangle was actually
-            // a 1x1 rectangle (0, 0, 0, 0), which was then "fixed" after the main
-            // text size loop finished running by subtracting 1 from the right and
-            // bottom edges. Like other functions in SCI32, this has been converted
-            // to use exclusive rects with inclusive rounding.
-
-            Rect result = new Rect();
-
-            short scriptWidth = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
-            short scriptHeight = (short)SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
-
-            maxWidth = (short)(maxWidth * _scaledWidth / scriptWidth);
-
-            _text = text;
-
-            if (maxWidth >= 0)
-            {
-                if (maxWidth == 0)
-                {
-                    maxWidth = (short)(_scaledWidth * 3 / 5);
-                }
-
-                result.Right = maxWidth;
-
-                short textWidth = 0;
-                if (_text.Length > 0)
-                {
-                    var rawText = 0;
-                    var sourceText = 0;
-                    int charIndex = 0;
-                    int nextCharIndex = 0;
-                    while (rawText < _text.Length)
-                    {
-                        int length = GetLongest(ref nextCharIndex, result.Width);
-                        textWidth = Math.Max(textWidth, GetTextWidth(charIndex, length));
-                        charIndex = nextCharIndex;
-                        rawText = sourceText + charIndex;
-                        // TODO: Due to getLongest and getTextWidth not having side
-                        // effects, it is possible that the currently loaded font's
-                        // height is wrong for this line if it was changed inline
-                        result.Bottom += _font.Height;
-                    }
-                }
-
-                if (textWidth < maxWidth)
-                {
-                    result.Right = textWidth;
-                }
-            }
-            else
-            {
-                result.Right = GetTextWidth(0, 10000);
-
-                if (ResourceManager.GetSciVersion() < SciVersion.V2_1_MIDDLE)
-                {
-                    result.Bottom = 0;
-                }
-                else
-                {
-                    // NOTE: In the original engine code, the bottom was not decremented
-                    // by 1, which means that the rect was actually a pixel taller than
-                    // the height of the font. This was not the case in the other branch,
-                    // which decremented the bottom by 1 at the end of the loop.
-                    result.Bottom = (short)(_font.Height + 1);
-                }
-            }
-
-            if (doScaling)
-            {
-                // NOTE: The original engine code also scaled top/left but these are
-                // always zero so there is no reason to do that.
-                result.Right = (short)(((result.Right - 1) * scriptWidth + _scaledWidth - 1) / _scaledWidth + 1);
-                result.Bottom = (short)(((result.Bottom - 1) * scriptHeight + _scaledHeight - 1) / _scaledHeight + 1);
-            }
-
-            return result;
-        }
-
-        public int ScaleUpWidth(int value)
-        {
-            int scriptWidth = SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth;
-            return (value * scriptWidth + _scaledWidth - 1) / _scaledWidth;
-        }
-
-        public int ScaleUpHeight(byte value)
-        {
-            int scriptHeight = SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
-            return (value * scriptHeight + _scaledHeight - 1) / _scaledHeight;
-        }
-
-        public ushort GetCharWidth(char charIndex, bool doScaling)
-        {
-            ushort width = _font.GetCharWidth(charIndex);
-            if (doScaling)
-            {
-                width = (ushort)ScaleUpWidth(width);
-            }
-            return width;
-        }
-
-        public short GetStringWidth(string text)
-        {
-            return GetTextWidth(text, 0, 10000);
-        }
-
-        public void InvertRect(Register bitmap, short bitmapStride, Rect rect, byte foreColor, byte backColor,
-            bool doScaling)
-        {
-            Rect targetRect = rect;
-            if (doScaling)
-            {
-                bitmapStride =
-                    (short)(bitmapStride * _scaledWidth / SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptWidth);
-                targetRect = ScaleRect(rect);
-            }
-
-            var bitmapData = _segMan.GetHunkPointer(bitmap);
-
-            // NOTE: SCI code is super weird here; it seems to be trying to look at the
-            // entire size of the bitmap including the header, instead of just the pixel
-            // data size. We just look at the pixel size. This function generally is an
-            // odd duck since the stride dimension for a bitmap is built in to the bitmap
-            // header, so perhaps it was once an unheadered bitmap format and this
-            // function was never updated to match? Or maybe they exploit the
-            // configurable stride length somewhere else to do stair stepping inverts...
-            int invertSize = targetRect.Height * bitmapStride + targetRect.Width;
-            int bitmapSize = (int)bitmapData.ReadSci11EndianUInt32(12);
-
-            if (invertSize >= bitmapSize)
-            {
-                Error("InvertRect too big: {0} >= {1}", invertSize, bitmapSize);
-            }
-
-            // NOTE: Actual engine just added the bitmap header size hardcoded here
-            var pixel = new BytePtr(bitmapData, (int)bitmapData.ReadSci11EndianUInt32(28) +
-                                                bitmapStride * targetRect.Top + targetRect.Left);
-
-            short stride = (short)(bitmapStride - targetRect.Width);
-            short targetHeight = targetRect.Height;
-            short targetWidth = targetRect.Width;
-
-            for (var y = 0; y < targetHeight; ++y)
-            {
-                for (var x = 0; x < targetWidth; ++x)
-                {
-                    if (pixel.Value == foreColor)
-                    {
-                        pixel.Value = backColor;
-                    }
-                    else if (pixel.Value == backColor)
-                    {
-                        pixel.Value = foreColor;
-                    }
-
-                    pixel.Offset++;
-                }
-
-                pixel.Offset += stride;
+                --heightRemaining;
             }
         }
     }

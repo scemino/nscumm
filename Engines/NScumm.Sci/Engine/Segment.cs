@@ -209,7 +209,7 @@ namespace NScumm.Sci.Engine
         }
     }
 
-    internal class SegmentObjTable<T> : SegmentObj where T : new()
+    internal class SegmentObjTable<T> : SegmentObj where T : IDisposable, new()
     {
         private const int HEAPENTRY_INVALID = -1;
 
@@ -259,6 +259,8 @@ namespace NScumm.Sci.Engine
                 throw new ArgumentOutOfRangeException("idx", $"Table::freeEntry: Attempt to release invalid table index {idx}");
 
             _table[idx].next_free = first_free;
+            _table[idx].Item.Dispose();
+            _table[idx].Item = default(T);
             first_free = idx;
             entries_used--;
         }
@@ -277,6 +279,8 @@ namespace NScumm.Sci.Engine
                 first_free = _table[oldff].next_free;
 
                 _table[oldff].next_free = oldff;
+                System.Diagnostics.Debug.Assert(_table[oldff].Item == null);
+                _table[oldff].Item = new T();
                 return oldff;
             }
 
@@ -351,10 +355,12 @@ namespace NScumm.Sci.Engine
         }
     }
 
-    internal class List
+    internal class List : IDisposable
     {
         public Register first;
         public Register last;
+
+        void IDisposable.Dispose() { }
     }
 
     internal class ListTable : SegmentObjTable<List>
@@ -385,7 +391,7 @@ namespace NScumm.Sci.Engine
         }
     }
 
-    internal class Node
+    internal class Node : IDisposable
     {
         /// <summary>
         /// Predecessor node
@@ -397,6 +403,8 @@ namespace NScumm.Sci.Engine
         public Register succ;
         public Register key;
         public Register value;
+
+        void IDisposable.Dispose() { }
     }
 
     internal class NodeTable : SegmentObjTable<Node>
@@ -429,11 +437,13 @@ namespace NScumm.Sci.Engine
         }
     }
 
-    internal class Hunk
+    internal class Hunk : IDisposable
     {
         public byte[] mem;
         public int size;
         public string type;
+
+        void IDisposable.Dispose() { }
     }
 
     internal class HunkTable : SegmentObjTable<Hunk>
@@ -493,7 +503,8 @@ namespace NScumm.Sci.Engine
             {
                 ret.reg = new RegisterPtr(new StackPtr(_locals, (int)(pointer.Offset / 2)));
             }
-            else {
+            else
+            {
                 if ((SciEngine.Instance.EngineState.CurrentRoomNumber == 160 ||
                      SciEngine.Instance.EngineState.CurrentRoomNumber == 220)
                     && SciEngine.Instance.GameId == SciGameId.LAURABOW2)
@@ -505,7 +516,8 @@ namespace NScumm.Sci.Engine
                     // - room 220: Heap 220 has 114 local variables (0-113), and the
                     //   game asks for variables at indices 114-120 too.
                 }
-                else {
+                else
+                {
                     throw new InvalidOperationException($"LocalVariables::dereference: Offset at end or out of bounds {pointer}");
                 }
                 ret.reg = null;
@@ -552,19 +564,19 @@ namespace NScumm.Sci.Engine
             maxSize = 0;
         }
 
-        public bool IsValid => isRaw ? raw != BytePtr.Null : reg!=null;
+        public bool IsValid => isRaw ? raw != BytePtr.Null : reg != null;
     }
 
     internal class BitmapTable : SegmentObjTable<SciBitmap>
     {
-        public BitmapTable() : base(SegmentType.BITMAP) {}
+        public BitmapTable() : base(SegmentType.BITMAP) { }
 
         public override SegmentRef Dereference(Register pointer)
         {
             SegmentRef ret = new SegmentRef();
             ret.isRaw = true;
-            ret.maxSize = this[(int) pointer.Offset].RawSize;
-            ret.raw = this[(int) pointer.Offset].RawData;
+            ret.maxSize = this[(int)pointer.Offset].RawSize;
+            ret.raw = this[(int)pointer.Offset].RawData;
             return ret;
         }
     }

@@ -217,9 +217,9 @@ namespace NScumm.Sci.Graphics
                     if (color != clearKey && priority >= _screen.GetPriority((short)x2, (short)y2))
                     {
                         byte outputColor = palette.mapping[color];
-                        // TODO: SCI16 remapping (QFG4 demo)
-                        //if (SciEngine.Instance._gfxRemap16 && SciEngine.Instance._gfxRemap16.isRemapped(outputColor))
-                        //    outputColor = SciEngine.Instance._gfxRemap16.remapColor(outputColor, _screen.GetVisual(x2, y2));
+                        // SCI16 remapping (QFG4 demo)
+                        if (SciEngine.Instance._gfxRemap16 != null && SciEngine.Instance._gfxRemap16.IsRemapped(outputColor))
+                            outputColor = SciEngine.Instance._gfxRemap16.RemapColor(outputColor, _screen.GetVisual((short)x2, (short)y2));
                         _screen.PutPixel((short)x2, (short)y2, drawMask, outputColor, priority, 0);
                     }
                 }
@@ -348,10 +348,10 @@ namespace NScumm.Sci.Graphics
             scaledHeight = (short)ScummHelper.Clip(scaledHeight, 0, _screen.Height);
 
             var outRect = new Rect();
-            outRect.Left = (short) (x + scaledDisplaceX - (scaledWidth >> 1));
-            outRect.Right = (short) (outRect.Left + scaledWidth);
-            outRect.Bottom = (short) (y + scaledDisplaceY - z + 1);
-            outRect.Top = (short) (outRect.Bottom - scaledHeight);
+            outRect.Left = (short)(x + scaledDisplaceX - (scaledWidth >> 1));
+            outRect.Right = (short)(outRect.Left + scaledWidth);
+            outRect.Bottom = (short)(y + scaledDisplaceY - z + 1);
+            outRect.Top = (short)(outRect.Bottom - scaledHeight);
             return outRect;
         }
 
@@ -665,14 +665,17 @@ namespace NScumm.Sci.Graphics
                     }
 #if ENABLE_SCI32
                     // adjust width/height returned to scripts
-                    if (_sci2ScaleRes != Sci32ViewNativeResolution.NONE) {
-                        for (loopNo = 0; loopNo<_loopCount; loopNo++)
-                            for (celNo = 0; celNo<_loop[loopNo].celCount; celNo++)
+                    if (_sci2ScaleRes != Sci32ViewNativeResolution.NONE)
+                    {
+                        for (loopNo = 0; loopNo < _loopCount; loopNo++)
+                            for (celNo = 0; celNo < _loop[loopNo].celCount; celNo++)
                                 _screen.AdjustBackUpscaledCoordinates(ref _loop[loopNo].cel[celNo].scriptWidth, ref _loop[loopNo].cel[celNo].scriptHeight, _sci2ScaleRes);
-                                } else if (ResourceManager.GetSciVersion() >= SciVersion.V2_1_EARLY &&
-                                           ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE) {
-                        for (loopNo = 0; loopNo<_loopCount; loopNo++)
-                            for (celNo = 0; celNo<_loop[loopNo].celCount; celNo++)
+                    }
+                    else if (ResourceManager.GetSciVersion() >= SciVersion.V2_1_EARLY &&
+                             ResourceManager.GetSciVersion() <= SciVersion.V2_1_LATE)
+                    {
+                        for (loopNo = 0; loopNo < _loopCount; loopNo++)
+                            for (celNo = 0; celNo < _loop[loopNo].celCount; celNo++)
                                 _coordAdjuster.FromDisplayToScript(ref _loop[loopNo].cel[celNo].scriptHeight, ref _loop[loopNo].cel[celNo].scriptWidth);
                     }
 #endif

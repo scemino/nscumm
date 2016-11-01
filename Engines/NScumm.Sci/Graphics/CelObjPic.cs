@@ -118,9 +118,9 @@ namespace NScumm.Sci.Graphics
 
             _width = celHeader.Data.ReadSci11EndianUInt16(celHeader.Offset);
             _height = celHeader.Data.ReadSci11EndianUInt16(celHeader.Offset + 2);
-            _displace.X = (short) celHeader.Data.ReadSci11EndianUInt16(celHeader.Offset + 4);
-            _displace.Y = (short) celHeader.Data.ReadSci11EndianUInt16(celHeader.Offset + 6);
-            _transparentColor = celHeader[8];
+            _origin.X = (short) celHeader.Data.ReadSci11EndianUInt16(celHeader.Offset + 4);
+            _origin.Y = (short) celHeader.Data.ReadSci11EndianUInt16(celHeader.Offset + 6);
+            _skipColor = celHeader[8];
             _compressionType = (CelCompressionType) celHeader[9];
             _priority = (short) celHeader.Data.ReadSci11EndianUInt16(celHeader.Offset + 36);
             _relativePosition.X = (short) celHeader.Data.ReadSci11EndianUInt16(celHeader.Offset + 38);
@@ -179,7 +179,7 @@ namespace NScumm.Sci.Graphics
             for (var i = 0; i < _width * _height; ++i)
             {
                 var pixel = pixels[i];
-                if (pixel == _transparentColor)
+                if (pixel == _skipColor)
                 {
                     return true;
                 }

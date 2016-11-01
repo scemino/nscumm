@@ -82,38 +82,45 @@ namespace NScumm.Sci.Engine
             GET_SAVEFILE_NAME = 8
         }
 
+        enum CheckFreeSpaceMode
+        {
+            kSaveGameSize = 0,
+            kFreeDiskSpace = 1,
+            kEnoughSpaceToSave = 2
+        }
+
         private static Register kCheckFreeSpace(EngineState s, int argc, StackPtr argv)
         {
-            if (argc > 1)
+            // A file path to test is also passed to this function as a separate
+            // argument, but we do not actually check anything, so it is unused
+
+            CheckFreeSpaceMode subop;
+            // In SCI2.1mid, the call is moved into kFileIO and the arguments are
+            // flipped
+            if (ResourceManager.GetSciVersion() >= SciVersion.V2_1_MIDDLE)
             {
-                // SCI1.1/SCI32
-                // TODO: don't know if those are right for SCI32 as well
-                // Please note that sierra sci supported both calls either w/ or w/o opcode in SCI1.1
-                switch (argv[1].ToUInt16())
-                {
-                    case 0: // return saved game size
-                        return Register.Make(0, 0); // we return 0
-
-                    case 1: // return free harddisc space (shifted right somehow)
-                        return Register.Make(0, 0x7fff); // we return maximum
-
-                    case 2: // same as call w/o opcode
-                        break;
-
-                    default:
-                        throw new InvalidOperationException(
-                            "kCheckFreeSpace: called with unknown sub-op {argv[1].ToUInt16()}");
-                }
+                subop = argc > 0 ? (CheckFreeSpaceMode)argv[0].ToInt16() : CheckFreeSpaceMode.kEnoughSpaceToSave;
+            }
+            else
+            {
+                subop = argc > 1 ? (CheckFreeSpaceMode)argv[1].ToInt16() : CheckFreeSpaceMode.kEnoughSpaceToSave;
             }
 
-            var path = s._segMan.GetString(argv[0]);
+            switch (subop)
+            {
+                case CheckFreeSpaceMode.kSaveGameSize:
+                    return Register.Make(0, 0);
 
-            Debug(3, $"kCheckFreeSpace({path}");
+                case CheckFreeSpaceMode.kFreeDiskSpace: // in KiB; up to 32MiB maximum
+                    return Register.Make(0, 0x7fff);
 
-            // We simply always pretend that there is enough space. The alternative
-            // would be to write a big test file, which is not nice on systems where
-            // doing so is very slow.
-            return Register.Make(0, 1);
+                case CheckFreeSpaceMode.kEnoughSpaceToSave:
+                    return Register.Make(0, 1);
+
+                default:
+                    Error("kCheckFreeSpace: called with unknown sub-op {0}", (int)subop);
+                    return Register.NULL_REG;
+            }
         }
 
         private static Register kCheckSaveGame(EngineState s, int argc, StackPtr argv)
@@ -142,7 +149,7 @@ namespace NScumm.Sci.Engine
                 savegameId = virtualId - SAVEGAMEID_OFFICIALRANGE_START;
             }
 
-            var savegameNr = File.FindSavegame(saves, (short) savegameId);
+            var savegameNr = File.FindSavegame(saves, (short)savegameId);
             if (savegameNr == -1)
                 return Register.NULL_REG;
 
@@ -166,76 +173,76 @@ namespace NScumm.Sci.Engine
                 return s.r_acc;
             }
 
-            var mode = (DeviceInfo) argv[0].ToUInt16();
+            var mode = (DeviceInfo)argv[0].ToUInt16();
 
             switch (mode)
             {
                 case DeviceInfo.GET_DEVICE:
-                {
-                    var input_str = s._segMan.GetString(argv[1]);
+                    {
+                        var input_str = s._segMan.GetString(argv[1]);
 
-                    s._segMan.Strcpy(argv[2], "/");
-                    Debug(3, $"DeviceInfo.GET_DEVICE({input_str}) . /");
-                    break;
-                }
+                        s._segMan.Strcpy(argv[2], "/");
+                        Debug(3, $"DeviceInfo.GET_DEVICE({input_str}) . /");
+                        break;
+                    }
                 case DeviceInfo.GET_CURRENT_DEVICE:
                     s._segMan.Strcpy(argv[1], "/");
                     Debug(3, "DeviceInfo.GET_CURRENT_DEVICE() . /");
                     break;
 
                 case DeviceInfo.PATHS_EQUAL:
-                {
-                    var path1_s = s._segMan.GetString(argv[1]);
-                    var path2_s = s._segMan.GetString(argv[2]);
-                    Debug(3, $"DeviceInfo.PATHS_EQUAL({path1_s},{path2_s})");
+                    {
+                        var path1_s = s._segMan.GetString(argv[1]);
+                        var path2_s = s._segMan.GetString(argv[2]);
+                        Debug(3, $"DeviceInfo.PATHS_EQUAL({path1_s},{path2_s})");
 
-                    Register.Make(0, string.Equals(path2_s, path1_s, StringComparison.Ordinal));
-                }
+                        Register.Make(0, string.Equals(path2_s, path1_s, StringComparison.Ordinal));
+                    }
                     break;
 
                 case DeviceInfo.IS_FLOPPY:
-                {
-                    var input_str = s._segMan.GetString(argv[1]);
-                    Debug(3, $"DeviceInfo.IS_FLOPPY({input_str})");
-                    return Register.NULL_REG; /* Never */
-                }
+                    {
+                        var input_str = s._segMan.GetString(argv[1]);
+                        Debug(3, $"DeviceInfo.IS_FLOPPY({input_str})");
+                        return Register.NULL_REG; /* Never */
+                    }
                 case DeviceInfo.GET_CONFIG_PATH:
-                {
-                    // Early versions return drive letter, later versions a path string
-                    // FIXME: Implement if needed, for now return NULL_REG
-                    return Register.NULL_REG;
-                }
+                    {
+                        // Early versions return drive letter, later versions a path string
+                        // FIXME: Implement if needed, for now return NULL_REG
+                        return Register.NULL_REG;
+                    }
                 /* SCI uses these in a less-than-portable way to delete savegames.
                     ** Read http://www-plan.cs.colorado.edu/creichen/freesci-logs/2005.10/log20051019.html
                     ** for more information on our workaround for this.
                     */
                 case DeviceInfo.GET_SAVECAT_NAME:
-                {
-                    var game_prefix = s._segMan.GetString(argv[2]);
-                    s._segMan.Strcpy(argv[1], "__throwaway");
-                    Debug(3, $"DeviceInfo.GET_SAVECAT_NAME({game_prefix}) . __throwaway");
-                }
+                    {
+                        var game_prefix = s._segMan.GetString(argv[2]);
+                        s._segMan.Strcpy(argv[1], "__throwaway");
+                        Debug(3, $"DeviceInfo.GET_SAVECAT_NAME({game_prefix}) . __throwaway");
+                    }
 
                     break;
                 case DeviceInfo.GET_SAVEFILE_NAME:
-                {
-                    var game_prefix = s._segMan.GetString(argv[2]);
-                    int virtualId = argv[3].ToUInt16();
-                    s._segMan.Strcpy(argv[1], "__throwaway");
-                    Debug(3, $"DeviceInfo.GET_SAVEFILE_NAME({game_prefix},{virtualId}) . __throwaway");
-                    if ((virtualId < SAVEGAMEID_OFFICIALRANGE_START) || (virtualId > SAVEGAMEID_OFFICIALRANGE_END))
-                        throw new InvalidOperationException("kDeviceInfo(deleteSave): invalid savegame ID specified");
-                    var savegameId = virtualId - SAVEGAMEID_OFFICIALRANGE_START;
-                    var saves = File.ListSavegames();
-                    if (File.FindSavegame(saves, (short) savegameId) != -1)
                     {
-                        // Confirmed that this id still lives...
-                        var filename = SciEngine.Instance.GetSavegameName(savegameId);
-                        var saveFileMan = SciEngine.Instance.SaveFileManager;
-                        saveFileMan.RemoveSavefile(filename);
+                        var game_prefix = s._segMan.GetString(argv[2]);
+                        int virtualId = argv[3].ToUInt16();
+                        s._segMan.Strcpy(argv[1], "__throwaway");
+                        Debug(3, $"DeviceInfo.GET_SAVEFILE_NAME({game_prefix},{virtualId}) . __throwaway");
+                        if ((virtualId < SAVEGAMEID_OFFICIALRANGE_START) || (virtualId > SAVEGAMEID_OFFICIALRANGE_END))
+                            throw new InvalidOperationException("kDeviceInfo(deleteSave): invalid savegame ID specified");
+                        var savegameId = virtualId - SAVEGAMEID_OFFICIALRANGE_START;
+                        var saves = File.ListSavegames();
+                        if (File.FindSavegame(saves, (short)savegameId) != -1)
+                        {
+                            // Confirmed that this id still lives...
+                            var filename = SciEngine.Instance.GetSavegameName(savegameId);
+                            var saveFileMan = SciEngine.Instance.SaveFileManager;
+                            saveFileMan.RemoveSavefile(filename);
+                        }
+                        break;
                     }
-                    break;
-                }
 
                 default:
                     throw new InvalidOperationException($"Unknown DeviceInfo() sub-command: {mode}");
@@ -268,9 +275,9 @@ namespace NScumm.Sci.Engine
             s._lastSaveVirtualId = SAVEGAMEID_OFFICIALRANGE_START;
 
             var saves = File.ListSavegames();
-            var totalSaves = (uint) Math.Min(saves.Count, MAX_SAVEGAME_NR);
+            var totalSaves = (uint)Math.Min(saves.Count, MAX_SAVEGAME_NR);
 
-            var slot = s._segMan.DerefRegPtr(argv[2], (int) totalSaves);
+            var slot = s._segMan.DerefRegPtr(argv[2], (int)totalSaves);
 
             if (slot == null)
             {
@@ -285,7 +292,7 @@ namespace NScumm.Sci.Engine
 
             for (var i = 0; i < totalSaves; i++)
             {
-                sl[i] = Register.Make(0, (ushort) (saves[i].id + SAVEGAMEID_OFFICIALRANGE_START));
+                sl[i] = Register.Make(0, (ushort)(saves[i].id + SAVEGAMEID_OFFICIALRANGE_START));
                 // Store the virtual savegame ID (see above)
                 Array.Copy(saves[i].name.GetBytes(), 0, saveNames, ptr, saves[i].name.Length);
                 ptr += SCI_MAX_SAVENAME_LENGTH;
@@ -293,9 +300,9 @@ namespace NScumm.Sci.Engine
 
             saveNames[ptr] = 0; // Terminate list
 
-            s._segMan.Memcpy(argv[1], new ByteAccess(saveNames), (int) bufSize);
+            s._segMan.Memcpy(argv[1], new ByteAccess(saveNames), (int)bufSize);
 
-            return Register.Make(0, (ushort) totalSaves);
+            return Register.Make(0, (ushort)totalSaves);
         }
 
         private static Register kGetSaveFiles32(EngineState s, int argc, StackPtr argv)
@@ -309,24 +316,24 @@ namespace NScumm.Sci.Engine
 
             // Normally SSCI limits to 20 games per directory, but ScummVM allows more
             // than that with games that use the standard save-load dialogue
-            descriptions.Resize((ushort) (SCI_MAX_SAVENAME_LENGTH * saves.Count + 1), true);
-            saveIds.Resize((ushort) (saves.Count + 1), true);
+            descriptions.Resize((ushort)(SCI_MAX_SAVENAME_LENGTH * saves.Count + 1), true);
+            saveIds.Resize((ushort)(saves.Count + 1), true);
 
             BytePtr ptr;
             for (var i = 0; i < saves.Count; ++i)
             {
                 SavegameDesc save = saves[i];
-                var target = descriptions.ByteAt((ushort) (SCI_MAX_SAVENAME_LENGTH * i));
+                var target = descriptions.ByteAt((ushort)(SCI_MAX_SAVENAME_LENGTH * i));
                 Array.Copy(save.name.GetBytes(), 0, target.Data, target.Offset, SCI_MAX_SAVENAME_LENGTH);
                 ptr = saveIds.ByteAt(0);
-                ptr.Data.WriteInt16(i * 2, (short) (save.id - SaveIdShift));
+                ptr.Data.WriteInt16(i * 2, (short)(save.id - SaveIdShift));
             }
 
-            descriptions[(ushort) (SCI_MAX_SAVENAME_LENGTH * saves.Count)] = 0;
+            descriptions[(ushort)(SCI_MAX_SAVENAME_LENGTH * saves.Count)] = 0;
             ptr = saveIds.ByteAt(0);
             ptr.Data.WriteInt16(saves.Count * 2, 0);
 
-            return Register.Make(0, (ushort) saves.Count);
+            return Register.Make(0, (ushort)saves.Count);
         }
 
         public static Register kRestoreGame(EngineState s, int argc, StackPtr argv)
@@ -399,26 +406,26 @@ namespace NScumm.Sci.Engine
                 switch (SciEngine.Instance.GameId)
                 {
                     case SciGameId.MOTHERGOOSE:
-                    {
-                        // WORKAROUND: Mother Goose SCI0
-                        //  Script 200 / rm200::newRoom will set global C5h directly right after creating a child to the
-                        //   current number of children plus 1.
-                        //  We can't trust that global, that's why we set the actual savedgame id right here directly after
-                        //   restoring a saved game.
-                        //  If we didn't, the game would always save to a new slot
-                        s.variables[Vm.VAR_GLOBAL].SetOffset(0xC5,
-                            (ushort) (SAVEGAMEID_OFFICIALRANGE_START + savegameId));
-                    }
+                        {
+                            // WORKAROUND: Mother Goose SCI0
+                            //  Script 200 / rm200::newRoom will set global C5h directly right after creating a child to the
+                            //   current number of children plus 1.
+                            //  We can't trust that global, that's why we set the actual savedgame id right here directly after
+                            //   restoring a saved game.
+                            //  If we didn't, the game would always save to a new slot
+                            s.variables[Vm.VAR_GLOBAL].SetOffset(0xC5,
+                                (ushort)(SAVEGAMEID_OFFICIALRANGE_START + savegameId));
+                        }
                         break;
                     case SciGameId.MOTHERGOOSE256:
-                    {
-                        // WORKAROUND: Mother Goose SCI1/SCI1.1 does some weird things for
-                        //  saving a previously restored game.
-                        // We set the current savedgame-id directly and remove the script
-                        //  code concerning this via script patch.
-                        s.variables[Vm.VAR_GLOBAL].SetOffset(0xB3,
-                            (ushort) (SAVEGAMEID_OFFICIALRANGE_START + savegameId));
-                    }
+                        {
+                            // WORKAROUND: Mother Goose SCI1/SCI1.1 does some weird things for
+                            //  saving a previously restored game.
+                            // We set the current savedgame-id directly and remove the script
+                            //  code concerning this via script patch.
+                            s.variables[Vm.VAR_GLOBAL].SetOffset(0xB3,
+                                (ushort)(SAVEGAMEID_OFFICIALRANGE_START + savegameId));
+                        }
                         break;
                     case SciGameId.JONES:
                         // HACK: The code that enables certain menu items isn't called when a game is restored from the
@@ -515,7 +522,7 @@ namespace NScumm.Sci.Engine
                 if ((virtualId >= SAVEGAMEID_OFFICIALRANGE_START) && (virtualId <= SAVEGAMEID_OFFICIALRANGE_END))
                 {
                     // savegameId is an actual Id, so search for it just to make sure
-                    savegameId = (short) (virtualId - SAVEGAMEID_OFFICIALRANGE_START);
+                    savegameId = (short)(virtualId - SAVEGAMEID_OFFICIALRANGE_START);
                     if (File.FindSavegame(saves, savegameId) == -1)
                         return Register.NULL_REG;
                 }
@@ -602,13 +609,13 @@ namespace NScumm.Sci.Engine
         private static Register kFileIO(EngineState s, int argc, StackPtr argv)
         {
             if (s == null)
-                return Register.Make(0, (ushort) ResourceManager.GetSciVersion());
+                return Register.Make(0, (ushort)ResourceManager.GetSciVersion());
             throw new InvalidOperationException("not supposed to call this");
         }
 
         private static Register kFileIOOpen(EngineState s, int argc, StackPtr argv)
         {
-            var name = new StringBuilder(s._segMan.GetString(argv[0]));
+            var name = s._segMan.GetString(argv[0]);
 
             // SCI32 can call K_FILEIO_OPEN with only one argument. It seems to
             // just be checking if it exists.
@@ -616,92 +623,201 @@ namespace NScumm.Sci.Engine
             var unwrapFilename = true;
 
             // SQ4 floppy prepends /\ to the filenames
-            if (name.ToString().StartsWith("/\\"))
+            if (name.StartsWith("/\\"))
             {
-                name.Remove(0, 2);
+                name = name.Remove(0, 2);
             }
 
             // SQ4 floppy attempts to update the savegame index file sq4sg.dir when
             // deleting saved games. We don't use an index file for saving or loading,
             // so just stop the game from modifying the file here in order to avoid
             // having it saved in the ScummVM save directory.
-            if (name.ToString() == "sq4sg.dir")
+            if (name == "sq4sg.dir")
             {
                 DebugC(DebugLevels.File, "Not opening unused file sq4sg.dir");
                 return Register.SIGNAL_REG;
             }
 
-            if (name.Length == 0)
+#if ENABLE_SCI32
+            // GK1, GK2, KQ7, LSL6hires, Phant1, PQ4, PQ:SWAT, and SQ6 read in
+            // their game version from the VERSION file
+            if (string.Equals(name, "version", StringComparison.OrdinalIgnoreCase))
             {
-                // Happens many times during KQ1 (e.g. when typing something)
-                DebugC(DebugLevels.File, "Attempted to open a file with an empty filename");
-                return Register.SIGNAL_REG;
-            }
-            DebugC(DebugLevels.File, "kFileIO(open): {0}, 0x{1:X}", name, mode);
+                unwrapFilename = false;
 
-            if (name.ToString().StartsWith("sciAudio\\"))
+                // LSL6hires version is in a file with an empty extension
+                if (SciEngine.FileExists(name + "."))
+                {
+                    name += ".";
+                }
+            }
+
+            if (SciEngine.Instance.GameId == SciGameId.SHIVERS && name.EndsWith(".SG"))
+            {
+                // Shivers stores the name and score of save games in separate %d.SG
+                // files, which are used by the save/load screen
+                if (mode == _K_FILE_MODE_OPEN_OR_CREATE || mode == _K_FILE_MODE_CREATE)
+                {
+                    // Suppress creation of the SG file, since it is not necessary
+                    DebugC(DebugLevels.File, "Not creating unused file {0}", name);
+                    return Register.SIGNAL_REG;
+                }
+                else if (mode == _K_FILE_MODE_OPEN_OR_FAIL)
+                {
+                    // Create a virtual file containing the save game description
+                    // and slot number, as the game scripts expect.
+                    int saveNo = int.Parse(name.Substring(name.Length - 3, 3));
+                    saveNo += SaveIdShift;
+
+                    SavegameDesc save;
+                    File.FillSavegameDesc(SciEngine.Instance.GetSavegameName(saveNo), out save);
+
+                    string score;
+                    if (save.highScore == 0)
+                    {
+                        score = save.lowScore.ToString();
+                    }
+                    else
+                    {
+                        score = $"{save.highScore}{save.lowScore:D3}";
+                    }
+
+                    int nameLength = save.name.Length;
+                    int size = nameLength + /* \r\n */ 2 + score.Length;
+                    byte[] buffer = new byte[size];
+                    Array.Copy(save.name.GetBytes(), buffer, nameLength);
+                    buffer[nameLength] = (byte)'\r';
+                    buffer[nameLength + 1] = (byte)'\n';
+                    Array.Copy(score.GetBytes(), 0, buffer, nameLength + 2, score.Length);
+
+                    uint handle = FindFreeFileHandle(s);
+
+                    s._fileHandles[handle]._in = new MemoryStream(buffer, 0, size);
+                    s._fileHandles[handle]._out = null;
+                    s._fileHandles[handle]._name = string.Empty;
+
+                    return Register.Make(0, (ushort)handle);
+                }
+            }
+            else if (SciEngine.Instance.GameId == SciGameId.MOTHERGOOSEHIRES && name.EndsWith(".DTA"))
+            {
+                throw new NotImplementedException();
+                // MGDX stores the name and avatar ID in separate %d.DTA files, which
+                // are used by the save/load screen
+                //if (mode == _K_FILE_MODE_OPEN_OR_CREATE || mode == _K_FILE_MODE_CREATE)
+                //{
+                //    // Suppress creation of the DTA file, since it is not necessary
+                //    debugC(kDebugLevelFile, "Not creating unused file %s", name.c_str());
+                //    return SIGNAL_REG;
+                //}
+                //else if (mode == _K_FILE_MODE_OPEN_OR_FAIL)
+                //{
+                //    // Create a virtual file containing the save game description
+                //    // and slot number, as the game scripts expect.
+                //    int saveNo;
+                //    sscanf(name.c_str(), "%d.DTA", &saveNo);
+                //    saveNo += kSaveIdShift;
+
+                //    SavegameDesc save;
+                //    fillSavegameDesc(g_sci.getSavegameName(saveNo), &save);
+
+                //    const Common::String avatarId = Common::String::format("%02d", save.avatarId);
+                //    const uint nameLength = strlen(save.name);
+                //    const uint size = nameLength + /* \r\n */ 2 + avatarId.size() + 1;
+                //    char* buffer = (char*)malloc(size);
+                //    memcpy(buffer, save.name, nameLength);
+                //    buffer[nameLength] = '\r';
+                //    buffer[nameLength + 1] = '\n';
+                //    memcpy(buffer + nameLength + 2, avatarId.c_str(), avatarId.size() + 1);
+
+                //    const uint handle = findFreeFileHandle(s);
+
+                //    s._fileHandles[handle]._in = new Common::MemoryReadStream((byte*)buffer, size, DisposeAfterUse::YES);
+                //    s._fileHandles[handle]._out = nullptr;
+                //    s._fileHandles[handle]._name = "";
+
+                //    return make_reg(0, handle);
+                //}
+            }
+            else if (SciEngine.Instance.GameId == SciGameId.KQ7)
+            {
+                throw new NotImplementedException();
+                // KQ7 creates a temp.tmp file to perform an atomic rewrite of the
+                // catalogue, but since we do not create catalogues for most SCI32
+                // games, ignore the write
+                //           if (name.ToString() == "temp.tmp")
+                //           {
+                //               return make_reg(0, VIRTUALFILE_HANDLE_SCI32SAVE);
+                //           }
+
+                //           // KQ7 tries to read out game information from catalogues directly
+                //           // instead of using the standard kSaveGetFiles function
+                //           if (name.ToString() == "kq7cdsg.cat")
+                //           {
+                //               if (mode == _K_FILE_MODE_OPEN_OR_CREATE || mode == _K_FILE_MODE_CREATE)
+                //               {
+                //                   // Suppress creation of the catalogue file, since it is not necessary
+                //                   debugC(kDebugLevelFile, "Not creating unused file %s", name.c_str());
+                //                   return SIGNAL_REG;
+                //               }
+                //               else if (mode == _K_FILE_MODE_OPEN_OR_FAIL)
+                //               {
+                //                   Common::Array<SavegameDesc> saves;
+                //                   listSavegames(saves);
+
+                //                   const uint recordSize = sizeof(int16) + SCI_MAX_SAVENAME_LENGTH;
+                //                   const uint numSaves = MIN<uint>(saves.size(), 10);
+                //                   const uint size = numSaves * recordSize + /* terminator */ 2;
+                //                   byte*const buffer = (byte*)malloc(size);
+
+                //                   byte*out = buffer;
+                //                   for (uint i = 0; i < numSaves; ++i)
+                //                   {
+                //                       WRITE_UINT16(out, saves[i].id - kSaveIdShift);
+                //                       Common::strlcpy((char*)out +sizeof(int16), saves[i].name, SCI_MAX_SAVENAME_LENGTH);
+                //out += recordSize;
+                //                   }
+                //                   WRITE_UINT16(out, 0xFFFF);
+
+                //                   const uint handle = findFreeFileHandle(s);
+                //                   s._fileHandles[handle]._in = new Common::MemoryReadStream(buffer, size, DisposeAfterUse::YES);
+                //                   s._fileHandles[handle]._out = null;
+                //                   s._fileHandles[handle]._name = "";
+
+                //                   return Register.Make(0, handle);
+                //               }
+                //           }
+            }
+
+            // See kMakeSaveCatName
+            if (string.Equals(name, "fake.cat"))
+            {
+                return Register.Make(0, VIRTUALFILE_HANDLE_SCI32SAVE);
+            }
+
+            if (IsSaveCatalogue(name))
+            {
+                bool exists = SaveCatalogueExists(name);
+                if (exists)
+                {
+                    // Dummy handle is used to represent the catalogue and ignore any
+                    // direct game script writes
+                    return Register.Make(0, VIRTUALFILE_HANDLE_SCI32SAVE);
+                }
+                else
+                {
+                    return Register.SIGNAL_REG;
+                }
+            }
+#endif
+
+            DebugC(DebugLevels.File, "kFileIO(open): {0}, 0x{1:x}", name, mode);
+
+            if (name.StartsWith("sciAudio\\"))
             {
                 // fan-made sciAudio extension, don't create those files and instead return a virtual handle
                 return Register.Make(0, VIRTUALFILE_HANDLE_SCIAUDIO);
             }
-
-#if ENABLE_SCI32
-            // Shivers is trying to store savegame descriptions and current spots in
-            // separate .SG files, which are hardcoded in the scripts.
-            // Essentially, there is a normal save file, created by the executable
-            // and an extra hardcoded save file, created by the game scripts, probably
-            // because they didn't want to modify the save/load code to add the extra
-            // information.
-            // Each slot in the book then has two strings, the save description and a
-            // description of the current spot that the player is at. Currently, the
-            // spot strings are always empty (probably related to the unimplemented
-            // kString subop 14, which gets called right before this call).
-            // For now, we don't allow the creation of these files, which means that
-            // all the spot descriptions next to each slot description will be empty
-            // (they are empty anyway). Until a viable solution is found to handle these
-            // extra files and until the spot description strings are initialized
-            // correctly, we resort to virtual files in order to make the load screen
-            // useable. Without this code it is unusable, as the extra information is
-            // always saved to 0.SG for some reason, but on restore the correct file is
-            // used. Perhaps the virtual ID is not taken into account when saving.
-            //
-            // Future TODO: maintain spot descriptions and show them too, ideally without
-            // having to return to this logic of extra hardcoded files.
-            if (SciEngine.Instance.GameId == SciGameId.SHIVERS && name.ToString().EndsWith(".SG"))
-            {
-                switch (mode)
-                {
-                    case _K_FILE_MODE_OPEN_OR_CREATE:
-                    case _K_FILE_MODE_CREATE:
-                        // Game scripts are trying to create a file with the save
-                        // description, stop them here
-                        DebugC(DebugLevels.File, "Not creating unused file {0}", name);
-                        return Register.SIGNAL_REG;
-                    case _K_FILE_MODE_OPEN_OR_FAIL:
-                        // Create a virtual file containing the save game description
-                        // and slot number, as the game scripts expect.
-                        var slotNumber = int.Parse(
-                            ServiceLocator.FileStorage.GetFileNameWithoutExtension(name.ToString()));
-
-                        var saves = File.ListSavegames();
-                        int savegameNr = File.FindSavegame(saves, (short) (slotNumber - SAVEGAMEID_OFFICIALRANGE_START));
-
-                        var size = saves[savegameNr].name.Length + 2;
-                        var buf = new byte[size];
-                        var savename = saves[savegameNr].name.GetBytes();
-                        Array.Copy(savename, buf, name.Length);
-                        buf[size - 1] = 0; // Spot description (empty)
-
-                        uint handle = FindFreeFileHandle(s);
-
-                        s._fileHandles[handle]._in = new MemoryStream(buf, 0, size);
-                        s._fileHandles[handle]._out = null;
-                        s._fileHandles[handle]._name = "";
-
-                        return Register.Make(0, (ushort) handle);
-                }
-            }
-#endif
 
             // QFG import rooms get a virtual filelisting instead of an actual one
             if (SciEngine.Instance.InQfGImportRoom != 0)
@@ -709,11 +825,11 @@ namespace NScumm.Sci.Engine
                 // We need to find out what the user actually selected, "savedHeroes" is
                 // already destroyed when we get here. That's why we need to remember
                 // selection via kDrawControl.
-                name = new StringBuilder(s._dirseeker.GetVirtualFilename(s._chosenQfGImportItem));
+                name = s._dirseeker.GetVirtualFilename(s._chosenQfGImportItem);
                 unwrapFilename = false;
             }
 
-            return file_open(s, name.ToString(), mode, unwrapFilename);
+            return file_open(s, name, mode, unwrapFilename);
         }
 
         private static uint FindFreeFileHandle(EngineState s)
@@ -819,7 +935,7 @@ namespace NScumm.Sci.Engine
             s._fileHandles[handle]._name = englishName;
 
             DebugC(DebugLevels.File, "  . opened file '{0}' with handle {1}", englishName, handle);
-            return Register.Make(0, (ushort) handle);
+            return Register.Make(0, (ushort)handle);
         }
 
         private static Register kFileIOClose(EngineState s, int argc, StackPtr argv)
@@ -843,7 +959,7 @@ namespace NScumm.Sci.Engine
                 f.Close();
                 if (ResourceManager.GetSciVersion() <= SciVersion.V0_LATE)
                     return s.r_acc; // SCI0 semantics: no value returned
-                return Register.SIGNAL_REG;
+                return ResourceManager.GetSciVersion() >= SciVersion.V2 ? Register.TRUE_REG : Register.SIGNAL_REG;
             }
 
             if (ResourceManager.GetSciVersion() <= SciVersion.V0_LATE)
@@ -858,20 +974,18 @@ namespace NScumm.Sci.Engine
             int bytesRead = 0;
             var buf = new byte[size];
             DebugC(DebugLevels.File, "kFileIO(readRaw): {0}, {1}", handle, size);
-            Debug("kFileIO(readRaw): {0}, {1}", handle, size);
 
             FileHandle f = GetFileFromHandle(s, handle);
             if (f != null)
                 bytesRead = f._in.Read(buf, 0, size);
-            Debug("kFileIO(readRaw): {0}", buf);
 
             // TODO: What happens if less bytes are read than what has
             // been requested? (i.e. if bytesRead is non-zero, but still
             // less than size)
             if (bytesRead > 0)
-                s._segMan.Memcpy(argv[1], new ByteAccess(buf), size);
+                s._segMan.Memcpy(argv[1], buf, size);
 
-            return Register.Make(0, (ushort) bytesRead);
+            return Register.Make(0, (ushort)bytesRead);
         }
 
         private static FileHandle GetFileFromHandle(EngineState s, uint handle)
@@ -895,17 +1009,40 @@ namespace NScumm.Sci.Engine
         {
             ushort handle = argv[0].ToUInt16();
             ushort size = argv[2].ToUInt16();
+
+#if ENABLE_SCI32
+            if (handle == VIRTUALFILE_HANDLE_SCI32SAVE)
+            {
+                return Register.Make(0, size);
+            }
+#endif
+
             var buf = new byte[size];
             bool success = false;
             s._segMan.Memcpy(new ByteAccess(buf), argv[1], size);
             DebugC(DebugLevels.File, "kFileIO(writeRaw): {0}, {1}", handle, size);
 
             FileHandle f = GetFileFromHandle(s, handle);
+            int bytesWritten = 0;
             if (f != null)
             {
+                var pos = f._out.Position;
                 f._out.Write(buf, 0, size);
                 success = true;
+                bytesWritten = (int)(f._out.Length - pos);
             }
+
+#if ENABLE_SCI32
+            if (ResourceManager.GetSciVersion() >= SciVersion.V2)
+            {
+                if (!success)
+                {
+                    return Register.SIGNAL_REG;
+                }
+
+                return Register.Make(0, (ushort)bytesWritten);
+            }
+#endif
 
             if (success)
                 return Register.NULL_REG;
@@ -938,8 +1075,17 @@ namespace NScumm.Sci.Engine
                 name = SciEngine.Instance.GetSavegameName(savedir_nr);
                 result = saveFileMan.RemoveSavefile(name);
             }
+#if ENABLE_SCI32
             else if (ResourceManager.GetSciVersion() >= SciVersion.V2)
             {
+                // Special case for KQ7, basically identical to the SQ4 case above,
+                // where the game hardcodes its save game names
+                if (name.StartsWith("kq7cdsg."))
+                {
+                    int saveNo = int.Parse(name.Substring(name.Length - 3, 3));
+                    name = SciEngine.Instance.GetSavegameName(saveNo + SaveIdShift);
+                }
+
                 // The file name may be already wrapped, so check both cases
                 result = saveFileMan.RemoveSavefile(name);
                 if (!result)
@@ -947,6 +1093,7 @@ namespace NScumm.Sci.Engine
                     string wrappedName = SciEngine.Instance.WrapFilename(name);
                     result = saveFileMan.RemoveSavefile(wrappedName);
                 }
+#endif
             }
             else
             {
@@ -955,6 +1102,14 @@ namespace NScumm.Sci.Engine
             }
 
             DebugC(DebugLevels.File, "kFileIO(unlink): {0}", name);
+
+#if ENABLE_SCI32
+            if (ResourceManager.GetSciVersion() >= SciVersion.V2)
+            {
+                return Register.Make(0, result);
+            }
+#endif
+
             if (result)
                 return Register.NULL_REG;
             return Register.Make(0, 2); // DOS - file not found error code
@@ -974,7 +1129,7 @@ namespace NScumm.Sci.Engine
 
         private static int fgets_wrapper(EngineState s, byte[] dest, int maxsize, int handle)
         {
-            var f = GetFileFromHandle(s, (uint) handle);
+            var f = GetFileFromHandle(s, (uint)handle);
             if (f == null)
                 return 0;
 
@@ -997,7 +1152,7 @@ namespace NScumm.Sci.Engine
                 {
                     dst = dst + "\xA";
                 }
-                var data = dst.ToCharArray().Select(c => (byte) c).ToArray();
+                var data = dst.ToCharArray().Select(c => (byte)c).ToArray();
                 Array.Copy(data, dest, data.Length);
             }
             else
@@ -1030,7 +1185,7 @@ namespace NScumm.Sci.Engine
                 return Register.NULL_REG;
             }
 
-            FileHandle f = GetFileFromHandle(s, (uint) handle);
+            FileHandle f = GetFileFromHandle(s, (uint)handle);
 
             if (f != null)
             {
@@ -1048,8 +1203,8 @@ namespace NScumm.Sci.Engine
         private static Register kFileIOSeek(EngineState s, int argc, StackPtr argv)
         {
             ushort handle = argv[0].ToUInt16();
-            ushort offset = (ushort) Math.Abs(argv[1].ToInt16()); // can be negative
-            var whence = (SeekOrigin) argv[2].ToUInt16();
+            ushort offset = (ushort)Math.Abs(argv[1].ToInt16()); // can be negative
+            var whence = (SeekOrigin)argv[2].ToUInt16();
             DebugC(DebugLevels.File, "kFileIO(seek): {0}, {1}, {2}", handle, offset, whence);
 
             var f = GetFileFromHandle(s, handle);
@@ -1060,12 +1215,12 @@ namespace NScumm.Sci.Engine
                 // parameters accordingly if games ask for such a seek mode. A known
                 // case where this is requested is the save file manager in Phantasmagoria
                 if (whence != SeekOrigin.End)
-                    return Register.Make(0, (ushort) f._in.Seek(offset, whence));
+                    return Register.Make(0, (ushort)f._in.Seek(offset, whence));
 
                 whence = SeekOrigin.Begin;
-                offset = (ushort) (f._in.Length - offset);
+                offset = (ushort)(f._in.Length - offset);
 
-                return Register.Make(0, (ushort) f._in.Seek(offset, whence));
+                return Register.Make(0, (ushort)f._in.Seek(offset, whence));
             }
 
             if (f?._out != null)
@@ -1113,6 +1268,13 @@ namespace NScumm.Sci.Engine
                     return Register.NULL_REG;
             }
 
+#if ENABLE_SCI32
+            if (IsSaveCatalogue(name))
+            {
+                return SaveCatalogueExists(name) ? Register.TRUE_REG : Register.NULL_REG;
+            }
+#endif
+
             // TODO: It may apparently be worth caching the existence of
             // phantsg.dir, and possibly even keeping it open persistently
 
@@ -1133,15 +1295,15 @@ namespace NScumm.Sci.Engine
 
             // SCI2+ debug mode
             // TODO: if (DebugMan.isDebugChannelEnabled(kDebugLevelDebugMode)) {
-//                if (!exists && name == "1.scr")		// PQ4
-//                    exists = true;
-//                if (!exists && name == "18.scr")	// QFG4
-//                    exists = true;
-//                if (!exists && name == "99.scr")	// GK1, KQ7
-//                    exists = true;
-//                if (!exists && name == "classes")	// GK2, SQ6, LSL7
-//                    exists = true;
-//            }
+            //                if (!exists && name == "1.scr")		// PQ4
+            //                    exists = true;
+            //                if (!exists && name == "18.scr")	// QFG4
+            //                    exists = true;
+            //                if (!exists && name == "99.scr")	// GK1, KQ7
+            //                    exists = true;
+            //                if (!exists && name == "classes")	// GK2, SQ6, LSL7
+            //                    exists = true;
+            //            }
 
             // Special case for non-English versions of LSL5: The English version of
             // LSL5 calls kFileIO(), case K_FILEIO_OPEN for reading to check if
@@ -1155,7 +1317,7 @@ namespace NScumm.Sci.Engine
             {
                 // Create a new file, and write the bytes for the empty password
                 // string inside
-                byte[] defaultContent = {0xE9, 0xE9, 0xEB, 0xE1, 0x0D, 0x0A, 0x31, 0x30, 0x30, 0x30};
+                byte[] defaultContent = { 0xE9, 0xE9, 0xEB, 0xE1, 0x0D, 0x0A, 0x31, 0x30, 0x30, 0x30 };
                 using (var outFile = saveFileMan.OpenForSaving(wrappedName))
                 {
                     for (int i = 0; i < 10; i++)
@@ -1190,20 +1352,63 @@ namespace NScumm.Sci.Engine
         }
 
 #if ENABLE_SCI32
+        private static bool IsSaveCatalogue(string name)
+        {
+            return name == "autosave.cat" || name.EndsWith("sg.cat");
+        }
+
+        // SCI32 save game scripts check for, and write directly to, the save game
+        // catalogue. Since ScummVM does not use these catalogues, when looking for a
+        // catalogue, we instead check for save games within ScummVM that are logically
+        // equivalent to the behaviour of SSCI.
+        private static bool SaveCatalogueExists(string name)
+        {
+            bool exists = false;
+            ISaveFileManager saveFileMan = SciEngine.Instance.SaveFileManager;
+
+            // There will always be one save game in some games, the "new game"
+            // game, which should be ignored when deciding if there are any save
+            // games available
+            uint numPermanentSaves;
+            switch (SciEngine.Instance.GameId)
+            {
+                case SciGameId.TORIN:
+                case SciGameId.LSL7:
+                case SciGameId.LIGHTHOUSE:
+                    numPermanentSaves = 1;
+                    break;
+                default:
+                    numPermanentSaves = 0;
+                    break;
+            }
+
+            // Torin uses autosave.cat; LSL7 uses autosvsg.cat
+            if (name == "autosave.cat" || name == "autosvsg.cat")
+            {
+                exists = saveFileMan.ListSavefiles(SciEngine.Instance.GetSavegameName(0)).Length != 0;
+            }
+            else
+            {
+                exists = saveFileMan.ListSavefiles(SciEngine.Instance.SavegamePattern).Length > numPermanentSaves;
+            }
+
+            return exists;
+        }
+
         private static Register kFileIOReadByte(EngineState s, int argc, StackPtr argv)
         {
             // Read the byte into the low byte of the accumulator
             var f = GetFileFromHandle(s, argv[0].ToUInt16());
             if (f == null)
                 return Register.NULL_REG;
-            return Register.Make(0, (ushort) ((s.r_acc.ToUInt16() & 0xff00) | f._in.ReadByte()));
+            return Register.Make(0, (ushort)((s.r_acc.ToUInt16() & 0xff00) | f._in.ReadByte()));
         }
 
         private static Register kFileIOWriteByte(EngineState s, int argc, StackPtr argv)
         {
             var f = GetFileFromHandle(s, argv[0].ToUInt16());
             if (f != null)
-                f._out.WriteByte((byte) (argv[1].ToUInt16() & 0xff));
+                f._out.WriteByte((byte)(argv[1].ToUInt16() & 0xff));
             return s.r_acc; // FIXME: does this really not return anything?
         }
 
@@ -1287,7 +1492,7 @@ namespace NScumm.Sci.Engine
         private static Register kSave(EngineState s, int argc, StackPtr argv)
         {
             if (s == null)
-                return Register.Make(0, (ushort) ResourceManager.GetSciVersion());
+                return Register.Make(0, (ushort)ResourceManager.GetSciVersion());
             Error("not supposed to call this");
             return Register.NULL_REG;
         }

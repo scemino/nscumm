@@ -962,7 +962,7 @@ namespace NScumm.Sci.Engine
             }
         }
 
-        public void Memcpy(Register dest, ByteAccess src, int n)
+        public void Memcpy(Register dest, BytePtr src, int n)
         {
             SegmentRef destR = Dereference(dest);
             if (!destR.IsValid)
@@ -989,7 +989,7 @@ namespace NScumm.Sci.Engine
             }
         }
 
-        public void Memcpy(ByteAccess dest, Register src, int n)
+        public void Memcpy(BytePtr dest, Register src, int n)
         {
             SegmentRef srcR = Dereference(src);
             if (!srcR.IsValid)

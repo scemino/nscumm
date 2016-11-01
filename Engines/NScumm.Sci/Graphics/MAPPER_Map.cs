@@ -22,10 +22,10 @@ using NScumm.Core;
 
 namespace NScumm.Sci.Graphics
 {
-    /**
-     * Pixel mapper for a CelObj with transparent pixels,
-     * remapping data, and remapping enabled.
-     */
+    /// <summary>
+    /// Pixel mapper for a CelObj with transparent pixels,
+    /// remapping data, and remapping enabled.
+    /// </summary>
     internal class MAPPER_Map : IMapper
     {
         public void Draw(BytePtr target, byte pixel, byte skipColor)

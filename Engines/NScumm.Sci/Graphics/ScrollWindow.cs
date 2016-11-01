@@ -24,6 +24,7 @@ using NScumm.Core;
 using NScumm.Core.Graphics;
 using NScumm.Sci.Engine;
 using static NScumm.Core.DebugHelper;
+using NScumm.Core.Common;
 
 namespace NScumm.Sci.Graphics
 {
@@ -32,149 +33,149 @@ namespace NScumm.Sci.Graphics
     /// </summary>
     internal class ScrollWindow
     {
-        /**
-	 * The text renderer.
-	 */
+        /// <summary>
+        /// The text renderer.
+        /// </summary>
         private GfxText32 _gfxText32;
 
-        /**
-         * The individual text entries added to the
-         * ScrollWindow.
-         */
-        private List<ScrollWindowEntry> _entries;
+        /// <summary>
+        /// The individual text entries added to the
+        /// ScrollWindow.
+        /// </summary>
+        private Array<ScrollWindowEntry> _entries;
 
-        /**
-         * The maximum number of entries allowed. Once this
-         * limit is reached, the oldest entry will be removed
-         * when a new entry is added.
-         */
+        /// <summary>
+        /// The maximum number of entries allowed. Once this
+        /// limit is reached, the oldest entry will be removed
+        /// when a new entry is added.
+        /// </summary>
         private uint _maxNumEntries;
 
-        /**
-         * A mapping from a line index to the line's character
-         * offset in `_text`.
-         */
-        private List<int> _startsOfLines;
+        /// <summary>
+        /// A mapping from a line index to the line's character
+        /// offset in `_text`.
+        /// </summary>
+        private Array<int> _startsOfLines;
 
-        /**
-         * All text added to the window.
-         */
+        /// <summary>
+        /// All text added to the window.
+        /// </summary>
         private string _text;
 
-        /**
-         * Text that is within the viewport of the ScrollWindow.
-         */
+        /// <summary>
+        /// Text that is within the viewport of the ScrollWindow.
+        /// </summary>
         private string _visibleText;
 
-        /**
-         * The offset of the first visible character in `_text`.
-         */
+        /// <summary>
+        /// The offset of the first visible character in `_text`.
+        /// </summary>
         private int _firstVisibleChar;
 
-        /**
-         * The index of the line that is at the top of the
-         * viewport.
-         */
+        /// <summary>
+        /// The index of the line that is at the top of the
+        /// viewport.
+        /// </summary>
         private int _topVisibleLine;
 
-        /**
-         * The index of the last visible character in `_text`,
-         * or -1 if there is no text.
-         */
+        /// <summary>
+        /// The index of the last visible character in `_text`,
+        /// or -1 if there is no text.
+        /// </summary>
         private int _lastVisibleChar;
 
-        /**
-         * The index of the line that is at the bottom of the
-         * viewport, or -1 if there is no text.
-         */
+        /// <summary>
+        /// The index of the line that is at the bottom of the
+        /// viewport, or -1 if there is no text.
+        /// </summary>
         private int _bottomVisibleLine;
 
-        /**
-         * The total number of lines in the backbuffer. This
-         * number may be higher than the total number of entries
-         * if an entry contains newlines.
-         */
+        /// <summary>
+        /// The total number of lines in the backbuffer. This
+        /// number may be higher than the total number of entries
+        /// if an entry contains newlines.
+        /// </summary>
         private int _numLines;
 
-        /**
-         * The number of lines that are currently visible in the
-         * text area of the window.
-         */
+        /// <summary>
+        /// The number of lines that are currently visible in the
+        /// text area of the window.
+        /// </summary>
         private int _numVisibleLines;
 
-        /**
-         * The plane in which the ScrollWindow should be
-         * rendered.
-         */
+        /// <summary>
+        /// The plane in which the ScrollWindow should be
+        /// rendered.
+        /// </summary>
         private Register _plane;
 
-        /**
-         * The default text color.
-         */
+        /// <summary>
+        /// The default text color.
+        /// </summary>
         private byte _foreColor;
 
-        /**
-         * The default background color of the text bitmap.
-         */
+        /// <summary>
+        /// The default background color of the text bitmap.
+        /// </summary>
         private byte _backColor;
 
-        /**
-         * The default border color of the text bitmap. If -1,
-         * the viewport will have no border.
-         */
+        /// <summary>
+        /// The default border color of the text bitmap. If -1,
+        /// the viewport will have no border.
+        /// </summary>
         private short _borderColor;
 
-        /**
-         * The default font used for rendering text into the
-         * ScrollWindow.
-         */
+        /// <summary>
+        /// The default font used for rendering text into the
+        /// ScrollWindow.
+        /// </summary>
         private int _fontId;
 
-        /**
-         * The default text alignment used for rendering text
-         * into the ScrollWindow.
-         */
+        /// <summary>
+        /// The default text alignment used for rendering text
+        /// into the ScrollWindow.
+        /// </summary>
         private TextAlign _alignment;
 
-        /**
-         * The visibility of the ScrollWindow.
-         */
+        /// <summary>
+        /// The visibility of the ScrollWindow.
+        /// </summary>
         private bool _visible;
 
-        /**
-         * The dimensions of the text box inside the font
-         * bitmap, in text-system coordinates.
-         */
+        /// <summary>
+        /// The dimensions of the text box inside the font
+        /// bitmap, in text-system coordinates.
+        /// </summary>
         private Rect _textRect;
 
-        /**
-         * The top-left corner of the ScrollWindow's screen
-         * item, in game script coordinates, relative to the
-         * parent plane.
-         */
+        /// <summary>
+        /// The top-left corner of the ScrollWindow's screen
+        /// item, in game script coordinates, relative to the
+        /// parent plane.
+        /// </summary>
         private Point _position;
 
-        /**
-         * The height of the default font in screen pixels. All
-         * fonts rendered into the ScrollWindow must have this
-         * same height.
-         */
+        /// <summary>
+        /// The height of the default font in screen pixels. All
+        /// fonts rendered into the ScrollWindow must have this
+        /// same height.
+        /// </summary>
         private byte _pointSize;
 
-        /**
-         * The bitmap used to render text.
-         */
+        /// <summary>
+        /// The bitmap used to render text.
+        /// </summary>
         private Register _bitmap;
 
-        /**
-         * A monotonically increasing ID used to identify
-         * text entries added to the ScrollWindow.
-         */
+        /// <summary>
+        /// A monotonically increasing ID used to identify
+        /// text entries added to the ScrollWindow.
+        /// </summary>
         private ushort _nextEntryId;
 
-        /**
-         * The ScrollWindow's screen item.
-         */
+        /// <summary>
+        /// The ScrollWindow's screen item.
+        /// </summary>
         private ScreenItem _screenItem;
 
         public Rational Where => new Rational(_topVisibleLine, Math.Max(_numLines, 1));
@@ -184,7 +185,7 @@ namespace NScumm.Sci.Graphics
             byte defaultBackColor, int defaultFontId, TextAlign defaultAlignment, short defaultBorderColor,
             ushort maxNumEntries)
         {
-            _startsOfLines = new List<int>();
+            _startsOfLines = new Array<int>(() => 0);
             _gfxText32 = new GfxText32(segMan, SciEngine.Instance._gfxCache);
             _maxNumEntries = maxNumEntries;
             _plane = plane;
@@ -196,7 +197,8 @@ namespace NScumm.Sci.Graphics
             _position = position;
             _nextEntryId = 1;
 
-            _entries = new List<ScrollWindowEntry>(maxNumEntries);
+            _entries = new Array<ScrollWindowEntry>(() => new ScrollWindowEntry());
+            _entries.Reserve(maxNumEntries);
 
             _gfxText32.SetFont(_fontId);
             _pointSize = _gfxText32._font.Height;
@@ -205,13 +207,13 @@ namespace NScumm.Sci.Graphics
             ushort scriptHeight = SciEngine.Instance._gfxFrameout.CurrentBuffer.ScriptHeight;
 
             Rect bitmapRect = new Rect(gameRect);
-            Helpers.Mulinc(ref bitmapRect, new Rational(GfxText32._scaledWidth, scriptWidth),
-                new Rational(GfxText32._scaledHeight, scriptHeight));
+            Helpers.Mulinc(ref bitmapRect, new Rational(GfxText32._xResolution, scriptWidth),
+                new Rational(GfxText32._yResolution, scriptHeight));
 
             _textRect.Left = 2;
             _textRect.Top = 2;
-            _textRect.Right = (short) (bitmapRect.Width - 2);
-            _textRect.Bottom = (short) (bitmapRect.Height - 2);
+            _textRect.Right = (short)(bitmapRect.Width - 2);
+            _textRect.Bottom = (short)(bitmapRect.Height - 2);
 
             byte skipColor = 0;
             while (skipColor == _foreColor || skipColor == _backColor)
@@ -471,12 +473,22 @@ namespace NScumm.Sci.Graphics
             Update(true);
         }
 
+        /// <summary>
+        /// Adds a new text entry to the window. If `fontId`,
+        /// `foreColor`, or `alignment` are `-1`, the
+        /// ScrollWindow's default values will be used.
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="fontId"></param>
+        /// <param name="foreColor"></param>
+        /// <param name="alignment"></param>
+        /// <param name="scrollTo"></param>
+        /// <returns></returns>
         public Register Add(string text, int fontId, short foreColor, TextAlign alignment, bool scrollTo)
         {
-            if (_entries.Count == _maxNumEntries)
+            if (_entries.Size == _maxNumEntries)
             {
-                ScrollWindowEntry removedEntry = _entries[0];
-                _entries.Remove(removedEntry);
+                ScrollWindowEntry removedEntry = _entries.RemoveAt(0);
                 _text = _text.Substring(removedEntry.text.Length);
                 // `_firstVisibleChar` will be reset shortly if
                 // `scrollTo` is true, so there is no reason to
@@ -488,7 +500,7 @@ namespace NScumm.Sci.Graphics
             }
 
             var entry = new ScrollWindowEntry();
-            _entries.Add(entry);
+            _entries.PushBack(entry);
 
             // NOTE: In SSCI the line ID was a memory handle for the
             // string of this line. We use a numeric ID instead.
@@ -504,7 +516,7 @@ namespace NScumm.Sci.Graphics
             // subtraction operation (subtracting `entry.text` size)
             if (scrollTo)
             {
-                _firstVisibleChar = _text.Length;
+                _firstVisibleChar = _text != null ? _text.Length : 0;
             }
 
             FillEntry(entry, text, fontId, foreColor, alignment);
@@ -574,7 +586,7 @@ namespace NScumm.Sci.Graphics
                     _gfxText32._font.Height, _pointSize);
             }
 
-            Rect lineRect = new Rect(0, 0, _textRect.Width, (short) (_pointSize + 3));
+            Rect lineRect = new Rect(0, 0, _textRect.Width, (short)(_pointSize + 3));
 
             _startsOfLines.Clear();
 
@@ -582,13 +594,13 @@ namespace NScumm.Sci.Graphics
             // do not enforce any limit
             for (var charIndex = 0; charIndex < _text.Length;)
             {
-                _startsOfLines.Add(charIndex);
+                _startsOfLines.PushBack(charIndex);
                 charIndex += _gfxText32.GetTextCount(_text, charIndex, lineRect, false);
             }
 
-            _numLines = _startsOfLines.Count;
+            _numLines = _startsOfLines.Size;
 
-            _startsOfLines.Add(_text.Length);
+            _startsOfLines.PushBack(_text.Length);
 
             _lastVisibleChar = _gfxText32.GetTextCount(_text, 0, _fontId, _textRect, false) - 1;
 
@@ -603,7 +615,6 @@ namespace NScumm.Sci.Graphics
 
             _numVisibleLines = _bottomVisibleLine + 1;
         }
-
 
         private static void FillEntry(ScrollWindowEntry entry, string text, int fontId, short foreColor,
             TextAlign alignment)

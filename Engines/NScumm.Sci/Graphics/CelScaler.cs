@@ -24,28 +24,30 @@ namespace NScumm.Sci.Graphics
 {
     internal class CelScalerTable
     {
-        /**
-         * A lookup table of indexes that should be used to find
-         * the correct column to read from the source bitmap
-         * when drawing a scaled version of the source bitmap.
-         */
-        public int[] valuesX = new int[1024];
+        public const int CelScalerTableSize = 4096;
 
-        /**
-         * The ratio used to generate the x-values.
-         */
+        /// <summary>
+        /// A lookup table of indexes that should be used to find
+        /// the correct column to read from the source bitmap
+        /// when drawing a scaled version of the source bitmap.
+        /// </summary>
+        public int[] valuesX = new int[CelScalerTableSize];
+
+        /// <summary>
+        /// The ratio used to generate the x-values.
+        /// </summary>
         public Rational scaleX;
 
-        /**
-         * A lookup table of indexes that should be used to find
-         * the correct row to read from a source bitmap when
-         * drawing a scaled version of the source bitmap.
-         */
-        public int[] valuesY = new int[1024];
+        /// <summary>
+        /// A lookup table of indexes that should be used to find
+        /// the correct row to read from a source bitmap when
+        /// drawing a scaled version of the source bitmap.
+        /// </summary>
+        public int[] valuesY = new int[CelScalerTableSize];
 
-        /**
-         * The ratio used to generate the y-values.
-         */
+        /// <summary>
+        /// The ratio used to generate the y-values.
+        /// </summary>
         public Rational scaleY;
     }
 
@@ -61,72 +63,6 @@ namespace NScumm.Sci.Graphics
         /// The index of the most recently used scale table.
         /// </summary>
         private int _activeIndex;
-
-        /**
-         * Activates a scale table for the given X and Y ratios.
-         * If there is no table that matches the given ratios,
-         * the least most recently used table will be replaced
-         * and activated.
-         */
-
-        private void ActivateScaleTables(ref Rational scaleX, ref Rational scaleY)
-        {
-            short screenWidth = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScreenWidth;
-            short screenHeight = (short) SciEngine.Instance._gfxFrameout.CurrentBuffer.ScreenHeight;
-
-            for (var i = 0; i < _scaleTables.Length; ++i)
-            {
-                if (_scaleTables[i].scaleX == scaleX && _scaleTables[i].scaleY == scaleY)
-                {
-                    _activeIndex = i;
-                    return;
-                }
-            }
-
-            int index = 1 - _activeIndex;
-            _activeIndex = index;
-            CelScalerTable table = _scaleTables[index];
-
-            if (table.scaleX != scaleX)
-            {
-                System.Diagnostics.Debug.Assert(screenWidth <= table.valuesX.Length);
-                BuildLookupTable(table.valuesX, ref scaleX, screenWidth);
-                table.scaleX = scaleX;
-            }
-
-            if (table.scaleY != scaleY)
-            {
-                System.Diagnostics.Debug.Assert(screenHeight <= table.valuesY.Length);
-                BuildLookupTable(table.valuesY, ref scaleY, screenHeight);
-                table.scaleY = scaleY;
-            }
-        }
-
-        /**
-         * Builds a pixel lookup table in `table` for the given
-         * ratio. The table will be filled up to the specified
-         * size, which should be large enough to draw across the
-         * entire target buffer.
-         */
-
-        private void BuildLookupTable(int[] table, ref Rational ratio, int size)
-        {
-            var t = new Ptr<int>(table);
-            int value = 0;
-            int remainder = 0;
-            int num = ratio.Numerator;
-            for (int i = 0; i < size; ++i)
-            {
-                t.Value = value;
-                t.Offset++;
-                remainder += ratio.Denominator;
-                if (remainder >= num)
-                {
-                    value += remainder / num;
-                    remainder %= num;
-                }
-            }
-        }
 
         public CelScaler()
         {
@@ -159,6 +95,72 @@ namespace NScumm.Sci.Graphics
         {
             ActivateScaleTables(ref scaleX, ref scaleY);
             return _scaleTables[_activeIndex];
+        }
+
+
+        /// <summary>
+        /// Activates a scale table for the given X and Y ratios.
+        /// If there is no table that matches the given ratios,
+        /// the least most recently used table will be replaced
+        /// and activated.
+        /// </summary>
+        /// <param name="scaleX"></param>
+        /// <param name="scaleY"></param>
+        private void ActivateScaleTables(ref Rational scaleX, ref Rational scaleY)
+        {
+            int i;
+            for (i = 0; i < _scaleTables.Length; ++i)
+            {
+                if (_scaleTables[i].scaleX == scaleX && _scaleTables[i].scaleY == scaleY)
+                {
+                    _activeIndex = i;
+                    return;
+                }
+            }
+
+            i = 1 - _activeIndex;
+            _activeIndex = i;
+            CelScalerTable table = _scaleTables[i];
+
+            if (table.scaleX != scaleX)
+            {
+                BuildLookupTable(table.valuesX, ref scaleX, CelScalerTable.CelScalerTableSize);
+                table.scaleX = scaleX;
+            }
+
+            if (table.scaleY != scaleY)
+            {
+                BuildLookupTable(table.valuesY, ref scaleY, CelScalerTable.CelScalerTableSize);
+                table.scaleY = scaleY;
+            }
+        }
+
+        /// <summary>
+        /// Builds a pixel lookup table in `table` for the given
+        /// ratio. The table will be filled up to the specified
+        /// size, which should be large enough to draw across the
+        /// entire target buffer.
+        /// </summary>
+        /// <param name="table"></param>
+        /// <param name="ratio"></param>
+        /// <param name="size"></param>
+        private void BuildLookupTable(int[] table, ref Rational ratio, int size)
+        {
+            var t = new Ptr<int>(table);
+            int value = 0;
+            int remainder = 0;
+            int num = ratio.Numerator;
+            for (int i = 0; i < size; ++i)
+            {
+                t.Value = value;
+                t.Offset++;
+                remainder += ratio.Denominator;
+                if (remainder >= num)
+                {
+                    value += remainder / num;
+                    remainder %= num;
+                }
+            }
         }
     }
 }

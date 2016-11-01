@@ -173,6 +173,7 @@ namespace NScumm.Sci.Engine
             if (cloneObj.Item == null)
             {
                 Error($"Cloning {parentAddr} failed-- internal error");
+                return Register.NULL_REG;
             }
 
             // In case the parent object is a clone itself we need to refresh our

@@ -9,13 +9,13 @@ namespace NScumm.Sci.Graphics
     /// A convenience class for creating and modifying in-memory
     /// bitmaps.
     /// </summary>
-    internal class SciBitmap
+    internal class SciBitmap : IDisposable
     {
         private const int kBitmapRemap = 2;
 
-        byte[] _data;
-        int _dataSize;
-        Buffer _buffer;
+        private byte[] _data;
+        private int _dataSize;
+        private Buffer _buffer;
 
         public bool ShouldGc { get; private set; }
 
@@ -172,7 +172,7 @@ namespace NScumm.Sci.Graphics
 
         public Register Object { get; }
 
-        public Buffer Buffer { get; }
+        public Buffer Buffer => _buffer;
 
         /// <summary>
         /// Gets the size of the bitmap header for the current
@@ -215,7 +215,7 @@ namespace NScumm.Sci.Graphics
 
         public SciBitmap()
         {
-            _data = new byte[0];
+            ShouldGc = true;
         }
 
         private SciBitmap(SciBitmap other)
@@ -269,6 +269,12 @@ namespace NScumm.Sci.Graphics
             YResolution = (ushort)scaledHeight;
 
             _buffer = new Buffer(Width, Height, Pixels);
+        }
+
+        public void Dispose()
+        {
+            _data = null;
+            _dataSize = 0;
         }
     }
 }

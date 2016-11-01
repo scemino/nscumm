@@ -108,6 +108,12 @@ namespace NScumm.Sci.Graphics
             };
             return info;
         }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is CelInfo32)) return false;
+            return this == (CelInfo32)obj;
+        }
     }
 }
 

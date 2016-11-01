@@ -315,7 +315,7 @@ namespace NScumm.Sci.Graphics
 
             if (!_showCursor)
             {
-                SciEngine.Instance._gfxCursor.KernelShow();
+                SciEngine.Instance._gfxCursor32.Unhide();
             }
 
             _lastYieldedFrameNo = 0;

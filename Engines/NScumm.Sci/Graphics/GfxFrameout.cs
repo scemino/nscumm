@@ -23,7 +23,6 @@ using NScumm.Sci.Engine;
 using static NScumm.Core.DebugHelper;
 using NScumm.Sci.Video;
 using NScumm.Core.Common;
-using System.Collections.Generic;
 
 #if ENABLE_SCI32
 
@@ -70,7 +69,7 @@ namespace NScumm.Sci.Graphics
         public bool _isHiRes;
         private GfxPalette32 _palette;
         private SegManager _segMan;
-        
+
         /// <summary>
         /// Optimization to avoid the more expensive object name
         /// comparision on every call to kAddScreenItem and
@@ -1260,7 +1259,7 @@ namespace NScumm.Sci.Graphics
                 }
                 else if (plane._updated != 0)
                 {
-                    visiblePlane = plane;
+                    visiblePlane.Assign(plane);
                     --plane._updated;
                 }
             }
@@ -1474,7 +1473,7 @@ namespace NScumm.Sci.Graphics
                 }
 
                 byte pixel = celObj.ReadPixel((ushort)scaledPosition.X, (ushort)scaledPosition.Y, mirrorX);
-                return pixel != celObj._transparentColor;
+                return pixel != celObj._skipColor;
             }
 
             return true;
@@ -1611,14 +1610,14 @@ namespace NScumm.Sci.Graphics
             screenItem.Update();
         }
 
-        public void KernelAddPicAt(Register planeObject, int pictureId, short x, short y, bool mirrorX)
+        public void KernelAddPicAt(Register planeObject, int pictureId, short x, short y, bool mirrorX, bool deleteDuplicate)
         {
             Plane plane = _planes.FindByObject(planeObject);
             if (plane == null)
             {
                 Error("kAddPicAt: Plane {0} not found", planeObject);
             }
-            plane.AddPic(pictureId, new Point(x, y), mirrorX);
+            plane.AddPic(pictureId, new Point(x, y), mirrorX, deleteDuplicate);
         }
 
         public void KernelMovePlaneItems(Register @object, short deltaX, short deltaY, bool scrollPics)

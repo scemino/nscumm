@@ -1505,8 +1505,8 @@ namespace NScumm.Sci.Engine
         {
             SciEngine.Instance._gfxText32.SetFont(argv[2].ToUInt16());
 
-            StackPtr? rect = s._segMan.DerefRegPtr(argv[0], 4);
-            if (rect.HasValue)
+            SciArray rect = s._segMan.LookupArray(argv[0]);
+            if (rect == null)
             {
                 Error("kTextSize: {0} cannot be dereferenced", argv[0]);
             }
@@ -1516,11 +1516,15 @@ namespace NScumm.Sci.Engine
             bool doScaling = argc <= 4 || argv[4].ToInt16() != 0;
 
             Rect textRect = SciEngine.Instance._gfxText32.GetTextSize(text, maxWidth, doScaling);
-            var r = rect.Value;
-            r[0] = Register.Make(0, (ushort)textRect.Left);
-            r[1] = Register.Make(0, (ushort)textRect.Top);
-            r[2] = Register.Make(0, (ushort)(textRect.Right - 1));
-            r[3] = Register.Make(0, (ushort)(textRect.Bottom - 1));
+
+            var value = new Register[] {
+                Register.Make(0, (ushort)textRect.Left),
+                Register.Make(0, (ushort)textRect.Top),
+                Register.Make(0, (ushort)(textRect.Right - 1)),
+                Register.Make(0, (ushort)(textRect.Bottom - 1))
+            };
+
+            rect.SetElements(0, 4, new StackPtr(value));
             return s.r_acc;
         }
 
@@ -1864,8 +1868,9 @@ namespace NScumm.Sci.Engine
             short x = argv[2].ToInt16();
             short y = argv[3].ToInt16();
             bool mirrorX = argc > 4 && argv[4].ToInt16() != 0;
+            bool deleteDuplicate = argc > 5 ? argv[5].ToInt16() != 0 : true;
 
-            SciEngine.Instance._gfxFrameout.KernelAddPicAt(planeObj, pictureId, x, y, mirrorX);
+            SciEngine.Instance._gfxFrameout.KernelAddPicAt(planeObj, pictureId, x, y, mirrorX, deleteDuplicate);
             return s.r_acc;
         }
 
@@ -1902,10 +1907,10 @@ namespace NScumm.Sci.Engine
             switch (argv[0].ToUInt16())
             {
                 case 0:
-                    result = view._displace.X;
+                    result = view._origin.X;
                     break;
                 case 1:
-                    result = view._displace.Y;
+                    result = view._origin.Y;
                     break;
                 case 2:
                 case 3:
@@ -2148,8 +2153,8 @@ namespace NScumm.Sci.Engine
                 y == -1 ? bitmap.Origin.Y : y
             );
 
-            position.X -= alignX == -1 ? view._displace.X : alignX;
-            position.Y -= alignY == -1 ? view._displace.Y : alignY;
+            position.X -= alignX == -1 ? view._origin.X : alignX;
+            position.Y -= alignY == -1 ? view._origin.Y : alignY;
 
             Rect drawRect = new Rect(position.X, position.Y,
                 (short)(position.X + view._width), (short)(position.Y + view._height));

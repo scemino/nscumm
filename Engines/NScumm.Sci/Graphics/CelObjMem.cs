@@ -50,8 +50,8 @@ namespace NScumm.Sci.Graphics
             }
             _width = bitmap.Width;
             _height = bitmap.Height;
-            _displace = bitmap.Origin;
-            _transparentColor = bitmap.SkipColor;
+            _origin = bitmap.Origin;
+            _skipColor = bitmap.SkipColor;
             _xResolution = bitmap.XResolution;
             _yResolution = bitmap.YResolution;
             _hunkPaletteOffset = bitmap.HunkPaletteOffset;

@@ -21,6 +21,7 @@ using System;
 using NScumm.Core;
 using NScumm.Core.Graphics;
 using static NScumm.Core.DebugHelper;
+using NScumm.Sci.Engine;
 
 namespace NScumm.Sci.Graphics
 {
@@ -41,7 +42,7 @@ namespace NScumm.Sci.Graphics
             if (cacheIndex == -1) return new CelObjView(info);
 
             var entry = _cache[cacheIndex];
-            var cachedCelObj = (CelObjView) entry.celObj;
+            var cachedCelObj = (CelObjView)entry.celObj;
             if (cachedCelObj == null)
             {
                 Error("Expected a CelObjView in cache slot {0}", cacheIndex);
@@ -76,7 +77,7 @@ namespace NScumm.Sci.Graphics
             // implementations
 
             var resource = SciEngine.Instance.ResMan.FindResource(
-                new ResourceId(ResourceType.View, (ushort) _info.resourceId), false);
+                new ResourceId(ResourceType.View, (ushort)_info.resourceId), false);
 
             // NOTE: SCI2.1/SQ6 just silently returns here.
             if (resource == null)
@@ -113,7 +114,7 @@ namespace NScumm.Sci.Graphics
             ushort loopCount = data[2];
             if (_info.loopNo >= loopCount)
             {
-                _info.loopNo = (short) (loopCount - 1);
+                _info.loopNo = (short)(loopCount - 1);
             }
 
             // NOTE: This is the actual check, in the actual location,
@@ -129,7 +130,7 @@ namespace NScumm.Sci.Graphics
 
             BytePtr loopHeader = new BytePtr(data, viewHeaderFieldSize + viewHeaderSize + loopHeaderSize * _info.loopNo);
 
-            if ((sbyte) loopHeader[0] != -1)
+            if ((sbyte)loopHeader[0] != -1)
             {
                 if (loopHeader[1] == 1)
                 {
@@ -137,27 +138,41 @@ namespace NScumm.Sci.Graphics
                 }
 
                 loopHeader = new BytePtr(data,
-                    viewHeaderFieldSize + viewHeaderSize + loopHeaderSize * (sbyte) loopHeader[0]);
+                    viewHeaderFieldSize + viewHeaderSize + loopHeaderSize * (sbyte)loopHeader[0]);
             }
 
             byte celCount = loopHeader[2];
             if (_info.celNo >= celCount)
             {
-                _info.celNo = (short) (celCount - 1);
+                _info.celNo = (short)(celCount - 1);
             }
 
-            _hunkPaletteOffset = (int) data.ReadSci11EndianUInt32(8);
+            // A celNo can be negative and still valid. At least PQ4CD uses this strange
+            // arrangement to load its high-resolution main menu resource. In PQ4CD, the
+            // low-resolution menu is at view 23, loop 9, cel 0, and the high-resolution
+            // menu is at view 2300, loop 0, cel 0. View 2300 is specially crafted to
+            // have 2 loops, with the second loop having 0 cels. When in high-resolution
+            // mode, the game scripts only change the view resource ID from 23 to 2300,
+            // leaving loop 9 and cel 0 the same. The code in CelObjView constructor
+            // auto-corrects loop 9 to loop 1, and then auto-corrects the cel number
+            // from 0 to -1, which effectively causes loop 0, cel 0 to be read.
+            if (_info.celNo < 0 && _info.loopNo == 0)
+            {
+                Error("Cel is less than 0 on loop 0");
+            }
+
+            _hunkPaletteOffset = (int)data.ReadSci11EndianUInt32(8);
             _celHeaderOffset =
-                (int) (loopHeader.Data.ReadSci11EndianUInt32(loopHeader.Offset + 12) + (data[13] * _info.celNo));
+                (int)(loopHeader.Data.ReadSci11EndianUInt32(loopHeader.Offset + 12) + (data[13] * _info.celNo));
 
             BytePtr celHeader = new BytePtr(data, _celHeaderOffset);
 
             _width = celHeader.Data.ReadSci11EndianUInt16(celHeader.Offset);
             _height = celHeader.Data.ReadSci11EndianUInt16(celHeader.Offset + 2);
-            _displace.X = (short) (_width / 2 - (short) celHeader.Data.ReadSci11EndianUInt16(celHeader.Offset + 4));
-            _displace.Y = (short) (_height - (short) celHeader.Data.ReadSci11EndianUInt16(celHeader.Offset + 6) - 1);
-            _transparentColor = celHeader[8];
-            _compressionType = (CelCompressionType) celHeader[9];
+            _origin.X = (short)(_width / 2 - (short)celHeader.Data.ReadSci11EndianUInt16(celHeader.Offset + 4));
+            _origin.Y = (short)(_height - (short)celHeader.Data.ReadSci11EndianUInt16(celHeader.Offset + 6) - 1);
+            _skipColor = celHeader[8];
+            _compressionType = (CelCompressionType)celHeader[9];
 
             if (_compressionType != CelCompressionType.None && _compressionType != CelCompressionType.RLE)
             {
@@ -190,14 +205,14 @@ namespace NScumm.Sci.Graphics
         private bool AnalyzeUncompressedForRemap()
         {
             BytePtr pixels = new BytePtr(GetResPointer(),
-                (int) GetResPointer().ReadSci11EndianUInt32(_celHeaderOffset + 24));
+                (int)GetResPointer().ReadSci11EndianUInt32(_celHeaderOffset + 24));
             for (int i = 0; i < _width * _height; ++i)
             {
                 byte pixel = pixels[i];
                 if (
                     pixel >= SciEngine.Instance._gfxRemap32.StartColor &&
                     pixel <= SciEngine.Instance._gfxRemap32.EndColor &&
-                    pixel != _transparentColor
+                    pixel != _skipColor
                 )
                 {
                     return true;
@@ -208,17 +223,17 @@ namespace NScumm.Sci.Graphics
 
         private bool AnalyzeForRemap()
         {
-            var reader = new READER_Compressed(this, (short) _width);
+            var reader = new READER_Compressed(this, (short)_width);
             for (int y = 0; y < _height; y++)
             {
-                var curRow = reader.GetRow((short) y);
+                var curRow = reader.GetRow((short)y);
                 for (int x = 0; x < _width; x++)
                 {
                     byte pixel = curRow[x];
                     if (
                         pixel >= SciEngine.Instance._gfxRemap32.StartColor &&
                         pixel <= SciEngine.Instance._gfxRemap32.EndColor &&
-                        pixel != _transparentColor
+                        pixel != _skipColor
                     )
                     {
                         return true;
@@ -236,7 +251,7 @@ namespace NScumm.Sci.Graphics
         public override BytePtr GetResPointer()
         {
             ResourceManager.ResourceSource.Resource resource = SciEngine.Instance.ResMan.FindResource(
-                new ResourceId(ResourceType.View, (ushort) _info.resourceId), false);
+                new ResourceId(ResourceType.View, (ushort)_info.resourceId), false);
             if (resource == null)
             {
                 Error("Failed to load view {0} from resource manager", _info.resourceId);
@@ -246,7 +261,7 @@ namespace NScumm.Sci.Graphics
 
         public static short GetNumLoops(int viewId)
         {
-            var resource = SciEngine.Instance.ResMan.FindResource(new ResourceId(ResourceType.View, (ushort) viewId),
+            var resource = SciEngine.Instance.ResMan.FindResource(new ResourceId(ResourceType.View, (ushort)viewId),
                 false);
             if (resource == null)
             {
@@ -259,9 +274,10 @@ namespace NScumm.Sci.Graphics
 
         public static short GetNumCels(int viewId, short loopNo)
         {
-            var resource = SciEngine.Instance.ResMan.FindResource(new ResourceId(ResourceType.View, (ushort) viewId), false);
+            var resource = SciEngine.Instance.ResMan.FindResource(new ResourceId(ResourceType.View, (ushort)viewId), false);
 
-            if (resource==null) {
+            if (resource == null)
+            {
                 return 0;
             }
 
@@ -278,24 +294,26 @@ namespace NScumm.Sci.Graphics
             // explicitly trap the bad condition here and report it so that any other
             // game scripts relying on this broken behavior can be fixed as well
 
-            throw new NotImplementedException();
+            if (loopNo == loopCount)
+            {
+                SciTrackOriginReply origin;
+                var solution = Workarounds.TrackOriginAndFindWorkaround(0, Workarounds.kNumCels_workarounds, out origin);
+                switch (solution.type)
+                {
+                    case SciWorkaroundType.NONE:
+                        Error("[CelObjView::getNumCels]: loop number {0} is equal to loop count in view {1}, {2}", loopNo, viewId, origin.ToString());
+                        break;
+                    case SciWorkaroundType.FAKE:
+                        return (short)solution.value;
+                    case SciWorkaroundType.IGNORE:
+                        return 0;
+                    case SciWorkaroundType.STILLCALL:
+                        break;
+                }
+            }
 
-//            if (loopNo == loopCount) {
-//                SciCallOrigin origin;
-//                SciWorkaroundSolution solution = TrackOriginAndFindWorkaround(0, kNumCels_workarounds, &origin);
-//                switch (solution.type) {
-//                    case WORKAROUND_NONE:
-//                        error("[CelObjView::getNumCels]: loop number %d is equal to loop count in view %u, %s", loopNo, viewId, origin.toString().c_str());
-//                    case WORKAROUND_FAKE:
-//                        return (int16)solution.value;
-//                    case WORKAROUND_IGNORE:
-//                        return 0;
-//                    case WORKAROUND_STILLCALL:
-//                        break;
-//                }
-//            }
-
-            if (loopNo > loopCount || loopNo < 0) {
+            if (loopNo > loopCount || loopNo < 0)
+            {
                 return 0;
             }
 
@@ -309,7 +327,8 @@ namespace NScumm.Sci.Graphics
             BytePtr loopHeader = new BytePtr(data, viewHeaderFieldSize + viewHeaderSize + (loopHeaderSize * loopNo));
             System.Diagnostics.Debug.Assert(loopHeader + 3 <= dataMax);
 
-            if ((sbyte)loopHeader[0] != -1) {
+            if ((sbyte)loopHeader[0] != -1)
+            {
                 loopHeader = new BytePtr(data, viewHeaderFieldSize + viewHeaderSize + (loopHeaderSize * (sbyte)loopHeader[0]));
                 System.Diagnostics.Debug.Assert(loopHeader >= data && loopHeader + 3 <= dataMax);
             }

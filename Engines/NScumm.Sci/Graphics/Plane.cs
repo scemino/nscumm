@@ -189,125 +189,133 @@ namespace NScumm.Sci.Graphics
     /// </summary>
     internal class Plane : IComparable<Plane>
     {
-        /**
-         * A serial used for planes that are generated inside
-         * the graphics engine, rather than the interpreter.
-         */
+        /// <summary>
+        /// A serial used for planes that are generated inside
+        /// the graphics engine, rather than the interpreter.
+        /// </summary>
         private static ushort _nextObjectId;
 
-        /**
-         * For planes that are used to render picture data, the
-         * resource ID of the picture to be displayed. This
-         * value may also be one of the special
-         * PlanePictureCodes, in which case the plane becomes a
-         * non-picture plane.
-         */
+        /// <summary>
+        /// For planes that are used to render picture data, the
+        /// resource ID of the picture to be displayed. This
+        /// value may also be one of the special
+        /// PlanePictureCodes, in which case the plane becomes a
+        /// non-picture plane.
+        /// </summary>
         private PlanePictureCodes _pictureId;
 
-        /**
-         * Whether or not the contents of picture planes should
-         * be drawn horizontally mirrored. Only applies to
-         * planes of type Picture.
-         */
+        /// <summary>
+        /// Whether or not the contents of picture planes should
+        /// be drawn horizontally mirrored. Only applies to
+        /// planes of type Picture.
+        /// </summary>
         private bool _mirrored;
 
-        /**
-         * Whether the picture ID for this plane has changed.
-         * This flag is set when the plane is created or updated
-         * from a VM object, and is cleared when the plane is
-         * synchronised to another plane (which calls
-         * changePic).
-         */
+        /// <summary>
+        /// Whether the picture ID for this plane has changed.
+        /// This flag is set when the plane is created or updated
+        /// from a VM object, and is cleared when the plane is
+        /// synchronised to another plane (which calls
+        /// changePic).
+        /// </summary>
         private bool _pictureChanged;
 
-        /**
-         * The type of the plane.
-         */
+        /// <summary>
+        /// The type of the plane.
+        /// </summary>
         public PlaneType _type;
 
-        /**
-         * The color to use when erasing the plane. Only
-         * applies to planes of type Colored.
-         */
+        /// <summary>
+        /// The color to use when erasing the plane. Only
+        /// applies to planes of type Colored.
+        /// </summary>
         public byte _back;
 
-        /**
-         * Whether the priority of this plane has changed.
-         * This flag is set when the plane is updated from
-         * another plane and cleared when draw list calculation
-         * occurs.
-         */
+        /// <summary>
+        /// Whether the priority of this plane has changed.
+        /// This flag is set when the plane is updated from
+        /// another plane and cleared when draw list calculation
+        /// occurs.
+        /// </summary>
         public int _priorityChanged;
 
-        /**
-         * A handle to the VM object corresponding to this
-         * plane. Some planes are generated purely within the
-         * graphics engine and have a numeric object value.
-         */
+        /// <summary>
+        /// A handle to the VM object corresponding to this
+        /// plane. Some planes are generated purely within the
+        /// graphics engine and have a numeric object value.
+        /// </summary>
         public Register _object;
 
-        /**
-         * The rendering priority of the plane. Higher
-         * priorities are drawn above lower priorities.
-         */
+        /// <summary>
+        /// The rendering priority of the plane. Higher
+        /// priorities are drawn above lower priorities.
+        /// </summary>
         public short _priority;
 
-        /**
-         * Whether or not all screen items in this plane should
-         * be redrawn on the next frameout, instead of just
-         * the screen items marked as updated. This is set when
-         * visual changes to the plane itself are made that
-         * affect the rendering of the entire plane, and cleared
-         * once those changes are rendered by `redrawAll`.
-         */
+        /// <summary>
+        /// Whether or not all screen items in this plane should
+        /// be redrawn on the next frameout, instead of just
+        /// the screen items marked as updated. This is set when
+        /// visual changes to the plane itself are made that
+        /// affect the rendering of the entire plane, and cleared
+        /// once those changes are rendered by `redrawAll`.
+        /// </summary>
         public int _redrawAllCount;
 
-        /**
-         * Flags indicating the state of the plane.
-         * - `created` is set when the plane is first created,
-         *   either from a VM object or from within the engine
-         *   itself
-         * - `updated` is set when the plane is updated from
-         *   another plane and the two planes' `planeRect`s do
-         *   not match
-         * - `deleted` is set when the plane is deleted by a
-         *   kernel call
-         * - `moved` is set when the plane has been moved or
-         *   resized
-         */
+        /// <summary>
+        /// Flags indicating the state of the plane.
+        /// - `created` is set when the plane is first created,
+        ///   either from a VM object or from within the engine
+        ///   itself
+        /// - `updated` is set when the plane is updated from
+        ///   another plane and the two planes' `planeRect`s do
+        ///   not match
+        /// - `deleted` is set when the plane is deleted by a
+        ///   kernel call
+        /// - `moved` is set when the plane has been moved or
+        ///   resized
+        /// </summary>
         public int _created, _updated, _deleted, _moved;
 
-        /**
-         * The vanishing point for the plane. Used when
-         * automatically calculating the correct scaling of the
-         * plane's screen items according to their position.
-         */
+        /// <summary>
+        /// The vanishing point for the plane. Used when
+        /// automatically calculating the correct scaling of the
+        /// plane's screen items according to their position.
+        /// </summary>
         public Point _vanishingPoint;
 
-        /**
-         * The position & dimensions of the plane in screen
-         * coordinates. This rect is not clipped to the screen,
-         * so may include coordinates that are offscreen.
-         */
+        /// <summary>
+        /// The position & dimensions of the plane in screen
+        /// coordinates. This rect is not clipped to the screen,
+        /// so may include coordinates that are offscreen.
+        /// </summary>
         public Rect _planeRect;
 
-        /**
-         * The position & dimensions of the plane in game script
-         * coordinates.
-         */
+        /// <summary>
+        /// The position & dimensions of the plane in game script
+        /// coordinates.
+        /// </summary>
         public Rect _gameRect;
 
-        /**
-         * The position & dimensions of the plane in screen
-         * coordinates. This rect is clipped to the screen.
-         */
+        /// <summary>
+        /// The position & dimensions of the plane in screen
+        /// coordinates. This rect is clipped to the screen.
+        /// </summary>
         public Rect _screenRect;
 
-        /**
-         * The list of screen items grouped within this plane.
-         */
+        /// <summary>
+        /// The list of screen items grouped within this plane.
+        /// </summary>
         public readonly ScreenItemList _screenItemList = new ScreenItemList();
 
+        /// <summary>
+        /// NOTE: This constructor signature originally did not accept a
+        /// picture ID, but some calls to construct planes with this signature
+        /// immediately set the picture ID and then called setType again, so
+        /// it made more sense to just make the picture ID a parameter instead.
+        /// </summary>
+        /// <param name="gameRect"></param>
+        /// <param name="pictureId"></param>
         public Plane(Rect gameRect, PlanePictureCodes pictureId = PlanePictureCodes.kPlanePicColored)
         {
             _pictureId = pictureId;
@@ -451,48 +459,6 @@ namespace NScumm.Sci.Graphics
                         MergeToDrawList(j, r, drawList);
                     }
                 }
-            }
-        }
-
-        private static void MergeToRectList(Rect rect, RectList eraseList)
-        {
-            RectList mergeList = new RectList();
-            mergeList.Add(rect);
-
-            for (var i = 0; i < mergeList.Count; ++i)
-            {
-                var r = mergeList[i];
-
-                var eraseCount = eraseList.Count;
-                for (var j = 0; j < eraseCount; ++j)
-                {
-                    Rect eraseRect = eraseList[j];
-                    if (eraseRect.Contains(r))
-                    {
-                        mergeList.RemoveAt(i);
-                        break;
-                    }
-
-                    var outRects = new Rect[4];
-                    int splitCount = GfxFrameout.SplitRects(r, eraseRect, outRects);
-                    if (splitCount == -1) continue;
-                    while (splitCount-- != 0)
-                    {
-                        mergeList.Add(outRects[splitCount]);
-                    }
-
-                    mergeList.RemoveAt(i);
-
-                    // proceed to the next rect
-                    r = mergeList[++i];
-                }
-            }
-
-            mergeList.Pack();
-
-            for (var i = 0; i < mergeList.Count; ++i)
-            {
-                eraseList.Add(mergeList[i]);
             }
         }
 
@@ -847,6 +813,270 @@ namespace NScumm.Sci.Graphics
             DecrementScreenItemArrayCounts(visiblePlane, false);
         }
 
+        public void ChangePic()
+        {
+            _pictureChanged = false;
+
+            if (_type != PlaneType.Picture && _type != PlaneType.TransparentPicture)
+            {
+                return;
+            }
+
+            AddPicInternal(_pictureId, new Point(), _mirrored);
+        }
+
+        public static void Init()
+        {
+            _nextObjectId = 20000;
+        }
+
+        public void RemapMarkRedraw()
+        {
+            var screenItemCount = _screenItemList.Count;
+            for (var i = 0; i < screenItemCount; ++i)
+            {
+                ScreenItem screenItem = _screenItemList[i];
+                if (
+                    screenItem != null &&
+                    screenItem._deleted == 0 && screenItem._created == 0 &&
+                    screenItem._celObj._remap
+                )
+                {
+                    screenItem._updated = SciEngine.Instance._gfxFrameout.GetScreenCount();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Updates the plane to match the state of the plane
+        /// object from the virtual machine.
+        /// 
+        /// @note This method was originally called UpdatePlane
+        /// in SCI engine.
+        /// </summary>
+        /// <param name="object"></param>
+        public void Update(Register @object)
+        {
+            SegManager segMan = SciEngine.Instance.EngineState._segMan;
+            _vanishingPoint.X = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.vanishingX);
+            _vanishingPoint.Y = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.vanishingY);
+            _gameRect.Left = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.inLeft);
+            _gameRect.Top = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.inTop);
+            _gameRect.Right = (short)(SciEngine.ReadSelectorValue(segMan, @object, o => o.inRight) + 1);
+            _gameRect.Bottom = (short)(SciEngine.ReadSelectorValue(segMan, @object, o => o.inBottom) + 1);
+            ConvertGameRectToPlaneRect();
+
+            _priority = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.priority);
+            PlanePictureCodes pictureId =
+                (PlanePictureCodes)SciEngine.ReadSelectorValue(segMan, @object, o => o.picture);
+            if (_pictureId != pictureId)
+            {
+                _pictureId = pictureId;
+                _pictureChanged = true;
+            }
+
+            _mirrored = SciEngine.ReadSelectorValue(segMan, @object, o => o.mirrored) != 0;
+            _back = (byte)SciEngine.ReadSelectorValue(segMan, @object, o => o.back);
+        }
+
+        /// <summary>
+        /// Clips the screen rect of this plane to fit within the
+        /// given screen rect.
+        /// </summary>
+        /// <param name="screenRect"></param>
+        public void ClipScreenRect(Rect screenRect)
+        {
+            // LSL6 hires creates planes with invalid rects; SSCI does not
+            // care about this, but `Common::Rect::clip` does, so we need to
+            // check whether or not the rect is actually valid before clipping
+            // and only clip valid rects
+            if (_screenRect.IsValidRect && _screenRect.Intersects(screenRect))
+            {
+                _screenRect.Clip(screenRect);
+            }
+            else
+            {
+                _screenRect.Left = 0;
+                _screenRect.Top = 0;
+                _screenRect.Right = 0;
+                _screenRect.Bottom = 0;
+            }
+        }
+
+        /// <summary>
+        /// Modifies the position of all non-pic screen items
+        /// by the given delta. If `scrollPics` is true, pic
+        /// items are also repositioned.
+        /// </summary>
+        /// <param name="deltaX"></param>
+        /// <param name="deltaY"></param>
+        /// <param name="scrollPics"></param>
+        public void ScrollScreenItems(short deltaX, short deltaY, bool scrollPics)
+        {
+            _redrawAllCount = SciEngine.Instance._gfxFrameout.GetScreenCount();
+
+            foreach (var screenItem in _screenItemList)
+            {
+                if (screenItem?._deleted == 0 && (screenItem._celInfo.type != CelType.Pic || scrollPics))
+                {
+                    screenItem._position.X += deltaX;
+                    screenItem._position.Y += deltaY;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Compares the properties of the current plane against
+        /// the properties of the `other` plane (which is the
+        /// corresponding plane from the visible plane list) to
+        /// discover which properties have been changed on this
+        /// plane by a call to `update(reg_t)`.
+        /// 
+        /// @note This method was originally called UpdatePlane
+        /// in SCI engine.
+        /// </summary>
+        /// <param name="other"></param>
+        /// <param name="screenRect"></param>
+        public void Sync(Plane other, Rect screenRect)
+        {
+            if (other == null)
+            {
+                if (_pictureChanged)
+                {
+                    DeleteAllPics();
+                    SetType();
+                    ChangePic();
+                    _redrawAllCount = SciEngine.Instance._gfxFrameout.GetScreenCount();
+                }
+                else
+                {
+                    SetType();
+                }
+            }
+            else
+            {
+                if (
+                    _planeRect.Top != other._planeRect.Top ||
+                    _planeRect.Left != other._planeRect.Left ||
+                    _planeRect.Right > other._planeRect.Right ||
+                    _planeRect.Bottom > other._planeRect.Bottom
+                )
+                {
+                    // the plane moved or got larger
+                    _redrawAllCount = SciEngine.Instance._gfxFrameout.GetScreenCount();
+                    _moved = SciEngine.Instance._gfxFrameout.GetScreenCount();
+                }
+                else if (_planeRect != other._planeRect)
+                {
+                    // the plane got smaller
+                    _moved = SciEngine.Instance._gfxFrameout.GetScreenCount();
+                }
+
+                if (_priority != other._priority)
+                {
+                    _priorityChanged = SciEngine.Instance._gfxFrameout.GetScreenCount();
+                }
+
+                if (_pictureId != other._pictureId || _mirrored != other._mirrored || _pictureChanged)
+                {
+                    DeleteAllPics();
+                    SetType();
+                    ChangePic();
+                    _redrawAllCount = SciEngine.Instance._gfxFrameout.GetScreenCount();
+                }
+
+                if (_back != other._back)
+                {
+                    _redrawAllCount = SciEngine.Instance._gfxFrameout.GetScreenCount();
+                }
+            }
+
+            _deleted = 0;
+            if (_created == 0)
+            {
+                _updated = SciEngine.Instance._gfxFrameout.GetScreenCount();
+            }
+
+            ConvertGameRectToPlaneRect();
+            _screenRect = _planeRect;
+            // NOTE: screenRect originally was retrieved through globals
+            // instead of being passed into the function
+            ClipScreenRect(screenRect);
+        }
+
+        public int CompareTo(Plane other)
+        {
+            var result = _priority.CompareTo(other._priority);
+            if (result != 0) return result;
+            return _object.CompareTo(other._object);
+        }
+
+        public int AddPic(int pictureId, Point position, bool mirrorX, bool deleteDuplicate)
+        {
+            if (deleteDuplicate)
+            {
+                DeletePic(pictureId);
+            }
+            AddPicInternal((PlanePictureCodes)pictureId, position, mirrorX);
+            return (int)_pictureId;
+        }
+
+        public void Assign(Plane other)
+        {
+            _gameRect = other._gameRect;
+            _planeRect = other._planeRect;
+            _vanishingPoint = other._vanishingPoint;
+            _pictureId = other._pictureId;
+            _type = other._type;
+            _mirrored = other._mirrored;
+            _priority = other._priority;
+            _back = other._back;
+            _screenRect = other._screenRect;
+            _priorityChanged = other._priorityChanged;
+        }
+
+
+        private static void MergeToRectList(Rect rect, RectList eraseList)
+        {
+            RectList mergeList = new RectList();
+            mergeList.Add(rect);
+
+            for (var i = 0; i < mergeList.Count; ++i)
+            {
+                var r = mergeList[i];
+
+                var eraseCount = eraseList.Count;
+                for (var j = 0; j < eraseCount; ++j)
+                {
+                    Rect eraseRect = eraseList[j];
+                    if (eraseRect.Contains(r))
+                    {
+                        mergeList.RemoveAt(i);
+                        break;
+                    }
+
+                    var outRects = new Rect[4];
+                    int splitCount = GfxFrameout.SplitRects(r, eraseRect, outRects);
+                    if (splitCount == -1) continue;
+                    while (splitCount-- != 0)
+                    {
+                        mergeList.Add(outRects[splitCount]);
+                    }
+
+                    mergeList.RemoveAt(i);
+
+                    // proceed to the next rect
+                    r = mergeList[++i];
+                }
+            }
+
+            mergeList.Pack();
+
+            for (var i = 0; i < mergeList.Count; ++i)
+            {
+                eraseList.Add(mergeList[i]);
+            }
+        }
 
         private void BreakDrawListByPlanes(DrawList drawList, PlaneList planeList)
         {
@@ -955,19 +1185,6 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-
-        public void ChangePic()
-        {
-            _pictureChanged = false;
-
-            if (_type != PlaneType.Picture && _type != PlaneType.TransparentPicture)
-            {
-                return;
-            }
-
-            AddPicInternal(_pictureId, new Point(), _mirrored);
-        }
-
         private void AddPicInternal(PlanePictureCodes pictureId, Point position, bool mirrorX)
         {
             ushort celCount = 1000;
@@ -1037,157 +1254,6 @@ namespace NScumm.Sci.Graphics
             Helpers.Mulru(ref _planeRect, ref ratioX, ref ratioY, 1);
         }
 
-        public static void Init()
-        {
-            _nextObjectId = 20000;
-        }
-
-        public void RemapMarkRedraw()
-        {
-            var screenItemCount = _screenItemList.Count;
-            for (var i = 0; i < screenItemCount; ++i)
-            {
-                ScreenItem screenItem = _screenItemList[i];
-                if (
-                    screenItem != null &&
-                    screenItem._deleted == 0 && screenItem._created == 0 &&
-                    screenItem._celObj._remap
-                )
-                {
-                    screenItem._updated = SciEngine.Instance._gfxFrameout.GetScreenCount();
-                }
-            }
-        }
-
-        public void Update(Register @object)
-        {
-            SegManager segMan = SciEngine.Instance.EngineState._segMan;
-            _vanishingPoint.X = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.vanishingX);
-            _vanishingPoint.Y = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.vanishingY);
-            _gameRect.Left = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.inLeft);
-            _gameRect.Top = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.inTop);
-            _gameRect.Right = (short)(SciEngine.ReadSelectorValue(segMan, @object, o => o.inRight) + 1);
-            _gameRect.Bottom = (short)(SciEngine.ReadSelectorValue(segMan, @object, o => o.inBottom) + 1);
-            ConvertGameRectToPlaneRect();
-
-            _priority = (short)SciEngine.ReadSelectorValue(segMan, @object, o => o.priority);
-            PlanePictureCodes pictureId =
-                (PlanePictureCodes)SciEngine.ReadSelectorValue(segMan, @object, o => o.picture);
-            if (_pictureId != pictureId)
-            {
-                _pictureId = pictureId;
-                _pictureChanged = true;
-            }
-
-            _mirrored = SciEngine.ReadSelectorValue(segMan, @object, o => o.mirrored) != 0;
-            _back = (byte)SciEngine.ReadSelectorValue(segMan, @object, o => o.back);
-        }
-
-        /// <summary>
-        /// Clips the screen rect of this plane to fit within the
-        /// given screen rect.
-        /// </summary>
-        /// <param name="screenRect"></param>
-        public void ClipScreenRect(Rect screenRect)
-        {
-            // LSL6 hires creates planes with invalid rects; SSCI does not
-            // care about this, but `Common::Rect::clip` does, so we need to
-            // check whether or not the rect is actually valid before clipping
-            // and only clip valid rects
-            if (_screenRect.IsValidRect && _screenRect.Intersects(screenRect))
-            {
-                _screenRect.Clip(screenRect);
-            }
-            else
-            {
-                _screenRect.Left = 0;
-                _screenRect.Top = 0;
-                _screenRect.Right = 0;
-                _screenRect.Bottom = 0;
-            }
-        }
-
-        public void ScrollScreenItems(short deltaX, short deltaY, bool scrollPics)
-        {
-            _redrawAllCount = SciEngine.Instance._gfxFrameout.GetScreenCount();
-
-            foreach (var screenItem in _screenItemList)
-            {
-                if (screenItem?._deleted == 0 && (screenItem._celInfo.type != CelType.Pic || scrollPics))
-                {
-                    screenItem._position.X += deltaX;
-                    screenItem._position.Y += deltaY;
-                }
-            }
-        }
-
-        public void Sync(Plane other, Rect screenRect)
-        {
-            if (other == null)
-            {
-                if (_pictureChanged)
-                {
-                    DeleteAllPics();
-                    SetType();
-                    ChangePic();
-                    _redrawAllCount = SciEngine.Instance._gfxFrameout.GetScreenCount();
-                }
-                else
-                {
-                    SetType();
-                }
-            }
-            else
-            {
-                if (
-                    _planeRect.Top != other._planeRect.Top ||
-                    _planeRect.Left != other._planeRect.Left ||
-                    _planeRect.Right > other._planeRect.Right ||
-                    _planeRect.Bottom > other._planeRect.Bottom
-                )
-                {
-                    // the plane moved or got larger
-                    _redrawAllCount = SciEngine.Instance._gfxFrameout.GetScreenCount();
-                    _moved = SciEngine.Instance._gfxFrameout.GetScreenCount();
-                }
-                else if (_planeRect != other._planeRect)
-                {
-                    // the plane got smaller
-                    _moved = SciEngine.Instance._gfxFrameout.GetScreenCount();
-                }
-
-                if (_priority != other._priority)
-                {
-                    _priorityChanged = SciEngine.Instance._gfxFrameout.GetScreenCount();
-                }
-
-                if (_pictureId != other._pictureId || _mirrored != other._mirrored || _pictureChanged)
-                {
-                    DeleteAllPics();
-                    SetType();
-                    ChangePic();
-                    _redrawAllCount = SciEngine.Instance._gfxFrameout.GetScreenCount();
-                }
-
-                if (_back != other._back)
-                {
-                    _redrawAllCount = SciEngine.Instance._gfxFrameout.GetScreenCount();
-                }
-            }
-
-            _deleted = 0;
-            if (_created == 0)
-            {
-                _updated = SciEngine.Instance._gfxFrameout.GetScreenCount();
-            }
-
-            ConvertGameRectToPlaneRect();
-            _screenRect = _planeRect;
-            // NOTE: screenRect originally was retrieved through globals
-            // instead of being passed into the function
-            ClipScreenRect(screenRect);
-        }
-
         private void DeleteAllPics()
         {
             for (var i = 0; i < _screenItemList.Count; i++)
@@ -1208,21 +1274,6 @@ namespace NScumm.Sci.Graphics
             }
 
             _screenItemList.Pack();
-        }
-
-        public int CompareTo(Plane other)
-        {
-            var result = _priority.CompareTo(other._priority);
-            if (result != 0) return result;
-            return _object.CompareTo(other._object);
-        }
-
-        public void AddPic(int pictureId, Point position, bool mirrorX)
-        {
-            DeletePic(pictureId);
-            AddPicInternal((PlanePictureCodes)pictureId, position, mirrorX);
-            // NOTE: In SCI engine this method returned the pictureId of the
-            // plane, but this return value was never used
         }
 
         private void DeletePic(int pictureId)

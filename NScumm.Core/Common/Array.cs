@@ -119,7 +119,10 @@ namespace NScumm.Core.Common
         public T RemoveAt(int index)
         {
             T tmp = _storage[index];
-            Array.Copy(_storage, index + 1, _storage, index, _size - index);
+            if (index >= 0 && index < (_size - 1))
+            {
+                Array.Copy(_storage, index + 1, _storage, index, _size - index);
+            }
             _size--;
             return tmp;
         }

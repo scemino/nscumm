@@ -21,6 +21,7 @@
 
 using System;
 using System.Diagnostics;
+using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Scumm.Audio.AppleII;
 using NScumm.Scumm.IO;
@@ -137,7 +138,7 @@ namespace NScumm.Scumm.Audio.Players
             return 0;
         }
 
-        public int ReadBuffer(short[] buffer, int count)
+        public int ReadBuffer(Ptr<short> buffer, int count)
         {
             var numSamples = count;
             lock (_mutex)
@@ -149,7 +150,7 @@ namespace NScumm.Scumm.Audio.Players
                 var offset = 0;
                 do
                 {
-                    int nSamplesRead = _sampleConverter.ReadSamples(buffer, offset, samplesLeft);
+                    int nSamplesRead = _sampleConverter.ReadSamples(buffer.Data, buffer.Offset + offset, samplesLeft);
                     samplesLeft -= nSamplesRead;
                     offset += nSamplesRead;
                 } while ((samplesLeft > 0) && UpdateSound());

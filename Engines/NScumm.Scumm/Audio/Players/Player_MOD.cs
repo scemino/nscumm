@@ -22,6 +22,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Core.Audio.Decoders;
 using NScumm.Scumm.Audio.Amiga;
@@ -77,7 +78,7 @@ namespace NScumm.Scumm.Audio.Players
             }
         }
 
-        public int ReadBuffer(short[] buffer, int count)
+        public int ReadBuffer(Ptr<short> buffer, int count)
         {
             do_mix(buffer, count / 2);
             return count;
@@ -212,14 +213,12 @@ namespace NScumm.Scumm.Audio.Players
             }
         }
 
-        void do_mix(short[] data, int len)
+        void do_mix(Ptr<short> data, int len)
         {
-            int i;
-            int dpos = 0;
-            uint dlen;
-            Array.Clear(data, 0, data.Length);
+            Array.Clear(data.Data, data.Offset, data.Data.Length - data.Offset);
             while (len != 0)
             {
+                uint dlen;
                 if (_playproc != null)
                 {
                     dlen = _mixamt - _mixpos;
@@ -242,16 +241,16 @@ namespace NScumm.Scumm.Audio.Players
                     dlen = (uint)len;
                     len = 0;
                 }
-                for (i = 0; i < MOD_MAXCHANS; i++)
+                for (var i = 0; i < MOD_MAXCHANS; i++)
                 {
                     if (_channels[i].id != 0)
                     {
                         ushort vol_l = (ushort)((127 - _channels[i].pan) * _channels[i].vol / 127);
                         ushort vol_r = (ushort)((127 + _channels[i].pan) * _channels[i].vol / 127);
-                        for (uint j = 0; j < dlen; j++)
+                        for (var j = 0; j < dlen; j++)
                         {
                             // simple linear resample, unbuffered
-                            int delta = ((_channels[i].freq * 0x10000) / _sampleRate);
+                            int delta = _channels[i].freq * 0x10000 / _sampleRate;
                             ushort cfrac = (ushort)(~_channels[i].ctr & 0xFFFF);
                             if (_channels[i].ctr + delta < 0x10000)
                                 cfrac = (ushort)delta;
@@ -286,14 +285,16 @@ namespace NScumm.Scumm.Audio.Players
                                 cpos -= 0x7FFF;
                             }
                             pos += cpos * 0x10000 / delta;
-                            RateHelper.ClampedAdd(ref data[(dpos + j) * 2 + 0], (int)(pos * vol_l / Mixer.MaxMixerVolume));
-                            RateHelper.ClampedAdd(ref data[(dpos + j) * 2 + 1], (int)(pos * vol_r / Mixer.MaxMixerVolume));
+                            RateHelper.ClampedAdd(ref data, (int)(pos * vol_l / Mixer.MaxMixerVolume));
+                            data.Offset++;
+                            RateHelper.ClampedAdd(ref data, (int)(pos * vol_r / Mixer.MaxMixerVolume));
+                            data.Offset++;
                         }
                     }
                     skipchan:
                     ;   // channel ran out of data
                 }
-                dpos += (int)dlen;
+                data.Offset += (int)dlen;
             }
         }
 

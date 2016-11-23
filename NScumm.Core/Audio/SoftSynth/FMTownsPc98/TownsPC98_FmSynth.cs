@@ -84,9 +84,9 @@ namespace NScumm.Core.Audio.SoftSynth
             _timerbase = (uint)(_baserate * 1000000.0f);
         }
 
-        public int ReadBuffer(short[] buffer, int count)
+        public int ReadBuffer(Ptr<short> buffer, int count)
         {
-            Array.Clear(buffer, 0, count);
+            Array.Clear(buffer.Data, buffer.Offset, count);
             var tmp = new int[count];
             int samplesLeft = count >> 1;
 

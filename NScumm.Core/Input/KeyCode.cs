@@ -38,6 +38,7 @@ namespace NScumm.Core
         Backspace = 8,
         Tab = 9,
         Return = 13,
+        Pause = 19,
         Escape = 27,
         Space = 32,
         Comma = 44,

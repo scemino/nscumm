@@ -689,11 +689,11 @@ namespace NScumm.Core
             }
         }
 
-        public static bool ArrayEquals(byte[] src, int srcOffset, byte[] dst, int dstOffset, int count)
+        public static bool ArrayEquals<T>(T[] src, int srcOffset, T[] dst, int dstOffset, int count)
         {
             for (var i = 0; i < count; i++)
             {
-                if (src[srcOffset + i] != dst[dstOffset + i])
+                if (!Equals(src[srcOffset + i], dst[dstOffset + i]))
                     return false;
             }
             return true;

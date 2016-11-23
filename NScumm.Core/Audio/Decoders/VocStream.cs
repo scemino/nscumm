@@ -104,7 +104,7 @@ namespace NScumm.Core.Audio.Decoders
         }
 
 
-        public virtual int ReadBuffer(short[] buffer, int count)
+        public virtual int ReadBuffer(Ptr<short> buffer, int count)
         {
             int pos = 0;
             var samplesLeft = count;

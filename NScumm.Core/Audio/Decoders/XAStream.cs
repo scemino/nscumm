@@ -82,7 +82,7 @@ namespace NScumm.Core.Audio.Decoders
             }
         }
 
-        public int ReadBuffer(short[] buffer, int numSamples)
+        public int ReadBuffer(Ptr<short> buffer, int numSamples)
         {
             int samplesDecoded = 0;
 

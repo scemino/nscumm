@@ -88,28 +88,32 @@ namespace NScumm.Core
 
         public static bool operator >(BytePtr p1, BytePtr p2)
         {
-            if (p1.Data != p2.Data) throw new InvalidOperationException("Cannot compare the 2 pointers");
+            if (p1 != Null && p2 != Null && p1.Data != p2.Data)
+                throw new InvalidOperationException("Cannot compare the 2 pointers");
 
             return p1.Offset > p2.Offset;
         }
 
         public static bool operator >=(BytePtr p1, BytePtr p2)
         {
-            if (p1.Data != p2.Data) throw new InvalidOperationException("Cannot compare the 2 pointers");
+            if (p1 != Null && p2 != Null && p1.Data != p2.Data)
+                throw new InvalidOperationException("Cannot compare the 2 pointers");
 
             return p1.Offset >= p2.Offset;
         }
 
         public static bool operator <(BytePtr p1, BytePtr p2)
         {
-            if (p1.Data != p2.Data) throw new InvalidOperationException("Cannot compare the 2 pointers");
+            if (p1 != Null && p2 != Null && p1.Data != p2.Data)
+                throw new InvalidOperationException("Cannot compare the 2 pointers");
 
             return p1.Offset < p2.Offset;
         }
 
         public static bool operator <=(BytePtr p1, BytePtr p2)
         {
-            if (p1.Data != p2.Data) throw new InvalidOperationException("Cannot compare the 2 pointers");
+            if (p1 != Null && p2 != Null && p1 != Null && p2 != Null && p1.Data != p2.Data)
+                throw new InvalidOperationException("Cannot compare the 2 pointers");
 
             return p1.Offset <= p2.Offset;
         }
@@ -266,6 +270,38 @@ namespace NScumm.Core
         public override int GetHashCode()
         {
             return Data?.GetHashCode() ^ Offset ?? 0;
+        }
+
+        public static bool operator >(Ptr<T> p1, Ptr<T> p2)
+        {
+            if (p1 != Null && p2 != Null && p1.Data != p2.Data)
+                throw new InvalidOperationException("Cannot compare the 2 pointers");
+
+            return p1.Offset > p2.Offset;
+        }
+
+        public static bool operator >=(Ptr<T> p1, Ptr<T> p2)
+        {
+            if (p1 != Null && p2 != Null && p1.Data != p2.Data)
+                throw new InvalidOperationException("Cannot compare the 2 pointers");
+
+            return p1.Offset >= p2.Offset;
+        }
+
+        public static bool operator <(Ptr<T> p1, Ptr<T> p2)
+        {
+            if (p1 != Null && p2 != Null && p1.Data != p2.Data)
+                throw new InvalidOperationException("Cannot compare the 2 pointers");
+
+            return p1.Offset < p2.Offset;
+        }
+
+        public static bool operator <=(Ptr<T> p1, Ptr<T> p2)
+        {
+            if (p1 != Null && p2 != Null && p1 != Null && p2 != Null && p1.Data != p2.Data)
+                throw new InvalidOperationException("Cannot compare the 2 pointers");
+
+            return p1.Offset <= p2.Offset;
         }
     }
 

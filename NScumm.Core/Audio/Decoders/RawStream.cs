@@ -85,7 +85,7 @@ namespace NScumm.Core.Audio.Decoders
             return true;
         }
 
-        public int ReadBuffer(short[] buffer, int count)
+        public int ReadBuffer(Ptr<short> buffer, int count)
         {
             int samplesLeft = count;
 

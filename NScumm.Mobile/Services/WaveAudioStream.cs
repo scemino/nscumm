@@ -44,40 +44,26 @@ namespace NScumm.Mobile.Services
             _buffer = new byte[4096];
         }
 
-        public bool IsEndOfData
-        {
-            get
-            {
-                return _stream.Position >= _stream.Length;
-            }
-        }
+        public bool IsEndOfData => _stream.Position >= _stream.Length;
 
-        public bool IsEndOfStream
-        {
-            get
-            {
-                return IsEndOfData;
-            }
-        }
+        public bool IsEndOfStream => IsEndOfData;
 
         public bool IsStereo
         {
-            get; private set;
-        }
+            get; }
 
         public int Rate
         {
-            get; private set;
-        }
+            get; }
 
         public void Dispose()
         {
             _stream.Dispose();
         }
 
-        public int ReadBuffer(short[] buffer, int numSamples)
+        public int ReadBuffer(Ptr<short> buffer, int numSamples)
         {
-            int numRead = 0;
+            var numRead = 0;
             int read;
             do
             {
@@ -88,8 +74,8 @@ namespace NScumm.Mobile.Services
                 {
                     buffer[offs++] = _buffer.ToInt16(i);
                 }
-                numSamples -= (read / 2);
-                numRead += (read / 2);
+                numSamples -= read / 2;
+                numRead += read / 2;
             } while (read != 0 && numSamples != 0);
             return numRead;
         }

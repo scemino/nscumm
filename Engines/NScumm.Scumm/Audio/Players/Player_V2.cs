@@ -21,6 +21,7 @@
 
 using System;
 using System.Diagnostics;
+using NScumm.Core;
 using NScumm.Core.Audio;
 
 namespace NScumm.Scumm.Audio.Players
@@ -175,7 +176,7 @@ namespace NScumm.Scumm.Audio.Players
             return _current_nr == nr || _next_nr == nr ? 1 : 0;
         }
 
-        public override int ReadBuffer(short[] data, int count)
+        public override int ReadBuffer(Ptr<short> data, int count)
         {
             lock (_mutex)
             {
@@ -193,17 +194,17 @@ namespace NScumm.Scumm.Audio.Players
                     }
 
                     step = len;
-                    if (step > (_next_tick >> FIXP_SHIFT))
+                    if (step > _next_tick >> FIXP_SHIFT)
                         step = (int)(_next_tick >> FIXP_SHIFT);
                     if (_pcjr)
-                        GeneratePCjrSamples(data, offset, step);
+                        GeneratePCjrSamples(data.Data, data.Offset + offset, step);
                     else
-                        GenerateSpkSamples(data, offset, step);
+                        GenerateSpkSamples(data.Data, data.Offset + offset, step);
                     offset += 2 * step;
                     _next_tick -= (uint)(step << FIXP_SHIFT);
                 } while ((len -= step) != 0);
 
-                return data.Length;
+                return data.Data.Length - data.Offset;
             }
         }
 

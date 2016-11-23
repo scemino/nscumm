@@ -20,6 +20,8 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+using NScumm.Core.Audio.SoftSynth;
+
 namespace NScumm.Core.Audio
 {
     public static class RateHelper

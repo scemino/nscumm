@@ -115,11 +115,11 @@ namespace NScumm.Core.Audio
         {
         }
 
-        public int ReadBuffer(short[] buffer, int count)
+        public int ReadBuffer(Ptr<short> buffer, int count)
         {
             lock (_mutex)
             {
-                Array.Clear(buffer, 0, count);
+                Array.Clear(buffer.Data, buffer.Offset, count);
                 if (!IsPlaying)
                 {
                     return count;
@@ -217,9 +217,8 @@ namespace NScumm.Core.Audio
             // TODO: implement
         }
 
-        private int ReadBufferIntern(bool stereo, short[] buffer, int count)
+        private int ReadBufferIntern(bool stereo, Ptr<short> buffer, int count)
         {
-            var bufOffset = 0;
             var numSamples = count;
             int samples = _stereo ? numSamples / 2 : numSamples;
             while (samples > 0)
@@ -256,7 +255,6 @@ namespace NScumm.Core.Audio
 
                     var ch = _voice[voice];
                     var p = buffer;
-                    var pOff = bufOffset;
                     int neededSamples = (int)nSamples;
 
                     // NOTE: A Protracker (or other module format) player might actually
@@ -268,7 +266,7 @@ namespace NScumm.Core.Audio
                     // by the OS/2 version of Hopkins FBI.
 
                     // Mix the generated samples into the output buffer
-                    neededSamples -= MixBuffer(stereo, p, ref pOff, ch.data, ref ch.offset, rate, neededSamples, ch.length, ch.volume, ch.panning);
+                    neededSamples -= MixBuffer(stereo, ref p, ch.data, ref ch.offset, rate, neededSamples, ch.length, ch.volume, ch.panning);
 
                     // Wrap around if necessary
                     if (ch.offset.int_off >= ch.length)
@@ -293,7 +291,7 @@ namespace NScumm.Core.Audio
                         while (neededSamples > 0)
                         {
                             // Mix the generated samples into the output buffer
-                            neededSamples -= MixBuffer(stereo, p, ref pOff, ch.data, ref ch.offset, rate, neededSamples, ch.length, ch.volume, ch.panning);
+                            neededSamples -= MixBuffer(stereo, ref p, ch.data, ref ch.offset, rate, neededSamples, ch.length, ch.volume, ch.panning);
 
                             if (ch.offset.int_off >= ch.length)
                             {
@@ -305,14 +303,14 @@ namespace NScumm.Core.Audio
                     }
 
                 }
-                bufOffset += _stereo ? (int)nSamples * 2 : (int)nSamples;
+                buffer.Offset += _stereo ? (int)nSamples * 2 : (int)nSamples;
                 SingleInterrupt -= nSamples;
                 samples -= (int)nSamples;
             }
             return numSamples;
         }
 
-        private int MixBuffer(bool stereo, short[] buf, ref int bufOffset, BytePtr data, ref Offset offset, int rate, int neededSamples, int bufSize, byte volume, byte panning)
+        private int MixBuffer(bool stereo, ref Ptr<short> buf, BytePtr data, ref Offset offset, int rate, int neededSamples, int bufSize, byte volume, byte panning)
         {
             int samples;
             for (samples = 0; samples < neededSamples && offset.int_off < bufSize; ++samples)
@@ -321,11 +319,16 @@ namespace NScumm.Core.Audio
                 var tmp = d * volume;
                 if (stereo)
                 {
-                    buf[bufOffset++] += (short)((tmp * (255 - panning)) >> 7);
-                    buf[bufOffset++] += (short)((tmp * panning) >> 7);
+                    buf[0] += (short) ((tmp * (255 - panning)) >> 7);
+                    buf.Offset++;
+                    buf[0] += (short) ((tmp * panning) >> 7);
+                    buf.Offset++;
                 }
                 else
-                    buf[bufOffset++] += (short)tmp;
+                {
+                    buf[0] += (short) tmp;
+                    buf.Offset++;
+                }
 
                 // Step to next source sample
                 offset.rem_off += rate;

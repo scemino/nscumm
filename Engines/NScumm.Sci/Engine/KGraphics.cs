@@ -1516,15 +1516,13 @@ namespace NScumm.Sci.Engine
             bool doScaling = argc <= 4 || argv[4].ToInt16() != 0;
 
             Rect textRect = SciEngine.Instance._gfxText32.GetTextSize(text, maxWidth, doScaling);
-
-            var value = new Register[] {
+            var r = new Register[]{
                 Register.Make(0, (ushort)textRect.Left),
                 Register.Make(0, (ushort)textRect.Top),
                 Register.Make(0, (ushort)(textRect.Right - 1)),
                 Register.Make(0, (ushort)(textRect.Bottom - 1))
             };
-
-            rect.SetElements(0, 4, new StackPtr(value));
+            rect.SetElements(0, 4, new StackPtr(r));
             return s.r_acc;
         }
 
@@ -1753,27 +1751,17 @@ namespace NScumm.Sci.Engine
 
         private static Register kSetScroll(EngineState s, int argc, StackPtr argv)
         {
-            // Called in the intro of LSL6 hires (room 110)
-            // The end effect of this is the same as the old screen scroll transition
+            var plane = argv[0];
+            short deltaX = argv[1].ToInt16();
+            short deltaY = argv[2].ToInt16();
+            int pictureId = argv[3].ToUInt16();
+            bool animate = argv[4].ToUInt16()!=0;
+            // NOTE: speed was accepted as an argument, but then never actually used
+            // const int16 speed = argc > 5 ? (bool)argv[5].toSint16() : -1;
+            bool mirrorX = argc > 6 ? argv[6].ToUInt16() != 0 : false;
 
-            // 7 parameters
-            Register planeObject = argv[0];
-            //int16 x = argv[1].toSint16();
-            //int16 y = argv[2].toSint16();
-            ushort pictureId = argv[3].ToUInt16();
-            // param 4: int (0 in LSL6, probably scroll direction? The picture in LSL6 scrolls down)
-            // param 5: int (first call is 1, then the subsequent one is 0 in LSL6)
-            // param 6: optional int (0 in LSL6)
-
-            // Set the new picture directly for now
-            //writeSelectorValue(s._segMan, planeObject, SELECTOR(left), x);
-            //writeSelectorValue(s._segMan, planeObject, SELECTOR(top), y);
-            SciEngine.WriteSelectorValue(s._segMan, planeObject, o => o.picture, pictureId);
-            // and update our draw list
-            SciEngine.Instance._gfxFrameout.KernelUpdatePlane(planeObject);
-
-            // TODO
-            return kStub(s, argc, argv);
+            SciEngine.Instance._gfxTransitions32.KernelSetScroll(plane, deltaX, deltaY, pictureId, animate, mirrorX);
+            return s.r_acc;
         }
 
         private static Register kPalCycle(EngineState s, int argc, StackPtr argv)

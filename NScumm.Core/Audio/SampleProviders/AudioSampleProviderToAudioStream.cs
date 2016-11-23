@@ -73,7 +73,7 @@ namespace NScumm.Core.Audio.SampleProviders
             _buffer = new byte[4096];
         }
 
-        public int ReadBuffer(short[] samples, int numSamples)
+        public int ReadBuffer(Ptr<short> samples, int numSamples)
         {
             if (_buffer.Length < numSamples)
             {

@@ -25,36 +25,18 @@ namespace NScumm.Core.Audio
 {
     public class LoopingAudioStream : IAudioStream
     {
-        public bool IsStereo
-        {
-            get { return _parent.IsStereo; }
-        }
+        public bool IsStereo => _parent.IsStereo;
 
-        public int Rate
-        {
-            get { return _parent.Rate; }
-        }
+        public int Rate => _parent.Rate;
 
-        public bool IsEndOfData
-        {
-            get
-            {
-                return (_loops != 0 && _completeIterations == _loops) || _parent.IsEndOfData;
-            }
-        }
+        public bool IsEndOfData => (_loops != 0 && _completeIterations == _loops) || _parent.IsEndOfData;
 
-        public bool IsEndOfStream
-        {
-            get
-            {
-                return _loops != 0 && _completeIterations == _loops;
-            }
-        }
+        public bool IsEndOfStream => _loops != 0 && _completeIterations == _loops;
 
         /// <summary>
         /// Gets the number of loops the stream has played.
         /// </summary>
-        public int CompleteIterations { get { return _completeIterations; } }
+        public int CompleteIterations => _completeIterations;
 
         public static LoopingAudioStream Create(ISeekableAudioStream stream, Timestamp start, Timestamp end, int loops)
         {
@@ -62,20 +44,17 @@ namespace NScumm.Core.Audio
             {
                 return new LoopingAudioStream(stream, loops);
             }
-            else
+            if (end.TotalNumberOfFrames == 0)
+                end = stream.Length;
+
+            if (start >= end)
             {
-                if (end.TotalNumberOfFrames == 0)
-                    end = stream.Length;
-
-                if (start >= end)
-                {
-                    Debug.WriteLine("makeLoopingAudioStream: start ({0}) >= end ({1})", start.Milliseconds, end.Milliseconds);
-                    stream.Dispose();
-                    return null;
-                }
-
-                return new LoopingAudioStream(new SubSeekableAudioStream(stream, start, end), loops);
+                Debug.WriteLine("makeLoopingAudioStream: start ({0}) >= end ({1})", start.Milliseconds, end.Milliseconds);
+                stream.Dispose();
+                return null;
             }
+
+            return new LoopingAudioStream(new SubSeekableAudioStream(stream, start, end), loops);
         }
 
         public LoopingAudioStream(IRewindableAudioStream stream, int loops, bool disposeAfterUse = true)
@@ -116,7 +95,7 @@ namespace NScumm.Core.Audio
             }
         }
 
-        public int ReadBuffer(short[] buffer, int count)
+        public int ReadBuffer(Ptr<short> buffer, int count)
         {
             if ((_loops != 0 && _completeIterations == _loops) || count == 0)
                 return 0;
@@ -145,7 +124,7 @@ namespace NScumm.Core.Audio
 
                 var tmp = new short[remainingSamples];
                 var read = ReadBuffer(tmp, remainingSamples);
-                Array.Copy(tmp, 0, buffer, samplesRead, remainingSamples);
+                Array.Copy(tmp, 0, buffer.Data, buffer.Offset + samplesRead, remainingSamples);
                 return samplesRead + read;
             }
 

@@ -123,11 +123,11 @@ namespace NScumm.Scumm.Audio.Players
             }
         }
 
-        public int ReadBuffer(short[] data, int count)
+        public int ReadBuffer(Ptr<short> data, int count)
         {
             lock (_mutex)
             {
-                Array.Clear(data, 0, count);
+                Array.Clear(data.Data, data.Offset, count);
                 if (_soundPlaying == -1)
                 {
                     return count;
@@ -171,7 +171,7 @@ namespace NScumm.Scumm.Audio.Players
                         generated = (int)Math.Min(_channel[i]._remaining, samplesLeft);
                         if (_channel[i]._velocity != 0)
                         {
-                            _channel[i]._instrument.GenerateSamples(ptr, offset, _channel[i]._pitchModifier, _channel[i]._velocity, generated, (int)_channel[i]._remaining, _fadeNoteEnds);
+                            _channel[i]._instrument.GenerateSamples(ptr.Data, ptr.Offset + offset, _channel[i]._pitchModifier, _channel[i]._velocity, generated, (int)_channel[i]._remaining, _fadeNoteEnds);
                         }
                         offset += generated;
                         samplesLeft -= (uint)generated;

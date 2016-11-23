@@ -21,6 +21,7 @@
 
 using System;
 using System.Diagnostics;
+using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Scumm.IO;
 
@@ -70,7 +71,7 @@ namespace NScumm.Scumm.Audio.Players
 
         #region IAudioStream implementation
 
-        public abstract int ReadBuffer(short[] buffer, int count);
+        public abstract int ReadBuffer(Ptr<short> buffer, int count);
 
         public bool IsStereo
         {

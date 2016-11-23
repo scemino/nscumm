@@ -18,6 +18,7 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Diagnostics;
 
@@ -34,12 +35,12 @@ namespace NScumm.Core.Audio.Decoders
     /// This might be merged with SubSeekableAudioStream for playback purposes.
     /// (After extending it to accept a start time).
     /// </remarks>
-    public class SubLoopingAudioStream: IAudioStream
+    public class SubLoopingAudioStream : IAudioStream
     {
         public SubLoopingAudioStream(ISeekableAudioStream stream, uint loops,
-                                     Timestamp loopStart,
-                                     Timestamp loopEnd,
-                                     bool disposeAfterUse = true)
+            Timestamp loopStart,
+            Timestamp loopEnd,
+            bool disposeAfterUse = true)
         {
             _parent = stream;
             _loops = loops;
@@ -68,7 +69,7 @@ namespace NScumm.Core.Audio.Decoders
         {
         }
 
-        public int ReadBuffer(short[] buffer, int count)
+        public int ReadBuffer(Ptr<short> buffer, int count)
         {
             if (_done)
                 return 0;
@@ -77,7 +78,7 @@ namespace NScumm.Core.Audio.Decoders
             int framesLeft = Math.Min(_loopEnd.FrameDiff(_pos), numSamples);
             var tmp = new short[framesLeft];
             int framesRead = _parent.ReadBuffer(tmp, framesLeft);
-            Array.Copy(tmp, 0, buffer, 0, tmp.Length);
+            Array.Copy(tmp, 0, buffer.Data, buffer.Offset, tmp.Length);
             _pos = _pos.AddFrames(framesRead);
 
             if (framesRead < framesLeft && _parent.IsEndOfStream)
@@ -86,49 +87,61 @@ namespace NScumm.Core.Audio.Decoders
                 _done = true;
                 return framesRead;
             }
-            else if (_pos == _loopEnd)
+            else
             {
-                if (_loops != 0)
+                if (_pos == _loopEnd)
                 {
-                    --_loops;
-                    if (_loops == 0)
+                    if (_loops != 0)
                     {
+                        --_loops;
+                        if (_loops == 0)
+                        {
+                            _done = true;
+                            return framesRead;
+                        }
+                    }
+
+                    if (!_parent.Seek(_loopStart))
+                    {
+                        // TODO: Proper error indication.
                         _done = true;
                         return framesRead;
                     }
-                }
 
-                if (!_parent.Seek(_loopStart))
-                {
-                    // TODO: Proper error indication.
-                    _done = true;
-                    return framesRead;
+                    _pos = _loopStart;
+                    framesLeft = numSamples - framesLeft;
+                    tmp = new short[framesLeft];
+                    var numRead = ReadBuffer(tmp, framesLeft);
+                    Array.Copy(tmp, 0, buffer.Data, buffer.Offset + framesRead, tmp.Length);
+                    return framesRead + numRead;
                 }
-
-                _pos = _loopStart;
-                framesLeft = numSamples - framesLeft;
-                tmp = new short[framesLeft];
-                var numRead = ReadBuffer(tmp, framesLeft);
-                Array.Copy(tmp, 0, buffer, framesRead, tmp.Length);
-                return framesRead + numRead;
-            }
-            else
-            {
                 return framesRead;
             }
         }
 
         // We're out of data if this stream is finished or the parent
         // has run out of data for now.
-        public bool IsEndOfData { get { return _done || _parent.IsEndOfData; } }
+        public bool IsEndOfData
+        {
+            get { return _done || _parent.IsEndOfData; }
+        }
 
         // The end of the stream has been reached only when we've gone
         // through all the iterations.
-        public bool IsEndOfStream { get { return _done; } }
+        public bool IsEndOfStream
+        {
+            get { return _done; }
+        }
 
-        public bool IsStereo { get { return _parent.IsStereo; } }
+        public bool IsStereo
+        {
+            get { return _parent.IsStereo; }
+        }
 
-        public int Rate { get { return _parent.Rate; } }
+        public int Rate
+        {
+            get { return _parent.Rate; }
+        }
 
         ISeekableAudioStream _parent;
 
@@ -139,4 +152,3 @@ namespace NScumm.Core.Audio.Decoders
         bool _done;
     }
 }
-

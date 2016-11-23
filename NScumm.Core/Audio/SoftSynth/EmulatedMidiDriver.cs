@@ -21,11 +21,17 @@
 
 namespace NScumm.Core.Audio.SoftSynth
 {
-    public abstract class EmulatedMidiDriver: MidiDriver, IAudioStream
+    public abstract class EmulatedMidiDriver : MidiDriver, IAudioStream
     {
-        public bool IsOpen { get { return _isOpen; } }
+        public bool IsOpen
+        {
+            get { return _isOpen; }
+        }
 
-        public override uint BaseTempo { get { return 1000000 / (uint)_baseFreq; } }
+        public override uint BaseTempo
+        {
+            get { return 1000000 / (uint) _baseFreq; }
+        }
 
         protected EmulatedMidiDriver(IMixer mixer)
         {
@@ -61,7 +67,7 @@ namespace NScumm.Core.Audio.SoftSynth
 
         #region IMixerAudioStream implementation
 
-        public int ReadBuffer(short[] data, int count)
+        public int ReadBuffer(Ptr<short> data, int count)
         {
             int stereoFactor = IsStereo ? 2 : 1;
             int len = count / stereoFactor;
@@ -74,13 +80,12 @@ namespace NScumm.Core.Audio.SoftSynth
                 if (step > (_nextTick >> FixpShift))
                     step = (_nextTick >> FixpShift);
 
-                GenerateSamples(data, pos, step);
+                GenerateSamples(data.Data, data.Offset + pos, step);
 
                 _nextTick -= step << FixpShift;
                 if (0 == (_nextTick >> FixpShift))
                 {
-                    if (_timerProc != null)
-                        _timerProc(_timerParam);
+                    _timerProc?.Invoke(_timerParam);
 
                     OnTimer();
 
@@ -94,24 +99,18 @@ namespace NScumm.Core.Audio.SoftSynth
             return count;
         }
 
-        public abstract bool IsStereo
-        {
-            get;
-        }
+        public abstract bool IsStereo { get; }
 
-        public abstract int Rate
-        {
-            get;
-        }
+        public abstract int Rate { get; }
 
         public bool IsEndOfData
         {
-            get{ return false; }
+            get { return false; }
         }
 
         public bool IsEndOfStream
         {
-            get{ return false; }
+            get { return false; }
         }
 
         public override void Dispose()
@@ -134,4 +133,3 @@ namespace NScumm.Core.Audio.SoftSynth
         private int _samplesPerTick;
     }
 }
-

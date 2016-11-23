@@ -623,7 +623,7 @@ namespace NScumm.Core.Video
             // Seek
             _stream.Seek(_frames[frame + 1].offset, SeekOrigin.Begin);
             _curFrame = frame;
-            _startTime = ServiceLocator.Platform.GetMilliseconds() - (frame + 2) * StaticTimeToNextFrame;
+            _startTime = (int)(ServiceLocator.Platform.GetMilliseconds() - (frame + 2) * StaticTimeToNextFrame);
 
             return true;
         }
@@ -638,7 +638,7 @@ namespace NScumm.Core.Video
             ProcessFrame();
 
             if (_curFrame == 0)
-                _startTime = ServiceLocator.Platform.GetMilliseconds();
+                _startTime = (int)ServiceLocator.Platform.GetMilliseconds();
 
             return _surface;
         }

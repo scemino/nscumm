@@ -166,7 +166,7 @@ namespace NScumm.Scumm.Audio.Players
             }
         }
 
-        public int ReadBuffer(short[] buffer, int len)
+        public int ReadBuffer(Ptr<short> buffer, int len)
         {
             lock (_mutex)
             {
@@ -194,7 +194,7 @@ namespace NScumm.Scumm.Audio.Players
                     }
 
                     int samplesToRead = Math.Min(len, _samplesTillCallback);
-                    _opl2.ReadBuffer(buffer, pos, samplesToRead);
+                    _opl2.ReadBuffer(buffer.Data, buffer.Offset + pos, samplesToRead);
 
                     pos += samplesToRead;
                     len -= samplesToRead;
@@ -205,13 +205,13 @@ namespace NScumm.Scumm.Audio.Players
             }
         }
 
-        public bool IsStereo { get { return false; } }
+        public bool IsStereo => false;
 
-        public bool IsEndOfData { get { return false; } }
+        public bool IsEndOfData => false;
 
-        public bool IsEndOfStream { get { return IsEndOfData; } }
+        public bool IsEndOfStream => IsEndOfData;
 
-        public int Rate { get { return _rate; } }
+        public int Rate => _rate;
 
         public void StopSound(int sound)
         {

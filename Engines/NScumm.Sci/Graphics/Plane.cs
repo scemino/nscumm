@@ -1011,7 +1011,7 @@ namespace NScumm.Sci.Graphics
             return _object.CompareTo(other._object);
         }
 
-        public int AddPic(int pictureId, Point position, bool mirrorX, bool deleteDuplicate)
+        public int AddPic(int pictureId, Point position, bool mirrorX, bool deleteDuplicate = true)
         {
             if (deleteDuplicate)
             {
@@ -1276,7 +1276,7 @@ namespace NScumm.Sci.Graphics
             _screenItemList.Pack();
         }
 
-        private void DeletePic(int pictureId)
+        public void DeletePic(int pictureId)
         {
             foreach (var screenItem in _screenItemList)
             {
@@ -1287,6 +1287,13 @@ namespace NScumm.Sci.Graphics
                 screenItem._deleted = SciEngine.Instance._gfxFrameout.GetScreenCount();
             }
         }
+
+        public void DeletePic(int oldPictureId, int newPictureId)
+        {
+            DeletePic(oldPictureId);
+            _pictureId = (PlanePictureCodes)newPictureId;
+        }
+
     }
 }
 

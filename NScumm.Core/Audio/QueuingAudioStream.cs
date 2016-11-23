@@ -18,6 +18,7 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using NScumm.Core.Audio;
 using System.Diagnostics;
@@ -29,7 +30,6 @@ namespace NScumm.Core
 {
     public interface IQueuingAudioStream : IAudioStream
     {
-
         /// <summary>
         /// Queue an audio stream for playback. This stream plays all queued
         /// streams, in the order they were queued. If disposeAfterUse is set to
@@ -94,7 +94,8 @@ namespace NScumm.Core
         {
             Debug.Assert(!_finished);
             if ((stream.Rate != Rate) || (stream.IsStereo != IsStereo))
-                throw new NotSupportedException("QueuingAudioStreamImpl::queueAudioStream: stream has mismatched parameters");
+                throw new NotSupportedException(
+                    "QueuingAudioStreamImpl::queueAudioStream: stream has mismatched parameters");
 
             lock (_mutex)
             {
@@ -118,17 +119,17 @@ namespace NScumm.Core
             return _queue.Count;
         }
 
-        public int ReadBuffer(short[] buffer, int count)
+        public int ReadBuffer(Ptr<short> buffer, int count)
         {
             int samplesDecoded = 0;
             lock (_mutex)
             {
-                while (samplesDecoded < buffer.Length && _queue.Count != 0)
+                while (samplesDecoded < buffer.Data.Length - buffer.Offset && _queue.Count != 0)
                 {
                     var stream = _queue.Peek().Stream;
                     var buf = new short[count - samplesDecoded];
                     var read = stream.ReadBuffer(buf, count - samplesDecoded);
-                    Array.Copy(buf, 0, buffer, samplesDecoded, read);
+                    Array.Copy(buf, 0, buffer.Data, buffer.Offset + samplesDecoded, read);
                     samplesDecoded += read;
 
                     if (stream.IsEndOfData)
@@ -149,18 +150,12 @@ namespace NScumm.Core
 
         public int Rate
         {
-            get
-            {
-                return _rate;
-            }
+            get { return _rate; }
         }
 
         public bool IsEndOfData
         {
-            get
-            {
-                return _queue.Count == 0;
-            }
+            get { return _queue.Count == 0; }
         }
 
         public bool IsEndOfStream

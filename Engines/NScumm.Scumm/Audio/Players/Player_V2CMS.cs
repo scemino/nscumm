@@ -209,7 +209,7 @@ namespace NScumm.Scumm.Audio.Players
             return (_current_nr == nr || _next_nr == nr || _loadedMidiSong == nr) ? 1 : 0;
         }
 
-        public override int ReadBuffer(short[] buffer, int count)
+        public override int ReadBuffer(Ptr<short> buffer, int count)
         {
             lock (_mutex)
             {
@@ -247,7 +247,7 @@ namespace NScumm.Scumm.Audio.Players
                         step = (int)(_next_tick >> FIXP_SHIFT);
                     var tmp = new short[step * 2];
                     _cmsEmu.ReadBuffer(tmp, 0, tmp.Length);
-                    Array.Copy(tmp, 0, buffer, offset, tmp.Length);
+                    Array.Copy(tmp, 0, buffer.Data, buffer.Offset + offset, tmp.Length);
                     offset += 2 * step;
                     _next_tick -= (uint)(step << FIXP_SHIFT);
                 } while ((len -= step) != 0);

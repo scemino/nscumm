@@ -123,7 +123,7 @@ namespace NScumm.Sci.Sound.Decoders
         {
         }
 
-        public int ReadBuffer(short[] buffer, int numSamples)
+        public int ReadBuffer(Ptr<short> buffer, int numSamples)
         {
             // Reading an odd number of 8-bit samples will result in a loss of samples
             // since one byte represents two samples and we do not store the second
@@ -223,7 +223,7 @@ namespace NScumm.Sci.Sound.Decoders
             @out.Value = (short) (((lastSample + sample) << 7) ^ 0x8000);
         }
 
-        private static void DeDpcm16(Ptr<short> @out, Stream audioStream, int numBytes, ref short sample)
+        public static void DeDpcm16(Ptr<short> @out, Stream audioStream, int numBytes, ref short sample)
         {
             for (var i = 0; i < numBytes; ++i)
             {
@@ -238,6 +238,25 @@ namespace NScumm.Sci.Sound.Decoders
                 }
                 sample = (short) ScummHelper.Clip(sample, -32768, 32767);
                 @out.Value = sample;
+                @out.Offset++;
+            }
+        }
+
+        public static void DeDpcm16(UShortAccess @out, Stream audioStream, int numBytes, ref short sample)
+        {
+            for (var i = 0; i < numBytes; ++i)
+            {
+                byte delta = (byte)audioStream.ReadByte();
+                if ((delta & 0x80) != 0)
+                {
+                    sample = (short)(sample - TableDpcm16[delta & 0x7f]);
+                }
+                else
+                {
+                    sample = (short)(sample + TableDpcm16[delta]);
+                }
+                sample = (short)ScummHelper.Clip(sample, -32768, 32767);
+                @out.Value = (ushort)sample;
                 @out.Offset++;
             }
         }

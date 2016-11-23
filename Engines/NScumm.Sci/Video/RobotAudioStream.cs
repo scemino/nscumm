@@ -19,6 +19,9 @@
 using NScumm.Core;
 using NScumm.Core.Audio;
 using System;
+using static NScumm.Core.DebugHelper;
+using NScumm.Sci.Sound.Decoders;
+using System.IO;
 
 namespace NScumm.Sci.Video
 {
@@ -219,7 +222,7 @@ namespace NScumm.Sci.Video
             _firstPacketPosition = -1;
         }
 
-        public int ReadBuffer(short[] buffer, int numSamples)
+        public int ReadBuffer(Ptr<short> buffer, int numSamples)
         {
             lock (_mutex)
             {
@@ -280,7 +283,229 @@ namespace NScumm.Sci.Video
 
         public bool AddPacket(RobotAudioPacket packet)
         {
-            throw new NotImplementedException();
+            lock (_mutex)
+            {
+
+                if (_finished)
+                {
+                    Warning("Packet {0} sent to finished robot audio stream", packet.position);
+                    return false;
+                }
+
+                // `packet.position` is the decompressed (doubled) position of the packet,
+                // so values of `position` will always be divisible either by 2 (even) or by
+                // 4 (odd).
+                sbyte bufferIndex = (sbyte)((packet.position % 4) != 0 ? 1 : 0);
+
+                // Packet 0 is the first primer, packet 2 is the second primer,
+                // packet 4+ are regular audio data
+                if (packet.position <= 2 && _firstPacketPosition == -1)
+                {
+                    _readHead = 0;
+                    _readHeadAbs = 0;
+                    _maxWriteAbs = _loopBufferSize;
+                    _writeHeadAbs = 2;
+                    _jointMin[0] = 0;
+                    _jointMin[1] = 2;
+                    _waiting = true;
+                    _finished = false;
+                    _firstPacketPosition = packet.position;
+                    FillRobotBuffer(packet, bufferIndex);
+                    return true;
+                }
+
+                int packetEndByte = packet.position + (packet.dataSize * sizeof(short) * kEOSExpansion);
+
+                // Already read all the way past this packet (or already wrote valid samples
+                // to this channel all the way past this packet), so discard it
+                if (packetEndByte <= Math.Max(_readHeadAbs, _jointMin[bufferIndex]))
+                {
+                    DebugC(DebugLevels.Video, "Rejecting packet {0}, read past {1} / {2}", packet.position, _readHeadAbs, _jointMin[bufferIndex]);
+                    return true;
+                }
+
+                // The loop buffer is full, so tell the caller to send the packet again
+                // later
+                if (_maxWriteAbs <= _jointMin[bufferIndex])
+                {
+                    DebugC(DebugLevels.Video, "Rejecting packet {0}, full buffer", packet.position);
+                    return false;
+                }
+
+                FillRobotBuffer(packet, bufferIndex);
+
+                // This packet is the second primer, so allow playback to begin
+                if (_firstPacketPosition != -1 && _firstPacketPosition != packet.position)
+                {
+                    DebugC(DebugLevels.Video, "Done waiting. Robot audio begins");
+                    _waiting = false;
+                    _firstPacketPosition = -1;
+                }
+
+                // Only part of the packet could be read into the loop buffer before it was
+                // full, so tell the caller to send the packet again later
+                if (packetEndByte > _maxWriteAbs)
+                {
+                    DebugC(DebugLevels.Video, "Partial read of packet {0} ({1} / {2})", packet.position, packetEndByte - _maxWriteAbs, packetEndByte - packet.position);
+                    return false;
+                }
+
+                // The entire packet was successfully read into the loop buffer
+                return true;
+            }
+        }
+
+        private void FillRobotBuffer(RobotAudioPacket packet, sbyte bufferIndex)
+        {
+            int sourceByte = 0;
+
+            int decompressedSize = packet.dataSize * sizeof(short);
+            if (_decompressionBufferPosition != packet.position)
+            {
+                if (decompressedSize != _decompressionBufferSize)
+                {
+                    _decompressionBuffer.Realloc(decompressedSize);
+                    _decompressionBufferSize = decompressedSize;
+                }
+
+                short carry = 0;
+                using (var ms = new MemoryStream(packet.data.Data, packet.data.Offset, packet.dataSize))
+                {
+                    SolStream.DeDpcm16(new UShortAccess(_decompressionBuffer), ms, packet.dataSize, ref carry);
+                }
+                _decompressionBufferPosition = packet.position;
+            }
+
+            int numBytes = decompressedSize;
+            int packetPosition = packet.position;
+            int endByte = packet.position + decompressedSize * kEOSExpansion;
+            int startByte = Math.Max(_readHeadAbs + bufferIndex * 2, _jointMin[bufferIndex]);
+            int maxWriteByte = _maxWriteAbs + bufferIndex * 2;
+            if (packetPosition < startByte)
+            {
+                sourceByte = (startByte - packetPosition) / kEOSExpansion;
+                numBytes -= sourceByte;
+                packetPosition = startByte;
+            }
+            if (packetPosition > maxWriteByte)
+            {
+                numBytes += (packetPosition - maxWriteByte) / kEOSExpansion;
+                packetPosition = maxWriteByte;
+            }
+            if (endByte > maxWriteByte)
+            {
+                numBytes -= (endByte - maxWriteByte) / kEOSExpansion;
+                endByte = maxWriteByte;
+            }
+
+            int maxJointMin = Math.Max(_jointMin[0], _jointMin[1]);
+            if (endByte > maxJointMin)
+            {
+                _writeHeadAbs += endByte - maxJointMin;
+            }
+
+            if (packetPosition > _jointMin[bufferIndex])
+            {
+                int packetEndByte = packetPosition % _loopBufferSize;
+                int targetBytePosition;
+                int numBytesToEnd;
+                if ((packetPosition & ~3) > (_jointMin[1 - bufferIndex] & ~3))
+                {
+                    targetBytePosition = _jointMin[1 - bufferIndex] % _loopBufferSize;
+                    if (targetBytePosition >= packetEndByte)
+                    {
+                        numBytesToEnd = _loopBufferSize - targetBytePosition;
+                        Array.Clear(_loopBuffer.Data, _loopBuffer.Offset + targetBytePosition, numBytesToEnd);
+                        targetBytePosition = (1 - bufferIndex) != 0 ? 2 : 0;
+                    }
+                    numBytesToEnd = packetEndByte - targetBytePosition;
+                    if (numBytesToEnd > 0)
+                    {
+                        Array.Clear(_loopBuffer.Data, _loopBuffer.Offset + targetBytePosition, numBytesToEnd);
+                    }
+                }
+                targetBytePosition = _jointMin[bufferIndex] % _loopBufferSize;
+                if (targetBytePosition >= packetEndByte)
+                {
+                    numBytesToEnd = _loopBufferSize - targetBytePosition;
+                    InterpolateChannel(new UShortAccess(_loopBuffer, targetBytePosition), numBytesToEnd / sizeof(short) / kEOSExpansion, 0);
+                    targetBytePosition = bufferIndex != 0 ? 2 : 0;
+                }
+                numBytesToEnd = packetEndByte - targetBytePosition;
+                if (numBytesToEnd > 0)
+                {
+                    InterpolateChannel(new UShortAccess(_loopBuffer + targetBytePosition), numBytesToEnd / sizeof(short) / kEOSExpansion, 0);
+                }
+            }
+
+            if (numBytes > 0)
+            {
+                int targetBytePosition = packetPosition % _loopBufferSize;
+                int packetEndByte = endByte % _loopBufferSize;
+                int numBytesToEnd = 0;
+                if (targetBytePosition >= packetEndByte)
+                {
+                    numBytesToEnd = (_loopBufferSize - (targetBytePosition & ~3)) / kEOSExpansion;
+                    CopyEveryOtherSample(new UShortAccess(_loopBuffer + targetBytePosition), new UShortAccess(_decompressionBuffer + sourceByte), numBytesToEnd / kEOSExpansion);
+                    targetBytePosition = bufferIndex != 0 ? 2 : 0;
+                }
+                CopyEveryOtherSample(new UShortAccess(_loopBuffer + targetBytePosition), new UShortAccess(_decompressionBuffer + sourceByte + numBytesToEnd), (packetEndByte - targetBytePosition) / sizeof(short) / kEOSExpansion);
+            }
+            _jointMin[bufferIndex] = endByte;
+        }
+
+        private static void InterpolateChannel(UShortAccess buffer, int numSamples, sbyte bufferIndex)
+        {
+            if (numSamples <= 0)
+            {
+                return;
+            }
+
+            if (bufferIndex != 0)
+            {
+                short lastSample = (short)buffer.Value;
+                int sample = lastSample;
+                UShortAccess target = new UShortAccess(buffer, 2);
+                UShortAccess source = new UShortAccess(buffer, 4);
+                --numSamples;
+
+                while ((numSamples--) != 0)
+                {
+                    sample = source.Value + lastSample;
+                    lastSample = (short)source.Value;
+                    sample /= 2;
+                    target.Value = (ushort)sample;
+                    source.Offset += 4;
+                    target.Offset += 4;
+                }
+
+                target.Value = (ushort)sample;
+            }
+            else {
+                var target = new UShortAccess(buffer);
+                var source = new UShortAccess(buffer, 2);
+                var lastSample = (short)source.Value;
+
+                while ((numSamples--) != 0)
+                {
+                    int sample = (short)source.Value + lastSample;
+                    lastSample = (short)source.Value;
+                    sample /= 2;
+                    target.Value = (ushort)sample;
+                    source.Offset += 4;
+                    target.Offset += 4;
+                }
+            }
+        }
+
+        private static void CopyEveryOtherSample(UShortAccess @out, UShortAccess @in, int numSamples)
+        {
+            while ((numSamples--) != 0)
+            {
+                @out.Value = @in.Value;
+                @in.Offset += 2;
+                @out.Offset += 4;
+            }
         }
 
         public StreamState GetStatus()

@@ -19,8 +19,6 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System;
-using System.IO;
 using NScumm.Core;
 using NScumm.Core.Audio;
 
@@ -38,29 +36,11 @@ namespace NScumm.Queen
 
         public int Rate { get; }
 
-        public bool IsStereo
-        {
-            get
-            {
-                return _stream.IsStereo;
-            }
-        }
+        public bool IsStereo => _stream.IsStereo;
 
-        public bool IsEndOfData
-        {
-            get
-            {
-                return _stream.IsEndOfData;
-            }
-        }
+        public bool IsEndOfData => _stream.IsEndOfData;
 
-        public bool IsEndOfStream
-        {
-            get
-            {
-                return _stream.IsEndOfStream;
-            }
-        }
+        public bool IsEndOfStream => _stream.IsEndOfStream;
 
         public AudioStreamWrapper(IAudioStream stream)
         {
@@ -83,7 +63,7 @@ namespace NScumm.Queen
                 Rate = rate;
         }
 
-        public int ReadBuffer(short[] buffer, int numSamples)
+        public int ReadBuffer(Ptr<short> buffer, int numSamples)
         {
             return _stream.ReadBuffer(buffer, numSamples);
         }

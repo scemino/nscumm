@@ -1,4 +1,4 @@
-﻿//  Author:
+//  Author:
 //       scemino <scemino74@gmail.com>
 //
 //  Copyright (c) 2016
@@ -1097,6 +1097,133 @@ namespace NScumm.Sci.Graphics
         private PlaneShowStyle FindShowStyleForPlane(Register planeObj)
         {
             return _showStyles.FirstOrDefault(o => o.plane == planeObj);
+        }
+
+        private bool ProcessScroll(PlaneScroll scroll)
+        {
+            bool finished = false;
+            uint now = SciEngine.Instance.TickCount;
+            if (scroll.startTick >= now)
+            {
+                return false;
+            }
+
+            int deltaX = scroll.deltaX;
+            int deltaY = scroll.deltaY;
+            if (((scroll.x + deltaX) * scroll.x) <= 0)
+            {
+                deltaX = -scroll.x;
+            }
+            if (((scroll.y + deltaY) * scroll.y) <= 0)
+            {
+                deltaY = -scroll.y;
+            }
+
+            scroll.x = (short)(scroll.x + deltaX);
+            scroll.y = (short)(scroll.y + deltaY);
+
+            Plane plane = SciEngine.Instance._gfxFrameout.GetPlanes().FindByObject(scroll.plane);
+
+            if (plane == null)
+            {
+                Error("[GfxTransitions32::processScroll]: Plane {0} not found", scroll.plane);
+            }
+
+            if ((scroll.x == 0) && (scroll.y == 0))
+            {
+                plane.DeletePic(scroll.oldPictureId, scroll.newPictureId);
+                finished = true;
+            }
+
+            plane.ScrollScreenItems((short)deltaX, (short)deltaY, true);
+
+            return finished;
+        }
+
+        public void KernelSetScroll(Register planeId, short deltaX, short deltaY, int pictureId, bool animate, bool mirrorX)
+        {
+            foreach (var it in _scrolls)
+            {
+                if (it.plane == planeId)
+                {
+                    Error("Scroll already exists on plane {0}", planeId);
+                }
+            }
+
+            if (deltaX == 0 && deltaY == 0)
+            {
+                Error("kSetScroll: Scroll has no movement");
+            }
+
+            if (deltaX != 0 && deltaY != 0)
+            {
+                Error("kSetScroll: Cannot scroll in two dimensions");
+            }
+
+            PlaneScroll scroll = new PlaneScroll();
+            scroll.plane = planeId;
+            scroll.x = 0;
+            scroll.y = 0;
+            scroll.deltaX = deltaX;
+            scroll.deltaY = deltaY;
+            scroll.newPictureId = pictureId;
+            scroll.animate = animate;
+            scroll.startTick = SciEngine.Instance.TickCount;
+
+            Plane plane = SciEngine.Instance._gfxFrameout.GetPlanes().FindByObject(planeId);
+            if (plane == null)
+            {
+                Error("kSetScroll: Plane {0} not found", planeId);
+            }
+
+            Plane visiblePlane = SciEngine.Instance._gfxFrameout.GetPlanes().FindByObject(planeId);
+            if (visiblePlane == null)
+            {
+                Error("kSetScroll: Visible plane {0} not found", planeId);
+            }
+
+            Rect gameRect = visiblePlane._gameRect;
+            Point picOrigin;
+
+            if (deltaX != 0)
+            {
+                picOrigin.Y = 0;
+
+                if (deltaX > 0)
+                {
+                    scroll.x = picOrigin.X = (short)-gameRect.Width;
+                }
+                else {
+                    scroll.x = picOrigin.X = gameRect.Width;
+                }
+            }
+            else {
+                picOrigin.X = 0;
+
+                if (deltaY > 0)
+                {
+                    scroll.y = picOrigin.Y = (short)-gameRect.Height;
+                }
+                else {
+                    scroll.y = picOrigin.Y = gameRect.Height;
+                }
+            }
+
+            scroll.oldPictureId = plane.AddPic(pictureId, picOrigin, mirrorX);
+
+            if (animate)
+            {
+                _scrolls.Insert(0, scroll);
+            }
+            else {
+                bool finished = false;
+                while (!finished && !SciEngine.Instance.ShouldQuit)
+                {
+                    finished = ProcessScroll(scroll);
+                    SciEngine.Instance._gfxFrameout.FrameOut(true);
+                    Throttle();
+                }
+            }
         }
     }
 }

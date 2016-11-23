@@ -26,46 +26,15 @@ namespace NScumm.Core.Audio
 {
     public class SubSeekableAudioStream: ISeekableAudioStream
     {
-        public Timestamp Length
-        {
-            get
-            {
-                return _length;
-            }
-        }
+        public Timestamp Length => _length;
 
-        public bool IsStereo
-        {
-            get
-            {
-                return _parent.IsStereo;
-            }
-        }
+        public bool IsStereo => _parent.IsStereo;
 
-        public int Rate
-        {
-            get
-            {
-                return _parent.Rate;
-            }
-        }
+        public int Rate => _parent.Rate;
 
-        public bool IsEndOfData
-        {
-            get
-            {
-                return (_pos >= _length) || _parent.IsEndOfData;
-            }
-        }
+        public bool IsEndOfData => (_pos >= _length) || _parent.IsEndOfData;
 
-        public bool IsEndOfStream
-        {
-            get
-            {
-                return (_pos >= _length) || _parent.IsEndOfStream;
-            }
-        }
-
+        public bool IsEndOfStream => (_pos >= _length) || _parent.IsEndOfStream;
 
         public SubSeekableAudioStream(ISeekableAudioStream parent, Timestamp start, Timestamp end, bool disposeAfterUse = true)
         {
@@ -105,12 +74,12 @@ namespace NScumm.Core.Audio
             return Seek(new Timestamp(0, Rate));
         }
 
-        public int ReadBuffer(short[] buffer, int count)
+        public int ReadBuffer(Ptr<short> buffer, int count)
         {
             int framesLeft = Math.Min(_length.FrameDiff(_pos), count);
             var tmp = new short[framesLeft];
             int framesRead = _parent.ReadBuffer(tmp, framesLeft);
-            Array.Copy(tmp, buffer, framesLeft);
+            Array.Copy(tmp, buffer.Data, buffer.Offset + framesLeft);
             _pos = _pos.AddFrames(framesRead);
             return framesRead;
         }
@@ -128,11 +97,8 @@ namespace NScumm.Core.Audio
             {
                 return true;
             }
-            else
-            {
-                _pos = _length;
-                return false;
-            }
+            _pos = _length;
+            return false;
         }
 
         ISeekableAudioStream _parent;

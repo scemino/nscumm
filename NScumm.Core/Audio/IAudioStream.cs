@@ -71,7 +71,7 @@ namespace NScumm.Core.Audio
         /// <param name="buffer">Buffer.</param>
         /// <param name="numSamples">The number of samples to read.</param>
         /// <returns>The number of samples read.</returns>
-        int ReadBuffer(short[] buffer, int numSamples);
+        int ReadBuffer(Ptr<short> buffer, int numSamples);
 
         /// <summary>
         /// Is this a stereo stream?
@@ -181,7 +181,7 @@ namespace NScumm.Core.Audio
                 _parentStream.Dispose();
         }
 
-        public int ReadBuffer(short[] buffer, int numSamples)
+        public int ReadBuffer(Ptr<short> buffer, int numSamples)
         {
             // Cap us off so we don't read past _totalSamples
             int samplesRead = _parentStream.ReadBuffer(buffer, Math.Min(numSamples, _totalSamples - _samplesRead));

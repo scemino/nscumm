@@ -76,17 +76,17 @@ namespace NScumm.Sky.Music
             base.Dispose();
         }
 
-        public int ReadBuffer(short[] data, int numSamples)
+        public int ReadBuffer(Ptr<short> data, int numSamples)
         {
             if (_musicData == null)
             {
                 // no music loaded
-                Array.Clear(data, 0, numSamples);
+                Array.Clear(data.Data, data.Offset, numSamples);
             }
             else if ((_currentMusic == 0) || (_numberOfChannels == 0))
             {
                 // music loaded but not played as of yet
-                Array.Clear(data, 0, numSamples);
+                Array.Clear(data.Data, data.Offset, numSamples);
                 // poll anyways as pollMusic() can activate the music
                 PollMusic();
                 _nextMusicPoll = _sampleRate / 50;
@@ -101,7 +101,7 @@ namespace NScumm.Sky.Music
                     render = (remaining > _nextMusicPoll) ? _nextMusicPoll : remaining;
                     remaining -= render;
                     _nextMusicPoll -= render;
-                    _opl.ReadBuffer(data, offset, render);
+                    _opl.ReadBuffer(data.Data, data.Offset + offset, render);
                     offset += render;
                     if (_nextMusicPoll == 0)
                     {

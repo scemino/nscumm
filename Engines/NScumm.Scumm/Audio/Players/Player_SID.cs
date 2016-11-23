@@ -148,7 +148,7 @@ namespace NScumm.Scumm.Audio.Players
             return result;
         }
 
-        public int ReadBuffer(short[] buffer, int count)
+        public int ReadBuffer(Ptr<short> buffer, int count)
         {
             int samplesLeft = count;
             int offset = 0;
@@ -163,7 +163,7 @@ namespace NScumm.Scumm.Audio.Players
                         _cpuCyclesLeft = timingProps[(int)_videoSystem].CyclesPerFrame;
                     }
                     // fetch samples
-                    int sampleCount = _sid.UpdateClock(ref _cpuCyclesLeft, buffer, samplesLeft, offset);
+                    int sampleCount = _sid.UpdateClock(ref _cpuCyclesLeft, buffer.Data, samplesLeft, buffer.Offset + offset);
                     samplesLeft -= sampleCount;
                     offset += sampleCount;
                 }

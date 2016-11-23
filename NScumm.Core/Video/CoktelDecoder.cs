@@ -381,12 +381,12 @@ namespace NScumm.Core.Video
                 if (_isPaused)
                 {
                     // Add the time we were paused to the initial starting time
-                    _startTime += ServiceLocator.Platform.GetMilliseconds() - _pauseStartTime;
+                    _startTime += (int)(ServiceLocator.Platform.GetMilliseconds() - _pauseStartTime);
                 }
                 else
                 {
                     // Store the time we paused for use later
-                    _pauseStartTime = ServiceLocator.Platform.GetMilliseconds();
+                    _pauseStartTime = (int)ServiceLocator.Platform.GetMilliseconds();
                 }
 
                 _isPaused = pause;
@@ -608,7 +608,7 @@ namespace NScumm.Core.Video
             if (nextFrameStartTime <= elapsedTime)
                 return 0;
 
-            return nextFrameStartTime - elapsedTime;
+            return (int)(nextFrameStartTime - elapsedTime);
         }
 
         protected void CreateSurface()

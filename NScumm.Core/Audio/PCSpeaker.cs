@@ -18,6 +18,7 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Collections.Generic;
 
@@ -31,27 +32,23 @@ namespace NScumm.Core.Audio
         Triangle
     }
 
-    public class PCSpeaker: IAudioStream
+    public class PCSpeaker : IAudioStream
     {
         public bool IsStereo
         {
-            get{ return false; }
+            get { return false; }
         }
 
-        public int Rate
-        {
-            get;
-            private set;
-        }
+        public int Rate { get; private set; }
 
         public bool IsEndOfData
         {
-            get{ return false; }
+            get { return false; }
         }
 
         public bool IsEndOfStream
         {
-            get{ return false; }
+            get { return false; }
         }
 
         ~PCSpeaker()
@@ -71,19 +68,22 @@ namespace NScumm.Core.Audio
 
         public int Volume { get; set; }
 
-        public bool IsPlaying { get { return _remainingSamples != 0; } }
+        public bool IsPlaying
+        {
+            get { return _remainingSamples != 0; }
+        }
 
         public PCSpeaker(int rate = 44100)
         {
             Rate = rate;
             _wave = WaveForm.Square;
             Volume = 255;
-            generateWave = new Dictionary<WaveForm,Func<int,int,int>>()
+            generateWave = new Dictionary<WaveForm, Func<int, int, int>>()
             {
-                { WaveForm.Square, GenerateSquare },
-                { WaveForm.Sine, GenerateSine },
-                { WaveForm.Saw, GenerateSaw },
-                { WaveForm.Triangle, GenerateTriangle }
+                {WaveForm.Square, GenerateSquare},
+                {WaveForm.Sine, GenerateSine},
+                {WaveForm.Saw, GenerateSaw},
+                {WaveForm.Triangle, GenerateTriangle}
             };
         }
 
@@ -128,14 +128,14 @@ namespace NScumm.Core.Audio
             }
         }
 
-        public int ReadBuffer(short[] buffer, int count)
+        public int ReadBuffer(Ptr<short> buffer, int count)
         {
             lock (_mutex)
             {
                 int i;
                 for (i = 0; _remainingSamples != 0 && (i < count); i++)
                 {
-                    buffer[i] = (short)(generateWave[_wave](_oscSamples, _oscLength) * Volume);
+                    buffer[i] = (short) (generateWave[_wave](_oscSamples, _oscLength) * Volume);
                     if (_oscSamples++ >= _oscLength)
                         _oscSamples = 0;
                     if (!_playForever)
@@ -146,7 +146,7 @@ namespace NScumm.Core.Audio
                 // Clear the rest of the buffer
                 if (i < count)
                 {
-                    Array.Clear(buffer, i, (count - i));
+                    Array.Clear(buffer.Data, buffer.Offset + i, (count - i));
                 }
 
                 return count;
@@ -164,7 +164,7 @@ namespace NScumm.Core.Audio
                 return 0;
 
             // TODO: Maybe using a look-up-table would be better?
-            return ScummHelper.Clip((int)(128 * Math.Sin(2.0 * Math.PI * x / oscLength)), -128, 127);
+            return ScummHelper.Clip((int) (128 * Math.Sin(2.0 * Math.PI * x / oscLength)), -128, 127);
         }
 
         static int GenerateSaw(int x, int oscLength)
@@ -195,4 +195,3 @@ namespace NScumm.Core.Audio
         Dictionary<WaveForm, Func<int, int, int>> generateWave;
     }
 }
-

@@ -232,7 +232,7 @@ namespace NScumm.Sci.Sound
         /// <summary>
         /// The audio channels.
         /// </summary>
-        private List<AudioChannel> _channels;
+        private Array<AudioChannel> _channels;
 
         /// <summary>
         /// The number of active audio channels in the mixer.
@@ -362,14 +362,15 @@ namespace NScumm.Sci.Sound
             _maxAllowedOutputChannels = 2;
             _attenuatedMixing = true;
             _monitoredChannelIndex = -1;
+            _channels = new Array<AudioChannel>(() => new AudioChannel());
 
             if (ResourceManager.GetSciVersion() < SciVersion.V3)
             {
-                _channels = new List<AudioChannel>(5);
+                _channels.Resize(5);
             }
             else
             {
-                _channels = new List<AudioChannel>(8);
+                _channels.Resize(8);
             }
 
             _useModifiedAttenuation = false;
@@ -550,9 +551,9 @@ namespace NScumm.Sci.Sound
                     return (ushort)Math.Min(65534, 1 + ((ISeekableAudioStream)channel.stream).Length.Milliseconds * 60 / 1000);
                 }
 
-                if (_numActiveChannels == _channels.Count)
+                if (_numActiveChannels == _channels.Size)
                 {
-                    Warning("Audio mixer is full when trying to play %s", resourceId);
+                    Warning("Audio mixer is full when trying to play {0}", resourceId);
                     return 0;
                 }
 
@@ -593,7 +594,7 @@ namespace NScumm.Sci.Sound
                 // TODO: This should be fixed to use streaming, which means
                 // fixing the resource manager to allow streaming, which means
                 // probably rewriting a bunch of the resource manager.
-                ResourceManager.ResourceSource.Resource resource = _resMan.FindResource(resourceId, true);
+                var resource = _resMan.FindResource(resourceId, true);
                 if (resource == null)
                 {
                     return 0;
@@ -776,7 +777,7 @@ namespace NScumm.Sci.Sound
                     return (ushort)Math.Min(65534, 1 + stream.Length.Milliseconds * 60 / 1000);
                 }
 
-                if (_numActiveChannels == _channels.Count)
+                if (_numActiveChannels == _channels.Size)
                 {
                     Warning("Audio mixer is full when trying to play {0}", resourceId.ToString());
                     return 0;
@@ -843,7 +844,7 @@ namespace NScumm.Sci.Sound
                     _monitoredChannelIndex = (short)channelIndex;
                 }
 
-                var headerStream = new MemoryStream(resource._header, 0, resource._headerSize);
+                var headerStream = new MemoryStream(resource._header ?? new byte[0], 0, resource._headerSize);
                 var dataStream = channel.resourceStream = resource.MakeStream();
 
                 if (DetectSolAudio(headerStream))
@@ -1084,7 +1085,7 @@ namespace NScumm.Sci.Sound
                 channel.resource = null;
                 channel.stream.Dispose();
                 channel.stream = null;
-                channel.resourceStream.Dispose();
+                channel.resourceStream?.Dispose();
                 channel.resourceStream = null;
                 channel.converter = null;
 
@@ -1104,7 +1105,7 @@ namespace NScumm.Sci.Sound
             }
         }
 
-        public int ReadBuffer(short[] buffer, int numSamples)
+        public int ReadBuffer(Ptr<short> buffer, int numSamples)
         {
             lock (_mutex)
             {
@@ -1126,7 +1127,7 @@ namespace NScumm.Sci.Sound
                 // buffer, so we need to zero the intermediate buffer
                 // to prevent mixing into audio data from the last
                 // callback.
-                Array.Clear(buffer, 0, numSamples);
+                Array.Clear(buffer.Data, buffer.Offset, numSamples);
 
                 // This emulates the attenuated mixing mode of SSCI
                 // engine, which reduces the volume of the target
@@ -1797,7 +1798,7 @@ namespace NScumm.Sci.Sound
                 bool isNewChannel = false;
                 if (channelIndex == AudioChannelIndex.NoExistingChannel)
                 {
-                    if (_numActiveChannels == _channels.Count)
+                    if (_numActiveChannels == _channels.Size)
                     {
                         return false;
                     }

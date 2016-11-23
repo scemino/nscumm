@@ -63,10 +63,11 @@ namespace NScumm.Desktop
 
             //var pluginsdDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "plugins");
             var gd = new GameDetector();
-            gd.Add(new SciMetaEngine());
-            gd.Add(new QueenMetaEngine());
-            gd.Add(new Sky.SkyMetaEngine());
-            gd.Add(new Sword1.Sword1MetaEngine());
+            //gd.Add(new SciMetaEngine());
+            //gd.Add(new QueenMetaEngine());
+            //gd.Add(new Sky.SkyMetaEngine());
+            //gd.Add(new Sword1.Sword1MetaEngine());
+            gd.Add(new Agos.AgosMetaEngine());
             //gd.AddPluginsFromDirectory(pluginsdDirectory);
 
             var info = gd.DetectGame(path);

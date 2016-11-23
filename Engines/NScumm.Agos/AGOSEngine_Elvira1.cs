@@ -30,5 +30,11 @@ namespace NScumm.Agos
             : base(system, settings, gd)
         {
         }
+
+        protected void oe1_stopAnimate()
+        {
+            // 227: stop animate
+            StopAnimate((ushort) GetVarOrWord());
+        }
     }
 }

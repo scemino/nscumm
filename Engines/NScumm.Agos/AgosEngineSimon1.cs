@@ -78,6 +78,7 @@ namespace NScumm.Agos
                 {18, o_notEqf},
                 {19, o_ltf},
                 {20, o_gtf},
+                {23, o_chance},
                 {25, o_isRoom},
                 {26, o_isObject},
                 {27, o_state},
@@ -105,18 +106,32 @@ namespace NScumm.Agos
                 {59, o_inc},
                 {60, o_dec},
                 {61, o_setState},
+                {62, o_print},
                 {63, o_message},
                 {64, o_msg},
                 {65, oww_addTextBox},
                 {66, oww_setShortText},
                 {67, oww_setLongText},
+                {68, o_end},
+                {69, o_done},
                 {70, oww_printLongText},
                 {71, o_process},
                 {76, o_when},
+                {77, o_if1},
+                {78, o_if2},
+                {79, o_isCalled},
+                {80, o_is},
+                {82, o_debug},
+                {87, o_comment},
+                {88, o_haltAnimation},
+                {89, o_restartAnimation},
+                {90, o_getParent},
                 {91, o_getNext},
+                {92, o_getChildren},
                 {96, o_picture},
                 {97, o_loadZone},
                 {98, os1_animate},
+                {99, oe1_stopAnimate},
                 {100, o_killAnimate},
                 {101, o_defWindow},
                 {102, o_window},
@@ -126,14 +141,30 @@ namespace NScumm.Agos
                 {108, o_delBox},
                 {109, o_enableBox},
                 {110, o_disableBox},
+                {111, o_moveBox},
                 {114, o_doIcons},
+                {115, o_isClass},
+                {116, o_setClass},
+                {117, o_unsetClass},
                 {119, o_waitSync},
                 {120, o_sync},
                 {121, o_defObj},
                 {125, o_here},
                 {126, o_doClassIcons},
                 {127, o_playTune},
+                {130, o_setAdjNoun},
+                {132, o_saveUserGame},
+                {133, o_loadUserGame},
+                {135, os1_pauseGame},
+                {136, o_copysf},
+                {137, o_restoreIcons},
                 {138, o_freezeZones},
+                {139, o_placeNoIcons},
+                {140, o_clearTimers},
+                {141, o_setDollar},
+                {142, o_isBox},
+                {143, oe2_doTable},
+                {151, oe2_storeItem},
                 {152, oe2_getItem},
                 {153, oe2_bSet},
                 {154, oe2_bClear},
@@ -144,6 +175,13 @@ namespace NScumm.Agos
                 {160, oe2_ink},
                 {161, os1_screenTextBox},
                 {162, os1_screenTextMsg},
+                {163, os1_playEffect},
+                {164, oe2_getDollar2},
+                {165, oe2_isAdjNoun},
+                {166, oe2_b2Set},
+                {167, oe2_b2Clear},
+                {168, oe2_b2Zero},
+                {169, oe2_b2NotZero},
                 {175, oww_lockZones},
                 {176, oww_unlockZones},
                 {177, os1_screenTextPObj},
@@ -598,6 +636,61 @@ namespace NScumm.Agos
             throw new NotImplementedException();
         }
 
+        private void PlaySpeech(ushort speechId, ushort vgaSpriteId)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void os1_animate()
+        {
+            // 98: animate
+            var vgaSpriteId = (ushort) GetVarOrWord();
+            var windowNum = (ushort) GetVarOrByte();
+            var x = (short) GetVarOrWord();
+            var y = (short) GetVarOrWord();
+            var palette = (ushort) (GetVarOrWord() & 15);
+
+            if (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_TALKIE) && vgaSpriteId >= 400)
+            {
+                _lastVgaWaitFor = 0;
+            }
+
+            _videoLockOut |= 0x40;
+            Animate(windowNum, (ushort) (vgaSpriteId / 100), vgaSpriteId, x, y, palette);
+            _videoLockOut = (ushort) (_videoLockOut & ~0x40);
+        }
+
+        private void os1_pauseGame()
+        {
+            // 135: pause game
+            OSystem.InputManager.ShowVirtualKeyboard();
+
+            // TODO: os1_pauseGame
+            // KeyCode keyYes, keyNo;
+
+//            GetLanguageYesNo(_language, keyYes, keyNo);
+//
+//            while (!HasToQuit) {
+//                Delay(1);
+//                if (_keyPressed.keycode == keyYes)
+//                    QuitGame();
+//                else if (_keyPressed.keycode == keyNo)
+//                    break;
+//            }
+
+            OSystem.InputManager.HideVirtualKeyboard();
+        }
+
+        private void os1_screenTextBox()
+        {
+            // 161: setup text
+            var tl = GetTextLocation(GetVarOrByte());
+
+            tl.x = (short) GetVarOrWord();
+            tl.y = (short) GetVarOrByte();
+            tl.width = (short) GetVarOrWord();
+        }
+
         private void os1_screenTextMsg()
         {
             // 162: print string
@@ -649,33 +742,16 @@ namespace NScumm.Agos
                 PrintScreenText(vgaSpriteId, color, stringPtr, tl.x, tl.y, tl.width);
         }
 
-        private void PlaySpeech(ushort speechId, ushort vgaSpriteId)
-        {
-            throw new NotImplementedException();
-        }
 
-        private void os1_loadStrings()
+        private void os1_playEffect()
         {
-            // 185: load sound files
-            _soundFileId = (ushort) GetVarOrWord();
-            if (_gd.Platform == Platform.Amiga && _gd.ADGameDescription.features.HasFlag(GameFeatures.GF_TALKIE))
-            {
-                string buf;
-                buf = $"{_soundFileId}Effects";
-                _sound.ReadSfxFile(buf);
-                buf = $"{_soundFileId}simon";
-                // TODO: vs: _sound.ReadVoiceFile(buf);
-            }
-        }
+            // 163: play sound
+            ushort soundId = (ushort) GetVarOrWord();
 
-        private void os1_screenTextBox()
-        {
-            // 161: setup text
-            var tl = GetTextLocation(GetVarOrByte());
-
-            tl.x = (short) GetVarOrWord();
-            tl.y = (short) GetVarOrByte();
-            tl.width = (short) GetVarOrWord();
+            if (GameId == GameIds.GID_SIMON1DOS)
+                PlaySting(soundId);
+            else
+                _sound.PlayEffects(soundId);
         }
 
         private void os1_screenTextPObj()
@@ -854,23 +930,18 @@ namespace NScumm.Agos
             vpe.vgaFile2 = BytePtr.Null;
         }
 
-        private void os1_animate()
+        private void os1_loadStrings()
         {
-            // 98: animate
-            var vgaSpriteId = (ushort) GetVarOrWord();
-            var windowNum = (ushort) GetVarOrByte();
-            var x = (short) GetVarOrWord();
-            var y = (short) GetVarOrWord();
-            var palette = (ushort) (GetVarOrWord() & 15);
-
-            if (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_TALKIE) && vgaSpriteId >= 400)
+            // 185: load sound files
+            _soundFileId = (ushort) GetVarOrWord();
+            if (_gd.Platform == Platform.Amiga && _gd.ADGameDescription.features.HasFlag(GameFeatures.GF_TALKIE))
             {
-                _lastVgaWaitFor = 0;
+                string buf;
+                buf = $"{_soundFileId}Effects";
+                _sound.ReadSfxFile(buf);
+                buf = $"{_soundFileId}simon";
+                // TODO: vs: _sound.ReadVoiceFile(buf);
             }
-
-            _videoLockOut |= 0x40;
-            Animate(windowNum, (ushort) (vgaSpriteId / 100), vgaSpriteId, x, y, palette);
-            _videoLockOut = (ushort) (_videoLockOut & ~0x40);
         }
 
         private void os1_unfreezeZones()

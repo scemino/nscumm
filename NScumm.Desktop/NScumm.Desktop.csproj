@@ -9,7 +9,7 @@
     <RootNamespace>NScumm.Desktop</RootNamespace>
     <AssemblyName>nSCUMM</AssemblyName>
     <MonoGamePlatform>DesktopGL</MonoGamePlatform>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+      <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DebugSymbols>true</DebugSymbols>
@@ -34,6 +34,9 @@
     <Commandlineparameters>"/Users/valery/Downloads/Broken Sword 1 The Shadow of the Templar (CD Windows)/SWORDRES.RIF"</Commandlineparameters>
   </PropertyGroup>
   <ItemGroup>
+      <Reference Include="NScumm.Agos, PublicKeyToken=null">
+          <HintPath>..\Engines\NScumm.Agos\NScumm.Agos.csproj</HintPath>
+      </Reference>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
@@ -118,10 +121,6 @@
     <ProjectReference Include="..\Engines\NScumm.Sword1\NScumm.Sword1.csproj">
       <Project>{EF539A3F-0672-412C-B9D0-38DCD3622D99}</Project>
       <Name>NScumm.Sword1</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NScumm.Agos\NScumm.Agos.csproj">
-      <Project>{024F3C9E-36B9-4A61-A210-54E265597D6E}</Project>
-      <Name>NScumm.Agos</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

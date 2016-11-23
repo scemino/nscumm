@@ -31,9 +31,12 @@
     </PropertyGroup>
     <ItemGroup>
         <Compile Include="AGOSEngine.cs"/>
+        <Compile Include="AgosEngine.Event.cs"/>
+        <Compile Include="AgosEngine.Input.cs"/>
         <Compile Include="AgosEngine.Script.cs"/>
         <Compile Include="AgosEngine.Sound.cs"/>
         <Compile Include="AgosEngine.String.cs"/>
+        <Compile Include="AgosEngine.Verb.cs"/>
         <Compile Include="AGOSEngine_Elvira1.cs"/>
         <Compile Include="AGOSEngine_Elvira2.cs"/>
         <Compile Include="AGOSEngine_Waxworks.cs"/>

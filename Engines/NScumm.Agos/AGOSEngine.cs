@@ -131,7 +131,7 @@ namespace NScumm.Agos
         protected ushort _soundFileId;
         private short _lastMusicPlayed;
         private short _nextMusicToPlay;
-        private bool _showPreposition;
+        protected bool _showPreposition;
         private bool _showMessageFlag;
 
         private byte _agosMenu;
@@ -157,7 +157,7 @@ namespace NScumm.Agos
         private Item _currentPlayer;
         protected Item _dummyItem1 = new Item();
         protected Item _dummyItem2 = new Item();
-        private Item _dummyItem3 = new Item();
+        protected Item _dummyItem3 = new Item();
         private byte[] _strippedTxtMem;
         private int _numRoomStates;
         private RoomState[] _roomStates;
@@ -196,12 +196,14 @@ namespace NScumm.Agos
         private readonly short[] _runScriptReturn = new short[40];
 
         private readonly ushort[] _bitArray = new ushort[128];
-        private readonly ushort[] _bitArrayTwo = new ushort[16];
+        protected readonly ushort[] _bitArrayTwo = new ushort[16];
         private ushort[] _bitArrayThree = new ushort[16];
         private Item _findNextPtr;
 
-        private short _scriptVerb, _scriptNoun1, _scriptNoun2;
-        private short _scriptAdj1, _scriptAdj2;
+        private short _scriptVerb, _scriptNoun1;
+        protected short _scriptNoun2;
+        private short _scriptAdj1;
+        protected short _scriptAdj2;
 
         protected Item _subjectItem;
         protected Item _objectItem;
@@ -223,12 +225,12 @@ namespace NScumm.Agos
         private readonly byte[] _hebrewCharWidths = new byte[32];
         private HitArea _lastHitArea;
         private Item _hitAreaSubjectItem;
-        private Item _hitAreaObjectItem;
+        protected Item _hitAreaObjectItem;
         protected bool _nameLocked;
         private ushort _needHitAreaRecalc;
         private HitArea _lastHitArea3;
         private bool _dragAccept;
-        private ScummInputState _keyPressed;
+        protected ScummInputState _keyPressed;
         private bool _dragMode;
         private HitArea _lastClickRem;
         private bool _dragFlag;
@@ -539,16 +541,6 @@ namespace NScumm.Agos
             return offset;
         }
 
-        protected void o_getNext()
-        {
-            // 91: set minusitem to next
-            Item i = GetNextItemPtr();
-            if (GetVarOrByte() == 1)
-                _subjectItem = DerefItem(i.next);
-            else
-                _objectItem = DerefItem(i.next);
-        }
-
         protected void o_loadZone()
         {
             // 97: load zone
@@ -714,6 +706,15 @@ namespace NScumm.Agos
             DisableBox((int) GetVarOrWord());
         }
 
+        protected void o_moveBox()
+        {
+            // 111: set hitarea xy
+            int hitarea_id = (int)GetVarOrWord();
+            int x = (int)GetVarOrWord();
+            int y = (int)GetVarOrWord();
+            MoveBox(hitarea_id, x, y);
+        }
+
         protected void o_process()
         {
             // 71: start subroutine
@@ -756,34 +757,6 @@ namespace NScumm.Agos
             }
         }
 
-        protected virtual void ClearName()
-        {
-            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 ||
-                _gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2)
-                return;
-
-            if (_nameLocked || _lastNameOn == null)
-                return;
-
-            ResetNameWindow();
-        }
-
-        protected void ResetNameWindow()
-        {
-            WindowBlock window;
-
-            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2 &&
-                GetBitFlag(79))
-                return;
-
-            window = _windowArray[1];
-            if (window != null && window.textColor != 0)
-                ClearWindow(window);
-
-            _lastNameOn = null;
-            _lastVerbOn = null;
-        }
-
         protected void SetTextColor(uint color)
         {
             WindowBlock window = _windowArray[_curWindow];
@@ -813,22 +786,6 @@ namespace NScumm.Agos
             ha.Value.verb = 253;
 
             return Array.IndexOf(_hitAreas, ha);
-        }
-
-        protected Ptr<HitArea> FindEmptyHitArea()
-        {
-            var ha = 0;
-            int count = _hitAreas.Length - 1;
-
-            do
-            {
-                if (_hitAreas[ha].flags == 0)
-                    return new Ptr<HitArea>(_hitAreas, ha);
-                ha++;
-            } while (--count != 0);
-
-            // The last box is overwritten, if too many boxes are allocated.
-            return new Ptr<HitArea>(_hitAreas, ha);
         }
 
         protected virtual int ItemGetIconNumber(Item item)
@@ -1349,24 +1306,6 @@ namespace NScumm.Agos
             throw new NotImplementedException();
         }
 
-        protected void DeleteVgaEvent(Ptr<VgaTimerEntry> vte)
-        {
-            _videoLockOut |= 1;
-
-            if (vte.Offset + 1 <= _nextVgaTimerToProcess.Offset)
-            {
-                _nextVgaTimerToProcess.Offset--;
-            }
-
-            do
-            {
-                vte[0] = new VgaTimerEntry(vte[1]);
-                vte.Offset++;
-            } while (vte.Value.delay != 0);
-
-            _videoLockOut = (ushort) (_videoLockOut & ~1);
-        }
-
         protected string GetFileName(GameFileTypes type)
         {
 // Required if the InstallShield cab is been used
@@ -1765,63 +1704,6 @@ namespace NScumm.Agos
             }
         }
 
-        private void EnableBox(int hitarea)
-        {
-            HitArea ha = FindBox(hitarea);
-            if (ha != null)
-                ha.flags = (ushort) (ha.flags & ~(ushort) BoxFlags.kBFBoxDead);
-        }
-
-        private void DisableBox(int hitarea)
-        {
-            var ha = FindBox(hitarea);
-            if (ha == null) return;
-
-            ha.flags = (ushort) (ha.flags | (ushort) BoxFlags.kBFBoxDead);
-            ha.flags = (ushort) (ha.flags & ~(ushort) BoxFlags.kBFBoxSelected);
-            if ((_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1 ||
-                 _gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2) &&
-                hitarea == 102)
-            {
-                ResetVerbs();
-            }
-        }
-
-        protected void DefineBox(int id, int x, int y, int width, int height, int flags, int verb, Item itemPtr)
-        {
-            UndefineBox(id);
-
-            var ha = FindEmptyHitArea();
-            ha.Value.x = (ushort) x;
-            ha.Value.y = (ushort) y;
-            ha.Value.width = (ushort) width;
-            ha.Value.height = (ushort) height;
-            ha.Value.flags = (ushort) (flags | (ushort) BoxFlags.kBFBoxInUse);
-            ha.Value.id = ha.Value.priority = (ushort) id;
-            ha.Value.verb = (ushort) verb;
-            ha.Value.itemPtr = itemPtr;
-
-            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF &&
-                ((ha.Value.flags & (ushort) BoxFlags.kBFHyperBox) != 0))
-            {
-                ha.Value.data = _hyperLink;
-                ha.Value.priority = 50;
-            }
-
-            _needHitAreaRecalc++;
-        }
-
-        private void UndefineBox(int hitarea)
-        {
-            HitArea ha = FindBox(hitarea);
-            if (ha != null)
-            {
-                ha.flags = 0;
-                if (ha == _lastNameOn)
-                    ClearName();
-                _needHitAreaRecalc++;
-            }
-        }
 
         private Item GetNextItemPtrStrange()
         {
@@ -2240,11 +2122,6 @@ namespace NScumm.Agos
             throw new NotImplementedException();
         }
 
-        private void FreeBox(uint boxCode)
-        {
-            throw new NotImplementedException();
-        }
-
         private void ChangeWindow(uint a)
         {
             a &= 7;
@@ -2347,7 +2224,7 @@ namespace NScumm.Agos
             }
         }
 
-        private Item Me()
+        protected Item Me()
         {
             if (_currentPlayer != null)
                 return _currentPlayer;
@@ -2388,257 +2265,6 @@ namespace NScumm.Agos
         }
 #endif
 
-        private void HandleVerbClicked(uint verb)
-        {
-            throw new NotImplementedException();
-        }
-
-        private void WaitForInput()
-        {
-            _leftButtonDown = false;
-            _lastHitArea = null;
-            //_lastClickRem = 0;
-            _verbHitArea = 0;
-            _hitAreaSubjectItem = null;
-            _hitAreaObjectItem = null;
-            _clickOnly = false;
-            _nameLocked = false;
-
-            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
-            {
-                _mouseCursor = 0;
-                _needHitAreaRecalc++;
-                ClearMenuStrip();
-            }
-            else
-            {
-                ResetVerbs();
-            }
-
-            while (!HasToQuit)
-            {
-                _lastHitArea = null;
-                _lastHitArea3 = null;
-                _dragAccept = true;
-
-                while (!HasToQuit)
-                {
-                    if ((_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1 ||
-                         _gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2) &&
-                        _keyPressed.IsKeyDown(KeyCode.F10))
-                        DisplayBoxStars();
-                    if (ProcessSpecialKeys())
-                    {
-                        if (_gd.ADGameDescription.gameId != GameIds.GID_DIMP)
-                            goto out_of_here;
-                    }
-
-                    if (_lastHitArea3 == HitArea.None)
-                    {
-                        _lastHitArea = null;
-                        _lastHitArea3 = null;
-                        _dragAccept = true;
-                    }
-                    else
-                    {
-                        if (_lastHitArea3 != null || _dragMode)
-                            break;
-                        HitareaStuffHelper();
-                        Delay(100);
-                    }
-                }
-
-                HitArea ha;
-                if (_lastHitArea3 == null && _dragMode)
-                {
-                    ha = _lastClickRem;
-
-                    if (ha == null || ha.itemPtr == null || (ha.flags & (ushort) BoxFlags.kBFDragBox) == 0)
-                    {
-                        _dragFlag = false;
-                        _dragMode = false;
-                        _dragCount = 0;
-                        _dragEnd = false;
-                        continue;
-                    }
-
-                    _hitAreaSubjectItem = ha.itemPtr;
-                    _verbHitArea = 500;
-
-                    do
-                    {
-                        ProcessSpecialKeys();
-                        HitareaStuffHelper();
-                        Delay(100);
-
-                        if (!_dragFlag)
-                        {
-                            _dragFlag = false;
-                            _dragMode = false;
-                            _dragCount = 0;
-                            _dragEnd = false;
-                        }
-                    } while (!_dragEnd);
-
-                    _dragFlag = false;
-                    _dragMode = false;
-                    _dragCount = 0;
-                    _dragEnd = false;
-
-                    BoxController(_mouse.X, _mouse.Y, 1);
-
-                    if (_currentBox != null)
-                    {
-                        _hitAreaObjectItem = _currentBox.itemPtr;
-                        SetVerbText(_currentBox);
-                    }
-
-                    break;
-                }
-
-                ha = _lastHitArea;
-                if (ha == null)
-                {
-                }
-                else if (ha.id == 0x7FFB)
-                {
-                    InventoryUp(ha.window);
-                }
-                else if (ha.id == 0x7FFC)
-                {
-                    InventoryDown(ha.window);
-                }
-                else if ((_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1 ||
-                          _gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2) &&
-                         (ha.id >= 101 && ha.id < 113))
-                {
-                    _verbHitArea = ha.verb;
-                    SetVerb(ha);
-                    _defaultVerb = 0;
-                }
-                else
-                {
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
-                    {
-                        if (_mouseCursor == 3)
-                            _verbHitArea = 236;
-
-                        if (ha.id == 98)
-                        {
-                            Animate(2, 1, 110, 0, 0, 0);
-                            WaitForSync(34);
-                        }
-                        else if (ha.id == 108)
-                        {
-                            Animate(2, 1, 106, 0, 0, 0);
-                            WaitForSync(34);
-                        }
-                        else if (ha.id == 109)
-                        {
-                            Animate(2, 1, 107, 0, 0, 0);
-                            WaitForSync(34);
-                        }
-                        else if (ha.id == 115)
-                        {
-                            Animate(2, 1, 109, 0, 0, 0);
-                            WaitForSync(34);
-                        }
-                        else if (ha.id == 116)
-                        {
-                            Animate(2, 1, 113, 0, 0, 0);
-                            WaitForSync(34);
-                        }
-                        else if (ha.id == 117)
-                        {
-                            Animate(2, 1, 112, 0, 0, 0);
-                            WaitForSync(34);
-                        }
-                        else if (ha.id == 118)
-                        {
-                            Animate(2, 1, 108, 0, 0, 0);
-                            WaitForSync(34);
-                        }
-                        else if (ha.id == 119)
-                        {
-                            Animate(2, 1, 111, 0, 0, 0);
-                            WaitForSync(34);
-                        }
-                    }
-                    if (ha.itemPtr != null && (ha.verb == 0 || _verbHitArea != 0 ||
-                                               (_hitAreaSubjectItem != ha.itemPtr &&
-                                                (ha.flags & (ushort) BoxFlags.kBFBoxItem) != 0)))
-                    {
-                        _hitAreaSubjectItem = ha.itemPtr;
-                        var id = SetVerbText(ha);
-                        _nameLocked = false;
-                        DisplayName(ha);
-                        _nameLocked = true;
-
-                        if (_verbHitArea != 0)
-                        {
-                            break;
-                        }
-
-                        if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
-                            DoMenuStrip(menuFor_ww(ha.itemPtr, id));
-                        else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2)
-                            DoMenuStrip(menuFor_e2(ha.itemPtr));
-                        else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1)
-                            LightMenuStrip(GetUserFlag1(ha.itemPtr, 6));
-                    }
-                    else
-                    {
-                        if (ha.verb != 0)
-                        {
-                            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW && _mouseCursor != 0 &&
-                                _mouseCursor < 4)
-                            {
-                                _hitAreaSubjectItem = ha.itemPtr;
-                                break;
-                            }
-
-                            _verbHitArea = (ushort) (ha.verb & 0xBFFF);
-                            if ((ha.verb & 0x4000) != 0)
-                            {
-                                _hitAreaSubjectItem = ha.itemPtr;
-                                break;
-                            }
-                            if (_hitAreaSubjectItem != null)
-                                break;
-
-                            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
-                            {
-                                if (ha.id == 109)
-                                {
-                                    _mouseCursor = 2;
-                                    _needHitAreaRecalc++;
-                                }
-                                else if (ha.id == 117)
-                                {
-                                    _mouseCursor = 3;
-                                    _needHitAreaRecalc++;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            out_of_here:
-            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 ||
-                _gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
-                ClearMenuStrip();
-            else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1)
-                UnlightMenuStrip();
-
-            _nameLocked = false;
-            _needHitAreaRecalc++;
-            _dragAccept = false;
-
-            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW && _mouseCursor < 3)
-                _mouseCursor = 0;
-        }
-
         private void LightMenuStrip(int getUserFlag1)
         {
             throw new NotImplementedException();
@@ -2655,11 +2281,6 @@ namespace NScumm.Agos
         }
 
         private uint menuFor_ww(Item haItemPtr, uint id)
-        {
-            throw new NotImplementedException();
-        }
-
-        private void DisplayName(HitArea ha)
         {
             throw new NotImplementedException();
         }
@@ -2777,7 +2398,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void StopAnimate(ushort a)
+        protected void StopAnimate(ushort a)
         {
             ushort b = To16Wrapper(a);
             _videoLockOut |= 0x8000;
@@ -2798,505 +2419,9 @@ namespace NScumm.Agos
             return src.ToUInt16BigEndian();
         }
 
-        private void SetVerb(HitArea ha)
-        {
-            HitArea tmp = _currentVerbBox;
-
-            if (ha == tmp)
-                return;
-
-            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1)
-            {
-                if (tmp != null)
-                {
-                    tmp.flags |= (ushort) BoxFlags.kBFInvertTouch;
-                    if (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_32COLOR))
-                        InvertBox(tmp, 212, 208, 212, 8);
-                    else
-                        InvertBox(tmp, 213, 208, 213, 10);
-                }
-
-                if ((ha.flags & (ushort) BoxFlags.kBFBoxSelected) != 0)
-                {
-                    if (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_32COLOR))
-                        InvertBox(ha, 216, 212, 212, 4);
-                    else
-                        InvertBox(ha, 218, 213, 213, 5);
-                }
-                else
-                {
-                    if (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_32COLOR))
-                        InvertBox(ha, 220, 216, 216, 8);
-                    else
-                        InvertBox(ha, 223, 218, 218, 10);
-                }
-
-                ha.flags = (ushort) (ha.flags & ~(ushort) (BoxFlags.kBFBoxSelected | BoxFlags.kBFInvertTouch));
-            }
-            else
-            {
-                if (ha.id < 101)
-                    return;
-                _mouseCursor = (byte) (ha.id - 101);
-                _needHitAreaRecalc++;
-            }
-            _currentVerbBox = ha;
-        }
-
-        private void InvertBox(HitArea ha, byte a, byte b, byte c, byte d)
-        {
-            byte color;
-            int w, h, i;
-
-            _videoLockOut |= 0x8000;
-
-            LocksScreen(screen =>
-            {
-                var src = screen.GetBasePtr(ha.x, ha.y);
-
-                // WORKAROUND: Hitareas for saved game names aren't adjusted for scrolling locations
-                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2 && ha.id >= 208 && ha.id <= 213)
-                {
-                    src -= _scrollX * 8;
-                }
-
-                _litBoxFlag = true;
-
-                w = ha.width;
-                h = ha.height;
-
-                do
-                {
-                    for (i = 0; i != w; ++i)
-                    {
-                        color = src[i];
-                        if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
-                        {
-                            if ((color & 0xF) == 0 || (color & 0xF) == 10)
-                            {
-                                color ^= 10;
-                                src[i] = color;
-                            }
-                        }
-                        else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2)
-                        {
-                            if ((color & 1) == 0)
-                            {
-                                color ^= 2;
-                                src[i] = color;
-                            }
-                        }
-                        else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1)
-                        {
-                            if ((color & 1) != 0)
-                            {
-                                color ^= 2;
-                                src[i] = color;
-                            }
-                        }
-                        else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PN)
-                        {
-                            if (_gd.Platform == Platform.DOS)
-                            {
-                                if (color != 15)
-                                {
-                                    color ^= 7;
-                                    src[i] = color;
-                                }
-                            }
-                            else
-                            {
-                                if (color != 14)
-                                {
-                                    color ^= 15;
-                                    src[i] = color;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if (a >= color && b < color)
-                            {
-                                if (c >= color)
-                                    color += d;
-                                else
-                                    color -= d;
-                                src[i] = color;
-                            }
-                        }
-                    }
-                    src += screen.Pitch;
-                } while (--h != 0);
-            });
-
-            _videoLockOut = (ushort) (_videoLockOut & ~0x8000);
-        }
-
-        private uint SetVerbText(HitArea currentBox)
-        {
-            throw new NotImplementedException();
-        }
-
         private void UnlightMenuStrip()
         {
             throw new NotImplementedException();
-        }
-
-        private void InventoryUp(WindowBlock haWindow)
-        {
-            throw new NotImplementedException();
-        }
-
-        private void InventoryDown(WindowBlock haWindow)
-        {
-            throw new NotImplementedException();
-        }
-
-        private void BoxController(short mouseX, short mouseY, int i)
-        {
-            throw new NotImplementedException();
-        }
-
-        private void HitareaStuffHelper()
-        {
-            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2 ||
-                _gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
-                _gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
-            {
-                if (_variableArray[254] != 0 || _variableArray[249] != 0)
-                {
-                    HitareaStuffHelper2();
-                }
-            }
-            else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 ||
-                     _gd.ADGameDescription.gameType == SIMONGameType.GType_WW ||
-                     _gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1)
-            {
-                uint subr_id = (ushort) _variableArray[254];
-                if (subr_id != 0)
-                {
-                    Subroutine sub = GetSubroutineByID(subr_id);
-                    if (sub != null)
-                    {
-                        StartSubroutineEx(sub);
-                        PermitInput();
-                    }
-                    _variableArray[254] = 0;
-                    _runScriptReturn1 = false;
-                }
-            }
-
-            uint cur_time = GetTime();
-            if (cur_time != _lastTime)
-            {
-                _lastTime = cur_time;
-                if (KickoffTimeEvents())
-                    PermitInput();
-            }
-
-            if (_gd.ADGameDescription.gameId == GameIds.GID_DIMP)
-                Delay(200);
-        }
-
-        private bool KickoffTimeEvents()
-        {
-            uint cur_time;
-            TimeEvent te;
-            bool result = false;
-
-            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF && _clockStopped != 0)
-                return result;
-
-            cur_time = GetTime() - _gameStoppedClock;
-
-            while ((te = _firstTimeStruct) != null && te.time <= cur_time && !HasToQuit)
-            {
-                result = true;
-                _pendingDeleteTimeEvent = te;
-                InvokeTimeEvent(te);
-                if (_pendingDeleteTimeEvent != null)
-                {
-                    _pendingDeleteTimeEvent = null;
-                    DelTimeEvent(te);
-                }
-            }
-
-            return result;
-        }
-
-        private void InvokeTimeEvent(TimeEvent te)
-        {
-            _scriptVerb = 0;
-
-            if (_runScriptReturn1)
-                return;
-
-            var sub = GetSubroutineByID(te.subroutine_id);
-            if (sub != null)
-                StartSubroutineEx(sub);
-
-            _runScriptReturn1 = false;
-        }
-
-        private void DelTimeEvent(TimeEvent te)
-        {
-            if (te == _pendingDeleteTimeEvent)
-                _pendingDeleteTimeEvent = null;
-
-            if (te == _firstTimeStruct)
-            {
-                _firstTimeStruct = te.next;
-                return;
-            }
-
-            var cur = _firstTimeStruct;
-            if (cur == null)
-                Error("delTimeEvent: none available");
-
-            for (;;)
-            {
-                if (cur.next == null)
-                    Error("delTimeEvent: no such te");
-                if (te == cur.next)
-                {
-                    cur.next = te.next;
-                    return;
-                }
-                cur = cur.next;
-            }
-        }
-
-        private void HitareaStuffHelper2()
-        {
-            uint subr_id;
-            Subroutine sub;
-
-            subr_id = (ushort) _variableArray[249];
-            if (subr_id != 0)
-            {
-                sub = GetSubroutineByID(subr_id);
-                if (sub != null)
-                {
-                    _variableArray[249] = 0;
-                    StartSubroutineEx(sub);
-                    PermitInput();
-                }
-                _variableArray[249] = 0;
-            }
-
-            subr_id = (ushort) _variableArray[254];
-            if (subr_id != 0)
-            {
-                sub = GetSubroutineByID(subr_id);
-                if (sub != null)
-                {
-                    _variableArray[254] = 0;
-                    StartSubroutineEx(sub);
-                    PermitInput();
-                }
-                _variableArray[254] = 0;
-            }
-
-            _runScriptReturn1 = false;
-        }
-
-        private bool ProcessSpecialKeys()
-        {
-            bool verbCode = false;
-
-            if (_gd.ADGameDescription.gameId == GameIds.GID_DIMP)
-            {
-                uint t1 = GetTime() / 30;
-                if (_lastMinute == 0)
-                    _lastMinute = t1;
-                if ((t1 - _lastMinute) != 0)
-                {
-                    _variableArray[120] = (short) (_variableArray[120] + (t1 - _lastMinute));
-                    _lastMinute = t1;
-                }
-            }
-
-            if (HasToQuit)
-                _exitCutscene = true;
-
-            var keys = _keyPressed.GetKeys();
-            if (keys.Count == 0)
-                return verbCode;
-
-            var keycode = keys.First();
-            switch (keycode)
-            {
-                case KeyCode.Up:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
-                        _verbHitArea = 302;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
-                        _verbHitArea = 239;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 && IsBoxDead(101))
-                        _verbHitArea = 200;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 && IsBoxDead(101))
-                        _verbHitArea = 214;
-                    verbCode = true;
-                    break;
-                case KeyCode.Down:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
-                        _verbHitArea = 304;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
-                        _verbHitArea = 241;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 && IsBoxDead(107))
-                        _verbHitArea = 202;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 && IsBoxDead(105))
-                        _verbHitArea = 215;
-                    verbCode = true;
-                    break;
-                case KeyCode.Right:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
-                        _verbHitArea = 303;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
-                        _verbHitArea = 240;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 && IsBoxDead(102))
-                        _verbHitArea = 201;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 && IsBoxDead(103))
-                        _verbHitArea = 216;
-                    verbCode = true;
-                    break;
-                case KeyCode.Left:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
-                        _verbHitArea = 301;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
-                        _verbHitArea = 242;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 && IsBoxDead(104))
-                        _verbHitArea = 203;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 && IsBoxDead(107))
-                        _verbHitArea = 217;
-                    verbCode = true;
-                    break;
-                case KeyCode.Escape:
-                    _exitCutscene = true;
-                    break;
-                case KeyCode.F1:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
-                    {
-                        VcWriteVar(5, 50);
-                        VcWriteVar(86, 0);
-                    }
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1)
-                    {
-                        VcWriteVar(5, 40);
-                        VcWriteVar(86, 0);
-                    }
-                    break;
-                case KeyCode.F2:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
-                    {
-                        VcWriteVar(5, 75);
-                        VcWriteVar(86, 1);
-                    }
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1)
-                    {
-                        VcWriteVar(5, 60);
-                        VcWriteVar(86, 1);
-                    }
-                    break;
-                case KeyCode.F3:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
-                    {
-                        VcWriteVar(5, 125);
-                        VcWriteVar(86, 2);
-                    }
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1)
-                    {
-                        VcWriteVar(5, 100);
-                        VcWriteVar(86, 2);
-                    }
-                    break;
-                case KeyCode.F5:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2 ||
-                        _gd.ADGameDescription.gameType == SIMONGameType.GType_FF)
-                        _exitCutscene = true;
-                    break;
-                case KeyCode.F7:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF && GetBitFlag(76))
-                        _variableArray[254] = 70;
-                    break;
-                case KeyCode.F9:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF)
-                        SetBitFlag(73, !GetBitFlag(73));
-                    break;
-                case KeyCode.F12:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP &&
-                        _gd.ADGameDescription.gameId != GameIds.GID_DIMP)
-                    {
-                        if (!GetBitFlag(110))
-                        {
-                            SetBitFlag(107, !GetBitFlag(107));
-                            _vgaPeriod = (byte) ((GetBitFlag(107) != false) ? 15 : 30);
-                        }
-                    }
-                    break;
-                case KeyCode.Pause:
-                    Pause();
-                    break;
-            }
-
-            //            switch (_keyPressed.ascii) {
-            //                case 't':
-            //                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
-            //                        (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2 &&
-            //                         (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_TALKIE)) ||
-            //                        ((_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_TALKIE)) &&
-            //                         _language != Language.EN_ANY && _language != Language.DE_DEU)) {
-            //                        if (_speech)
-            //                            _subtitles = !_subtitles;
-            //                    }
-            //                    break;
-            //                case 'v':
-            //                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
-            //                        (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2 &&
-            //                         (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_TALKIE)))) {
-            //                        if (_subtitles)
-            //                            _speech = !_speech;
-            //                    }
-            //                    break;
-            //                case '+':
-            //                    if (_midiEnabled) {
-            //                        _midi.SetVolume(_midi.GetMusicVolume() + 16, _midi.GetSFXVolume() + 16);
-            //                    }
-            //                    ConfMan.setInt("music_volume", _mixer.getVolumeForSoundType(Audio::Mixer::kMusicSoundType) + 16);
-            //                    syncSoundSettings();
-            //                    break;
-            //                case '-':
-            //                    if (_midiEnabled) {
-            //                        _midi.setVolume(_midi.getMusicVolume() - 16, _midi.getSFXVolume() - 16);
-            //                    }
-            //                    ConfMan.setInt("music_volume", _mixer.getVolumeForSoundType(Audio::Mixer::kMusicSoundType) - 16);
-            //                    syncSoundSettings();
-            //                    break;
-            //                case 'm':
-            //                    _musicPaused = !_musicPaused;
-            //                    if (_midiEnabled) {
-            //                        _midi.pause(_musicPaused);
-            //                    }
-            //                    _mixer.pauseHandle(_modHandle, _musicPaused);
-            //                    syncSoundSettings();
-            //                    break;
-            //                case 's':
-            //                    if (getGameId() == GID_SIMON1DOS) {
-            //                        _midi._enable_sfx = !_midi._enable_sfx;
-            //                    } else {
-            //                        _effectsPaused = !_effectsPaused;
-            //                        _sound.effectsPause(_effectsPaused);
-            //                    }
-            //                    break;
-            //                case 'b':
-            //                    if (_gd.ADGameDescription.gameType == GType_SIMON2) {
-            //                        _ambientPaused = !_ambientPaused;
-            //                        _sound.ambientPause(_ambientPaused);
-            //                    }
-            //                    break;
-            //            }
-
-            OSystem.InputManager.ResetKeys();
-            return verbCode;
         }
 
         private void Pause()
@@ -3314,123 +2439,12 @@ namespace NScumm.Agos
             }
         }
 
-        private bool IsBoxDead(int hitarea)
-        {
-            HitArea ha = FindBox(hitarea);
-            if (ha == null)
-                return false;
-            return (ha.flags & (ushort) BoxFlags.kBFBoxDead) == 0;
-        }
-
         private void DisplayBoxStars()
         {
             throw new NotImplementedException();
         }
 
-        private void ResetVerbs()
-        {
-            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 ||
-                _gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2)
-                return;
-
-            int id;
-
-            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
-            {
-                id = 2;
-                if (!GetBitFlag(79))
-                    id = _mouse.Y >= 136 ? 102 : 101;
-            }
-            else
-            {
-                id = (int) (_mouse.Y >= 136 ? 102U : 101U);
-            }
-
-            _defaultVerb = (ushort) id;
-
-            var ha = FindBox(id);
-            if (ha == null)
-                return;
-
-            if ((ha.flags & (ushort) BoxFlags.kBFBoxDead) != 0)
-            {
-                _defaultVerb = 999;
-                _currentVerbBox = null;
-            }
-            else
-            {
-                _verbHitArea = ha.verb;
-                SetVerb(ha);
-            }
-        }
-
-        private HitArea FindBox(int hitareaId)
-        {
-            var ha = 0;
-            int count = _hitAreas.Length;
-
-            do
-            {
-                var h = _hitAreas[ha];
-                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
-                    _gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
-                {
-                    if (h.id == hitareaId && h.flags != 0)
-                        return h;
-                }
-                else
-                {
-                    if (h.id == hitareaId)
-                        return h;
-                }
-                ha++;
-            } while (--count != 0);
-            return null;
-        }
-
         private void ClearMenuStrip()
-        {
-            throw new NotImplementedException();
-        }
-
-        private void PermitInput()
-        {
-            if (_mortalFlag)
-                return;
-
-            _mortalFlag = true;
-            JustifyOutPut(0);
-
-            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 ||
-                _gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 ||
-                _gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
-            {
-                int n = 0;
-                while (n < 8)
-                {
-                    if ((_fcsData1[n] != 0) && (_windowArray[n] != null) && (_windowArray[n].flags & 128) != 0)
-                    {
-                        _textWindow = _windowArray[n];
-                        WaitWindow(_textWindow);
-                        ClsCheck(_textWindow);
-                    }
-                    _fcsData1[n] = 0;
-                    n++;
-                }
-
-                RestartAnimation();
-            }
-
-            _curWindow = 0;
-            if (_windowArray[0] != null)
-            {
-                _textWindow = _windowArray[0];
-                JustifyStart();
-            }
-            _mortalFlag = false;
-        }
-
-        private void RestartAnimation()
         {
             throw new NotImplementedException();
         }
@@ -3547,20 +2561,6 @@ namespace NScumm.Agos
             _videoLockOut = (ushort) (_videoLockOut & ~0x8000);
         }
 
-
-        private void HaltAnimation()
-        {
-            if ((_videoLockOut & 0x10) != 0)
-                return;
-
-            _videoLockOut |= 0x10;
-
-            if (_displayFlag != 0)
-            {
-                DisplayScreen();
-                _displayFlag = 0;
-            }
-        }
 
         private void DisplayScreen()
         {
@@ -3729,7 +2729,7 @@ namespace NScumm.Agos
             return StartSubroutine(sub);
         }
 
-        private int StartSubroutine(Subroutine sub)
+        protected int StartSubroutine(Subroutine sub)
         {
             int result = -1;
             var sl = new SubroutineLine(sub.Pointer + sub.first);
@@ -4020,7 +3020,7 @@ namespace NScumm.Agos
             return (uint) _variableArray[variable];
         }
 
-        private Subroutine GetSubroutineByID(uint subroutineId)
+        protected Subroutine GetSubroutineByID(uint subroutineId)
         {
             Subroutine cur;
 
@@ -4129,276 +3129,6 @@ namespace NScumm.Agos
         private void PlayMusic(int i, int i1)
         {
             // TODO: vs: PlayMusic
-        }
-
-        protected void Delay(int amount)
-        {
-            //Event @event;
-            var start = DateTime.Now;
-            var cur = start;
-
-            // TODO: vs: _system.getAudioCDManager().update();
-
-            // TODO: vs: _debugger.onFrame();
-
-            //TODO: vs: vgaPeriod = (_fastMode) ? 10 : _vgaPeriod;
-            var vgaPeriod = _vgaPeriod;
-            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP &&
-                _gd.ADGameDescription.gameId != GameIds.GID_DIMP)
-            {
-                if (vgaPeriod == 15 && _variableArray[999] == 0)
-                    vgaPeriod = 30;
-            }
-
-            _rnd.GetRandomNumber(2);
-
-            do
-            {
-                while (!_inCallBack && cur >= _lastVgaTick + TimeSpan.FromMilliseconds(vgaPeriod) && !IsPaused)
-                {
-                    _lastVgaTick += TimeSpan.FromMilliseconds(vgaPeriod);
-
-                    // don't get too many frames behind
-                    if (cur >= _lastVgaTick + TimeSpan.FromMilliseconds(vgaPeriod * 2))
-                        _lastVgaTick = cur;
-
-                    _inCallBack = true;
-                    TimerProc();
-                    _inCallBack = false;
-                }
-
-                // TODO: vs
-                /*while (_eventMan.pollEvent(@event))
-                {
-                    switch (@event.type)
-                    {
-                        case Common::EVENT_KEYDOWN:
-                            if (@event.kbd.keycode >= Common::KEYCODE_0 && @event.kbd.keycode <= Common::KEYCODE_9
-                                && (@event.kbd.hasFlags(Common::KBD_ALT) ||
-                                    @event.kbd.hasFlags(Common::KBD_CTRL)))
-                            {
-                                _saveLoadSlot = @event.kbd.keycode - Common::KEYCODE_0;
-
-                                // There is no save slot 0
-                                if (_saveLoadSlot == 0)
-                                    _saveLoadSlot = 10;
-
-                                memset(_saveLoadName, 0, sizeof(_saveLoadName));
-                                sprintf(_saveLoadName, "Quick %d", _saveLoadSlot);
-                                _saveLoadType = (@event.kbd.hasFlags(Common::KBD_ALT)) ? 1 : 2;
-                                quickLoadOrSave();
-                            }
-                            else if (@event.kbd.hasFlags(Common::KBD_ALT))
-                            {
-                                if (@event.kbd.keycode == Common::KEYCODE_u)
-                                {
-                                    DumpAllSubroutines();
-                                }
-                                else if (@event.kbd.keycode == Common::KEYCODE_i)
-                                {
-                                    DumpAllVgaImageFiles();
-                                }
-                                else if (@event.kbd.keycode == Common::KEYCODE_v)
-                                {
-                                    DumpAllVgaScriptFiles();
-                                }
-                            }
-                            else if (@event.kbd.hasFlags(Common::KBD_CTRL))
-                            {
-                                if (@event.kbd.keycode == Common::KEYCODE_a)
-                                {
-                                    GUI::Dialog* _aboutDialog;
-                                    _aboutDialog = new GUI::AboutDialog();
-                                    _aboutDialog.runModal();
-                                }
-                                else if (@event.kbd.keycode == Common::KEYCODE_f)
-                                {
-                                    _fastMode = !_fastMode;
-                                }
-                                else if (@event.kbd.keycode == Common::KEYCODE_d)
-                                {
-                                    _debugger.attach();
-                                }
-                            }
-
-                            if (_gd.ADGameDescription.gameType == GType_PP)
-                            {
-                                if (@event.kbd.hasFlags(Common::KBD_SHIFT))
-                                    _variableArray[41] = 0;
-                                else
-                                    _variableArray[41] = 1;
-                            }
-
-                            _keyPressed = @event.kbd;
-                            break;
-                        case Common::EVENT_MOUSEMOVE:
-                            break;
-                        case Common::EVENT_LBUTTONDOWN:
-                            if (_gd.ADGameDescription.gameType == GType_FF)
-                                setBitFlag(89, true);
-                            _leftButtonDown = true;
-                            _leftButton = 1;
-                            break;
-                        case Common::EVENT_LBUTTONUP:
-                            if (_gd.ADGameDescription.gameType == GType_FF)
-                                setBitFlag(89, false);
-
-                            _leftButton = 0;
-                            _leftButtonCount = 0;
-                            _leftClick = true;
-                            break;
-                        case Common::EVENT_RBUTTONDOWN:
-                            if (_gd.ADGameDescription.gameType == GType_FF)
-                                setBitFlag(92, false);
-                            _rightButtonDown = true;
-                            break;
-                        case Common::EVENT_RBUTTONUP:
-                            _rightClick = true;
-                            break;
-                        case Common::EVENT_RTL:
-                        case Common::EVENT_QUIT:
-                            return;
-                        case Common::EVENT_WHEELUP:
-                            handleMouseWheelUp();
-                            break;
-                        case Common::EVENT_WHEELDOWN:
-                            handleMouseWheelDown();
-                            break;
-                    }
-                }*/
-
-                if (_leftButton == 1)
-                    _leftButtonCount++;
-
-                // TODO: vs: _system.getAudioCDManager().update();
-
-                OSystem.GraphicsManager.UpdateScreen();
-
-                if (amount == 0)
-                    break;
-
-                // TODO: vs: thisDelay = _fastMode ? 1 : 20;
-                //var thisDelay = 20;
-                var thisDelay = 1;
-                if (thisDelay > amount)
-                    thisDelay = amount;
-                ServiceLocator.Platform.Sleep(thisDelay);
-
-                cur = DateTime.Now;
-            } while (cur < start + TimeSpan.FromMilliseconds(amount) && !HasToQuit);
-        }
-
-        private void TimerProc()
-        {
-            if ((_videoLockOut & 0x80E9) != 0 || (_videoLockOut & 2) != 0)
-                return;
-
-            _syncCount++;
-
-            _videoLockOut |= 2;
-
-            HandleMouseMoved();
-
-            if ((_videoLockOut & 0x10) == 0)
-            {
-                ProcessVgaEvents();
-                ProcessVgaEvents();
-                _cepeFlag = !_cepeFlag;
-                if (!_cepeFlag)
-                    ProcessVgaEvents();
-            }
-
-            if (_displayFlag != 0)
-            {
-                DisplayScreen();
-                _displayFlag = 0;
-            }
-
-            _videoLockOut = (ushort) (_videoLockOut & ~2);
-        }
-
-        private void ProcessVgaEvents()
-        {
-            var vte = new Ptr<VgaTimerEntry>(_vgaTimerList);
-
-            _vgaTickCounter++;
-
-            while (vte.Value.delay != 0)
-            {
-                vte.Value.delay -= _vgaBaseDelay;
-                if (vte.Value.delay <= 0)
-                {
-                    ushort curZoneNum = vte.Value.zoneNum;
-                    ushort curSprite = vte.Value.id;
-                    var scriptPtr = vte.Value.codePtr;
-
-                    switch (vte.Value.type)
-                    {
-                        case EventType.ANIMATE_INT:
-                            vte.Value.delay = (short) (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2
-                                ? 5
-                                : _frameCount);
-                            AnimateSprites();
-                            vte.Offset++;
-                            break;
-                        case EventType.ANIMATE_EVENT:
-                            _nextVgaTimerToProcess = new Ptr<VgaTimerEntry>(vte, 1);
-                            DeleteVgaEvent(vte);
-                            AnimateEvent(scriptPtr, curZoneNum, curSprite);
-                            vte = _nextVgaTimerToProcess;
-                            break;
-                        case EventType.SCROLL_EVENT:
-                            _nextVgaTimerToProcess = new Ptr<VgaTimerEntry>(vte, 1);
-                            DeleteVgaEvent(vte);
-                            ScrollEvent();
-                            vte = _nextVgaTimerToProcess;
-                            break;
-                        case EventType.PLAYER_DAMAGE_EVENT:
-                            PlayerDamageEvent(vte.Value, curZoneNum);
-                            vte = _nextVgaTimerToProcess;
-                            break;
-                        case EventType.MONSTER_DAMAGE_EVENT:
-                            MonsterDamageEvent(vte.Value, curZoneNum);
-                            vte = _nextVgaTimerToProcess;
-                            break;
-                        default:
-                            Error("processVgaEvents: Unknown event type {0}", vte.Value.type);
-                            return;
-                    }
-                }
-                else
-                {
-                    vte.Offset++;
-                }
-            }
-        }
-
-        private void MonsterDamageEvent(VgaTimerEntry vte, ushort curZoneNum)
-        {
-            throw new NotImplementedException();
-        }
-
-        private void AnimateEvent(BytePtr codePtr, ushort curZoneNum, ushort curSprite)
-        {
-            _vgaCurSpriteId = curSprite;
-
-            _vgaCurZoneNum = curZoneNum;
-            _zoneNumber = curZoneNum;
-            var vpe = _vgaBufferPointers[curZoneNum];
-
-            _curVgaFile1 = vpe.vgaFile1;
-            _curVgaFile2 = vpe.vgaFile2;
-            _curSfxFile = vpe.sfxFile;
-            _curSfxFileSize = vpe.sfxFileEnd.Offset - vpe.sfxFile.Offset;
-
-            _vcPtr = codePtr;
-
-            RunVgaScript();
-        }
-
-        private void PlayerDamageEvent(VgaTimerEntry vte, ushort curZoneNum)
-        {
-            throw new NotImplementedException();
         }
 
         private void AnimateSprites()
@@ -5003,11 +3733,6 @@ namespace NScumm.Agos
             throw new NotImplementedException();
         }
 
-        private void ScrollEvent()
-        {
-            throw new NotImplementedException();
-        }
-
         private void HandleMouseMoved()
         {
 // TODO: vs: HandleMouseMoved()
@@ -5254,21 +3979,6 @@ namespace NScumm.Agos
                 src.Offset += _backBuf.Pitch;
                 dst.Offset += _backGroundBuf.Pitch;
             }
-        }
-
-        private void AddVgaEvent(ushort num, EventType type, BytePtr codePtr, ushort curSprite, ushort curZoneNum)
-        {
-            Debug($"AddVgaEvent({num})");
-            _videoLockOut |= 1;
-
-            var vte = _vgaTimerList.FirstOrDefault(o => o.delay == 0);
-            vte.delay = (short) num;
-            vte.codePtr = codePtr;
-            vte.id = curSprite;
-            vte.zoneNum = curZoneNum;
-            vte.type = type;
-
-            _videoLockOut = (ushort) (_videoLockOut & ~1);
         }
 
         private void MouseOff()
@@ -5848,53 +4558,6 @@ namespace NScumm.Agos
             return (uint) (DateTime.Now.Ticks / 1000);
         }
 
-        private void AddTimeEvent(ushort timeout, ushort subroutine_id)
-        {
-            TimeEvent te = new TimeEvent(), last = null;
-            uint curTime = GetTime();
-
-            if (_gd.ADGameDescription.gameId == GameIds.GID_DIMP)
-            {
-                timeout /= 2;
-            }
-
-            te.time = curTime + timeout - _gameStoppedClock;
-            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF && _clockStopped != 0)
-                te.time -= GetTime() - _clockStopped;
-            te.subroutine_id = subroutine_id;
-
-            var first = _firstTimeStruct;
-            while (first != null)
-            {
-                if (te.time <= first.time)
-                {
-                    if (last != null)
-                    {
-                        last.next = te;
-                        te.next = first;
-                        return;
-                    }
-                    te.next = _firstTimeStruct;
-                    _firstTimeStruct = te;
-                    return;
-                }
-
-                last = first;
-                first = first.next;
-            }
-
-            if (last != null)
-            {
-                last.next = te;
-                te.next = null;
-            }
-            else
-            {
-                _firstTimeStruct = te;
-                te.next = null;
-            }
-        }
-
         private void LoadGamePcFile()
         {
             int fileSize;
@@ -6396,7 +5059,7 @@ namespace NScumm.Agos
             SetUserFlag(_currentPlayer, 0, 0);
         }
 
-        private Item DerefItem(uint item)
+        protected Item DerefItem(uint item)
         {
             if (item >= _itemArraySize)
                 Error("derefItem: invalid item {0}", item);
@@ -6651,6 +5314,26 @@ namespace NScumm.Agos
             _tablesHeapSize = _tableMemSize;
             _tablesHeapCurPos = 0;
             _tablesHeapPtr = new byte[_tableMemSize];
+        }
+
+        private bool SaveGame(int slot, string caption)
+        {
+            throw new NotImplementedException();
+        }
+
+        private string GenSaveName(int i)
+        {
+            throw new NotImplementedException();
+        }
+
+        private bool LoadGame(string genSaveName)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void UserGame(bool b)
+        {
+            throw new NotImplementedException();
         }
 
         private static readonly byte[] zoneTable =

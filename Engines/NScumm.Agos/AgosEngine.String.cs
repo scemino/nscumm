@@ -692,11 +692,6 @@ namespace NScumm.Agos
             return true;
         }
 
-        private void ShowActionString(string stringPtr)
-        {
-            throw new NotImplementedException();
-        }
-
         protected void PrintScreenText(uint vgaSpriteId, uint color, string str, short x, short y, short width)
         {
             var @string = new BytePtr(str.GetBytes());

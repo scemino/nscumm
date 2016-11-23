@@ -75,7 +75,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void PlaySting(ushort soundId)
+        protected void PlaySting(ushort soundId)
         {
             // The sound effects in floppy disk version of
             // Simon the Sorcerer 1 are only meant for AdLib

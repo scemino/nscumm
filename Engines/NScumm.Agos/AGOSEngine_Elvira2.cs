@@ -45,6 +45,44 @@ namespace NScumm.Agos
             SetTextColor(GetVarOrByte());
         }
 
+        protected void oe2_doTable()
+        {
+            // 143: start item sub
+            Item i = GetNextItemPtr();
+
+            var r = (SubRoom) FindChildOfType(i, ChildType.kRoomType);
+            if (r != null)
+            {
+                var sub = GetSubroutineByID(r.subroutine_id);
+                if (sub != null)
+                {
+                    StartSubroutine(sub);
+                    return;
+                }
+            }
+
+            if (GameType == SIMONGameType.GType_ELVIRA2)
+            {
+                var sr = (SubSuperRoom) FindChildOfType(i, ChildType.kSuperRoomType);
+                if (sr != null)
+                {
+                    Subroutine sub = GetSubroutineByID(sr.subroutine_id);
+                    if (sub != null)
+                    {
+                        StartSubroutine(sub);
+                    }
+                }
+            }
+        }
+
+        protected void oe2_storeItem()
+        {
+            // 151: set array6 to item
+            uint var = GetVarOrByte();
+            Item item = GetNextItemPtr();
+            _itemStore[var] = item;
+        }
+
         protected void oe2_getItem()
         {
             // 152: set m1 to m3 to array 6
@@ -124,6 +162,82 @@ namespace NScumm.Agos
                 int offs = GetOffsetOfChild2Param(subObject, 1 << prop);
                 subObject.objectFlagValue[offs] = (short) value;
             }
+        }
+
+        protected void oe2_getDollar2()
+        {
+            // 175
+            _showPreposition = true;
+
+            SetupCondCHelper();
+
+            _objectItem = _hitAreaObjectItem;
+
+            if (_objectItem == _dummyItem2)
+                _objectItem = Me();
+
+            if (_objectItem == _dummyItem3)
+                _objectItem = DerefItem(Me().parent);
+
+            if (_objectItem != null)
+            {
+                _scriptNoun2 = _objectItem.noun;
+                _scriptAdj2 = _objectItem.adjective;
+            }
+            else
+            {
+                _scriptNoun2 = -1;
+                _scriptAdj2 = -1;
+            }
+
+            _showPreposition = false;
+        }
+
+        protected void oe2_isAdjNoun()
+        {
+            // 179: item unk1 unk2 is
+            Item item = GetNextItemPtr();
+            short a = (short) GetNextWord();
+            short n = (short) GetNextWord();
+
+            if (GameType == SIMONGameType.GType_ELVIRA2 && item == null)
+            {
+                // WORKAROUND bug #1745996: A NULL item can occur when
+                // interacting with items in the dinning room
+                SetScriptCondition(false);
+                return;
+            }
+
+            System.Diagnostics.Debug.Assert(item != null);
+            SetScriptCondition(item.adjective == a && item.noun == n);
+        }
+
+        protected void oe2_b2Set()
+        {
+            // 180: set bit2
+            int bit = (int) GetVarOrByte();
+            _bitArrayTwo[bit / 16] = (ushort) (_bitArrayTwo[bit / 16] | (1 << (bit & 15)));
+        }
+
+        protected void oe2_b2Clear()
+        {
+            // 181: clear bit2
+            int bit = (int) GetVarOrByte();
+            _bitArrayTwo[bit / 16] = (ushort) (_bitArrayTwo[bit / 16] & ~(1 << (bit & 15)));
+        }
+
+        protected void oe2_b2Zero()
+        {
+            // 182: is bit2 clear
+            int bit = (int) GetVarOrByte();
+            SetScriptCondition((_bitArrayTwo[bit / 16] & (1 << (bit & 15))) == 0);
+        }
+
+        protected void oe2_b2NotZero()
+        {
+            // 183: is bit2 set
+            int bit = (int) GetVarOrByte();
+            SetScriptCondition((_bitArrayTwo[bit / 16] & (1 << (bit & 15))) != 0);
         }
 
         protected override int SetupIconHitArea(WindowBlock window, uint num, int x, int y, Item itemPtr)

@@ -28,6 +28,8 @@ namespace NScumm.Agos
 {
     partial class AGOSEngine
     {
+        private bool _fastMode = true;
+
         private void AddTimeEvent(ushort timeout, ushort subroutine_id)
         {
             TimeEvent te = new TimeEvent(), last = null;
@@ -306,8 +308,8 @@ namespace NScumm.Agos
 
             // TODO: vs: _debugger.onFrame();
 
-            //TODO: vs: vgaPeriod = (_fastMode) ? 10 : _vgaPeriod;
-            var vgaPeriod = _vgaPeriod;
+            var vgaPeriod = _fastMode ? 10 : _vgaPeriod;
+            //var vgaPeriod = _vgaPeriod;
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP &&
                 _gd.ADGameDescription.gameId != GameIds.GID_DIMP)
             {
@@ -333,6 +335,7 @@ namespace NScumm.Agos
                 }
 
                 // TODO: vs
+                var inputState = OSystem.InputManager.GetState();
                 /*while (_eventMan.pollEvent(@event))
                 {
                     switch (@event.type)
@@ -432,6 +435,34 @@ namespace NScumm.Agos
                     }
                 }*/
 
+                if (inputState.IsLeftButtonDown)
+                {
+                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF)
+                        SetBitFlag(89, true);
+                    _leftButtonDown = true;
+                    _leftButton = 1;
+                }
+                else
+                {
+                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF)
+                        SetBitFlag(89, false);
+
+                    _leftButton = 0;
+                    _leftButtonCount = 0;
+                    _leftClick = true;
+                }
+
+                if (inputState.IsRightButtonDown)
+                {
+                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF)
+                        SetBitFlag(92, false);
+                    _rightButtonDown = true;
+                }
+                else
+                {
+                    _rightClick = true;
+                }
+
                 if (_leftButton == 1)
                     _leftButtonCount++;
 
@@ -442,9 +473,7 @@ namespace NScumm.Agos
                 if (amount == 0)
                     break;
 
-                // TODO: vs: thisDelay = _fastMode ? 1 : 20;
-                //var thisDelay = 20;
-                var thisDelay = 1;
+                var thisDelay = _fastMode ? 1 : 20;
                 if (thisDelay > amount)
                     thisDelay = amount;
                 ServiceLocator.Platform.Sleep(thisDelay);

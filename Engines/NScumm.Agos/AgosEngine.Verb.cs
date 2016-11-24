@@ -103,9 +103,10 @@ namespace NScumm.Agos
             return new Ptr<HitArea>(_hitAreas, ha);
         }
 
-        private void FreeBox(uint boxCode)
+        private void FreeBox(int index)
         {
-            throw new NotImplementedException();
+            CHECK_BOUNDS(index, _hitAreas);
+            _hitAreas[index].flags = 0;
         }
 
         private void EnableBox(int hitarea)

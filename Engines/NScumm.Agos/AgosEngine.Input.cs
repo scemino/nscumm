@@ -20,7 +20,6 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Linq;
 using NScumm.Core;
 
 namespace NScumm.Agos
@@ -552,186 +551,196 @@ namespace NScumm.Agos
             if (HasToQuit)
                 _exitCutscene = true;
 
-            var keys = _keyPressed.GetKeys();
-            if (keys.Count == 0)
-                return verbCode;
-
-            var keycode = keys.First();
-            switch (keycode)
+            var keys = OSystem.InputManager.GetState();
+            if (keys.IsKeyDown(KeyCode.Up))
             {
-                case KeyCode.Up:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
-                        _verbHitArea = 302;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
-                        _verbHitArea = 239;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 && IsBoxDead(101))
-                        _verbHitArea = 200;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 && IsBoxDead(101))
-                        _verbHitArea = 214;
-                    verbCode = true;
-                    break;
-                case KeyCode.Down:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
-                        _verbHitArea = 304;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
-                        _verbHitArea = 241;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 && IsBoxDead(107))
-                        _verbHitArea = 202;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 && IsBoxDead(105))
-                        _verbHitArea = 215;
-                    verbCode = true;
-                    break;
-                case KeyCode.Right:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
-                        _verbHitArea = 303;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
-                        _verbHitArea = 240;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 && IsBoxDead(102))
-                        _verbHitArea = 201;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 && IsBoxDead(103))
-                        _verbHitArea = 216;
-                    verbCode = true;
-                    break;
-                case KeyCode.Left:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
-                        _verbHitArea = 301;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
-                        _verbHitArea = 242;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 && IsBoxDead(104))
-                        _verbHitArea = 203;
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 && IsBoxDead(107))
-                        _verbHitArea = 217;
-                    verbCode = true;
-                    break;
-                case KeyCode.Escape:
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
+                    _verbHitArea = 302;
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
+                    _verbHitArea = 239;
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 && IsBoxDead(101))
+                    _verbHitArea = 200;
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 && IsBoxDead(101))
+                    _verbHitArea = 214;
+                verbCode = true;
+            }
+            if(keys.IsKeyDown(KeyCode.Down))
+            {
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
+                    _verbHitArea = 304;
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
+                    _verbHitArea = 241;
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 && IsBoxDead(107))
+                    _verbHitArea = 202;
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 && IsBoxDead(105))
+                    _verbHitArea = 215;
+                verbCode = true;
+            }
+            if (keys.IsKeyDown(KeyCode.Right))
+            {
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
+                    _verbHitArea = 303;
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
+                    _verbHitArea = 240;
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 && IsBoxDead(102))
+                    _verbHitArea = 201;
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 && IsBoxDead(103))
+                    _verbHitArea = 216;
+                verbCode = true;
+            }
+            if (keys.IsKeyDown(KeyCode.Left))
+            {
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
+                    _verbHitArea = 301;
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
+                    _verbHitArea = 242;
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 && IsBoxDead(104))
+                    _verbHitArea = 203;
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 && IsBoxDead(107))
+                    _verbHitArea = 217;
+                verbCode = true;
+            }
+            if (keys.IsKeyDown(KeyCode.Escape))
+            {
+                _exitCutscene = true;
+            }
+            if (keys.IsKeyDown(KeyCode.F1))
+            {
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
+                {
+                    VcWriteVar(5, 50);
+                    VcWriteVar(86, 0);
+                }
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1)
+                {
+                    VcWriteVar(5, 40);
+                    VcWriteVar(86, 0);
+                }
+            }
+            if (keys.IsKeyDown(KeyCode.F2))
+            {
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
+                {
+                    VcWriteVar(5, 75);
+                    VcWriteVar(86, 1);
+                }
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1)
+                {
+                    VcWriteVar(5, 60);
+                    VcWriteVar(86, 1);
+                }
+            }
+            if (keys.IsKeyDown(KeyCode.F3))
+            {
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
+                {
+                    VcWriteVar(5, 125);
+                    VcWriteVar(86, 2);
+                }
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1)
+                {
+                    VcWriteVar(5, 100);
+                    VcWriteVar(86, 2);
+                }
+            }
+            if (keys.IsKeyDown(KeyCode.F5))
+            {
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2 ||
+                    _gd.ADGameDescription.gameType == SIMONGameType.GType_FF)
                     _exitCutscene = true;
-                    break;
-                case KeyCode.F1:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
+            }
+            if (keys.IsKeyDown(KeyCode.F7))
+            {
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF && GetBitFlag(76))
+                    _variableArray[254] = 70;
+            }
+            if (keys.IsKeyDown(KeyCode.F9))
+            {
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF)
+                    SetBitFlag(73, !GetBitFlag(73));
+            }
+            if (keys.IsKeyDown(KeyCode.F12))
+            {
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP &&
+                    _gd.ADGameDescription.gameId != GameIds.GID_DIMP)
+                {
+                    if (!GetBitFlag(110))
                     {
-                        VcWriteVar(5, 50);
-                        VcWriteVar(86, 0);
+                        SetBitFlag(107, !GetBitFlag(107));
+                        _vgaPeriod = (byte) ((GetBitFlag(107) != false) ? 15 : 30);
                     }
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1)
-                    {
-                        VcWriteVar(5, 40);
-                        VcWriteVar(86, 0);
-                    }
-                    break;
-                case KeyCode.F2:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
-                    {
-                        VcWriteVar(5, 75);
-                        VcWriteVar(86, 1);
-                    }
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1)
-                    {
-                        VcWriteVar(5, 60);
-                        VcWriteVar(86, 1);
-                    }
-                    break;
-                case KeyCode.F3:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
-                    {
-                        VcWriteVar(5, 125);
-                        VcWriteVar(86, 2);
-                    }
-                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1)
-                    {
-                        VcWriteVar(5, 100);
-                        VcWriteVar(86, 2);
-                    }
-                    break;
-                case KeyCode.F5:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2 ||
-                        _gd.ADGameDescription.gameType == SIMONGameType.GType_FF)
-                        _exitCutscene = true;
-                    break;
-                case KeyCode.F7:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF && GetBitFlag(76))
-                        _variableArray[254] = 70;
-                    break;
-                case KeyCode.F9:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF)
-                        SetBitFlag(73, !GetBitFlag(73));
-                    break;
-                case KeyCode.F12:
-                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP &&
-                        _gd.ADGameDescription.gameId != GameIds.GID_DIMP)
-                    {
-                        if (!GetBitFlag(110))
-                        {
-                            SetBitFlag(107, !GetBitFlag(107));
-                            _vgaPeriod = (byte) ((GetBitFlag(107) != false) ? 15 : 30);
-                        }
-                    }
-                    break;
-                case KeyCode.Pause:
+                }
+            }
+            if(keys.IsKeyDown(KeyCode.Pause)){
                     Pause();
-                    break;
             }
 
-            //            switch (_keyPressed.ascii) {
-            //                case 't':
-            //                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
-            //                        (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2 &&
-            //                         (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_TALKIE)) ||
-            //                        ((_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_TALKIE)) &&
-            //                         _language != Language.EN_ANY && _language != Language.DE_DEU)) {
-            //                        if (_speech)
-            //                            _subtitles = !_subtitles;
-            //                    }
-            //                    break;
-            //                case 'v':
-            //                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
-            //                        (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2 &&
-            //                         (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_TALKIE)))) {
-            //                        if (_subtitles)
-            //                            _speech = !_speech;
-            //                    }
-            //                    break;
-            //                case '+':
-            //                    if (_midiEnabled) {
-            //                        _midi.SetVolume(_midi.GetMusicVolume() + 16, _midi.GetSFXVolume() + 16);
-            //                    }
-            //                    ConfMan.setInt("music_volume", _mixer.getVolumeForSoundType(Audio::Mixer::kMusicSoundType) + 16);
-            //                    syncSoundSettings();
-            //                    break;
-            //                case '-':
-            //                    if (_midiEnabled) {
-            //                        _midi.setVolume(_midi.getMusicVolume() - 16, _midi.getSFXVolume() - 16);
-            //                    }
-            //                    ConfMan.setInt("music_volume", _mixer.getVolumeForSoundType(Audio::Mixer::kMusicSoundType) - 16);
-            //                    syncSoundSettings();
-            //                    break;
-            //                case 'm':
-            //                    _musicPaused = !_musicPaused;
-            //                    if (_midiEnabled) {
-            //                        _midi.pause(_musicPaused);
-            //                    }
-            //                    _mixer.pauseHandle(_modHandle, _musicPaused);
-            //                    syncSoundSettings();
-            //                    break;
-            //                case 's':
-            //                    if (getGameId() == GID_SIMON1DOS) {
-            //                        _midi._enable_sfx = !_midi._enable_sfx;
-            //                    } else {
-            //                        _effectsPaused = !_effectsPaused;
-            //                        _sound.effectsPause(_effectsPaused);
-            //                    }
-            //                    break;
-            //                case 'b':
-            //                    if (_gd.ADGameDescription.gameType == GType_SIMON2) {
-            //                        _ambientPaused = !_ambientPaused;
-            //                        _sound.ambientPause(_ambientPaused);
-            //                    }
-            //                    break;
-            //            }
+            if (keys.IsKeyDown(KeyCode.T))
+            {
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
+                    _gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2 &&
+                    _gd.ADGameDescription.features.HasFlag(GameFeatures.GF_TALKIE) ||
+                    (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_TALKIE) &&
+                     _language != Language.EN_ANY && _language != Language.DE_DEU))
+                {
+                    if (_speech)
+                        _subtitles = !_subtitles;
+                }
+            }
+            if (keys.IsKeyDown(KeyCode.V))
+            {
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
+                    (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2 &&
+                     (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_TALKIE))))
+                {
+                    if (_subtitles)
+                        _speech = !_speech;
+                }
+            }
+            // TODO:
+                /*if(keys.IsKeyDown('+')){
+                    if (_midiEnabled) {
+                        _midi.SetVolume(_midi.GetMusicVolume() + 16, _midi.GetSFXVolume() + 16);
+                    }
+                    ConfMan.setInt("music_volume", _mixer.getVolumeForSoundType(Audio::Mixer::kMusicSoundType) + 16);
+                    syncSoundSettings();
+                    }
+                if(keys.IsKeyDown('-')){
+                    if (_midiEnabled) {
+                        _midi.setVolume(_midi.getMusicVolume() - 16, _midi.getSFXVolume() - 16);
+                    }
+                    ConfMan.setInt("music_volume", _mixer.getVolumeForSoundType(Audio::Mixer::kMusicSoundType) - 16);
+                    syncSoundSettings();
+                    }
+                if(keys.IsKeyDown(KeyCode.M)){
+                    _musicPaused = !_musicPaused;
+                    if (_midiEnabled)
+                    {
+                        _midi.Pause(_musicPaused);
+                    }
+                    Mixer.PauseHandle(_modHandle, _musicPaused);
+                    SyncSoundSettings();
+                    }
+                if(keys.IsKeyDown(KeyCode.S)){
+                    if (getGameId() == GID_SIMON1DOS)
+                    {
+                        _midi._enable_sfx = !_midi._enable_sfx;
+                    }
+                    else
+                    {
+                        _effectsPaused = !_effectsPaused;
+                        _sound.effectsPause(_effectsPaused);
+                    }
+                    }
+                if(keys.IsKeyDown(KeyCode.B)){
+                    if (_gd.ADGameDescription.gameType == GType_SIMON2)
+                    {
+                        _ambientPaused = !_ambientPaused;
+                        _sound.ambientPause(_ambientPaused);
+                    }
+                    }*/
 
-            OSystem.InputManager.ResetKeys();
             return verbCode;
         }
-
-
     }
 }

@@ -253,7 +253,7 @@ namespace NScumm.Agos
             ha.Value.priority = 100;
             ha.Value.verb = 208;
 
-            return Array.IndexOf(_hitAreas, ha);
+            return Array.IndexOf(_hitAreas, ha.Value);
         }
 
         protected override int ItemGetIconNumber(Item item)

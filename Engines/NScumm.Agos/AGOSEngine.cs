@@ -785,7 +785,7 @@ namespace NScumm.Agos
             ha.Value.priority = 100;
             ha.Value.verb = 253;
 
-            return Array.IndexOf(_hitAreas, ha);
+            return Array.IndexOf(_hitAreas, ha.Value);
         }
 
         protected virtual int ItemGetIconNumber(Item item)
@@ -1943,7 +1943,7 @@ namespace NScumm.Agos
 
         private void DrawIconArray(int num, Item itemRef, int line, int classMask)
         {
-            Item item_ptr_org = itemRef;
+            Item itemPtrOrg = itemRef;
             uint width, height;
             uint k;
             bool item_again, showArrows;
@@ -1975,17 +1975,16 @@ namespace NScumm.Agos
 
             window.iconPtr = new IconBlock();
             window.iconPtr.itemRef = itemRef;
-            window.iconPtr.upArrow = uint.MaxValue;
+            window.iconPtr.upArrow = -1;
             window.iconPtr.downArrow = -1;
             window.iconPtr.line = (short) line;
             window.iconPtr.classMask = (ushort) classMask;
 
             itemRef = DerefItem(itemRef.child);
 
-            uint curWidth;
             while (itemRef != null && line-- != 0)
             {
-                curWidth = 0;
+                uint curWidth = 0;
                 while (itemRef != null && width > curWidth)
                 {
                     if ((classMask == 0 || (itemRef.classFlags & classMask) != 0) && HasIcon(itemRef))
@@ -1997,11 +1996,11 @@ namespace NScumm.Agos
             if (itemRef == null)
             {
                 window.iconPtr.line = 0;
-                itemRef = DerefItem(item_ptr_org.child);
+                itemRef = DerefItem(itemPtrOrg.child);
             }
 
-            var x_pos = 0;
-            var y_pos = 0;
+            var xPos = 0;
+            var yPos = 0;
             k = 0;
             item_again = false;
             showArrows = false;
@@ -2015,22 +2014,22 @@ namespace NScumm.Agos
                         window.iconPtr.iconArray[k].item = itemRef;
                         if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
                         {
-                            DrawIcon(window, ItemGetIconNumber(itemRef), x_pos, y_pos);
+                            DrawIcon(window, ItemGetIconNumber(itemRef), xPos, yPos);
                             window.iconPtr.iconArray[k].boxCode =
-                                (ushort) SetupIconHitArea(window, 0, x_pos, y_pos, itemRef);
+                                (ushort) SetupIconHitArea(window, 0, xPos, yPos, itemRef);
                         }
                         else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1 ||
                                  _gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
                         {
-                            DrawIcon(window, ItemGetIconNumber(itemRef), x_pos * 3, y_pos);
+                            DrawIcon(window, ItemGetIconNumber(itemRef), xPos * 3, yPos);
                             window.iconPtr.iconArray[k].boxCode =
-                                (ushort) SetupIconHitArea(window, 0, x_pos * 3, y_pos, itemRef);
+                                (ushort) SetupIconHitArea(window, 0, xPos * 3, yPos, itemRef);
                         }
                         else
                         {
-                            DrawIcon(window, ItemGetIconNumber(itemRef), x_pos * 3, y_pos * 3);
+                            DrawIcon(window, ItemGetIconNumber(itemRef), xPos * 3, yPos * 3);
                             window.iconPtr.iconArray[k].boxCode =
-                                (ushort) SetupIconHitArea(window, 0, x_pos * 3, y_pos * 3, itemRef);
+                                (ushort) SetupIconHitArea(window, 0, xPos * 3, yPos * 3, itemRef);
                         }
                         k++;
                     }
@@ -2040,12 +2039,12 @@ namespace NScumm.Agos
                         showArrows = true;
                     }
 
-                    x_pos = (x_pos + iconSize);
-                    if (x_pos >= width)
+                    xPos = (xPos + iconSize);
+                    if (xPos >= width)
                     {
-                        x_pos = 0;
-                        y_pos = (y_pos + iconSize);
-                        if (y_pos >= height)
+                        xPos = 0;
+                        yPos = (yPos + iconSize);
+                        if (yPos >= height)
                             item_again = true;
                     }
                 }
@@ -2058,7 +2057,7 @@ namespace NScumm.Agos
             {
                 /* Plot arrows and add their boxes */
                 AddArrows(window, (uint) num);
-                window.iconPtr.upArrow = _scrollUpHitArea;
+                window.iconPtr.upArrow = (short)_scrollUpHitArea;
                 window.iconPtr.downArrow = (short) _scrollDownHitArea;
             }
         }
@@ -2107,7 +2106,7 @@ namespace NScumm.Agos
 
             if (window.iconPtr.downArrow != -1)
             {
-                FreeBox((uint) window.iconPtr.downArrow);
+                FreeBox(window.iconPtr.downArrow);
                 RemoveArrows(window, num);
             }
 

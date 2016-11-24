@@ -9,16 +9,14 @@
         <OutputType>Library</OutputType>
         <RootNamespace>NScumm.Agos</RootNamespace>
         <AssemblyName>NScumm.Agos</AssemblyName>
-        <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-        <TargetFrameworkProfile>Profile7</TargetFrameworkProfile>
-        <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
-        <LangVersion>6</LangVersion>
+        <TargetFrameworkProfile>Profile344</TargetFrameworkProfile>
+        <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <DebugSymbols>true</DebugSymbols>
         <DebugType>full</DebugType>
         <Optimize>false</Optimize>
-        <OutputPath>bin\Debug</OutputPath>
+        <OutputPath>..\..\NScumm.Desktop\bin\Debug\plugins</OutputPath>
         <DefineConstants>DEBUG;ENABLE_AGOS2</DefineConstants>
         <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
@@ -78,14 +76,14 @@
         <Compile Include="WavSound.cs"/>
         <Compile Include="WindowBlock.cs"/>
     </ItemGroup>
+    <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets"/>
+    <ItemGroup>
+        <None Include="packages.config"/>
+    </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\NScumm.Core\NScumm.Core.csproj">
             <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
             <Name>NScumm.Core</Name>
         </ProjectReference>
     </ItemGroup>
-    <ItemGroup>
-        <None Include="packages.config"/>
-    </ItemGroup>
-    <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets"/>
 </Project>

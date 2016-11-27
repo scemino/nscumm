@@ -336,6 +336,7 @@ namespace NScumm.Agos
         private BytePtr _byteTokenStrings;
         protected bool _vgaVar9;
         protected BytePtr _roomsListPtr;
+        private bool _effectsPaused;
 
         protected AGOSEngine(ISystem system, GameSettings settings, AGOSGameDescription gd)
             : base(system, settings)
@@ -824,24 +825,24 @@ namespace NScumm.Agos
             if (ConfigManager.Instance.HasKey("music_mute") && ConfigManager.Instance.Get<bool>("music_mute"))
             {
                 _musicPaused = true;
-                //if (_midiEnabled)
-                //{
-                //    _midi.Pause(_musicPaused);
-                //}
+                if (_midiEnabled)
+                {
+                    _midi.Pause(_musicPaused);
+                }
                 Mixer.SetVolumeForSoundType(SoundType.Music, 0);
             }
 
-//            if (ConfigManager.Instance.HasKey("sfx_mute") &&
-            //                ConfigManager.Instance.Get<bool>("sfx_mute"))
-            //            {
-            //                if (_gd.ADGameDescription.gameId == GameIds.GID_SIMON1DOS)
-            //                    _midi._enable_sfx = !_midi._enable_sfx;
-            //                else
-            //                {
-            //                    _effectsPaused = !_effectsPaused;
-            //                    _sound.EffectsPause(_effectsPaused);
-            //                }
-            //            }
+            if (ConfigManager.Instance.HasKey("sfx_mute") &&
+                ConfigManager.Instance.Get<bool>("sfx_mute"))
+            {
+                if (_gd.ADGameDescription.gameId == GameIds.GID_SIMON1DOS)
+                    _midi._enable_sfx = !_midi._enable_sfx;
+                else
+                {
+                    _effectsPaused = !_effectsPaused;
+                    _sound.EffectsPause(_effectsPaused);
+                }
+            }
 
             _copyProtection = ConfigManager.Instance.Get<bool>("copy_protection");
             _language = LanguageHelper.ParseLanguage(ConfigManager.Instance.Get<string>("language"));
@@ -933,7 +934,7 @@ namespace NScumm.Agos
 
         protected uint GetTime()
         {
-            return (uint) ((DateTime.Now.Ticks / 10000)/1000);
+            return (uint) ((DateTime.Now.Ticks / 10000) / 1000);
         }
 
         private static bool IS_ALIGNED(BytePtr value, int alignment)

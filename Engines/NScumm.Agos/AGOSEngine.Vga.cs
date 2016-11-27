@@ -1598,7 +1598,7 @@ namespace NScumm.Agos
             if (GameType == SIMONGameType.GType_SIMON2)
             {
                 if (_nextMusicToPlay != -1)
-                    LoadMusic(_nextMusicToPlay);
+                    LoadMusic((ushort) _nextMusicToPlay);
             }
         }
 

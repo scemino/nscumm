@@ -104,9 +104,87 @@ namespace NScumm.Agos
             _midi.StartTrack(0);
         }
 
-        private void LoadSound(ushort sound, ushort frq, SoundTypeFlags type)
+        private void LoadSound(ushort sound, ushort freq, SoundTypeFlags flags)
         {
-            throw new System.NotImplementedException();
+            int offs, size = 0;
+            int rate = 8000;
+
+            if (_curSfxFile == BytePtr.Null)
+                return;
+
+            var dst = _curSfxFile;
+            if (GameType == SIMONGameType.GType_WW)
+            {
+                ushort tmp = sound;
+
+                while (tmp-- != 0)
+                {
+                    size += dst.ToUInt16() + 4;
+                    dst += dst.ToUInt16() + 4;
+
+                    if (size > _curSfxFileSize)
+                        Error("loadSound: Reading beyond EOF ({0}, {1})", size, _curSfxFileSize);
+                }
+
+                size = dst.ToUInt16();
+                offs = 4;
+            }
+            else if (GameType == SIMONGameType.GType_ELVIRA2)
+            {
+                while (dst.ToInt32BigEndian(4) != sound)
+                {
+                    size += 12;
+                    dst += 12;
+
+                    if (size > _curSfxFileSize)
+                        Error("loadSound: Reading beyond EOF ({0}, {1})", size, _curSfxFileSize);
+                }
+
+                size = dst.ToInt32BigEndian();
+                offs = dst.ToInt32BigEndian(8);
+            }
+            else
+            {
+                while (dst.ToUInt16(6) != sound)
+                {
+                    size += 12;
+                    dst += 12;
+
+                    if (size > _curSfxFileSize)
+                        Error("loadSound: Reading beyond EOF ({0}, {1})", size, _curSfxFileSize);
+                }
+
+                size = dst.ToUInt16(2);
+                offs = dst.ToInt32BigEndian(8);
+            }
+
+            if (GameType == SIMONGameType.GType_PN)
+            {
+                if (freq == 0)
+                {
+                    rate = 4600;
+                }
+                else if (freq == 1)
+                {
+                    rate = 7400;
+                }
+                else
+                {
+                    rate = 9400;
+                }
+            }
+
+            // TODO: Handle other sound flags in Amiga/AtariST versions
+            if (flags == SoundTypeFlags.SFX && _sound.IsSfxActive)
+            {
+                _sound.QueueSound(dst + offs, sound, size, (ushort) rate);
+            }
+            else
+            {
+                if (flags == 0)
+                    _sound.StopSfx();
+                _sound.PlayRawData(dst + offs, sound, size, rate);
+            }
         }
 
         private void LoadSound(ushort sound, short pan, short vol, SoundTypeFlags type)
@@ -196,7 +274,58 @@ namespace NScumm.Agos
 
         protected void PlayModule(ushort music)
         {
-            throw new NotImplementedException();
+            int offs = 0;
+
+            if (GamePlatform == Platform.Amiga && GameType == SIMONGameType.GType_WW)
+            {
+                // Multiple tunes are stored in music files for main locations
+                for (uint i = 0; i < 20; i++)
+                {
+                    if (amigaWaxworksOffs[i].tune == music)
+                    {
+                        music = amigaWaxworksOffs[i].fileNum;
+                        offs = amigaWaxworksOffs[i].offs;
+                    }
+                }
+            }
+
+            string filename;
+            if (GameType == SIMONGameType.GType_ELVIRA1 && Features.HasFlag(GameFeatures.GF_DEMO))
+                filename = "elvira2";
+            else if (GamePlatform == Platform.Acorn)
+                filename = $"{music}tune.DAT";
+            else
+                filename = $"{music}tune";
+
+            var f = OpenFileRead(filename);
+            if (f == null)
+            {
+                Error("playModule: Can't load module from '{0}'", filename);
+            }
+
+            IAudioStream audioStream;
+            if (!(GameType == SIMONGameType.GType_ELVIRA1 && Features.HasFlag(GameFeatures.GF_DEMO)) &&
+                Features.HasFlag(GameFeatures.GF_CRUNCHED))
+            {
+                int srcSize = (int) f.Length;
+                var srcBuf = new byte[srcSize];
+                if (f.Read(srcBuf, 0, srcSize) != srcSize)
+                    Error("playModule: Read failed");
+
+                int dstSize = srcBuf.ToInt32BigEndian(srcSize - 4);
+                var dstBuf = new byte[dstSize];
+                DecrunchFile(srcBuf, dstBuf, srcSize);
+
+                var stream = new MemoryStream(dstBuf, 0, dstSize);
+                audioStream = new ProtrackerStream(stream, offs);
+            }
+            else
+            {
+                audioStream = new ProtrackerStream(f);
+            }
+
+            _modHandle = Mixer.PlayStream(SoundType.Music, audioStream);
+            Mixer.PauseHandle(_modHandle, _musicPaused);
         }
 
         protected void StopMusic()
@@ -210,7 +339,6 @@ namespace NScumm.Agos
 
         private bool LoadVGASoundFile(ushort id, byte type)
         {
-            Stream @in;
             string filename;
             BytePtr dst;
             int srcSize, dstSize;
@@ -261,7 +389,7 @@ namespace NScumm.Agos
                 }
             }
 
-            @in = OpenFileRead(filename);
+            var @in = OpenFileRead(filename);
             if (@in == null || @in.Length == 0)
             {
                 return false;
@@ -305,14 +433,71 @@ namespace NScumm.Agos
             return true;
         }
 
-        private void LoadMusic(short nextMusicToPlay)
+        private void LoadMusic(ushort music)
         {
-            throw new NotImplementedException();
+            byte[] buf = new byte[4];
+
+            StopMusic();
+
+            _gameFile.Seek(_gameOffsetsPtr[_musicIndexBase + music - 1], SeekOrigin.Begin);
+            _gameFile.Read(buf, 0, 4);
+            if (buf.GetRawText() == "FORM")
+            {
+                _gameFile.Seek(_gameOffsetsPtr[_musicIndexBase + music - 1], SeekOrigin.Begin);
+                _midi.LoadXMIDI(_gameFile);
+            }
+            else
+            {
+                _gameFile.Seek(_gameOffsetsPtr[_musicIndexBase + music - 1], SeekOrigin.Begin);
+                _midi.LoadMultipleSMF(_gameFile);
+            }
+
+            _lastMusicPlayed = (short) music;
+            _nextMusicToPlay = -1;
         }
 
-        protected void LoadVoice(ushort speechId)
+        protected void LoadVoice(uint speechId)
         {
-            throw new NotImplementedException();
+            if (GameType == SIMONGameType.GType_PP && speechId == 99)
+            {
+                _sound.StopVoice();
+                return;
+            }
+
+            if (Features.HasFlag(GameFeatures.GF_ZLIBCOMP))
+            {
+                string filename;
+
+                int file, offset, srcSize, dstSize;
+                if (GamePlatform == Platform.Amiga)
+                {
+                    LoadOffsets("spindex.dat", (int) speechId, out file, out offset, out srcSize, out dstSize);
+                }
+                else
+                {
+                    LoadOffsets("speech.wav", (int) speechId, out file, out offset, out srcSize, out dstSize);
+                }
+
+                // Voice segment doesn't exist
+                if (offset == 0xFFFFFFFF && srcSize == 0xFFFFFFFF && dstSize == 0xFFFFFFFF)
+                {
+                    Debug(0, "loadVoice: speechId %d removed", speechId);
+                    return;
+                }
+
+                if (GamePlatform == Platform.Amiga)
+                    filename = $"sp{file}.wav";
+                else
+                    filename = "speech.wav";
+
+                var dst = new byte[dstSize];
+                DecompressData(filename, dst, offset, srcSize, dstSize);
+                _sound.PlayVoiceData(dst, speechId);
+            }
+            else
+            {
+                _sound.PlayVoice(speechId);
+            }
         }
 
         private static readonly string[] dimpSoundList =
@@ -349,6 +534,51 @@ namespace NScumm.Agos
             "And15",
             "And16",
             "And17",
+        };
+
+        struct ModuleOffs
+        {
+            public byte tune;
+            public byte fileNum;
+            public int offs;
+
+            public ModuleOffs(byte tune, byte fileNum, int offs)
+            {
+                this.tune = tune;
+                this.fileNum = fileNum;
+                this.offs = offs;
+            }
+        }
+
+        private static readonly ModuleOffs[] amigaWaxworksOffs =
+        {
+            // Pyramid
+            new ModuleOffs(2, 2, 0),
+            new ModuleOffs(3, 2, 50980),
+            new ModuleOffs(4, 2, 56160),
+            new ModuleOffs(5, 2, 62364),
+            new ModuleOffs(6, 2, 73688),
+
+            // Zombie
+            new ModuleOffs(8, 8, 0),
+            new ModuleOffs(11, 8, 51156),
+            new ModuleOffs(12, 8, 56336),
+            new ModuleOffs(13, 8, 65612),
+            new ModuleOffs(14, 8, 68744),
+
+            // Mine
+            new ModuleOffs(9, 9, 0),
+            new ModuleOffs(15, 9, 47244),
+            new ModuleOffs(16, 9, 52424),
+            new ModuleOffs(17, 9, 59652),
+            new ModuleOffs(18, 9, 62784),
+
+            // Jack
+            new ModuleOffs(10, 10, 0),
+            new ModuleOffs(19, 10, 42054),
+            new ModuleOffs(20, 10, 47234),
+            new ModuleOffs(21, 10, 49342),
+            new ModuleOffs(22, 10, 51450),
         };
     }
 }

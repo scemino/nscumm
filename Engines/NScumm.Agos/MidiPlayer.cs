@@ -40,13 +40,13 @@ namespace NScumm.Agos
         public bool _adLibMusic;
         public bool _enable_sfx;
 
-        protected object _mutex = new object();
+        protected readonly object _mutex = new object();
         protected MidiDriver _driver;
         protected bool _map_mt32_to_gm;
         protected bool _nativeMT32;
 
-        protected MusicInfo _music = new MusicInfo();
-        protected MusicInfo _sfx = new MusicInfo();
+        protected readonly MusicInfo _music = new MusicInfo();
+        protected readonly MusicInfo _sfx = new MusicInfo();
         protected MusicInfo _current = new MusicInfo(); // Allows us to establish current context for operations.
 
         // These are maintained for both music and SFX
@@ -347,8 +347,7 @@ namespace NScumm.Agos
                     if (ret == 0)
                     {
                         // Reset is done inside our MIDI driver
-                        throw new NotImplementedException();
-                        //_driver.SetTimerCallback(this, OnTimer);
+                        _driver.SetTimerCallback(this, OnTimer);
                     }
                     return 0;
                 }
@@ -653,14 +652,6 @@ namespace NScumm.Agos
             }
         }
 
-        private static readonly int[] simon1_gmf_size =
-        {
-            8900, 12166, 2848, 3442, 4034, 4508, 7064, 9730, 6014, 4742, 3138,
-            6570, 5384, 8909, 6457, 16321, 2742, 8968, 4804, 8442, 7717,
-            9444, 5800, 1381, 5660, 6684, 2456, 4744, 2455, 1177, 1232,
-            17256, 5103, 8794, 4884, 16
-        };
-
         public void SetLoop(bool loop)
         {
             lock (_mutex)
@@ -710,5 +701,38 @@ namespace NScumm.Agos
         {
             throw new NotImplementedException();
         }
+
+        public void LoadXMIDI(Stream gameFile)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Pause(bool b)
+        {
+            if (_paused == b || _driver == null)
+                return;
+            _paused = b;
+
+            lock (_mutex)
+            {
+                for (int i = 0; i < 16; ++i)
+                {
+                    if (_music.channel[i] != null)
+                        _music.channel[i].Volume((byte) (_paused ? 0 : (_music.volume[i] * _musicVolume / 255)));
+                    if (_sfx.channel[i] != null)
+                        _sfx.channel[i].Volume((byte) (_paused ? 0 : (_sfx.volume[i] * _sfxVolume / 255)));
+                }
+            }
+        }
+
+        private static readonly int[] simon1_gmf_size =
+        {
+            8900, 12166, 2848, 3442, 4034, 4508, 7064, 9730, 6014, 4742, 3138,
+            6570, 5384, 8909, 6457, 16321, 2742, 8968, 4804, 8442, 7717,
+            9444, 5800, 1381, 5660, 6684, 2456, 4744, 2455, 1177, 1232,
+            17256, 5103, 8794, 4884, 16
+        };
+
+
     }
 }

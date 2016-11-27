@@ -24,6 +24,7 @@ using System.IO;
 using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Core.Audio.Decoders;
+using NScumm.Core.IO;
 using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
@@ -50,8 +51,8 @@ namespace NScumm.Agos
         private bool _ambientPaused;
         private bool _sfx5Paused;
 
-        //uint16 *_filenums;
-        //uint32 *_offsets;
+        private short[] _filenums;
+        private uint[] _offsets;
         private ushort _lastVoiceFile;
 
         private SoundHandle _voiceHandle;
@@ -68,6 +69,8 @@ namespace NScumm.Agos
         private ushort _soundQueueNum;
         private uint _soundQueueSize;
         private ushort _soundQueueFreq;
+
+        public bool IsSfxActive => _mixer.IsSoundHandleActive(_effectsHandle);
 
         public Sound(AGOSEngine vm, GameSpecificSettings gss, IMixer mixer)
         {
@@ -131,7 +134,52 @@ namespace NScumm.Agos
 
         private void LoadVoiceFile(GameSpecificSettings gss)
         {
-            throw new NotImplementedException();
+            // Game versions which use separate voice files
+            if (_hasVoiceFile || _vm.GameType == SIMONGameType.GType_FF || _vm.GameId == GameIds.GID_SIMON1CD32)
+                return;
+
+            _voice = MakeSound(_mixer, gss.speech_filename);
+            _hasVoiceFile = _voice != null;
+
+            if (_hasVoiceFile)
+                return;
+
+            if (_vm.GameType == SIMONGameType.GType_SIMON2)
+            {
+                // for simon2 mac/amiga, only read index file
+                var file = Engine.OpenFileRead("voices.idx");
+                if (file != null)
+                {
+                    var br = new BinaryReader(file);
+                    int end = (int) file.Length;
+                    _filenums = new short[end / 6 + 1];
+                    _offsets = new uint[end / 6 + 1 + 1];
+
+                    for (int i = 1; i <= end / 6; i++)
+                    {
+                        _filenums[i] = br.ReadInt16BigEndian();
+                        _offsets[i] = br.ReadUInt32BigEndian();
+                    }
+                    // We need to add a terminator entry otherwise we get an out of
+                    // bounds read when the offset table is accessed in
+                    // BaseSound::getSoundStream.
+                    _offsets[end / 6 + 1] = 0;
+
+                    _hasVoiceFile = true;
+                    return;
+                }
+            }
+
+            const bool dataIsUnsigned = true;
+
+            if (Engine.FileExists(gss.speech_filename))
+            {
+                _hasVoiceFile = true;
+                if (_vm.GameType == SIMONGameType.GType_PP)
+                    _voice = new WavSound(_mixer, gss.speech_filename);
+                else
+                    _voice = new VocSound(_mixer, gss.speech_filename, dataIsUnsigned);
+            }
         }
 
         // This method is only used by Simon1 Amiga CD32 & Windows
@@ -182,7 +230,7 @@ namespace NScumm.Agos
             _effectsHandle = PlaySoundData(soundData, sound, pan, (int) vol, false);
         }
 
-        private SoundHandle PlaySoundData(BytePtr soundData, uint sound, int pan, int vol, bool loop)
+        private SoundHandle PlaySoundData(BytePtr soundData, uint sound, int pan = 0, int vol = 0, bool loop = false)
         {
             int size = soundData.ToInt32(4) + 8;
             var stream = new MemoryStream(soundData.Data, soundData.Offset, size);
@@ -309,6 +357,86 @@ namespace NScumm.Agos
             {
                 pan = 0;
             }
+        }
+
+        public void PlayVoiceData(byte[] soundData, uint sound)
+        {
+            _mixer.StopHandle(_voiceHandle);
+            _voiceHandle = PlaySoundData(soundData, sound);
+        }
+
+        public void PlayVoice(uint sound)
+        {
+            if (_filenums != null)
+            {
+                if (_lastVoiceFile != _filenums[sound])
+                {
+                    _mixer.StopHandle(_voiceHandle);
+
+                    _lastVoiceFile = (ushort) _filenums[sound];
+                    var filename = "voices{_filenums[sound]}.dat";
+                    if (!Engine.FileExists(filename))
+                        Error("playVoice: Can't load voice file %s", filename);
+
+                    _voice = new WavSound(_mixer, filename, _offsets);
+                }
+            }
+
+            if (_voice == null)
+                return;
+
+            _mixer.StopHandle(_voiceHandle);
+            if (_vm.GameType == SIMONGameType.GType_PP)
+            {
+                if (sound < 11)
+                    _voiceHandle = _voice.PlaySound(sound, sound + 1, SoundType.Music, true, -1500);
+                else
+                    _voiceHandle = _voice.PlaySound(sound, sound, SoundType.Music, true);
+            }
+            else
+            {
+                _voiceHandle = _voice.PlaySound(sound, SoundType.Speech, false);
+            }
+        }
+
+        public void QueueSound(BytePtr ptr, ushort sound, int size, ushort freq)
+        {
+            if (_effectsPaused)
+                return;
+
+            // Only a single sound can be queued
+            _soundQueuePtr = ptr;
+            _soundQueueNum = sound;
+            _soundQueueSize = (uint) size;
+            _soundQueueFreq = freq;
+        }
+
+        public void StopSfx()
+        {
+            _mixer.StopHandle(_effectsHandle);
+        }
+
+        // Elvira 1/2 and Waxworks specific
+        public void PlayRawData(BytePtr soundData, ushort sound, int size, int freq)
+        {
+            if (_effectsPaused)
+                return;
+
+            var buffer = new byte[size];
+            Array.Copy(soundData.Data, soundData.Offset, buffer, 0, size);
+
+            AudioFlags flags = 0;
+            if (_vm.GamePlatform == Platform.DOS && _vm.GameId != GameIds.GID_ELVIRA2)
+                flags = AudioFlags.Unsigned;
+
+            var stream = new RawStream(flags, freq, true, new MemoryStream(buffer, 0, size));
+            _effectsHandle = _mixer.PlayStream(SoundType.SFX, stream);
+        }
+
+        public void EffectsPause(bool b)
+        {
+            _effectsPaused = b;
+            _sfx5Paused = b;
         }
     }
 }

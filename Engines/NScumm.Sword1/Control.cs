@@ -557,7 +557,7 @@ namespace NScumm.Sword1
                     destMem.Offset += Screen.SCREEN_WIDTH;
                 }
 
-                _system.GraphicsManager.CopyRectToScreen(_screenBuf, destY * Screen.SCREEN_WIDTH + destX, Screen.SCREEN_WIDTH, destX, destY, _resMan.ReadUInt16(frHead.width), _resMan.ReadUInt16(frHead.height));
+                _system.GraphicsManager.CopyRectToScreen(new BytePtr(_screenBuf, destY * Screen.SCREEN_WIDTH + destX), Screen.SCREEN_WIDTH, destX, destY, _resMan.ReadUInt16(frHead.width), _resMan.ReadUInt16(frHead.height));
                 _resMan.ResClose(SwordRes.SR_VLIGHT);
                 destX += 32;
             }
@@ -1275,7 +1275,7 @@ namespace NScumm.Sword1
                 i++;
             }
 
-            _system.GraphicsManager.CopyRectToScreen(_screenBuf, +y * Screen.SCREEN_WIDTH + x, Screen.SCREEN_WIDTH, x, y, (destX - x) + 3, 28);
+            _system.GraphicsManager.CopyRectToScreen(new BytePtr(_screenBuf, y * Screen.SCREEN_WIDTH + x), Screen.SCREEN_WIDTH, x, y, (destX - x) + 3, 28);
         }
 
         private ushort GetTextWidth(string str)

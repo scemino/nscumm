@@ -107,13 +107,7 @@ namespace NScumm.Droid.Services
             return _palColor;
         }
 
-        public void SetCursor(BytePtr pixels, int width, int height, Point hotspot)
-        {
-            SetCursor(pixels, 0, width, height, hotspot, 0xFF);
-
-        }
-
-        public void SetCursor(BytePtr pixels, int offset, int width, int height, Point hotspot, int keyColor)
+        public void SetCursor(BytePtr pixels, int width, int height, Point hotspot, int keyColor)
         {
             _hotspot = new Vector2(hotspot.X, hotspot.Y);
             _view._pixelsCursor = new byte[width * height * 4];
@@ -122,7 +116,7 @@ namespace NScumm.Droid.Services
             {
                 for (int w = 0; w < width; w++)
                 {
-                    var palColor = pixels[offset + w + h * width];
+                    var palColor = pixels[w + h * width];
                     if (palColor == keyColor)
                     {
                         _view._pixelsCursor[w * 4 + h * width * 4 + 3] = 0xFF;

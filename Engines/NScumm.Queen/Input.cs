@@ -244,7 +244,33 @@ namespace NScumm.Queen
 
         public static char ToChar(KeyCode key)
         {
-            return (char)('a' + (int)(key - KeyCode.A));
+            if (key >= KeyCode.A && key <= KeyCode.Z)
+            {
+                return (char) ('a' + (key - KeyCode.A));
+            }
+            if (key >= KeyCode.D0 && key <= KeyCode.D9)
+            {
+                return (char) ('0' + (key - KeyCode.D0));
+            }
+            if (key >= KeyCode.NumPad0 && key <= KeyCode.NumPad9)
+            {
+                return (char) ('0' + (key - KeyCode.NumPad0));
+            }
+            switch (key)
+            {
+                case KeyCode.Tab:
+                    return '\t';
+                case KeyCode.Return:
+                    return '\n';
+                case KeyCode.Space:
+                    return ' ';
+                case KeyCode.Comma:
+                    return ',';
+                case KeyCode.OemPeriod:
+                    return '.';
+                default:
+                    return '\0';
+            }
         }
 
         public void Delay(int amount)

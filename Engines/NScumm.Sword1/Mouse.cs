@@ -239,7 +239,7 @@ namespace NScumm.Sword1
                 var ptrData = MousePtr.Size;
                 ptrData += _frame * _currentPtr.sizeX * _currentPtr.sizeY;
 
-                _system.GraphicsManager.SetCursor(_currentPtr.Data, _currentPtr.Offset + ptrData, _currentPtr.sizeX, _currentPtr.sizeY, new Point((short) _currentPtr.hotSpotX, (short) _currentPtr.hotSpotY), 255);
+                _system.GraphicsManager.SetCursor(new BytePtr(_currentPtr.Data, _currentPtr.Offset + ptrData), _currentPtr.sizeX, _currentPtr.sizeY, new Point((short) _currentPtr.hotSpotX, (short) _currentPtr.hotSpotY), 255);
 
                 _activeFrame = _frame;
             }

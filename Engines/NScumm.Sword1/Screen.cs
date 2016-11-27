@@ -402,7 +402,7 @@ namespace NScumm.Sword1
             ushort avgScrlX = (ushort)((_oldScrollX + Logic.ScriptVars[(int)ScriptVariableNames.SCROLL_OFFSET_X]) / 2);
             ushort avgScrlY = (ushort)((_oldScrollY + Logic.ScriptVars[(int)ScriptVariableNames.SCROLL_OFFSET_Y]) / 2);
 
-            _system.GraphicsManager.CopyRectToScreen(_screenBuf, avgScrlY * _scrnSizeX + avgScrlX, _scrnSizeX, 0, 40, SCREEN_WIDTH, SCREEN_DEPTH);
+            _system.GraphicsManager.CopyRectToScreen(new BytePtr(_screenBuf, avgScrlY * _scrnSizeX + avgScrlX), _scrnSizeX, 0, 40, SCREEN_WIDTH, SCREEN_DEPTH);
             _system.GraphicsManager.UpdateScreen();
             return true;
         }
@@ -439,7 +439,7 @@ namespace NScumm.Sword1
                     copyWidth = (ushort)(_scrnSizeX - scrlX);
                 if (scrlY + copyHeight > _scrnSizeY)
                     copyHeight = (ushort)(_scrnSizeY - scrlY);
-                _system.GraphicsManager.CopyRectToScreen(_screenBuf, scrlY * _scrnSizeX + scrlX, _scrnSizeX, 0, 40, copyWidth, copyHeight);
+                _system.GraphicsManager.CopyRectToScreen(new BytePtr(_screenBuf, scrlY * _scrnSizeX + scrlX), _scrnSizeX, 0, 40, copyWidth, copyHeight);
             }
             else
             {
@@ -468,7 +468,7 @@ namespace NScumm.Sword1
                             short xPos = (short)((cntx - cpWidth) * SCRNGRID_X - diffX);
                             if (xPos < 0)
                                 xPos = 0;
-                            _system.GraphicsManager.CopyRectToScreen(_screenBuf, scrnBuf + xPos, _scrnSizeX, xPos, 40, cpWidth * SCRNGRID_X, diffY);
+                            _system.GraphicsManager.CopyRectToScreen(new BytePtr(_screenBuf, scrnBuf + xPos), _scrnSizeX, xPos, 40, cpWidth * SCRNGRID_X, diffY);
                             cpWidth = 0;
                         }
                     if (cpWidth != 0)
@@ -476,7 +476,7 @@ namespace NScumm.Sword1
                         short xPos = (short)((gridW - cpWidth) * SCRNGRID_X - diffX);
                         if (xPos < 0)
                             xPos = 0;
-                        _system.GraphicsManager.CopyRectToScreen(_screenBuf, scrnBuf + xPos, _scrnSizeX, xPos, 40, SCREEN_WIDTH - xPos, diffY);
+                        _system.GraphicsManager.CopyRectToScreen(new BytePtr(_screenBuf, scrnBuf + xPos), _scrnSizeX, xPos, 40, SCREEN_WIDTH - xPos, diffY);
                     }
                     scrlY += diffY;
                 }
@@ -497,7 +497,8 @@ namespace NScumm.Sword1
                         else if (cpHeight != 0)
                         {
                             ushort yPos = (ushort)((cnty - cpHeight) * SCRNGRID_Y);
-                            _system.GraphicsManager.CopyRectToScreen(_screenBuf, scrnBuf + yPos * _scrnSizeX, _scrnSizeX, 0, yPos + diffY + 40, diffX, cpHeight * SCRNGRID_Y);
+                            _system.GraphicsManager.CopyRectToScreen(
+                                new BytePtr(_screenBuf, scrnBuf + yPos * _scrnSizeX), _scrnSizeX, 0, yPos + diffY + 40, diffX, cpHeight * SCRNGRID_Y);
                             cpHeight = 0;
                         }
                         gridPos += _gridSizeX;
@@ -505,7 +506,8 @@ namespace NScumm.Sword1
                     if (cpHeight != 0)
                     {
                         ushort yPos = (ushort)((gridH - cpHeight) * SCRNGRID_Y);
-                        _system.GraphicsManager.CopyRectToScreen(_screenBuf, scrnBuf + yPos * _scrnSizeX, _scrnSizeX, 0, yPos + diffY + 40, diffX, SCREEN_DEPTH - (yPos + diffY));
+                        _system.GraphicsManager.CopyRectToScreen(
+                            new BytePtr(_screenBuf, scrnBuf + yPos * _scrnSizeX), _scrnSizeX, 0, yPos + diffY + 40, diffX, SCREEN_DEPTH - (yPos + diffY));
                     }
                     scrlX += diffX;
                 }
@@ -526,13 +528,15 @@ namespace NScumm.Sword1
                         }
                         else if (cpWidth != 0)
                         {
-                            _system.GraphicsManager.CopyRectToScreen(_screenBuf, scrnBuf + (cntx - cpWidth) * SCRNGRID_X, _scrnSizeX, (cntx - cpWidth) * SCRNGRID_X + diffX, cnty * SCRNGRID_Y + diffY + 40, cpWidth * SCRNGRID_X, cpHeight);
+                            _system.GraphicsManager.CopyRectToScreen(
+                                new BytePtr(_screenBuf, scrnBuf + (cntx - cpWidth) * SCRNGRID_X), _scrnSizeX, (cntx - cpWidth) * SCRNGRID_X + diffX, cnty * SCRNGRID_Y + diffY + 40, cpWidth * SCRNGRID_X, cpHeight);
                             cpWidth = 0;
                         }
                     if (cpWidth != 0)
                     {
                         ushort xPos = (ushort)((gridW - cpWidth) * SCRNGRID_X);
-                        _system.GraphicsManager.CopyRectToScreen(_screenBuf, scrnBuf + xPos, _scrnSizeX, xPos + diffX, cnty * SCRNGRID_Y + diffY + 40, SCREEN_WIDTH - (xPos + diffX), cpHeight);
+                        _system.GraphicsManager.CopyRectToScreen(
+                            new BytePtr(_screenBuf, scrnBuf + xPos), _scrnSizeX, xPos + diffX, cnty * SCRNGRID_Y + diffY + 40, SCREEN_WIDTH - (xPos + diffX), cpHeight);
                     }
                     gridPos += _gridSizeX;
                     scrnBuf += _scrnSizeX * SCRNGRID_Y;

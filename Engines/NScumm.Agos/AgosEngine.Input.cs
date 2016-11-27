@@ -19,16 +19,37 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System;
 using NScumm.Core;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
 {
     partial class AGOSEngine
     {
-        private uint SetVerbText(HitArea currentBox)
+        private uint SetVerbText(HitArea ha)
         {
-            throw new NotImplementedException();
+            uint id = 0xFFFF;
+
+            if (GameType == SIMONGameType.GType_ELVIRA1 || GameType == SIMONGameType.GType_ELVIRA2)
+                return id;
+
+            if (ha.flags.HasFlag(BoxFlags.kBFTextBox))
+            {
+                if (GameType == SIMONGameType.GType_PP)
+                    id = ha.id;
+                else if (GameType == SIMONGameType.GType_FF && ha.flags.HasFlag(BoxFlags.kBFHyperBox))
+                    id = ha.data;
+                else
+                    id = (uint) ((int)ha.flags / 256);
+            }
+            if (GameType == SIMONGameType.GType_PP)
+                _variableArray[199] = (short) id;
+            else if (GameType == SIMONGameType.GType_WW)
+                _variableArray[10] = (short) id;
+            else
+                _variableArray[60] = (short) id;
+
+            return id;
         }
 
         protected void SetupCondCHelper()
@@ -234,7 +255,7 @@ namespace NScumm.Agos
                 {
                     ha = _lastClickRem;
 
-                    if (ha == null || ha.itemPtr == null || (ha.flags & (ushort) BoxFlags.kBFDragBox) == 0)
+                    if (ha == null || ha.itemPtr == null || ha.flags.HasFlag(BoxFlags.kBFDragBox))
                     {
                         _dragFlag = false;
                         _dragMode = false;
@@ -266,7 +287,7 @@ namespace NScumm.Agos
                     _dragCount = 0;
                     _dragEnd = false;
 
-                    BoxController(_mouse.X, _mouse.Y, 1);
+                    BoxController((uint) _mouse.X, (uint) _mouse.Y, 1);
 
                     if (_currentBox != null)
                     {
@@ -346,8 +367,8 @@ namespace NScumm.Agos
                         }
                     }
                     if (ha.itemPtr != null && (ha.verb == 0 || _verbHitArea != 0 ||
-                                               (_hitAreaSubjectItem != ha.itemPtr &&
-                                                (ha.flags & (ushort) BoxFlags.kBFBoxItem) != 0)))
+                                               _hitAreaSubjectItem != ha.itemPtr &&
+                                               ha.flags.HasFlag(BoxFlags.kBFBoxItem)))
                     {
                         _hitAreaSubjectItem = ha.itemPtr;
                         var id = SetVerbText(ha);
@@ -564,7 +585,7 @@ namespace NScumm.Agos
                     _verbHitArea = 214;
                 verbCode = true;
             }
-            if(keys.IsKeyDown(KeyCode.Down))
+            if (keys.IsKeyDown(KeyCode.Down))
             {
                 if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
                     _verbHitArea = 304;
@@ -671,8 +692,9 @@ namespace NScumm.Agos
                     }
                 }
             }
-            if(keys.IsKeyDown(KeyCode.Pause)){
-                    Pause();
+            if (keys.IsKeyDown(KeyCode.Pause))
+            {
+                Pause();
             }
 
             if (keys.IsKeyDown(KeyCode.T))
@@ -698,49 +720,121 @@ namespace NScumm.Agos
                 }
             }
             // TODO:
-                /*if(keys.IsKeyDown('+')){
-                    if (_midiEnabled) {
-                        _midi.SetVolume(_midi.GetMusicVolume() + 16, _midi.GetSFXVolume() + 16);
-                    }
-                    ConfMan.setInt("music_volume", _mixer.getVolumeForSoundType(Audio::Mixer::kMusicSoundType) + 16);
-                    syncSoundSettings();
-                    }
-                if(keys.IsKeyDown('-')){
-                    if (_midiEnabled) {
-                        _midi.setVolume(_midi.getMusicVolume() - 16, _midi.getSFXVolume() - 16);
-                    }
-                    ConfMan.setInt("music_volume", _mixer.getVolumeForSoundType(Audio::Mixer::kMusicSoundType) - 16);
-                    syncSoundSettings();
-                    }
-                if(keys.IsKeyDown(KeyCode.M)){
-                    _musicPaused = !_musicPaused;
-                    if (_midiEnabled)
+            /*if(keys.IsKeyDown('+')){
+                if (_midiEnabled) {
+                    _midi.SetVolume(_midi.GetMusicVolume() + 16, _midi.GetSFXVolume() + 16);
+                }
+                ConfMan.setInt("music_volume", _mixer.getVolumeForSoundType(Audio::Mixer::kMusicSoundType) + 16);
+                syncSoundSettings();
+                }
+            if(keys.IsKeyDown('-')){
+                if (_midiEnabled) {
+                    _midi.setVolume(_midi.getMusicVolume() - 16, _midi.getSFXVolume() - 16);
+                }
+                ConfMan.setInt("music_volume", _mixer.getVolumeForSoundType(Audio::Mixer::kMusicSoundType) - 16);
+                syncSoundSettings();
+                }
+            if(keys.IsKeyDown(KeyCode.M)){
+                _musicPaused = !_musicPaused;
+                if (_midiEnabled)
+                {
+                    _midi.Pause(_musicPaused);
+                }
+                Mixer.PauseHandle(_modHandle, _musicPaused);
+                SyncSoundSettings();
+                }
+            if(keys.IsKeyDown(KeyCode.S)){
+                if (getGameId() == GID_SIMON1DOS)
+                {
+                    _midi._enable_sfx = !_midi._enable_sfx;
+                }
+                else
+                {
+                    _effectsPaused = !_effectsPaused;
+                    _sound.effectsPause(_effectsPaused);
+                }
+                }
+            if(keys.IsKeyDown(KeyCode.B)){
+                if (_gd.ADGameDescription.gameType == GType_SIMON2)
+                {
+                    _ambientPaused = !_ambientPaused;
+                    _sound.ambientPause(_ambientPaused);
+                }
+                }*/
+
+            return verbCode;
+        }
+
+        private void WaitForSync(uint a)
+        {
+            int maxCount = _gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1 ? 1000 : 2500;
+
+            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1 &&
+                _gd.ADGameDescription.features.HasFlag(GameFeatures.GF_TALKIE))
+            {
+                if (a != 200)
+                {
+                    ushort tmp = _lastVgaWaitFor;
+                    _lastVgaWaitFor = 0;
+                    if (tmp == a)
+                        return;
+                }
+            }
+
+            _vgaWaitFor = (ushort) a;
+            _syncCount = 0;
+            _exitCutscene = false;
+            _rightButtonDown = false;
+
+            while (_vgaWaitFor != 0 && !HasToQuit)
+            {
+                if (_rightButtonDown)
+                {
+                    if (_vgaWaitFor == 200 && (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
+                                               !GetBitFlag(14)))
                     {
-                        _midi.Pause(_musicPaused);
+                        SkipSpeech();
+                        break;
                     }
-                    Mixer.PauseHandle(_modHandle, _musicPaused);
-                    SyncSoundSettings();
-                    }
-                if(keys.IsKeyDown(KeyCode.S)){
-                    if (getGameId() == GID_SIMON1DOS)
+                }
+                if (_exitCutscene)
+                {
+                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1)
                     {
-                        _midi._enable_sfx = !_midi._enable_sfx;
+                        if (_variableArray[105] == 0)
+                        {
+                            _variableArray[105] = 255;
+                            break;
+                        }
+                    }
+                    else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 ||
+                             _gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
+                    {
+                        if (_vgaWaitFor == 51)
+                        {
+                            SetBitFlag(244, true);
+                            break;
+                        }
                     }
                     else
                     {
-                        _effectsPaused = !_effectsPaused;
-                        _sound.effectsPause(_effectsPaused);
+                        if (GetBitFlag(9))
+                        {
+                            EndCutscene();
+                            break;
+                        }
                     }
-                    }
-                if(keys.IsKeyDown(KeyCode.B)){
-                    if (_gd.ADGameDescription.gameType == GType_SIMON2)
-                    {
-                        _ambientPaused = !_ambientPaused;
-                        _sound.ambientPause(_ambientPaused);
-                    }
-                    }*/
+                }
+                ProcessSpecialKeys();
 
-            return verbCode;
+                if (_syncCount >= maxCount)
+                {
+                    Warning("waitForSync: wait timed out");
+                    break;
+                }
+
+                Delay(1);
+            }
         }
     }
 }

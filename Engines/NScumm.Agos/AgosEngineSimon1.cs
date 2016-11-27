@@ -21,8 +21,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using NScumm.Core;
 using NScumm.Core.Graphics;
+using NScumm.Core.Input;
 using NScumm.Core.IO;
 using static NScumm.Core.DebugHelper;
 
@@ -57,6 +60,182 @@ namespace NScumm.Agos
                 return;
             }
             o_invalid();
+        }
+
+        protected override void UserGame(bool load)
+        {
+            uint saveTime;
+            int i, numSaveGames;
+            bool b;
+            Array.Clear(_saveBuf, 0, _saveBuf.Length);
+            int maxChar = (_language == Language.HE_ISR) ? 155 : 128;
+
+            _saveOrLoad = load;
+
+            saveTime = GetTime();
+
+            numSaveGames = CountSaveGames();
+            if (!load)
+                numSaveGames++;
+            numSaveGames -= 6;
+            if (numSaveGames < 0)
+                numSaveGames = 0;
+            numSaveGames++;
+            _numSaveGameRows = (ushort) numSaveGames;
+
+            _saveLoadRowCurPos = 1;
+            if (!load)
+                _saveLoadRowCurPos = (ushort) numSaveGames;
+
+            _saveLoadEdit = false;
+
+            restart:
+            i = UserGameGetKey(out b, maxChar);
+
+            if (i == 205)
+                goto get_out;
+            if (!load)
+            {
+                // if_1
+                if_1:
+                ;
+                var result = i;
+
+                DisableBox(208 + i);
+                LeaveHitAreaById(208 + i);
+
+                var window = _windowArray[5];
+
+                window.textRow = (short) result;
+
+                // init x offset with a 2 character savegame number + a period (18 pix)
+                if (_language == Language.HE_ISR)
+                {
+                    window.textColumn = 3;
+                    window.textColumnOffset = 6;
+                }
+                else
+                {
+                    window.textColumn = 2;
+                    window.textColumnOffset = 2;
+                }
+                window.textLength = 3;
+
+                var name = new BytePtr(_saveBuf, i * 18);
+
+                // now process entire savegame name to get correct x offset for cursor
+                _saveGameNameLen = 0;
+                while (name[_saveGameNameLen] != 0)
+                {
+                    if (_language == Language.HE_ISR)
+                    {
+                        byte width = 6;
+                        if (name[_saveGameNameLen] >= 64 && name[_saveGameNameLen] < 91)
+                            width = _hebrewCharWidths[name[_saveGameNameLen] - 64];
+                        window.textLength++;
+                        window.textColumnOffset -= width;
+                        if (window.textColumnOffset < width)
+                        {
+                            window.textColumnOffset += 8;
+                            window.textColumn++;
+                        }
+                    }
+                    else
+                    {
+                        window.textLength++;
+                        window.textColumnOffset += 6;
+                        if (name[_saveGameNameLen] == 'i' || name[_saveGameNameLen] == 'l')
+                            window.textColumnOffset -= 2;
+                        if (window.textColumnOffset >= 8)
+                        {
+                            window.textColumnOffset -= 8;
+                            window.textColumn++;
+                        }
+                    }
+                    _saveGameNameLen++;
+                }
+
+                while (!HasToQuit)
+                {
+                    WindowPutChar(window, 127);
+
+                    _saveLoadEdit = true;
+
+                    i = UserGameGetKey(out b, maxChar);
+
+                    if (b)
+                    {
+                        if (i == 205)
+                            goto get_out;
+                        EnableBox(208 + result);
+                        if (_saveLoadEdit)
+                        {
+                            UserGameBackSpace(_windowArray[5], 8);
+                        }
+                        goto if_1;
+                    }
+
+                    if (!_saveLoadEdit)
+                    {
+                        EnableBox(208 + result);
+                        goto restart;
+                    }
+
+                    if (_language == Language.HE_ISR)
+                    {
+                        if (i >= 128)
+                            i -= 64;
+                        else if (i >= 32)
+                            i = hebrewKeyTable[i - 32];
+                    }
+
+                    UserGameBackSpace(_windowArray[5], 8);
+                    if (i == 10 || i == 13)
+                    {
+                        break;
+                    }
+                    else if (i == 8)
+                    {
+                        // do_backspace
+                        if (_saveGameNameLen != 0)
+                        {
+                            byte m, x;
+
+                            _saveGameNameLen--;
+                            m = (byte) name[_saveGameNameLen];
+
+                            if (_language == Language.HE_ISR)
+                                x = 8;
+                            else
+                                x = (byte) ((name[_saveGameNameLen] == 'i' || name[_saveGameNameLen] == 'l') ? 1 : 8);
+
+                            name[_saveGameNameLen] = 0;
+
+                            UserGameBackSpace(_windowArray[5], x, m);
+                        }
+                    }
+                    else if (i >= 32 && _saveGameNameLen != 17)
+                    {
+                        name[_saveGameNameLen++] = (byte) i;
+
+                        WindowPutChar(_windowArray[5], (byte) i);
+                    }
+                }
+
+                if (!SaveGame(_saveLoadRowCurPos + result, _saveBuf.GetRawText(result * 18)))
+                    FileError(_windowArray[5], true);
+            }
+            else
+            {
+                if (!LoadGame(GenSaveName(_saveLoadRowCurPos + i)))
+                    FileError(_windowArray[5], false);
+            }
+
+            get_out:
+            ;
+            DisableFileBoxes();
+
+            _gameStoppedClock = GetTime() - saveTime + _gameStoppedClock;
         }
 
         protected override void SetupOpcodes()
@@ -122,6 +301,7 @@ namespace NScumm.Agos
                 {79, o_isCalled},
                 {80, o_is},
                 {82, o_debug},
+                {83, oe1_rescan},
                 {87, o_comment},
                 {88, o_haltAnimation},
                 {89, o_restartAnimation},
@@ -214,6 +394,236 @@ namespace NScumm.Agos
             op[61] = vc61_setMaskImage;
             op[62] = vc62_fastFadeOut;
             op[63] = vc63_fastFadeIn;
+        }
+
+        protected override string GenSaveName(int slot)
+        {
+            return $"simon1.{slot:D3}";
+        }
+
+        private int UserGameGetKey(out bool b, int maxChar)
+        {
+            b = true;
+
+            if (!_saveLoadEdit)
+            {
+                ListSaveGames();
+            }
+
+            _keyPressed = new ScummInputState();
+
+            while (!HasToQuit)
+            {
+                _lastHitArea = null;
+                _lastHitArea3 = null;
+
+                do
+                {
+                    var keyCode = _keyPressed.GetKeys().FirstOrDefault();
+                    char ascii = keyCode == 0 ? '\0' : ToChar(keyCode);
+                    if (_saveLoadEdit && ascii != 0 && ascii < maxChar)
+                    {
+                        b = false;
+                        return ascii;
+                    }
+                    Delay(10);
+                } while (_lastHitArea3 == null && !HasToQuit);
+
+                var ha = _lastHitArea;
+                if (ha == null || ha.id < 205)
+                {
+                }
+                else if (ha.id == 205)
+                {
+                    return ha.id;
+                }
+                else if (ha.id == 206)
+                {
+                    if (_saveLoadRowCurPos != 1)
+                    {
+                        if (_saveLoadRowCurPos < 7)
+                            _saveLoadRowCurPos = 1;
+                        else
+                            _saveLoadRowCurPos -= 6;
+
+                        _saveLoadEdit = false;
+                        ListSaveGames();
+                    }
+                }
+                else if (ha.id == 207)
+                {
+                    if (_saveDialogFlag)
+                    {
+                        _saveLoadRowCurPos += 6;
+                        if (_saveLoadRowCurPos >= _numSaveGameRows)
+                            _saveLoadRowCurPos = _numSaveGameRows;
+
+                        _saveLoadEdit = false;
+                        ListSaveGames();
+                    }
+                }
+                else if (ha.id < 214)
+                {
+                    return ha.id - 208;
+                }
+            }
+
+            return 205;
+        }
+
+        protected override void InitMouse()
+        {
+            InitMouseCore();
+
+            var src = new Ptr<ushort>(_common_mouseInfo);
+            for (int i = 0; i < 16; i++)
+            {
+                for (int j = 0; j < 16; j++)
+                {
+                    if ((src[0] & (1 << (15 - j % 16))) == 0) continue;
+                    if ((src[1] & (1 << (15 - j % 16))) != 0)
+                    {
+                        _mouseData[16 * i + j] = 1;
+                    }
+                    else
+                    {
+                        _mouseData[16 * i + j] = 0;
+                    }
+                }
+                src.Offset += 2;
+            }
+
+            OSystem.GraphicsManager.SetCursor(_mouseData, 16, 16, new Point(), 0xFF);
+        }
+
+        protected override void HandleMouseMoved()
+        {
+            uint x;
+
+            if (_mouseHideCount != 0)
+            {
+                OSystem.GraphicsManager.IsCursorVisible = false;
+                return;
+            }
+
+            OSystem.GraphicsManager.IsCursorVisible = true;
+            _mouse = OSystem.InputManager.GetMousePosition();
+
+            if (_defaultVerb != 0)
+            {
+                uint id = 101;
+                if (_mouse.Y >= 136)
+                    id = 102;
+                if (_defaultVerb != id)
+                    ResetVerbs();
+            }
+
+            if (GameType == SIMONGameType.GType_FF)
+            {
+                if (GetBitFlag(99))
+                {
+                    // Oracle
+                    if (_mouse.X >= 10 && _mouse.X <= 635 && _mouse.Y >= 5 && _mouse.Y <= 475)
+                    {
+                        SetBitFlag(98, true);
+                    }
+                    else
+                    {
+                        if (GetBitFlag(98))
+                        {
+                            _variableArray[254] = 63;
+                        }
+                    }
+                }
+                else if (GetBitFlag(88))
+                {
+                    // Close Up
+                    if (_mouse.X >= 10 && _mouse.X <= 635 && _mouse.Y >= 5 && _mouse.Y <= 475)
+                    {
+                        SetBitFlag(87, true);
+                    }
+                    else
+                    {
+                        if (GetBitFlag(87))
+                        {
+                            _variableArray[254] = 75;
+                        }
+                    }
+                }
+
+                if (_rightButtonDown)
+                {
+                    _rightButtonDown = false;
+                    SetVerb(null);
+                }
+            }
+            else if (GameType == SIMONGameType.GType_SIMON2)
+            {
+                if (GetBitFlag(79))
+                {
+                    if (!_vgaVar9)
+                    {
+                        if (_mouse.X >= 315 || _mouse.X < 9)
+                        {
+                            _vgaVar9 = false;
+                            goto get_out2;
+                        }
+                        _vgaVar9 = true;
+                    }
+                    if (_scrollCount == 0)
+                    {
+                        if (_mouse.X >= 315)
+                        {
+                            if (_scrollX != _scrollXMax)
+                                _scrollFlag = 1;
+                        }
+                        else if (_mouse.X < 8)
+                        {
+                            if (_scrollX != 0)
+                                _scrollFlag = -1;
+                        }
+                    }
+                }
+                else
+                {
+                    _vgaVar9 = false;
+                }
+                get_out2:
+                ;
+            }
+
+            if (_mouse != _mouseOld)
+                _needHitAreaRecalc++;
+
+            if (_leftButtonOld == 0 && _leftButtonCount != 0)
+            {
+                BoxController((uint) _mouse.X, (uint) _mouse.Y, 3);
+            }
+            _leftButtonOld = _leftButton;
+
+            x = 0;
+            if (_lastHitArea3 == null && _leftButtonDown)
+            {
+                _leftButtonDown = false;
+                x = 1;
+            }
+            else
+            {
+                if (!_litBoxFlag && _needHitAreaRecalc == 0)
+                    goto get_out;
+            }
+
+            BoxController((uint) _mouse.X, (uint) _mouse.Y, x);
+            _lastHitArea3 = _lastHitArea;
+            if (x == 1 && _lastHitArea == null)
+                _lastHitArea3 = HitArea.None;
+
+            get_out:
+            _mouseOld = _mouse;
+            DrawMousePointer();
+
+            _needHitAreaRecalc = 0;
+            _litBoxFlag = false;
         }
 
         protected override void DrawIcon(WindowBlock window, int icon, int x, int y)
@@ -452,6 +862,246 @@ namespace NScumm.Agos
             });
         }
 
+        protected override void ClearName()
+        {
+            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 ||
+                _gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2)
+                return;
+
+            if (_nameLocked || _lastNameOn == null)
+                return;
+
+            ResetNameWindow();
+        }
+
+        protected override void AddArrows(WindowBlock window, uint num)
+        {
+            var ha = FindEmptyHitArea();
+            _scrollUpHitArea = (ushort) ha.Offset;
+
+            ha.Value.x = 308;
+            ha.Value.y = 149;
+            ha.Value.width = 12;
+            ha.Value.height = 17;
+            ha.Value.flags = BoxFlags.kBFBoxInUse | BoxFlags.kBFNoTouchName;
+            ha.Value.id = 0x7FFB;
+            ha.Value.priority = 100;
+            ha.Value.window = window;
+            ha.Value.verb = 1;
+
+            ha = FindEmptyHitArea();
+            _scrollDownHitArea = (ushort) ha.Offset;
+
+            ha.Value.x = 308;
+            ha.Value.y = 176;
+            ha.Value.width = 12;
+            ha.Value.height = 17;
+            ha.Value.flags = BoxFlags.kBFBoxInUse | BoxFlags.kBFNoTouchName;
+            ha.Value.id = 0x7FFC;
+            ha.Value.priority = 100;
+            ha.Value.window = window;
+            ha.Value.verb = 1;
+
+            _videoLockOut |= 0x8;
+
+            var vpe = new Ptr<VgaPointersEntry>(_vgaBufferPointers, 1);
+            var curVgaFile2Orig = _curVgaFile2;
+            var windowNumOrig = _windowNum;
+            var palette = (byte) (_gd.Platform == Platform.Amiga ? 15 : 14);
+
+            _windowNum = 0;
+            _curVgaFile2 = vpe.Value.vgaFile2;
+            DrawImageInit(1, palette, 38, 150, 4);
+
+            _curVgaFile2 = curVgaFile2Orig;
+            _windowNum = windowNumOrig;
+
+            _videoLockOut = (ushort) (_videoLockOut & ~0x8);
+        }
+
+        protected override void RemoveArrows(WindowBlock window, int num)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override int SetupIconHitArea(WindowBlock window, uint num, int x, int y, Item itemPtr)
+        {
+            var ha = FindEmptyHitArea();
+            ha.Value.x = (ushort) ((x + window.x) * 8);
+            ha.Value.y = (ushort) (y * 25 + window.y);
+            ha.Value.itemPtr = itemPtr;
+            ha.Value.width = 24;
+            ha.Value.height = 24;
+            ha.Value.flags = BoxFlags.kBFDragBox | BoxFlags.kBFBoxInUse | BoxFlags.kBFBoxItem;
+            ha.Value.id = 0x7FFD;
+            ha.Value.priority = 100;
+            ha.Value.verb = 208;
+
+            return ha.Offset;
+        }
+
+        private void ListSaveGames()
+        {
+            Stream @in;
+            ushort i, slot;
+            BytePtr dst = _saveBuf;
+
+            DisableFileBoxes();
+
+            ShowMessageFormat("\xC");
+
+            dst.Data.Set(dst.Offset, 0, 108);
+
+            slot = _saveLoadRowCurPos;
+            while (_saveLoadRowCurPos + 6 > slot)
+            {
+                if ((@in = OSystem.SaveFileManager.OpenForLoading(GenSaveName(slot))) == null)
+                    break;
+
+                @in.Read(dst.Data, dst.Offset, 18);
+                @in.Dispose();
+
+                var lastSlot = slot;
+                if (slot < 10)
+                {
+                    ShowMessageFormat(" ");
+                }
+                else if (_language == Language.HE_ISR)
+                {
+                    lastSlot = (ushort) ((slot % 10) * 10);
+                    lastSlot = (ushort) (lastSlot + slot / 10);
+                }
+
+                ShowMessageFormat("{0}", lastSlot);
+                if (_language == Language.HE_ISR && (slot % 10) == 0)
+                    ShowMessageFormat("0");
+                ShowMessageFormat(".{0}\n", dst.GetRawText());
+                dst += 18;
+                slot++;
+            }
+
+            if (!_saveOrLoad)
+            {
+                if (_saveLoadRowCurPos + 6 == slot)
+                {
+                    slot++;
+                }
+                else
+                {
+                    if (slot < 10)
+                        ShowMessageFormat(" ");
+                    ShowMessageFormat("{0}.\n", slot);
+                }
+            }
+            else
+            {
+                if (_saveLoadRowCurPos + 6 == slot)
+                {
+                    if ((@in = OSystem.SaveFileManager.OpenForLoading(GenSaveName(slot))) != null)
+                    {
+                        slot++;
+                        @in.Dispose();
+                    }
+                }
+            }
+
+            _saveDialogFlag = true;
+
+            i = (ushort) (slot - _saveLoadRowCurPos);
+            if (i != 7)
+            {
+                i++;
+                if (!_saveOrLoad)
+                    i++;
+                _saveDialogFlag = false;
+            }
+
+            if (--i == 0)
+                return;
+
+            do
+            {
+                EnableBox(208 + i - 1);
+            } while (--i != 0);
+        }
+
+        private void Draw32ColorImage(VC10_state state)
+        {
+            BytePtr src;
+            BytePtr dst;
+
+            if (state.flags.HasFlag(DrawFlags.kDFCompressed))
+            {
+                BytePtr dstPtr = state.surf_addr;
+                src = state.srcPtr;
+                /* AAAAAAAA BBBBBBBB CCCCCCCC DDDDDDDD EEEEEEEE
+                 * aaaaabbb bbcccccd ddddeeee efffffgg ggghhhhh
+                 */
+
+                do
+                {
+                    int count = state.draw_width / 4;
+
+                    dst = dstPtr;
+                    do
+                    {
+                        int bits = (src[0] << 24) | (src[1] << 16) | (src[2] << 8) | src[3];
+                        byte color;
+
+                        color = (byte) ((bits >> (32 - 5)) & 31);
+                        if ((state.flags.HasFlag(DrawFlags.kDFNonTrans)) || color != 0)
+                            dst[0] = color;
+                        color = (byte) ((bits >> (32 - 10)) & 31);
+                        if ((state.flags.HasFlag(DrawFlags.kDFNonTrans)) || color != 0)
+                            dst[1] = color;
+                        color = (byte) ((bits >> (32 - 15)) & 31);
+                        if ((state.flags.HasFlag(DrawFlags.kDFNonTrans)) || color != 0)
+                            dst[2] = color;
+                        color = (byte) ((bits >> (32 - 20)) & 31);
+                        if ((state.flags.HasFlag(DrawFlags.kDFNonTrans)) || color != 0)
+                            dst[3] = color;
+                        color = (byte) ((bits >> (32 - 25)) & 31);
+                        if ((state.flags.HasFlag(DrawFlags.kDFNonTrans)) || color != 0)
+                            dst[4] = color;
+                        color = (byte) ((bits >> (32 - 30)) & 31);
+                        if ((state.flags.HasFlag(DrawFlags.kDFNonTrans)) || color != 0)
+                            dst[5] = color;
+
+                        bits = (bits << 8) | src[4];
+
+                        color = (byte) ((bits >> (40 - 35)) & 31);
+                        if ((state.flags.HasFlag(DrawFlags.kDFNonTrans)) || color != 0)
+                            dst[6] = color;
+                        color = (byte) ((bits) & 31);
+                        if ((state.flags.HasFlag(DrawFlags.kDFNonTrans)) || color != 0)
+                            dst[7] = color;
+
+                        dst += 8;
+                        src += 5;
+                    } while (--count != 0);
+                    dstPtr.Offset = (int) (dstPtr.Offset + state.surf_pitch);
+                } while (--state.draw_height != 0);
+            }
+            else
+            {
+                src = state.srcPtr + (state.width * state.y_skip * 16) + (state.x_skip * 8);
+                dst = state.surf_addr;
+
+                state.draw_width *= 2;
+
+                int h = state.draw_height;
+                do
+                {
+                    int i;
+                    for (i = 0; i != state.draw_width; i++)
+                        if (state.flags.HasFlag(DrawFlags.kDFNonTrans) || src[i] != 0)
+                            dst[i] = (byte) (src[i] + state.paletteMod);
+                    dst.Offset = (int) (dst.Offset + state.surf_pitch);
+                    src += state.width * 16;
+                } while (--h != 0);
+            }
+        }
+
         private void DrawMaskedImage(VC10_state state)
         {
             if (GameType == SIMONGameType.GType_SIMON1 && (_windowNum == 3 || _windowNum == 4 || _windowNum >= 10))
@@ -568,74 +1218,6 @@ namespace NScumm.Agos
             }
         }
 
-
-        protected override void ClearName()
-        {
-            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 ||
-                _gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2)
-                return;
-
-            if (_nameLocked || _lastNameOn == null)
-                return;
-
-            ResetNameWindow();
-        }
-
-        protected override void AddArrows(WindowBlock window, uint num)
-        {
-            var ha = FindEmptyHitArea();
-            _scrollUpHitArea = (ushort) ha.Offset;
-
-            ha.Value.x = 308;
-            ha.Value.y = 149;
-            ha.Value.width = 12;
-            ha.Value.height = 17;
-            ha.Value.flags = (ushort) (BoxFlags.kBFBoxInUse | BoxFlags.kBFNoTouchName);
-            ha.Value.id = 0x7FFB;
-            ha.Value.priority = 100;
-            ha.Value.window = window;
-            ha.Value.verb = 1;
-
-            ha = FindEmptyHitArea();
-            _scrollDownHitArea = (ushort) ha.Offset;
-
-            ha.Value.x = 308;
-            ha.Value.y = 176;
-            ha.Value.width = 12;
-            ha.Value.height = 17;
-            ha.Value.flags = (ushort) (BoxFlags.kBFBoxInUse | BoxFlags.kBFNoTouchName);
-            ha.Value.id = 0x7FFC;
-            ha.Value.priority = 100;
-            ha.Value.window = window;
-            ha.Value.verb = 1;
-
-            _videoLockOut |= 0x8;
-
-            var vpe = new Ptr<VgaPointersEntry>(_vgaBufferPointers, 1);
-            var curVgaFile2Orig = _curVgaFile2;
-            var windowNumOrig = _windowNum;
-            var palette = (byte) (_gd.Platform == Platform.Amiga ? 15 : 14);
-
-            _windowNum = 0;
-            _curVgaFile2 = vpe.Value.vgaFile2;
-            DrawImageInit(1, palette, 38, 150, 4);
-
-            _curVgaFile2 = curVgaFile2Orig;
-            _windowNum = windowNumOrig;
-
-            _videoLockOut = (ushort) (_videoLockOut & ~0x8);
-        }
-
-        private void DecompressIcon(BytePtr dst, BytePtr src, int i, int i1, int i2, int screenPitch)
-        {
-            throw new NotImplementedException();
-        }
-
-        private void DecompressIconPlanar(BytePtr dst, BytePtr src, int i, int i1, byte color, int screenPitch)
-        {
-            throw new NotImplementedException();
-        }
-
         private void PlaySpeech(ushort speechId, ushort vgaSpriteId)
         {
             throw new NotImplementedException();
@@ -742,7 +1324,6 @@ namespace NScumm.Agos
                 PrintScreenText(vgaSpriteId, color, stringPtr, tl.x, tl.y, tl.width);
         }
 
-
         private void os1_playEffect()
         {
             // 163: play sound
@@ -836,21 +1417,21 @@ namespace NScumm.Agos
                 if (p == BytePtr.Null)
                     continue;
 
-                for (var j = 0; ReadUint16Wrapper(p) != end; j++, p += 2)
+                for (var j = 0; ReadUint16Wrapper(p) != end; j++, p += 4)
                 {
-                    uint x_diff = (uint) Math.Abs((short) (ReadUint16Wrapper(p) - x));
-                    uint y_diff = (uint) Math.Abs((short) (ReadUint16Wrapper(p + 1) - 12 - y));
+                    uint xDiff = (uint) Math.Abs((short) (ReadUint16Wrapper(p) - x));
+                    uint yDiff = (uint) Math.Abs((short) (ReadUint16Wrapper(p + 2) - 12 - y));
 
-                    if (x_diff < y_diff)
+                    if (xDiff < yDiff)
                     {
-                        x_diff /= 4;
-                        y_diff *= 4;
+                        xDiff /= 4;
+                        yDiff *= 4;
                     }
-                    x_diff += y_diff /= 4;
+                    xDiff += yDiff /= 4;
 
-                    if ((x_diff < bestDist) || ((x_diff == bestDist) && (prevI == i)))
+                    if ((xDiff < bestDist) || ((xDiff == bestDist) && (prevI == i)))
                     {
-                        bestDist = x_diff;
+                        bestDist = xDiff;
                         bestI = (uint) (maxPath + 1 - i);
                         bestJ = (uint) j;
                     }
@@ -882,7 +1463,6 @@ namespace NScumm.Agos
             if (!string.IsNullOrEmpty(stringPtr) && _subtitles)
                 PrintScreenText(vgaSpriteId, color, stringPtr, tl.x, tl.y, tl.width);
         }
-
 
         private void os1_mouseOn()
         {

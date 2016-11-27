@@ -31,6 +31,12 @@ namespace NScumm.Agos
         {
         }
 
+        protected void oe1_rescan()
+        {
+            // 164: restart subroutine
+            SetScriptReturn(-10);
+        }
+
         protected void oe1_stopAnimate()
         {
             // 227: stop animate

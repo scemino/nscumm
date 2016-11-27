@@ -418,7 +418,8 @@ namespace NScumm.Sci.Graphics
         {
             if (_upscaledHires == GfxScreenUpscaledMode.DISABLED)
                 throw new InvalidOperationException("copyDisplayRectToScreen: not in upscaled hires mode");
-            SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(_activeScreen, rect.Top * _displayWidth + rect.Left, _displayWidth, rect.Left, rect.Top, rect.Width, rect.Height);
+            SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(
+                new BytePtr(_activeScreen, rect.Top * _displayWidth + rect.Left), _displayWidth, rect.Left, rect.Top, rect.Width, rect.Height);
         }
 
         private void BitsRestoreDisplayScreen(Rect rect, ByteAccess memoryPtr)
@@ -474,14 +475,16 @@ namespace NScumm.Sci.Graphics
         {
             if (_upscaledHires == GfxScreenUpscaledMode.DISABLED)
             {
-                SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(_activeScreen, rect.Top * _displayWidth + rect.Left, _displayWidth, x, y, rect.Width, rect.Height);
+                SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(
+                    new BytePtr(_activeScreen, rect.Top * _displayWidth + rect.Left), _displayWidth, x, y, rect.Width, rect.Height);
             }
             else
             {
                 int rectHeight = _upscaledHeightMapping[rect.Bottom] - _upscaledHeightMapping[rect.Top];
                 int rectWidth = _upscaledWidthMapping[rect.Right] - _upscaledWidthMapping[rect.Left];
 
-                SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(_activeScreen, _upscaledHeightMapping[rect.Top] * _displayWidth + _upscaledWidthMapping[rect.Left], _displayWidth, _upscaledWidthMapping[x], _upscaledHeightMapping[y], rectWidth, rectHeight);
+                SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(
+                    new BytePtr(_activeScreen, _upscaledHeightMapping[rect.Top] * _displayWidth + _upscaledWidthMapping[rect.Left]), _displayWidth, _upscaledWidthMapping[x], _upscaledHeightMapping[y], rectWidth, rectHeight);
             }
         }
 
@@ -949,13 +952,15 @@ namespace NScumm.Sci.Graphics
         {
             if (_upscaledHires == GfxScreenUpscaledMode.DISABLED)
             {
-                SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(_activeScreen, rect.Top * _displayWidth + rect.Left, _displayWidth, rect.Left, rect.Top, rect.Width, rect.Height);
+                SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(
+                    new BytePtr(_activeScreen, rect.Top * _displayWidth + rect.Left), _displayWidth, rect.Left, rect.Top, rect.Width, rect.Height);
             }
             else
             {
                 int rectHeight = _upscaledHeightMapping[rect.Bottom] - _upscaledHeightMapping[rect.Top];
                 int rectWidth = _upscaledWidthMapping[rect.Right] - _upscaledWidthMapping[rect.Left];
-                SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(_activeScreen, _upscaledHeightMapping[rect.Top] * _displayWidth + _upscaledWidthMapping[rect.Left], _displayWidth, _upscaledWidthMapping[rect.Left], _upscaledHeightMapping[rect.Top], rectWidth, rectHeight);
+                SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(
+                    new BytePtr(_activeScreen, _upscaledHeightMapping[rect.Top] * _displayWidth + _upscaledWidthMapping[rect.Left]), _displayWidth, _upscaledWidthMapping[rect.Left], _upscaledHeightMapping[rect.Top], rectWidth, rectHeight);
             }
         }
 

@@ -372,7 +372,7 @@ namespace NScumm.Sci.Graphics
                 _screen.AdjustToUpscaledCoordinates(ref y, ref x);
             }
             oldScreenPtr.Offset += screenRect.Left + screenRect.Top * screenWidth;
-            SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(oldScreenPtr.Data, oldScreenPtr.Offset, screenWidth, x, y, screenRect.Width, screenRect.Height);
+            SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(oldScreenPtr, screenWidth, x, y, screenRect.Width, screenRect.Height);
         }
 
         private bool DoCreateFrame(int shouldBeAtMsec)

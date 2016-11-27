@@ -243,7 +243,7 @@ namespace NScumm.Sky
 				saveBuf += width;
 			}
 			screenBuf = y * Screen.GameScreenWidth + x;
-			_system.GraphicsManager.CopyRectToScreen (_skyScreen.Current, screenBuf, Screen.GameScreenWidth, x, y, width, height);
+			_system.GraphicsManager.CopyRectToScreen (new BytePtr(_skyScreen.Current, screenBuf), Screen.GameScreenWidth, x, y, width, height);
 		}
 
 		private void RestoreScreen ()
@@ -261,7 +261,7 @@ namespace NScumm.Sky
 				screenBuf += Screen.GameScreenWidth;
 				saveBuf += width;
 			}
-			_system.GraphicsManager.CopyRectToScreen (_saveBuf, sizeofDataFileHeader, width, x, y, width, height);
+			_system.GraphicsManager.CopyRectToScreen (new BytePtr(_saveBuf, sizeofDataFileHeader), width, x, y, width, height);
 		}
 
 		private bool FloppyScrollFlirt ()
@@ -295,7 +295,7 @@ namespace NScumm.Sky
 						vgaPtr += nrToDo;
 					} while (nrToDo == 255);
 				}
-				_system.GraphicsManager.CopyRectToScreen (scrollScreen, scrollPos, Screen.GameScreenWidth, 0, 0, Screen.GameScreenWidth, Screen.GameScreenHeight);
+				_system.GraphicsManager.CopyRectToScreen (new BytePtr(scrollScreen, scrollPos), Screen.GameScreenWidth, 0, 0, Screen.GameScreenWidth, Screen.GameScreenHeight);
 				_system.GraphicsManager.UpdateScreen ();
 				if (!EscDelay (60))
 					doContinue = false;

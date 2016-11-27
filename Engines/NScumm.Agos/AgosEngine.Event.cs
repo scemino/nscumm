@@ -28,9 +28,9 @@ namespace NScumm.Agos
 {
     partial class AGOSEngine
     {
-        private bool _fastMode = true;
+        private bool _fastMode;
 
-        private void AddTimeEvent(ushort timeout, ushort subroutine_id)
+        protected void AddTimeEvent(ushort timeout, ushort subroutine_id)
         {
             TimeEvent te = new TimeEvent(), last = null;
             uint curTime = GetTime();
@@ -336,27 +336,43 @@ namespace NScumm.Agos
 
                 // TODO: vs
                 var inputState = OSystem.InputManager.GetState();
+                /*if (inputState.IsKeyDown(KeyCode.D0) && inputState.IsKeyDown(KeyCode.D9)
+                    && (inputState.IsKeyDown(KeyCode.ALT) ||
+                        inputState.IsKeyDown(KeyCode.LeftControl)))
+                {
+                    _saveLoadSlot = @event.kbd.keycode - KeyCode.D0;
+
+                    // There is no save slot 0
+                    if (_saveLoadSlot == 0)
+                        _saveLoadSlot = 10;
+
+                    _saveLoadName=$"Quick {_saveLoadSlot}";
+                    _saveLoadType = inputState.IsKeyDown(KeyCode.ALT) ? 1 : 2;
+                    QuickLoadOrSave();
+                }*/
+                if (inputState.IsKeyDown(KeyCode.LeftControl))
+                {
+                    if (inputState.IsKeyDown(KeyCode.A))
+                    {
+                        // TODO; GUI::Dialog* _aboutDialog;
+                        //_aboutDialog = new GUI::AboutDialog();
+                        //_aboutDialog.runModal();
+                    }
+                    else if (inputState.IsKeyDown(KeyCode.F))
+                    {
+                        _fastMode = !_fastMode;
+                    }
+                    else if (inputState.IsKeyDown(KeyCode.D))
+                    {
+                        // TODO: _debugger.attach();
+                    }
+                }
                 /*while (_eventMan.pollEvent(@event))
                 {
                     switch (@event.type)
                     {
                         case Common::EVENT_KEYDOWN:
-                            if (@event.kbd.keycode >= Common::KEYCODE_0 && @event.kbd.keycode <= Common::KEYCODE_9
-                                && (@event.kbd.hasFlags(Common::KBD_ALT) ||
-                                    @event.kbd.hasFlags(Common::KBD_CTRL)))
-                            {
-                                _saveLoadSlot = @event.kbd.keycode - Common::KEYCODE_0;
-
-                                // There is no save slot 0
-                                if (_saveLoadSlot == 0)
-                                    _saveLoadSlot = 10;
-
-                                memset(_saveLoadName, 0, sizeof(_saveLoadName));
-                                sprintf(_saveLoadName, "Quick %d", _saveLoadSlot);
-                                _saveLoadType = (@event.kbd.hasFlags(Common::KBD_ALT)) ? 1 : 2;
-                                quickLoadOrSave();
-                            }
-                            else if (@event.kbd.hasFlags(Common::KBD_ALT))
+                            if (@event.kbd.hasFlags(Common::KBD_ALT))
                             {
                                 if (@event.kbd.keycode == Common::KEYCODE_u)
                                 {
@@ -371,23 +387,6 @@ namespace NScumm.Agos
                                     DumpAllVgaScriptFiles();
                                 }
                             }
-                            else if (@event.kbd.hasFlags(Common::KBD_CTRL))
-                            {
-                                if (@event.kbd.keycode == Common::KEYCODE_a)
-                                {
-                                    GUI::Dialog* _aboutDialog;
-                                    _aboutDialog = new GUI::AboutDialog();
-                                    _aboutDialog.runModal();
-                                }
-                                else if (@event.kbd.keycode == Common::KEYCODE_f)
-                                {
-                                    _fastMode = !_fastMode;
-                                }
-                                else if (@event.kbd.keycode == Common::KEYCODE_d)
-                                {
-                                    _debugger.attach();
-                                }
-                            }
 
                             if (_gd.ADGameDescription.gameType == GType_PP)
                             {
@@ -398,30 +397,6 @@ namespace NScumm.Agos
                             }
 
                             _keyPressed = @event.kbd;
-                            break;
-                        case Common::EVENT_MOUSEMOVE:
-                            break;
-                        case Common::EVENT_LBUTTONDOWN:
-                            if (_gd.ADGameDescription.gameType == GType_FF)
-                                setBitFlag(89, true);
-                            _leftButtonDown = true;
-                            _leftButton = 1;
-                            break;
-                        case Common::EVENT_LBUTTONUP:
-                            if (_gd.ADGameDescription.gameType == GType_FF)
-                                setBitFlag(89, false);
-
-                            _leftButton = 0;
-                            _leftButtonCount = 0;
-                            _leftClick = true;
-                            break;
-                        case Common::EVENT_RBUTTONDOWN:
-                            if (_gd.ADGameDescription.gameType == GType_FF)
-                                setBitFlag(92, false);
-                            _rightButtonDown = true;
-                            break;
-                        case Common::EVENT_RBUTTONUP:
-                            _rightClick = true;
                             break;
                         case Common::EVENT_RTL:
                         case Common::EVENT_QUIT:
@@ -434,6 +409,8 @@ namespace NScumm.Agos
                             break;
                     }
                 }*/
+
+                _keyPressed = inputState;
 
                 if (inputState.IsLeftButtonDown)
                 {
@@ -482,6 +459,38 @@ namespace NScumm.Agos
             } while (cur < start + TimeSpan.FromMilliseconds(amount) && !HasToQuit);
         }
 
+        // TODO: share this
+        public static char ToChar(KeyCode key)
+        {
+            if (key >= KeyCode.A && key <= KeyCode.Z)
+            {
+                return (char) ('a' + (key - KeyCode.A));
+            }
+            if (key >= KeyCode.D0 && key <= KeyCode.D9)
+            {
+                return (char) ('0' + (key - KeyCode.D0));
+            }
+            if (key >= KeyCode.NumPad0 && key <= KeyCode.NumPad9)
+            {
+                return (char) ('0' + (key - KeyCode.NumPad0));
+            }
+            switch (key)
+            {
+                case KeyCode.Tab:
+                    return '\t';
+                case KeyCode.Return:
+                    return '\n';
+                case KeyCode.Space:
+                    return ' ';
+                case KeyCode.Comma:
+                    return ',';
+                case KeyCode.OemPeriod:
+                    return '.';
+                default:
+                    return '\0';
+            }
+        }
+
         private void TimerProc()
         {
             if ((_videoLockOut & 0x80E9) != 0 || (_videoLockOut & 2) != 0)
@@ -510,7 +519,5 @@ namespace NScumm.Agos
 
             _videoLockOut = (ushort) (_videoLockOut & ~2);
         }
-
-
     }
 }

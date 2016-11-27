@@ -134,7 +134,7 @@ namespace NScumm.Sword1
                     src.Offset += _resMan.ReadUInt16(fHead.width);
                 }
 
-            _system.GraphicsManager.CopyRectToScreen(_dstBuf.Data, _dstBuf.Offset, Screen.SCREEN_WIDTH, _x, _y, _width, _height);
+            _system.GraphicsManager.CopyRectToScreen(new BytePtr(_dstBuf.Data, _dstBuf.Offset), Screen.SCREEN_WIDTH, _x, _y, _width, _height);
         }
 
         public bool WasClicked(ushort mouseX, ushort mouseY)

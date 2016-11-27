@@ -19,6 +19,8 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System;
+using System.Collections.Generic;
 using System.IO;
 using NScumm.Core;
 using NScumm.Core.IO;
@@ -160,6 +162,113 @@ namespace NScumm.Agos
                 _sound.PlaySfxData(dstPtr, sound, pan, vol);
             else if (type == SoundTypeFlags.SFX5)
                 _sound.PlaySfx5Data(dstPtr, sound, pan, vol);
+        }
+
+        private void PlayMusic(int i, int i1)
+        {
+            // TODO: vs: PlayMusic
+        }
+
+        private bool LoadVGASoundFile(ushort id, byte type)
+        {
+            Stream @in;
+            string filename;
+            BytePtr dst;
+            int srcSize, dstSize;
+
+            if (_gd.Platform == Platform.Amiga || _gd.Platform == Platform.AtariST)
+            {
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 &&
+                    _gd.ADGameDescription.features.HasFlag(GameFeatures.GF_DEMO) &&
+                    _gd.Platform == Platform.Amiga)
+                {
+                    filename = $"{(char) 48 + id}{type}.out";
+                }
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 ||
+                         _gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2)
+                {
+                    filename = $"{id:D2}{type}.out";
+                }
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PN)
+                {
+                    filename = "{(char)id + 48}{type}.in";
+                }
+                else
+                {
+                    filename = $"{id:D3}{type}.out";
+                }
+            }
+            else
+            {
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1)
+                {
+                    if (elvira1_soundTable[id] == 0)
+                        return false;
+
+                    filename = $"{elvira1_soundTable[id]:D2}.SND";
+                }
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 ||
+                         _gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
+                {
+                    filename = $"{id:D2}{type}.VGA";
+                }
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PN)
+                {
+                    filename = $"{(char) 48 + id}{type}.out";
+                }
+                else
+                {
+                    filename = $"{id:D3}{type}.VGA";
+                }
+            }
+
+            @in = OpenFileRead(filename);
+            if (@in == null || @in.Length == 0)
+            {
+                return false;
+            }
+
+            dstSize = srcSize = (int) @in.Length;
+            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PN &&
+                _gd.ADGameDescription.features.HasFlag(GameFeatures.GF_CRUNCHED))
+            {
+                var data = new Stack<uint>();
+                BytePtr dataOut;
+                int dataOutSize = 0;
+
+                var br = new BinaryReader(@in);
+                for (var i = 0; i < srcSize / 4; ++i)
+                    data.Push(br.ReadUInt32BigEndian());
+
+                DecompressPN(data, out dataOut, ref dataOutSize);
+                dst = AllocBlock(dataOutSize);
+                Array.Copy(dataOut.Data, dataOut.Offset, dst.Data, dst.Offset, dataOutSize);
+            }
+            else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 &&
+                     _gd.ADGameDescription.features.HasFlag(GameFeatures.GF_DEMO))
+            {
+                var srcBuffer = new byte[srcSize];
+                if (@in.Read(srcBuffer, 0, srcSize) != srcSize)
+                    Error("loadVGASoundFile: Read failed");
+
+                dstSize = srcBuffer.ToInt32BigEndian(srcSize - 4);
+                dst = AllocBlock(dstSize);
+                DecrunchFile(srcBuffer, dst, srcSize);
+            }
+            else
+            {
+                dst = AllocBlock(dstSize);
+                if (@in.Read(dst.Data, dst.Offset, dstSize) != dstSize)
+                    Error("loadVGASoundFile: Read failed");
+            }
+            @in.Dispose();
+
+            return true;
+        }
+
+        private void LoadMusic(short nextMusicToPlay)
+        {
+            throw new NotImplementedException();
         }
 
         private static readonly string[] dimpSoundList =

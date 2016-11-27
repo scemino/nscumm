@@ -1056,7 +1056,7 @@ namespace NScumm.Sky
                 crossPos += CrossSzX;
             }
             bufPos = y * Screen.GameScreenWidth + x;
-            _system.GraphicsManager.CopyRectToScreen(_screenBuf, bufPos, Screen.GameScreenWidth, x, y, CrossSzX,
+            _system.GraphicsManager.CopyRectToScreen(new BytePtr(_screenBuf, bufPos), Screen.GameScreenWidth, x, y, CrossSzX,
                 CrossSzY);
             _text.DrawToScreen(WithMask);
         }
@@ -1374,7 +1374,9 @@ namespace NScumm.Sky
                         drawResource.SetXy((ushort)(GameNameX + _enteredTextWidth + 1), (ushort)(GameNameY + cnt * PanCharHeight + 4));
                         drawResource.DrawToScreen(WithMask);
                     }
-                    _system.GraphicsManager.CopyRectToScreen(_screenBuf, (GameNameY + cnt * PanCharHeight) * Screen.GameScreenWidth + GameNameX, Screen.GameScreenWidth, GameNameX, GameNameY + cnt * PanCharHeight, PanLineWidth, PanCharHeight);
+                    _system.GraphicsManager.CopyRectToScreen(
+                        new BytePtr(_screenBuf, (GameNameY + cnt * PanCharHeight) * Screen.GameScreenWidth + GameNameX),
+                        Screen.GameScreenWidth, GameNameX, GameNameY + cnt * PanCharHeight, PanLineWidth, PanCharHeight);
                 }
                 else
                     drawResource.DrawToScreen(NoMask);
@@ -1713,7 +1715,7 @@ namespace NScumm.Sky
 						spriteDataPos += SpriteData.s_width;
                     }
                 }
-                System.GraphicsManager.CopyRectToScreen(Screen, updatePos, Sky.Screen.GameScreenWidth, X, Y,
+                System.GraphicsManager.CopyRectToScreen(new BytePtr(Screen, updatePos), Sky.Screen.GameScreenWidth, X, Y,
 					SpriteData.s_width, SpriteData.s_height);
             }
         }
@@ -1764,7 +1766,7 @@ namespace NScumm.Sky
                         Array.Copy(_oldScreen, cnty * PanLineWidth, Screen,
                             (cnty + _oldY) * Sky.Screen.GameScreenWidth + _oldX, cpWidth);
                     }
-                    System.GraphicsManager.CopyRectToScreen(Screen, _oldY * Sky.Screen.GameScreenWidth + _oldX,
+                    System.GraphicsManager.CopyRectToScreen(new BytePtr(Screen, _oldY * Sky.Screen.GameScreenWidth + _oldX),
                         Sky.Screen.GameScreenWidth, _oldX, _oldY, cpWidth, PAN_CHAR_HEIGHT);
                 }
                 if (spriteData == null)
@@ -1802,7 +1804,7 @@ namespace NScumm.Sky
                     copyDest += PanLineWidth;
                     screenPos += Sky.Screen.GameScreenWidth;
                 }
-                System.GraphicsManager.CopyRectToScreen(Screen, Y * Sky.Screen.GameScreenWidth + X,
+                System.GraphicsManager.CopyRectToScreen(new BytePtr(Screen, Y * Sky.Screen.GameScreenWidth + X),
                     Sky.Screen.GameScreenWidth,
                     X, Y, cpWidth, cpHeight);
             }

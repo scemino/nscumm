@@ -658,12 +658,54 @@ namespace NScumm.Agos
 
         private string GetPixelLength(string @string, ushort maxWidth, out ushort pixels)
         {
-            throw new NotImplementedException();
+            var s = 0;
+            pixels = 0;
+
+            foreach(var chr in @string)
+            {
+                s++;
+                byte len = _language == Language.PL_POL ? polish_charWidth[chr] : charWidth[chr];
+                if (pixels + len > maxWidth)
+                    break;
+                pixels += len;
+            }
+
+            return @string.Substring(s);
         }
 
         private bool PrintTextOf(uint a, uint x, uint y)
         {
-            throw new NotImplementedException();
+            if (GameType == SIMONGameType.GType_SIMON2)
+            {
+                if (GetBitFlag(79))
+                {
+                    _variableArray[84] = (short) a;
+                    var sub = GetSubroutineByID(5003);
+                    if (sub != null)
+                        StartSubroutineEx(sub);
+                    return true;
+                }
+            }
+
+            if (a >= _numTextBoxes)
+                return false;
+
+
+            var stringPtr = GetStringPtrById(_shortText[a]);
+            if (GameType == SIMONGameType.GType_FF)
+            {
+                ushort pixels;
+                GetPixelLength(stringPtr, 400, out pixels);
+                var w = (ushort) (pixels + 1);
+                x = (uint) (x - w / 2);
+                PrintScreenText(6, 0, stringPtr, (short) x, (short) y, (short) w);
+            }
+            else
+            {
+                ShowActionString(stringPtr);
+            }
+
+            return true;
         }
 
         private bool PrintNameOf(Item item, uint x, uint y)
@@ -807,6 +849,16 @@ namespace NScumm.Agos
             {
                 Animate(windowNum, 2, (ushort) vgaSpriteId, x, y, 12);
             }
+        }
+
+        protected uint GetNextStringID()
+        {
+            return (ushort) GetNextWord();
+        }
+
+        protected void SetScriptCondition(bool cond)
+        {
+            _runScriptCondition[_recursionDepth] = cond;
         }
 
         private static readonly byte[] polish_charWidth =

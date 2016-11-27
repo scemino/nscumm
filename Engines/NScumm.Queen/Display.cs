@@ -366,7 +366,8 @@ namespace NScumm.Queen
                         else if (accW != 0)
                         {
                             int x = (i - accW) * D_BLOCK_W;
-                            _system.GraphicsManager.CopyRectToScreen(scrBuf, s + x, SCREEN_W, x, j * D_BLOCK_H, accW * D_BLOCK_W, D_BLOCK_H);
+                            _system.GraphicsManager.CopyRectToScreen(
+                                new BytePtr(scrBuf, s + x), SCREEN_W, x, j * D_BLOCK_H, accW * D_BLOCK_W, D_BLOCK_H);
                             accW = 0;
                             ++count;
                         }
@@ -374,7 +375,8 @@ namespace NScumm.Queen
                     if (accW != 0)
                     {
                         int x = (_dirtyBlocksWidth - accW) * D_BLOCK_W;
-                        _system.GraphicsManager.CopyRectToScreen(scrBuf, s + x, SCREEN_W, x, j * D_BLOCK_H, accW * D_BLOCK_W, D_BLOCK_H);
+                        _system.GraphicsManager.CopyRectToScreen(
+                            new BytePtr(scrBuf, s + x), SCREEN_W, x, j * D_BLOCK_H, accW * D_BLOCK_W, D_BLOCK_H);
                         ++count;
                     }
                     d += _dirtyBlocksWidth;
@@ -998,7 +1000,7 @@ namespace NScumm.Queen
         /// <param name="height">Height.</param>
         public void SetMouseCursor(byte[] cursorData, ushort width, ushort height)
         {
-            _system.GraphicsManager.SetCursor(cursorData, 0, width, height, new Point(1, 1), keyColor: 0);
+            _system.GraphicsManager.SetCursor(cursorData, width, height, new Point(1, 1), keyColor: 0);
         }
 
         /// <summary>
@@ -1145,7 +1147,7 @@ namespace NScumm.Queen
                 }
                 _screenBuf.Set(p, c, 2);
                 _screenBuf.Set(p + SCREEN_W, c, 2);
-                _system.GraphicsManager.CopyRectToScreen(_screenBuf, p, SCREEN_W, x, y, 2, 2);
+                _system.GraphicsManager.CopyRectToScreen(new BytePtr(_screenBuf, p), SCREEN_W, x, y, 2, 2);
                 _vm.Input.Delay(10);
             }
         }
@@ -1170,7 +1172,7 @@ namespace NScumm.Queen
                     _screenBuf.Set(p, c, 2);
                     _screenBuf.Set(p + SCREEN_W, c, 2);
                     ++i;
-                    _system.GraphicsManager.CopyRectToScreen(_screenBuf, p, SCREEN_W, x, y, 2, 2);
+                    _system.GraphicsManager.CopyRectToScreen(new BytePtr(_screenBuf, p), SCREEN_W, x, y, 2, 2);
                 }
                 _vm.Input.Delay(10);
             }

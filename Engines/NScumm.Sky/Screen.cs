@@ -276,7 +276,7 @@ namespace NScumm.Sky
                     }
                     else if (rectWid != 0)
                     {
-                        _system.GraphicsManager.CopyRectToScreen(Current, rectPtr, GameScreenWidth, rectX << 4,
+                        _system.GraphicsManager.CopyRectToScreen(new BytePtr(Current, rectPtr), GameScreenWidth, rectX << 4,
                             rectY << 4, rectWid << 4, 16);
                         rectWid = 0;
                     }
@@ -285,7 +285,7 @@ namespace NScumm.Sky
                 }
                 if (rectWid != 0)
                 {
-                    _system.GraphicsManager.CopyRectToScreen(Current, rectPtr, GameScreenWidth, rectX << 4, rectY << 4,
+                    _system.GraphicsManager.CopyRectToScreen(new BytePtr(Current, rectPtr), GameScreenWidth, rectX << 4, rectY << 4,
                         rectWid << 4, 16);
                     rectWid = 0;
                 }
@@ -437,14 +437,16 @@ namespace NScumm.Sky
                     }
                     else if (copyWidth != 0)
                     {
-                        _system.GraphicsManager.CopyRectToScreen(Current, cnty * GridH * GameScreenWidth + copyX,
+                        _system.GraphicsManager.CopyRectToScreen(
+                            new BytePtr(Current, cnty * GridH * GameScreenWidth + copyX),
                             GameScreenWidth, copyX, cnty * GridH, copyWidth, GridH);
                         copyWidth = 0;
                     }
                 }
                 if (copyWidth != 0)
                 {
-                    _system.GraphicsManager.CopyRectToScreen(Current, cnty * GridH * GameScreenWidth + copyX,
+                    _system.GraphicsManager.CopyRectToScreen(
+                        new BytePtr(Current, cnty * GridH * GameScreenWidth + copyX),
                         GameScreenWidth, copyX, cnty * GridH, copyWidth, GridH);
                     copyWidth = 0;
                 }

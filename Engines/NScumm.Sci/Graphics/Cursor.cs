@@ -270,7 +270,7 @@ namespace NScumm.Sci.Graphics
                 throw new InvalidOperationException($"cursor {resourceId}'s hotspot ({hotspot.X}, {hotspot.Y}) is out of range of the cursor's dimensions ({heightWidth}x{heightWidth})");
             }
 
-            SciEngine.Instance.System.GraphicsManager.SetCursor(rawBitmap, 0, heightWidth, heightWidth, hotspot, SCI_CURSOR_SCI0_TRANSPARENCYCOLOR);
+            SciEngine.Instance.System.GraphicsManager.SetCursor(rawBitmap, heightWidth, heightWidth, hotspot, SCI_CURSOR_SCI0_TRANSPARENCYCOLOR);
             KernelShow();
         }
 
@@ -359,7 +359,7 @@ namespace NScumm.Sci.Graphics
                     }
                 }
 
-                SciEngine.Instance.System.GraphicsManager.SetCursor(_cursorSurface, 0, cursorCelInfo.width, cursorCelInfo.height, cursorHotspot, cursorCelInfo.clearKey);
+                SciEngine.Instance.System.GraphicsManager.SetCursor(_cursorSurface, cursorCelInfo.width, cursorCelInfo.height, cursorHotspot, cursorCelInfo.clearKey);
             }
         }
 
@@ -469,11 +469,11 @@ namespace NScumm.Sci.Graphics
                 cursorHotspot.Y *= 2;
                 byte[] cursorBitmap = new byte[width * height];
                 _screen.Scale2x(rawBitmap, cursorBitmap, celInfo.width, celInfo.height);
-                SciEngine.Instance.System.GraphicsManager.SetCursor(cursorBitmap, 0, width, height, cursorHotspot, clearKey);
+                SciEngine.Instance.System.GraphicsManager.SetCursor(cursorBitmap, width, height, cursorHotspot, clearKey);
             }
             else
             {
-                SciEngine.Instance.System.GraphicsManager.SetCursor(rawBitmap, 0, width, height, cursorHotspot, clearKey);
+                SciEngine.Instance.System.GraphicsManager.SetCursor(rawBitmap, width, height, cursorHotspot, clearKey);
             }
 
             KernelShow();

@@ -39,14 +39,157 @@ namespace NScumm.Agos
             ResetNameWindow();
         }
 
-        private void ShowActionString(string stringPtr)
+        private void ShowActionString(string @string)
         {
-            throw new NotImplementedException();
+            int len = GameType == SIMONGameType.GType_WW ? 29 : 53;
+
+            var window = _windowArray[1];
+            if (window == null || window.textColor == 0)
+                return;
+
+            // Arisme : hack for long strings in the French version
+            uint x;
+            if (@string.Length - 1 <= len)
+                x = (uint) ((len - (@string.Length - 1)) * 3);
+            else
+                x = 0;
+
+            window.textColumn = (short) (x / 8);
+            window.textColumnOffset = (ushort) (x & 7);
+            if (_language == Language.HE_ISR && window.textColumnOffset != 0)
+            {
+                window.textColumnOffset = (ushort) (8 - window.textColumnOffset);
+                window.textColumn++;
+            }
+
+            foreach (var c in @string)
+                WindowPutChar(window, (byte) c);
         }
 
         private void HandleVerbClicked(uint verb)
         {
-            throw new NotImplementedException();
+            int result;
+
+            if (HasToQuit)
+                return;
+
+            _objectItem = _hitAreaObjectItem;
+            if (_objectItem == _dummyItem2)
+            {
+                _objectItem = Me();
+            }
+            if (_objectItem == _dummyItem3)
+            {
+                _objectItem = DerefItem(Me().parent);
+            }
+
+            _subjectItem = _hitAreaSubjectItem;
+            if (_subjectItem == _dummyItem2)
+            {
+                _subjectItem = Me();
+            }
+            if (_subjectItem == _dummyItem3)
+            {
+                _subjectItem = DerefItem(Me().parent);
+            }
+
+            if (_subjectItem != null)
+            {
+                _scriptNoun1 = _subjectItem.noun;
+                _scriptAdj1 = _subjectItem.adjective;
+            }
+            else
+            {
+                _scriptNoun1 = -1;
+                _scriptAdj1 = -1;
+            }
+
+            if (_objectItem != null)
+            {
+                _scriptNoun2 = _objectItem.noun;
+                _scriptAdj2 = _objectItem.adjective;
+            }
+            else
+            {
+                _scriptNoun2 = -1;
+                _scriptAdj2 = -1;
+            }
+
+            _scriptVerb = (short) _verbHitArea;
+
+            var sub = GetSubroutineByID(0);
+            if (sub == null)
+                return;
+
+            result = StartSubroutine(sub);
+            if (result == -1)
+                ShowMessageFormat("I don't understand");
+
+            _runScriptReturn1 = false;
+
+            sub = GetSubroutineByID(100);
+            if (sub != null)
+                StartSubroutine(sub);
+
+            if (GameType == SIMONGameType.GType_SIMON2 || GameType == SIMONGameType.GType_FF ||
+                GameType == SIMONGameType.GType_PP)
+                _runScriptReturn1 = false;
+
+            PermitInput();
+        }
+
+        protected void DisplayName(HitArea ha)
+        {
+            if (GameType == SIMONGameType.GType_ELVIRA1 || GameType == SIMONGameType.GType_ELVIRA2 ||
+                GameType == SIMONGameType.GType_PP)
+                return;
+
+            bool result;
+            int x = 0, y = 0;
+
+            if (GameType == SIMONGameType.GType_FF)
+            {
+                if (ha.flags.HasFlag(BoxFlags.kBFHyperBox))
+                {
+                    _lastNameOn = ha;
+                    return;
+                }
+                if (FindBox(50) != null)
+                    return;
+
+                if (GetBitFlag(99))
+                    _animatePointer = !ha.flags.HasFlag(BoxFlags.kBFTextBox);
+                else
+                    _animatePointer = true;
+
+                if (!GetBitFlag(73))
+                    return;
+
+                y = ha.y;
+                if (GetBitFlag(99) && y > 288)
+                    y = 288;
+                y -= 17;
+                if (y < 0)
+                    y = 0;
+                y += 2;
+                x = ha.width / 2 + ha.x;
+            }
+            else
+            {
+                ResetNameWindow();
+            }
+
+            if (ha.flags.HasFlag(BoxFlags.kBFTextBox))
+            {
+                result = PrintTextOf((uint) ha.flags / 256, (uint) x, (uint) y);
+            }
+            else
+            {
+                result = PrintNameOf(ha.itemPtr, (uint) x, (uint) y);
+            }
+
+            if (result)
+                _lastNameOn = ha;
         }
 
         protected void ResetNameWindow()
@@ -109,20 +252,20 @@ namespace NScumm.Agos
             _hitAreas[index].flags = 0;
         }
 
-        private void EnableBox(int hitarea)
+        protected void EnableBox(int hitarea)
         {
             HitArea ha = FindBox(hitarea);
             if (ha != null)
-                ha.flags = (ushort) (ha.flags & ~(ushort) BoxFlags.kBFBoxDead);
+                ha.flags = (ha.flags & ~BoxFlags.kBFBoxDead);
         }
 
-        private void DisableBox(int hitarea)
+        protected void DisableBox(int hitarea)
         {
             var ha = FindBox(hitarea);
             if (ha == null) return;
 
-            ha.flags = (ushort) (ha.flags | (ushort) BoxFlags.kBFBoxDead);
-            ha.flags = (ushort) (ha.flags & ~(ushort) BoxFlags.kBFBoxSelected);
+            ha.flags = ha.flags | BoxFlags.kBFBoxDead;
+            ha.flags = ha.flags & ~BoxFlags.kBFBoxSelected;
             if ((_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1 ||
                  _gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2) &&
                 hitarea == 102)
@@ -166,7 +309,7 @@ namespace NScumm.Agos
             HitArea ha = FindBox(hitarea);
             if (ha == null)
                 return false;
-            return (ha.flags & (ushort) BoxFlags.kBFBoxDead) == 0;
+            return (ha.flags & BoxFlags.kBFBoxDead) == 0;
         }
 
         protected void DefineBox(int id, int x, int y, int width, int height, int flags, int verb, Item itemPtr)
@@ -178,13 +321,13 @@ namespace NScumm.Agos
             ha.Value.y = (ushort) y;
             ha.Value.width = (ushort) width;
             ha.Value.height = (ushort) height;
-            ha.Value.flags = (ushort) (flags | (ushort) BoxFlags.kBFBoxInUse);
+            ha.Value.flags = (BoxFlags) flags | BoxFlags.kBFBoxInUse;
             ha.Value.id = ha.Value.priority = (ushort) id;
             ha.Value.verb = (ushort) verb;
             ha.Value.itemPtr = itemPtr;
 
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF &&
-                ((ha.Value.flags & (ushort) BoxFlags.kBFHyperBox) != 0))
+                ((ha.Value.flags & BoxFlags.kBFHyperBox) != 0))
             {
                 ha.Value.data = _hyperLink;
                 ha.Value.priority = 50;
@@ -193,7 +336,7 @@ namespace NScumm.Agos
             _needHitAreaRecalc++;
         }
 
-        private void ResetVerbs()
+        protected void ResetVerbs()
         {
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 ||
                 _gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2)
@@ -218,7 +361,7 @@ namespace NScumm.Agos
             if (ha == null)
                 return;
 
-            if ((ha.flags & (ushort) BoxFlags.kBFBoxDead) != 0)
+            if ((ha.flags & BoxFlags.kBFBoxDead) != 0)
             {
                 _defaultVerb = 999;
                 _currentVerbBox = null;
@@ -230,7 +373,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void SetVerb(HitArea ha)
+        protected void SetVerb(HitArea ha)
         {
             HitArea tmp = _currentVerbBox;
 
@@ -241,14 +384,14 @@ namespace NScumm.Agos
             {
                 if (tmp != null)
                 {
-                    tmp.flags |= (ushort) BoxFlags.kBFInvertTouch;
+                    tmp.flags |= BoxFlags.kBFInvertTouch;
                     if (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_32COLOR))
                         InvertBox(tmp, 212, 208, 212, 8);
                     else
                         InvertBox(tmp, 213, 208, 213, 10);
                 }
 
-                if ((ha.flags & (ushort) BoxFlags.kBFBoxSelected) != 0)
+                if ((ha.flags & BoxFlags.kBFBoxSelected) != 0)
                 {
                     if (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_32COLOR))
                         InvertBox(ha, 216, 212, 212, 4);
@@ -263,7 +406,7 @@ namespace NScumm.Agos
                         InvertBox(ha, 223, 218, 218, 10);
                 }
 
-                ha.flags = (ushort) (ha.flags & ~(ushort) (BoxFlags.kBFBoxSelected | BoxFlags.kBFInvertTouch));
+                ha.flags = ha.flags & ~(BoxFlags.kBFBoxSelected | BoxFlags.kBFInvertTouch);
             }
             else
             {
@@ -285,12 +428,7 @@ namespace NScumm.Agos
             throw new NotImplementedException();
         }
 
-        private void BoxController(short mouseX, short mouseY, int i)
-        {
-            throw new NotImplementedException();
-        }
-
-        private void DisplayName(HitArea ha)
+        protected virtual void BoxController(uint mouseX, uint mouseY, uint mode)
         {
             throw new NotImplementedException();
         }
@@ -382,6 +520,28 @@ namespace NScumm.Agos
             });
 
             _videoLockOut = (ushort) (_videoLockOut & ~0x8000);
+        }
+
+        protected void LeaveHitAreaById(int hitarea_id)
+        {
+            var ha = FindBox(hitarea_id);
+            if (ha != null)
+                HitareaLeave(ha);
+        }
+
+        protected void HitareaLeave(HitArea ha, bool state = false)
+        {
+            if (GameType == SIMONGameType.GType_SIMON2)
+            {
+                InvertBox(ha, 231, 229, 230, 1);
+            }
+            else
+            {
+                if (Features.HasFlag(GameFeatures.GF_32COLOR))
+                    InvertBox(ha, 220, 212, 216, 4);
+                else
+                    InvertBox(ha, 223, 213, 218, 5);
+            }
         }
 
 

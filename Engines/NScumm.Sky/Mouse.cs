@@ -149,7 +149,7 @@ namespace NScumm.Sky
             var mouseWidth = header.s_width;
             var mouseHeight = header.s_height;
 
-            _system.GraphicsManager.SetCursor(_miceData, newCursor, mouseWidth, mouseHeight, new Point(mouseX, mouseY), 0);
+            _system.GraphicsManager.SetCursor(new BytePtr(_miceData, newCursor), mouseWidth, mouseHeight, new Point(mouseX, mouseY), 0);
             _system.GraphicsManager.IsCursorVisible = frameNum != Logic.MOUSE_BLANK;
         }
 

@@ -37,7 +37,7 @@ namespace NScumm.Core
         {
             if (bytes == null)
                 return null;
-            var chars = bytes.Select(c => (char)c).ToArray();
+            var chars = bytes.Select(c => (char) c).ToArray();
             return new string(chars);
         }
 
@@ -89,9 +89,9 @@ namespace NScumm.Core
         public static string LocatePath(string directory, string filename)
         {
             return (from file in ServiceLocator.FileStorage.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
-                    let fn = ServiceLocator.FileStorage.GetFileName(file)
-                    where string.Equals(fn, filename, StringComparison.OrdinalIgnoreCase)
-                    select file).FirstOrDefault();
+                let fn = ServiceLocator.FileStorage.GetFileName(file)
+                where string.Equals(fn, filename, StringComparison.OrdinalIgnoreCase)
+                select file).FirstOrDefault();
         }
 
         public static byte[] ToByteArray(this BitArray bits)
@@ -106,7 +106,7 @@ namespace NScumm.Core
             for (var i = 0; i < bits.Length; i++)
             {
                 if (bits[i])
-                    bytes[byteIndex] |= (byte)(1 << (7 - bitIndex));
+                    bytes[byteIndex] |= (byte) (1 << (7 - bitIndex));
 
                 bitIndex++;
                 if (bitIndex == 8)
@@ -121,12 +121,12 @@ namespace NScumm.Core
 
         public static int ToTicks(TimeSpan time)
         {
-            return (int)(time.TotalSeconds * 60);
+            return (int) (time.TotalSeconds * 60);
         }
 
         public static TimeSpan ToTimeSpan(int ticks)
         {
-            var t = (double)ticks;
+            var t = (double) ticks;
             return TimeSpan.FromSeconds(t / 60.0);
         }
 
@@ -178,7 +178,7 @@ namespace NScumm.Core
         {
             if (dir < 0 && dir > 3)
                 throw new ArgumentOutOfRangeException(nameof(dir), "Invalid direction");
-            int[] newDirTable = { 270, 90, 180, 0 };
+            int[] newDirTable = {270, 90, 180, 0};
             return newDirTable[dir];
         }
 
@@ -209,7 +209,7 @@ namespace NScumm.Core
 
         public static int ReadInt32BigEndian(this BinaryReader reader)
         {
-            return (int)reader.ReadUInt32BigEndian();
+            return (int) reader.ReadUInt32BigEndian();
         }
 
         public static int[] ReadInt32s(this BinaryReader reader, int count)
@@ -311,7 +311,7 @@ namespace NScumm.Core
             {
                 for (var j = 0; j < count1; j++)
                 {
-                    writer.Write((ushort)values[i][j]);
+                    writer.Write((ushort) values[i][j]);
                 }
             }
         }
@@ -361,36 +361,36 @@ namespace NScumm.Core
 
         public static void WriteInt16(this BinaryWriter writer, int value)
         {
-            writer.Write((short)value);
+            writer.Write((short) value);
         }
 
         public static void WriteUInt16(this BinaryWriter writer, bool value)
         {
-            var value16 = value ? (ushort)1 : (ushort)0;
+            var value16 = value ? (ushort) 1 : (ushort) 0;
             writer.Write(value16);
         }
 
         public static void WriteUInt16(this BinaryWriter writer, int value)
         {
-            var value16 = (ushort)value;
+            var value16 = (ushort) value;
             writer.Write(value16);
         }
 
         public static void WriteUInt16(this BinaryWriter writer, uint value)
         {
-            var value16 = (ushort)value;
+            var value16 = (ushort) value;
             writer.Write(value16);
         }
 
         public static void WriteByte(this BinaryWriter writer, bool value)
         {
-            var value8 = value ? (byte)1 : (byte)0;
+            var value8 = value ? (byte) 1 : (byte) 0;
             writer.Write(value8);
         }
 
         public static void WriteByte(this BinaryWriter writer, int value)
         {
-            var value8 = (byte)value;
+            var value8 = (byte) value;
             writer.Write(value8);
         }
 
@@ -406,7 +406,7 @@ namespace NScumm.Core
         {
             for (var i = 0; i < count; i++)
             {
-                writer.Write((byte)values[i]);
+                writer.Write((byte) values[i]);
             }
         }
 
@@ -446,7 +446,7 @@ namespace NScumm.Core
         {
             for (var i = 0; i < count; i++)
             {
-                writer.Write((short)values[i]);
+                writer.Write((short) values[i]);
             }
         }
 
@@ -468,6 +468,21 @@ namespace NScumm.Core
             writer.Write(SwapBytes(value));
         }
 
+        public static void WriteString(this BinaryWriter writer, string value, int length)
+        {
+            var valueRaw = value.GetBytes();
+            if (valueRaw.Length == length)
+            {
+                writer.Write(valueRaw);
+            }
+            else
+            {
+                var data = new byte[length];
+                Array.Copy(valueRaw, 0, data, 0, Math.Min(valueRaw.Length, length));
+                writer.Write(data);
+            }
+        }
+
         public static byte[] GetBytesBigEndian(uint value)
         {
             return BitConverter.GetBytes(SwapBytes(value));
@@ -475,22 +490,23 @@ namespace NScumm.Core
 
         public static ushort SwapBytes(ushort value)
         {
-            return (ushort)((value & 0xFFU) << 8 | (value & 0xFF00U) >> 8);
+            return (ushort) ((value & 0xFFU) << 8 | (value & 0xFF00U) >> 8);
         }
 
         public static short SwapBytes(short value)
         {
-            return (short)((value & 0xFFU) << 8 | (value & 0xFF00U) >> 8);
+            return (short) ((value & 0xFFU) << 8 | (value & 0xFF00U) >> 8);
         }
 
         public static uint SwapBytes(uint value)
         {
-            return (value & 0x000000FFU) << 24 | (value & 0x0000FF00U) << 8 | (value & 0x00FF0000U) >> 8 | (value & 0xFF000000U) >> 24;
+            return (value & 0x000000FFU) << 24 | (value & 0x0000FF00U) << 8 | (value & 0x00FF0000U) >> 8 |
+                   (value & 0xFF000000U) >> 24;
         }
 
         public static uint MakeTag(char a0, char a1, char a2, char a3)
         {
-            return (uint)(a3 | (a2 << 8) | (a1 << 16) | (a0 << 24));
+            return (uint) (a3 | (a2 << 8) | (a1 << 16) | (a0 << 24));
         }
 
         public static ushort ToUInt16(this byte[] value, int startIndex = 0)
@@ -505,7 +521,7 @@ namespace NScumm.Core
 
         public static short ToInt16BigEndian(this byte[] value, int startIndex = 0)
         {
-            return (short)ToUInt16BigEndian(value, startIndex);
+            return (short) ToUInt16BigEndian(value, startIndex);
         }
 
         public static ushort ToUInt16BigEndian(this byte[] value, int startIndex = 0)
@@ -515,7 +531,7 @@ namespace NScumm.Core
 
         public static uint ToUInt24(this byte[] value, int startIndex = 0)
         {
-            return (uint)((value[startIndex + 2] << 16) | (value[startIndex + 1] << 8) | value[startIndex]);
+            return (uint) ((value[startIndex + 2] << 16) | (value[startIndex + 1] << 8) | value[startIndex]);
         }
 
         public static void WriteUInt16(this byte[] array, int startIndex, ushort value)
@@ -593,7 +609,7 @@ namespace NScumm.Core
 
         public static int ToInt32BigEndian(this byte[] value, int startIndex = 0)
         {
-            return (int)SwapBytes(ToUInt32(value, startIndex));
+            return (int) SwapBytes(ToUInt32(value, startIndex));
         }
 
         public static string ToText(this byte[] value, int startIndex = 0, int count = 4)
@@ -633,14 +649,14 @@ namespace NScumm.Core
             count = count < 0 ? value.Length : count;
             for (var i = startIndex; i < startIndex + count && value[i] != 0; i++)
             {
-                data.Add((char)value[i]);
+                data.Add((char) value[i]);
             }
             return new string(data.ToArray());
         }
 
         public static byte[] GetBytes(this string value)
         {
-            return value.ToCharArray().Select(c => (byte)c).ToArray();
+            return value.ToCharArray().Select(c => (byte) c).ToArray();
         }
 
         public static int GetTextLength(this BytePtr value, int startIndex = 0)

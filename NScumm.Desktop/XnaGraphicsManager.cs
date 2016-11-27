@@ -136,14 +136,9 @@ namespace NScumm.Desktop
 
         public Vector2 Hotspot { get; private set; }
 
-        public void SetCursor(BytePtr pixels, int width, int height, Point hotspot)
+        public void SetCursor(BytePtr pixels, int width, int height, Point hotspot, int keyColor = 0xFF)
         {
-            _colorGraphicsManager.SetCursor(pixels, width, height, hotspot);
-        }
-
-        public void SetCursor(BytePtr pixels, int offset, int width, int height, Point hotspot, int keyColor)
-        {
-            _colorGraphicsManager.SetCursor(pixels, offset, width, height, hotspot, keyColor);
+            _colorGraphicsManager.SetCursor(pixels, width, height, hotspot, keyColor);
         }
 
         public void FillScreen(int color)
@@ -227,9 +222,7 @@ namespace NScumm.Desktop
 
             void CopyRectToScreen(BytePtr buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height);
 
-            void SetCursor(BytePtr pixels, int width, int height, Point hotspot);
-
-            void SetCursor(BytePtr pixels, int offset, int width, int height, Point hotspot, int keyColor);
+            void SetCursor(BytePtr pixels, int width, int height, Point hotspot, int keyColor = 0xFF);
 
             void UpdateCursor();
 
@@ -296,12 +289,7 @@ namespace NScumm.Desktop
                 }
             }
 
-            public void SetCursor(BytePtr pixels, int width, int height, Point hotspot)
-            {
-                SetCursor(pixels, 0, width, height, hotspot, 0xFF);
-            }
-
-            public void SetCursor(BytePtr pixels, int offset, int width, int height, Point hotspot, int keyColor)
+            public void SetCursor(BytePtr pixels, int width, int height, Point hotspot, int keyColor)
             {
                 if (_gfxManager._textureCursor.Width != width || _gfxManager._textureCursor.Height != height)
                 {
@@ -317,7 +305,7 @@ namespace NScumm.Desktop
                 {
                     for (var w = 0; w < width; w++)
                     {
-                        var palColor = pixels.ToUInt16(offset + w * 2 + h * width * 2);
+                        var palColor = pixels.ToUInt16(w * 2 + h * width * 2);
                         Core.Graphics.ColorHelper.ColorToRGB(palColor, out r, out g, out b);
                         var color = palColor == keyColor ? Color.Transparent : new Color(r, g, b);
                         pixelsCursor[w + h * width] = color;
@@ -381,13 +369,7 @@ namespace NScumm.Desktop
                 }
             }
 
-            public void SetCursor(BytePtr pixels, int width, int height, Point hotspot)
-            {
-                SetCursor(pixels, 0, width, height, hotspot, 0xFF);
-            }
-
             BytePtr _cursorPixels;
-            int _cursorOffset;
             int _cursorWidth;
             int _cursorHeight;
             Point _cursorHotspot;
@@ -395,13 +377,12 @@ namespace NScumm.Desktop
 
             public void UpdateCursor()
             {
-                SetCursor(_cursorPixels, _cursorOffset, _cursorWidth, _cursorHeight, _cursorHotspot, _cursorKeyColor);
+                SetCursor(_cursorPixels, _cursorWidth, _cursorHeight, _cursorHotspot, _cursorKeyColor);
             }
 
-            public void SetCursor(BytePtr pixels, int offset, int width, int height, Point hotspot, int keyColor)
+            public void SetCursor(BytePtr pixels, int width, int height, Point hotspot, int keyColor)
             {
                 _cursorPixels = pixels;
-                _cursorOffset = offset;
                 _cursorWidth = width;
                 _cursorHeight = height;
                 _cursorHotspot = hotspot;
@@ -420,7 +401,7 @@ namespace NScumm.Desktop
                 {
                     for (var w = 0; w < width; w++)
                     {
-                        var palColor = pixels[offset + w + h * width];
+                        var palColor = pixels[w + h * width];
                         var color = palColor == keyColor ? Color.Transparent : _gfxManager._palColors[palColor];
                         pixelsCursor[w + h * width] = color;
                     }

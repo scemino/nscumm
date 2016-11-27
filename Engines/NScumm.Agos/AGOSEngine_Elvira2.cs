@@ -33,12 +33,6 @@ namespace NScumm.Agos
         {
         }
 
-        protected override bool HasIcon(Item item)
-        {
-            var child = (SubObject) FindChildOfType(item, ChildType.kObjectType);
-            return child != null && child.objectFlags.HasFlag(SubObjectFlags.kOFIcon);
-        }
-
         protected void oe2_ink()
         {
             // 160
@@ -240,6 +234,485 @@ namespace NScumm.Agos
             SetScriptCondition((_bitArrayTwo[bit / 16] & (1 << (bit & 15))) != 0);
         }
 
+        protected bool SaveGame(int slot, string caption)
+        {
+            int item_index, num_item, i;
+            TimeEvent te;
+            uint curTime = GetTime();
+            uint gsc = _gameStoppedClock;
+
+            _videoLockOut |= 0x100;
+
+            var stream = OSystem.SaveFileManager.OpenForSaving(GenSaveName(slot));
+            if (stream == null)
+            {
+                _videoLockOut = (ushort) (_videoLockOut & ~0x100);
+                return false;
+            }
+            var f = new BinaryWriter(stream);
+            if (GameType == SIMONGameType.GType_PP)
+            {
+                // No caption
+            }
+            else if (GameType == SIMONGameType.GType_FF)
+            {
+                f.WriteBytes(caption.GetBytes(), 100);
+            }
+            else if (GameType == SIMONGameType.GType_SIMON1 || GameType == SIMONGameType.GType_SIMON2)
+            {
+                f.WriteString(caption, 18);
+            }
+            else
+            {
+                f.WriteString(caption, 8);
+            }
+
+            f.WriteUInt32BigEndian((uint) (_itemArrayInited - 1));
+            f.WriteUInt32BigEndian(0xFFFFFFFF);
+            f.WriteUInt32BigEndian(curTime);
+            f.WriteUInt32BigEndian(0);
+
+            i = 0;
+            for (te = _firstTimeStruct; te != null; te = te.next)
+                i++;
+            f.WriteUInt32BigEndian((uint) i);
+
+            if (GameType == SIMONGameType.GType_FF && _clockStopped != 0)
+                gsc += (GetTime() - _clockStopped);
+            for (te = _firstTimeStruct; te != null; te = te.next)
+            {
+                f.WriteUInt32BigEndian(te.time - curTime + gsc);
+                f.WriteUInt16BigEndian(te.subroutine_id);
+            }
+
+            if (GameType == SIMONGameType.GType_WW && GamePlatform == Platform.DOS)
+            {
+                if (_roomsListPtr != BytePtr.Null)
+                {
+                    BytePtr p = _roomsListPtr;
+                    for (;;)
+                    {
+                        ushort minNum = p.ToUInt16BigEndian();
+                        p += 2;
+                        if (minNum == 0)
+                            break;
+
+                        ushort maxNum = p.ToUInt16BigEndian();
+                        p += 2;
+
+                        for (ushort z = minNum; z <= maxNum; z++)
+                        {
+                            ushort itemNum = (ushort) (z + 2);
+                            Item item = DerefItem(itemNum);
+
+                            ushort num = (ushort) (itemNum - _itemArrayInited);
+                            _roomStates[num].state = (ushort) item.state;
+                            _roomStates[num].classFlags = item.classFlags;
+                            var subRoom = (SubRoom) FindChildOfType(item, ChildType.kRoomType);
+                            _roomStates[num].roomExitStates = subRoom.roomExitStates;
+                        }
+                    }
+                }
+
+                for (var s = 0; s < _numRoomStates; s++)
+                {
+                    f.WriteUInt16BigEndian(_roomStates[s].state);
+                    f.WriteUInt16BigEndian(_roomStates[s].classFlags);
+                    f.WriteUInt16BigEndian(_roomStates[s].roomExitStates);
+                }
+                f.WriteUInt16BigEndian(0);
+                f.WriteUInt16BigEndian(_currentRoom);
+            }
+
+            item_index = 1;
+            for (num_item = _itemArrayInited - 1; num_item != 0; num_item--)
+            {
+                Item item = _itemArrayPtr[item_index++];
+
+                if ((GameType == SIMONGameType.GType_WW && GamePlatform == Platform.Amiga) ||
+                    GameType == SIMONGameType.GType_ELVIRA2)
+                {
+                    WriteItemID(f, item.parent);
+                }
+                else
+                {
+                    f.WriteUInt16BigEndian(item.parent);
+                    f.WriteUInt16BigEndian(item.next);
+                }
+
+                f.WriteUInt16BigEndian((ushort) item.state);
+                f.WriteUInt16BigEndian(item.classFlags);
+
+                SubRoom r = (SubRoom) FindChildOfType(item, ChildType.kRoomType);
+                if (r != null)
+                {
+                    f.WriteUInt16BigEndian(r.roomExitStates);
+                }
+
+                var sr = (SubSuperRoom) FindChildOfType(item, ChildType.kSuperRoomType);
+                int j;
+                if (sr != null)
+                {
+                    ushort n = (ushort) (sr.roomX * sr.roomY * sr.roomZ);
+                    for (i = j = 0; i != n; i++)
+                        f.WriteUInt16BigEndian(sr.roomExitStates[j++]);
+                }
+
+                var o = (SubObject) FindChildOfType(item, ChildType.kObjectType);
+                if (o != null)
+                {
+                    f.WriteUInt32BigEndian((uint) o.objectFlags);
+                    i = (int) (o.objectFlags & (SubObjectFlags) 1);
+
+                    for (j = 1; j < 16; j++)
+                    {
+                        if (((int) o.objectFlags & (1 << j)) != 0)
+                        {
+                            f.WriteUInt16BigEndian((ushort) o.objectFlagValue[i++]);
+                        }
+                    }
+                }
+
+                var u = (SubUserFlag) FindChildOfType(item, ChildType.kUserFlagType);
+                if (u != null)
+                {
+                    for (i = 0; i != 4; i++)
+                    {
+                        f.WriteUInt16BigEndian(u.userFlags[i]);
+                    }
+                }
+            }
+
+            // write the variables
+            for (i = 0; i != _numVars; i++)
+            {
+                f.WriteUInt16BigEndian((ushort) ReadVariable((ushort) i));
+            }
+
+            // write the items in item store
+            for (i = 0; i != _numItemStore; i++)
+            {
+                if (GameType == SIMONGameType.GType_WW && GamePlatform == Platform.Amiga)
+                {
+                    f.WriteUInt16BigEndian((ushort) (ItemPtrToID(_itemStore[i]) * 16));
+                }
+                else if (GameType == SIMONGameType.GType_ELVIRA2)
+                {
+                    if (GamePlatform == Platform.DOS)
+                    {
+                        WriteItemID(f, (ushort) ItemPtrToID(_itemStore[i]));
+                    }
+                    else
+                    {
+                        f.WriteUInt16BigEndian((ushort) (ItemPtrToID(_itemStore[i]) * 18));
+                    }
+                }
+                else
+                {
+                    f.WriteUInt16BigEndian((ushort) ItemPtrToID(_itemStore[i]));
+                }
+            }
+
+            // Write the bits in array 1
+            for (i = 0; i != _numBitArray1; i++)
+                f.WriteUInt16BigEndian(_bitArray[i]);
+
+            // Write the bits in array 2
+            for (i = 0; i != _numBitArray2; i++)
+                f.WriteUInt16BigEndian(_bitArrayTwo[i]);
+
+            // Write the bits in array 3
+            for (i = 0; i != _numBitArray3; i++)
+                f.WriteUInt16BigEndian(_bitArrayThree[i]);
+
+            if (GameType == SIMONGameType.GType_ELVIRA2 || GameType == SIMONGameType.GType_WW)
+            {
+                f.WriteUInt16BigEndian(_superRoomNumber);
+            }
+
+            f.Dispose();
+            _videoLockOut = (ushort) (_videoLockOut & ~0x100);
+
+            return true;
+        }
+
+        protected override bool LoadGame(string filename, bool restartMode = false)
+        {
+            byte[] ident;
+            int num, item_index, i, j;
+
+            _videoLockOut |= 0x100;
+
+            BinaryReader f;
+
+            if (restartMode)
+            {
+                // Load restart state
+                var file = OpenFileRead(filename);
+                f = file == null ? null : new BinaryReader(file);
+            }
+            else
+            {
+                f = new BinaryReader(OSystem.SaveFileManager.OpenForLoading(filename));
+            }
+
+            if (f == null)
+            {
+                _videoLockOut = (ushort) (_videoLockOut & ~0x100);
+                return false;
+            }
+
+            if (GameType == SIMONGameType.GType_PP)
+            {
+                // No caption
+            }
+            else if (GameType == SIMONGameType.GType_FF)
+            {
+                ident = f.ReadBytes(100);
+            }
+            else if (GameType == SIMONGameType.GType_SIMON1 || GameType == SIMONGameType.GType_SIMON2)
+            {
+                ident = f.ReadBytes(18);
+            }
+            else if (!restartMode)
+            {
+                ident = f.ReadBytes(8);
+            }
+
+            num = (int) f.ReadUInt32BigEndian();
+
+            if (f.ReadUInt32BigEndian() != 0xFFFFFFFF || num != _itemArrayInited - 1)
+            {
+                f.Dispose();
+                _videoLockOut = (ushort) (_videoLockOut & ~0x100);
+                return false;
+            }
+
+            f.ReadUInt32BigEndian();
+            f.ReadUInt32BigEndian();
+            _noParentNotify = true;
+
+            // add all timers
+            KillAllTimers();
+            for (num = (int) f.ReadUInt32BigEndian(); num != 0; num--)
+            {
+                uint timeout = f.ReadUInt32BigEndian();
+                ushort subroutine_id = f.ReadUInt16BigEndian();
+                AddTimeEvent((ushort) timeout, subroutine_id);
+            }
+
+            if (GameType == SIMONGameType.GType_WW && GamePlatform == Platform.DOS)
+            {
+                for (uint s = 0; s < _numRoomStates; s++)
+                {
+                    _roomStates[s].state = f.ReadUInt16BigEndian();
+                    _roomStates[s].classFlags = f.ReadUInt16BigEndian();
+                    _roomStates[s].roomExitStates = f.ReadUInt16BigEndian();
+                }
+                f.ReadUInt16BigEndian();
+
+                ushort room = _currentRoom;
+                _currentRoom = f.ReadUInt16BigEndian();
+                if (_roomsListPtr != BytePtr.Null)
+                {
+                    var p = _roomsListPtr;
+                    if (room == _currentRoom)
+                    {
+                        for (;;)
+                        {
+                            ushort minNum = p.ToUInt16BigEndian();
+                            p += 2;
+                            if (minNum == 0)
+                                break;
+
+                            ushort maxNum = p.ToUInt16BigEndian();
+                            p += 2;
+
+                            for (ushort z = minNum; z <= maxNum; z++)
+                            {
+                                ushort itemNum = (ushort) (z + 2);
+                                Item item = DerefItem(itemNum);
+
+                                num = (itemNum - _itemArrayInited);
+                                item.state = (short) _roomStates[num].state;
+                                item.classFlags = _roomStates[num].classFlags;
+                                var subRoom = (SubRoom) FindChildOfType(item, ChildType.kRoomType);
+                                subRoom.roomExitStates = _roomStates[num].roomExitStates;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (;;)
+                        {
+                            ushort minNum = p.ToUInt16BigEndian();
+                            p += 2;
+                            if (minNum == 0)
+                                break;
+
+                            ushort maxNum = p.ToUInt16BigEndian();
+                            p += 2;
+
+                            for (ushort z = minNum; z <= maxNum; z++)
+                            {
+                                ushort itemNum = (ushort) (z + 2);
+                                _itemArrayPtr[itemNum] = null;
+                            }
+                        }
+                    }
+                }
+
+                if (room != _currentRoom)
+                {
+                    _roomsListPtr = BytePtr.Null;
+                    LoadRoomItems(_currentRoom);
+                }
+            }
+
+            item_index = 1;
+            for (num = _itemArrayInited - 1; num != 0; num--)
+            {
+                Item item = _itemArrayPtr[item_index++], parent_item;
+
+                if ((GameType == SIMONGameType.GType_WW && GamePlatform == Platform.Amiga) ||
+                    GameType == SIMONGameType.GType_ELVIRA2)
+                {
+                    parent_item = DerefItem(ReadItemID(f));
+                    SetItemParent(item, parent_item);
+                }
+                else
+                {
+                    uint parent = f.ReadUInt16BigEndian();
+                    uint next = f.ReadUInt16BigEndian();
+
+                    if (GameType == SIMONGameType.GType_WW && GamePlatform == Platform.DOS &&
+                        DerefItem(item.parent) == null)
+                        item.parent = 0;
+
+                    parent_item = DerefItem(parent);
+                    SetItemParent(item, parent_item);
+
+                    if (parent_item == null)
+                    {
+                        item.parent = (ushort) parent;
+                        item.next = (ushort) next;
+                    }
+                }
+
+                item.state = (short) f.ReadUInt16BigEndian();
+                item.classFlags = f.ReadUInt16BigEndian();
+
+                var r = (SubRoom) FindChildOfType(item, ChildType.kRoomType);
+                if (r != null)
+                {
+                    r.roomExitStates = f.ReadUInt16BigEndian();
+                }
+
+                var sr = (SubSuperRoom) FindChildOfType(item, ChildType.kSuperRoomType);
+                if (sr != null)
+                {
+                    ushort n = (ushort) (sr.roomX * sr.roomY * sr.roomZ);
+                    for (i = j = 0; i != n; i++)
+                        sr.roomExitStates[j++] = f.ReadUInt16BigEndian();
+                }
+
+                var o = (SubObject) FindChildOfType(item, ChildType.kObjectType);
+                if (o != null)
+                {
+                    o.objectFlags = (SubObjectFlags) f.ReadUInt32BigEndian();
+                    i = (int) (o.objectFlags & (SubObjectFlags) 1);
+
+                    for (j = 1; j < 16; j++)
+                    {
+                        if ((o.objectFlags & (SubObjectFlags) (1 << j)) != (SubObjectFlags) 0)
+                        {
+                            o.objectFlagValue[i++] = (short) f.ReadUInt16BigEndian();
+                        }
+                    }
+                }
+
+                var u = (SubUserFlag) FindChildOfType(item, ChildType.kUserFlagType);
+                if (u != null)
+                {
+                    for (i = 0; i != 4; i++)
+                    {
+                        u.userFlags[i] = f.ReadUInt16BigEndian();
+                    }
+                }
+            }
+
+            // read the variables
+            for (i = 0; i != _numVars; i++)
+            {
+                WriteVariable((ushort) i, f.ReadUInt16BigEndian());
+            }
+
+            // read the items in item store
+            for (i = 0; i != _numItemStore; i++)
+            {
+                if (GameType == SIMONGameType.GType_WW && GamePlatform == Platform.Amiga)
+                {
+                    _itemStore[i] = DerefItem((uint) (f.ReadUInt16BigEndian() / 16));
+                }
+                else if (GameType == SIMONGameType.GType_ELVIRA2)
+                {
+                    if (GamePlatform == Platform.DOS)
+                    {
+                        _itemStore[i] = DerefItem(ReadItemID(f));
+                    }
+                    else
+                    {
+                        _itemStore[i] = DerefItem((uint) (f.ReadUInt16BigEndian() / 18));
+                    }
+                }
+                else
+                {
+                    _itemStore[i] = DerefItem(f.ReadUInt16BigEndian());
+                }
+            }
+
+            // Read the bits in array 1
+            for (i = 0; i != _numBitArray1; i++)
+                _bitArray[i] = f.ReadUInt16BigEndian();
+
+            // Read the bits in array 2
+            for (i = 0; i != _numBitArray2; i++)
+                _bitArrayTwo[i] = f.ReadUInt16BigEndian();
+
+            // Read the bits in array 3
+            for (i = 0; i != _numBitArray3; i++)
+                _bitArrayThree[i] = f.ReadUInt16BigEndian();
+
+            if (GameType == SIMONGameType.GType_ELVIRA2 || GameType == SIMONGameType.GType_WW)
+            {
+                _superRoomNumber = f.ReadUInt16BigEndian();
+            }
+
+            f.Dispose();
+
+            _noParentNotify = false;
+
+            _videoLockOut = (ushort) (_videoLockOut & ~0x100);
+
+            // The floppy disk versions of Simon the Sorcerer 2 block changing
+            // to scrolling rooms, if the copy protection fails. But the copy
+            // protection flags are never set in the CD version.
+            // Setting this copy protection flag, allows saved games to be shared
+            // between all versions of Simon the Sorcerer 2.
+            if (GameType == SIMONGameType.GType_SIMON2)
+            {
+                SetBitFlag(135, true);
+            }
+
+            return true;
+        }
+
+        protected override bool HasIcon(Item item)
+        {
+            var child = (SubObject) FindChildOfType(item, ChildType.kObjectType);
+            return child != null && child.objectFlags.HasFlag(SubObjectFlags.kOFIcon);
+        }
+
         protected override int SetupIconHitArea(WindowBlock window, uint num, int x, int y, Item itemPtr)
         {
             var ha = FindEmptyHitArea();
@@ -248,7 +721,7 @@ namespace NScumm.Agos
             ha.Value.itemPtr = itemPtr;
             ha.Value.width = 24;
             ha.Value.height = 24;
-            ha.Value.flags = (ushort) (BoxFlags.kBFDragBox | BoxFlags.kBFBoxInUse | BoxFlags.kBFBoxItem);
+            ha.Value.flags = BoxFlags.kBFDragBox | BoxFlags.kBFBoxInUse | BoxFlags.kBFBoxItem;
             ha.Value.id = 0x7FFD;
             ha.Value.priority = 100;
             ha.Value.verb = 208;

@@ -43,7 +43,7 @@ namespace NScumm.Agos
     {
         public ushort x, y;
         public ushort width, height;
-        public ushort flags;
+        public BoxFlags flags;
         public ushort id;
         public ushort data;
         public WindowBlock window;

@@ -129,14 +129,9 @@ namespace NScumm
 
 		public Vector2 Hotspot { get; private set; }
 
-		public void SetCursor (BytePtr pixels, int width, int height, Point hotspot)
+		public void SetCursor (BytePtr pixels, int width, int height, Point hotspot, int keyColor)
 		{
-			_colorGraphicsManager.SetCursor (pixels, width, height, hotspot);
-		}
-
-		public void SetCursor (BytePtr pixels, int offset, int width, int height, Point hotspot, int keyColor)
-		{
-			_colorGraphicsManager.SetCursor (pixels, offset, width, height, hotspot, keyColor);
+			_colorGraphicsManager.SetCursor (pixels, width, height, hotspot, keyColor);
 		}
 
 		public void FillScreen (int color)
@@ -215,9 +210,7 @@ namespace NScumm
 
 			void CopyRectToScreen (BytePtr buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height);
 
-			void SetCursor (BytePtr pixels, int width, int height, Point hotspot);
-
-			void SetCursor (BytePtr pixels, int offset, int width, int height, Point hotspot, int keyColor);
+			void SetCursor (BytePtr pixels, int width, int height, Point hotspot, int keyColor);
 
 			void FillScreen (int color);
 		}
@@ -270,12 +263,7 @@ namespace NScumm
 				}
 			}
 
-			public void SetCursor (BytePtr pixels, int width, int height, Point hotspot)
-			{
-				SetCursor (pixels, 0, width, height, hotspot, 0xFF);
-			}
-
-			public void SetCursor (BytePtr pixels, int offset, int width, int height, Point hotspot, int keyColor)
+			public void SetCursor (BytePtr pixels, int width, int height, Point hotspot, int keyColor)
 			{
 				if (_gfxManager._textureCursor.Width != width || _gfxManager._textureCursor.Height != height) {
 					_gfxManager._textureCursor.Dispose ();
@@ -288,7 +276,7 @@ namespace NScumm
 				byte r, g, b;
 				for (int h = 0; h < height; h++) {
 					for (int w = 0; w < width; w++) {
-						var palColor = pixels.ToUInt16 (offset + w * 2 + h * width * 2);
+						var palColor = pixels.ToUInt16 (w * 2 + h * width * 2);
 						Core.Graphics.ColorHelper.ColorToRGB (palColor, out r, out g, out b);
 						var color = palColor == keyColor ? Color.Transparent : new Color (r, g, b);
 						pixelsCursor [w + h * width] = color;
@@ -346,12 +334,7 @@ namespace NScumm
 				}
 			}
 
-			public void SetCursor (BytePtr pixels, int width, int height, Point hotspot)
-			{
-				SetCursor (pixels, 0, width, height, hotspot, 0xFF);
-			}
-
-			public void SetCursor (BytePtr pixels, int offset, int width, int height, Point hotspot, int keyColor)
+			public void SetCursor (BytePtr pixels, int width, int height, Point hotspot, int keyColor)
 			{
 				if (_gfxManager._textureCursor.Width != width || _gfxManager._textureCursor.Height != height) {
 					_gfxManager._textureCursor.Dispose ();
@@ -363,7 +346,7 @@ namespace NScumm
 
 				for (int h = 0; h < height; h++) {
 					for (int w = 0; w < width; w++) {
-						var palColor = pixels [offset + w + h * width];
+						var palColor = pixels [w + h * width];
 						var color = palColor == keyColor ? Color.Transparent : _gfxManager._palColors [palColor];
 						pixelsCursor [w + h * width] = color;
 					}

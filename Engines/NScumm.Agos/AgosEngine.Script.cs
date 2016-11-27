@@ -827,63 +827,6 @@ namespace NScumm.Agos
             WriteVariable((ushort) GetVarWrapper(), contents);
         }
 
-        private void SetWindowImageEx(ushort mode, ushort vgaSpriteId)
-        {
-            _window3Flag = 0;
-
-            if (mode == 4)
-            {
-                vc29_stopAllSounds();
-
-                if (GameType == SIMONGameType.GType_ELVIRA1)
-                {
-                    if (_variableArray[299] == 0)
-                    {
-                        _variableArray[293] = 0;
-                        _wallOn = 0;
-                    }
-                }
-                else if (GameType == SIMONGameType.GType_ELVIRA2)
-                {
-                    if (_variableArray[70] == 0)
-                    {
-                        _variableArray[71] = 0;
-                        _wallOn = 0;
-                    }
-                }
-            }
-
-            if ((_videoLockOut & 0x10) != 0)
-                Error("setWindowImageEx: _videoLockOut & 0x10");
-
-            if (GameType != SIMONGameType.GType_PP && GameType != SIMONGameType.GType_FF)
-            {
-                if (GameType == SIMONGameType.GType_WW && (mode == 6 || mode == 8 || mode == 9))
-                {
-                    SetWindowImage(mode, vgaSpriteId);
-                }
-                else
-                {
-                    while (_copyScnFlag != 0 && !HasToQuit)
-                        Delay(1);
-
-                    SetWindowImage(mode, vgaSpriteId);
-                }
-            }
-            else
-            {
-                SetWindowImage(mode, vgaSpriteId);
-            }
-
-            // Amiga versions wait for verb area to be displayed.
-            if (GameType == SIMONGameType.GType_SIMON1 && GamePlatform == Platform.Amiga && vgaSpriteId == 1)
-            {
-                _copyScnFlag = 5;
-                while (_copyScnFlag != 0 && !HasToQuit)
-                    Delay(1);
-            }
-        }
-
         private void SendSync(uint a)
         {
             ushort id = To16Wrapper(a);
@@ -891,16 +834,6 @@ namespace NScumm.Agos
             _vcPtr = BitConverter.GetBytes(id);
             vc15_sync();
             _videoLockOut = (ushort) (_videoLockOut & ~0x8000);
-        }
-
-        private bool IsRoom(Item item)
-        {
-            return FindChildOfType(item, ChildType.kRoomType) != null;
-        }
-
-        private bool IsObject(Item item)
-        {
-            return FindChildOfType(item, ChildType.kObjectType) != null;
         }
 
         private void PrintScroll()
@@ -915,114 +848,230 @@ namespace NScumm.Agos
             _curVgaFile2 = curVgaFile2Orig;
         }
 
-        private void FileError(WindowBlock window, bool saveError)
+        private uint GetNextVarContents()
         {
-            string message1, message2;
+            return (ushort) ReadVariable((ushort) GetVarWrapper());
+        }
 
-            if (saveError)
+        protected uint GetVarWrapper()
+        {
+            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 ||
+                _gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
+                return GetVarOrWord();
+            return GetVarOrByte();
+        }
+
+        protected uint GetVarOrByte()
+        {
+            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1)
             {
-                switch (_language)
+                return GetVarOrWord();
+            }
+            uint a = _codePtr.Value;
+            _codePtr.Offset++;
+            if (a != 255)
+                return a;
+            var v = ReadVariable(_codePtr.Value);
+            _codePtr.Offset++;
+            return v;
+        }
+
+        protected void StopAnimateSimon2(ushort a, ushort b)
+        {
+            byte[] items = new byte[4];
+            items.WriteUInt16(0, To16Wrapper(a));
+            items.WriteUInt16(2, To16Wrapper(b));
+
+            _videoLockOut |= 0x8000;
+            _vcPtr = items;
+            vc60_stopAnimation();
+            _videoLockOut = (ushort) (_videoLockOut & ~0x8000);
+        }
+
+        protected int GetNextWord()
+        {
+            short a = (short) _codePtr.ToUInt16BigEndian();
+            _codePtr += 2;
+            return a;
+        }
+
+        protected abstract void ExecuteOpcode(int opcode);
+
+        private void SynchChain(Item i)
+        {
+            SubChain c = (SubChain) FindChildOfType(i, ChildType.kChainType);
+            while (c != null)
+            {
+                SetItemState(DerefItem(c.chChained), i.state);
+                c = (SubChain) NextSub(c, ChildType.kChainType);
+            }
+        }
+
+        private Child NextSub(Child sub, ChildType key)
+        {
+            Child a = sub.next;
+            while (a != null)
+            {
+                if (a.type == key)
+                    return a;
+                a = a.next;
+            }
+            return null;
+        }
+
+        private void SkipSpeech()
+        {
+            _sound.StopVoice();
+            if (!GetBitFlag(28))
+            {
+                SetBitFlag(14, true);
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF)
                 {
-                    case Language.RU_RUS:
-                        if (GameType == SIMONGameType.GType_SIMON2)
-                        {
-                            message1 = "\r   Mf sowrap+fts+.";
-                            message2 = "\r  Nzjb#a ejs#a.";
-                        }
-                        else
-                        {
-                            message1 = "\r   Mf sowrap]fts].";
-                            message2 = "\r   Nzjb_a ejs_a.";
-                        }
-                        break;
-                    case Language.PL_POL:
-                        message1 = "\r      Blad zapisu.    ";
-                        message2 = "\rBlad dysku.                       ";
-                        break;
-                    case Language.ES_ESP:
-                        message1 = "\r     Error al salvar";
-                        message2 = "\r  Intenta con otro disco";
-                        break;
-                    case Language.IT_ITA:
-                        message1 = "\r  Salvataggio non riuscito";
-                        message2 = "\r    Prova un\x27altro disco";
-                        break;
-                    case Language.FR_FRA:
-                        message1 = "\r    Echec sauvegarde";
-                        message2 = "\rEssayez une autre disquette";
-                        break;
-                    case Language.DE_DEU:
-                        message1 = "\r  Sicherung erfolglos.";
-                        message2 = "\rVersuche eine andere     Diskette.";
-                        break;
-                    default:
-                        message1 = "\r       Save failed.";
-                        message2 = "\r       Disk error.";
-                        break;
+                    _variableArray[103] = 5;
+                    Animate(4, 2, 13, 0, 0, 0);
+                    WaitForSync(213);
+                    StopAnimateSimon2(2, 1);
+                }
+                else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
+                {
+                    _variableArray[100] = 5;
+                    Animate(4, 1, 30, 0, 0, 0);
+                    WaitForSync(130);
+                    StopAnimateSimon2(2, 1);
+                }
+                else
+                {
+                    _variableArray[100] = 15;
+                    Animate(4, 1, 130, 0, 0, 0);
+                    WaitForSync(130);
+                    StopAnimate(1);
                 }
             }
-            else
+        }
+
+        protected void StopAnimate(ushort a)
+        {
+            ushort b = To16Wrapper(a);
+            _videoLockOut |= 0x8000;
+            var data = new byte[2];
+            data.WriteUInt16(0, b);
+            _vcPtr = data;
+            vc60_stopAnimation();
+            _videoLockOut = (ushort) (_videoLockOut & ~0x8000);
+        }
+
+        private int RunScript()
+        {
+            bool flag;
+
+            if (HasToQuit)
+                return 1;
+
+            do
             {
-                switch (_language)
+//                if (DebugMan.isDebugChannelEnabled(kDebugOpcode))
+//                    dumpOpcode(_codePtr);
+
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1)
                 {
-                    case Language.RU_RUS:
-                        if (GameType == SIMONGameType.GType_SIMON2)
-                        {
-                            message1 = "\r  Mf ^adruhafts+.";
-                            message2 = "\r   Takm pf pakefp.";
-                        }
-                        else
-                        {
-                            message1 = "\r   Mf ^adruhafts].";
-                            message2 = "\r   Takm pf pakefp.";
-                        }
-                        break;
-                    case Language.PL_POL:
-                        message1 = "\r   Blad odczytu.    ";
-                        message2 = "\r  Nie znaleziono pliku.";
-                        break;
-                    case Language.ES_ESP:
-                        message1 = "\r     Error al cargar";
-                        message2 = "\r  Archivo no encontrado";
-                        break;
-                    case Language.IT_ITA:
-                        message1 = "\r  Caricamento non riuscito";
-                        message2 = "\r      File non trovato";
-                        break;
-                    case Language.FR_FRA:
-                        message1 = "\r    Echec chargement";
-                        message2 = "\r  Fichier introuvable";
-                        break;
-                    case Language.DE_DEU:
-                        message1 = "\r    Laden erfolglos.";
-                        message2 = "\r  Datei nicht gefunden.";
-                        break;
-                    default:
-                        message1 = "\r       Load failed.";
-                        message2 = "\r     File not found.";
-                        break;
+                    _opcode = (ushort) GetVarOrWord();
+                    if (_opcode == 10000)
+                        return 0;
                 }
-            }
+                else
+                {
+                    _opcode = GetByte();
+                    if (_opcode == 0xFF)
+                        return 0;
+                }
 
-            if (GameType == SIMONGameType.GType_ELVIRA1)
-            {
-                PrintScroll();
-                window.textColumn = 0;
-                window.textRow = 0;
-                window.textColumnOffset = 0;
-                window.textLength = 0; // Difference
-            }
+                if (_runScriptReturn1)
+                    return 1;
+
+                /* Invert condition? */
+                flag = false;
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1)
+                {
+                    if (_opcode == 203)
+                    {
+                        flag = true;
+                        _opcode = (ushort) GetVarOrWord();
+                        if (_opcode == 10000)
+                            return 0;
+                    }
+                }
+                else
+                {
+                    if (_opcode == 0)
+                    {
+                        flag = true;
+                        _opcode = GetByte();
+                        if (_opcode == 0xFF)
+                            return 0;
+                    }
+                }
+
+                SetScriptCondition(true);
+                SetScriptReturn(0);
+
+                if (_opcode > _numOpcodes)
+                    Error("Invalid opcode '{0}' encountered", _opcode);
+
+                ExecuteOpcode(_opcode);
+            } while (GetScriptCondition() != flag && GetScriptReturn() == 0 && !HasToQuit);
+
+            return HasToQuit ? 1 : GetScriptReturn();
+        }
+
+        protected void SetScriptReturn(int ret)
+        {
+            _runScriptReturn[_recursionDepth] = (short) ret;
+        }
+
+        private int GetScriptReturn()
+        {
+            return _runScriptReturn[_recursionDepth];
+        }
+
+        private bool GetScriptCondition()
+        {
+            return _runScriptCondition[_recursionDepth];
+        }
+
+        private byte GetByte()
+        {
+            var value = _codePtr.Value;
+            _codePtr.Offset++;
+            return value;
+        }
+
+        protected void WriteVariable(ushort variable, ushort contents)
+        {
+            if (variable >= _numVars)
+                Error("writeVariable: Variable {0} out of range", variable);
+
+            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF && GetBitFlag(83))
+                _variableArray2[variable] = (short) contents;
             else
+                _variableArray[variable] = (short) contents;
+        }
+
+        protected uint ReadVariable(ushort variable)
+        {
+            if (variable >= _numVars)
+                Error("readVariable: Variable {0} out of range", variable);
+
+            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
             {
-                WindowPutChar(window, 12);
+                return (ushort) _variableArray[variable];
             }
-
-            foreach (var c in message1)
-                WindowPutChar(window, (byte) c);
-            foreach (var c in message2)
-                WindowPutChar(window, (byte) c);
-
-            WaitWindow(window);
+            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF)
+            {
+                if (GetBitFlag(83))
+                    return (ushort) _variableArray2[variable];
+                return (ushort) _variableArray[variable];
+            }
+            return (uint) _variableArray[variable];
         }
 
 

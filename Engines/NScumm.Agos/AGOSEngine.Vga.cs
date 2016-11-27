@@ -441,19 +441,23 @@ namespace NScumm.Agos
                 uint h_cur = h;
 
                 if (cur == -0x80)
-                    cur = (sbyte)src.Value; src.Offset++;
+                {
+                    cur = (sbyte) src.Value;
+                    src.Offset++;
+                }
 
                 for (;;)
                 {
                     if (cur >= 0)
                     {
                         /* rle_same */
-                        var color = src.Value; src.Offset++;
+                        var color = src.Value;
+                        src.Offset++;
                         do
                         {
                             dst.Value = color;
                             dst += w;
-                            if (--h_cur==0)
+                            if (--h_cur == 0)
                             {
                                 if (--cur < 0)
                                     cur = -0x80;
@@ -468,9 +472,10 @@ namespace NScumm.Agos
                         /* rle_diff */
                         do
                         {
-                            dst.Value = src.Value; src.Offset++;
+                            dst.Value = src.Value;
+                            src.Offset++;
                             dst += w;
-                            if (--h_cur==0)
+                            if (--h_cur == 0)
                             {
                                 if (++cur == 0)
                                     cur = -0x80;
@@ -478,11 +483,12 @@ namespace NScumm.Agos
                             }
                         } while (++cur != 0);
                     }
-                    cur = (sbyte)src.Value; src.Offset++;
+                    cur = (sbyte) src.Value;
+                    src.Offset++;
                 }
                 next_line:
                 dstPtr.Offset++;
-            } while (--wCur!=0);
+            } while (--wCur != 0);
 
             BytePtr srcPtr = dstPtr = new BytePtr(_videoBuf1, w);
 
@@ -500,7 +506,7 @@ namespace NScumm.Agos
 
                 srcPtr += w;
                 dstPtr += w;
-            } while (--h!=0);
+            } while (--h != 0);
 
             return _videoBuf1;
         }
@@ -562,7 +568,7 @@ namespace NScumm.Agos
             if (state.image < 0)
                 state.image = (short) VcReadVar(-state.image);
 
-            state.palette = (byte) ((GameType == SIMONGameType.GType_PN) ? 0 : palette * 16);
+            state.palette = (byte) (GameType == SIMONGameType.GType_PN ? 0 : palette * 16);
             state.paletteMod = 0;
 
             state.x = (short) (x - _scrollX);
@@ -703,7 +709,16 @@ namespace NScumm.Agos
 
         private void vc11_onStop()
         {
-            throw new NotImplementedException();
+            ushort id = (ushort) VcReadNextWord();
+
+            Ptr<VgaSleepStruct> vfs = _onStopTable;
+            while (vfs.Value.ident != 0)
+                vfs.Offset++;
+
+            vfs.Value.ident = _vgaCurSpriteId;
+            vfs.Value.codePtr = _vcPtr;
+            vfs.Value.id = id;
+            vfs.Value.zoneNum = _vgaCurZoneNum;
         }
 
         private void vc12_delay()
@@ -1297,7 +1312,12 @@ namespace NScumm.Agos
 
         protected void vc37_addToSpriteY()
         {
-            throw new NotImplementedException();
+            Ptr<VgaSprite> vsp = FindCurSprite();
+            vsp.Value.y = (short) (vsp.Value.y + VcReadVar((int) VcReadNextWord()));
+
+            vsp.Value.windowNum |= 0x8000;
+            DirtyBackGround();
+            _vgaSpriteChanged++;
         }
 
         private void vc38_ifVarNotZero()
@@ -1326,12 +1346,44 @@ namespace NScumm.Agos
 
         private void vc40_scrollRight()
         {
-            throw new NotImplementedException();
+            ushort var = (ushort) VcReadNextWord();
+            short value = (short) (VcReadVar(var) + VcReadNextWord());
+
+            if (GameType == SIMONGameType.GType_SIMON2 && var == 15 && !GetBitFlag(80))
+            {
+                if ((_scrollCount < 0) || (_scrollCount == 0 && _scrollFlag == 0))
+                {
+                    _scrollCount = 0;
+                    if (value - _scrollX >= 30)
+                    {
+                        _scrollCount = (short) Math.Min(20, _scrollXMax - _scrollX);
+                        AddVgaEvent(6, EventType.SCROLL_EVENT, BytePtr.Null, 0, 0);
+                    }
+                }
+            }
+
+            VcWriteVar(var, value);
         }
 
         private void vc41_scrollLeft()
         {
-            throw new NotImplementedException();
+            ushort var = (ushort) VcReadNextWord();
+            short value = (short) (VcReadVar(var) - VcReadNextWord());
+
+            if (GameType == SIMONGameType.GType_SIMON2 && var == 15 && !GetBitFlag(80))
+            {
+                if ((_scrollCount > 0) || (_scrollCount == 0 && _scrollFlag == 0))
+                {
+                    _scrollCount = 0;
+                    if ((ushort) (value - _scrollX) < 11)
+                    {
+                        _scrollCount = (short) -Math.Min(20, (int) _scrollX);
+                        AddVgaEvent(6, EventType.SCROLL_EVENT, BytePtr.Null, 0, 0);
+                    }
+                }
+            }
+
+            VcWriteVar(var, value);
         }
 
         private void vc42_delayIfNotEQ()
@@ -1561,6 +1613,84 @@ namespace NScumm.Agos
                 }
             }
             _fastFadeOutFlag = false;
+        }
+
+        protected void vc60_stopAnimation()
+        {
+            ushort sprite, zoneNum;
+
+            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
+            {
+                zoneNum = (ushort) VcReadNextWord();
+                sprite = (ushort) VcReadVarOrWord();
+            }
+            else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2 ||
+                     _gd.ADGameDescription.gameType == SIMONGameType.GType_FF)
+            {
+                zoneNum = (ushort) VcReadNextWord();
+                sprite = (ushort) VcReadNextWord();
+            }
+            else
+            {
+                sprite = (ushort) VcReadNextWord();
+                zoneNum = (ushort) (sprite / 100);
+            }
+
+            VcStopAnimation(zoneNum, sprite);
+        }
+
+        protected virtual void VcStopAnimation(ushort zone, ushort sprite)
+        {
+            ushort oldCurSpriteId, oldCurZoneNum;
+
+            oldCurSpriteId = _vgaCurSpriteId;
+            oldCurZoneNum = _vgaCurZoneNum;
+            var vcPtrOrg = _vcPtr;
+
+            _vgaCurZoneNum = zone;
+            _vgaCurSpriteId = sprite;
+
+            var vsp = FindCurSprite().Value;
+            if (vsp.id != 0)
+            {
+                vc25_halt_sprite();
+
+                Ptr<VgaTimerEntry> vte = _vgaTimerList;
+                while (vte.Value.delay != 0)
+                {
+                    if (vte.Value.id == _vgaCurSpriteId && vte.Value.zoneNum == _vgaCurZoneNum)
+                    {
+                        DeleteVgaEvent(vte);
+                        break;
+                    }
+                    vte.Offset++;
+                }
+            }
+
+            _vgaCurZoneNum = oldCurZoneNum;
+            _vgaCurSpriteId = oldCurSpriteId;
+            _vcPtr = vcPtrOrg;
+        }
+
+        protected uint GetVarOrWord()
+        {
+            uint a = _codePtr.ToUInt16BigEndian();
+            _codePtr += 2;
+            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
+            {
+                if (a >= 60000 && a < 62048)
+                {
+                    return ReadVariable((ushort) (a - 60000));
+                }
+            }
+            else
+            {
+                if (a >= 30000 && a < 30512)
+                {
+                    return ReadVariable((ushort) (a - 30000));
+                }
+            }
+            return a;
         }
 
         private static readonly byte[] opcodeParamLenPN =

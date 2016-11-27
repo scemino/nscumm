@@ -99,6 +99,134 @@ namespace NScumm.Agos
             _vgaMemBase = _vgaFrozenBase;
         }
 
+        protected override void BoxController(uint x, uint y, uint mode)
+        {
+            Ptr<HitArea> ha = _hitAreas;
+            int count = _hitAreas.Length;
+            ushort priority = 0;
+            ushort x_ = (ushort) x;
+            ushort y_ = (ushort) y;
+
+            if (GameType == SIMONGameType.GType_FF || GameType == SIMONGameType.GType_PP)
+            {
+                x_ = (ushort) (x_ + _scrollX);
+                y_ = (ushort) (y_ + _scrollY);
+            }
+            else if (GameType == SIMONGameType.GType_SIMON2)
+            {
+                if (GetBitFlag(79) || y < 134)
+                {
+                    x_ = (ushort) (x_ + _scrollX * 8);
+                }
+            }
+
+            HitArea bestHa = null;
+
+            do
+            {
+                if (ha.Value.flags.HasFlag(BoxFlags.kBFBoxInUse))
+                {
+                    if (!ha.Value.flags.HasFlag(BoxFlags.kBFBoxDead))
+                    {
+                        if (x_ >= ha.Value.x && y_ >= ha.Value.y &&
+                            x_ - ha.Value.x < ha.Value.width && y_ - ha.Value.y < ha.Value.height &&
+                            priority <= ha.Value.priority)
+                        {
+                            priority = ha.Value.priority;
+                            bestHa = ha.Value;
+                        }
+                        else
+                        {
+                            if (ha.Value.flags.HasFlag(BoxFlags.kBFBoxSelected))
+                            {
+                                HitareaLeave(ha.Value, true);
+                                ha.Value.flags &= ~BoxFlags.kBFBoxSelected;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ha.Value.flags &= ~BoxFlags.kBFBoxSelected;
+                    }
+                }
+                ha.Offset++;
+            } while (--count != 0);
+
+            _currentBoxNum = 0;
+            _currentBox = bestHa;
+
+            if (bestHa == null)
+            {
+                ClearName();
+                if (GameType == SIMONGameType.GType_WW && _mouseCursor >= 4)
+                {
+                    _mouseCursor = 0;
+                    _needHitAreaRecalc++;
+                }
+                return;
+            }
+
+            _currentBoxNum = bestHa.id;
+
+            if (mode != 0)
+            {
+                if (mode == 3)
+                {
+                    if (bestHa.flags.HasFlag(BoxFlags.kBFDragBox))
+                    {
+                        _lastClickRem = bestHa;
+                    }
+                }
+                else
+                {
+                    _lastHitArea = bestHa;
+                    if (GameType == SIMONGameType.GType_PP)
+                    {
+                        _variableArray[400] = (short) x;
+                        _variableArray[401] = (short) y;
+                    }
+                    else if (GameType == SIMONGameType.GType_SIMON1 || GameType == SIMONGameType.GType_SIMON2 ||
+                             GameType == SIMONGameType.GType_FF)
+                    {
+                        _variableArray[1] = (short) x;
+                        _variableArray[2] = (short) y;
+                    }
+                }
+            }
+
+            if ((GameType == SIMONGameType.GType_WW) && (_mouseCursor == 0 || _mouseCursor >= 4))
+            {
+                uint verb = (uint) (bestHa.verb & 0x3FFF);
+                if (verb >= 239 && verb <= 242)
+                {
+                    uint cursor = verb - 235;
+                    if (_mouseCursor != cursor)
+                    {
+                        _mouseCursor = (byte) cursor;
+                        _needHitAreaRecalc++;
+                    }
+                }
+            }
+
+            if (GameType != SIMONGameType.GType_WW || !_nameLocked)
+            {
+                if (bestHa.flags.HasFlag(BoxFlags.kBFNoTouchName))
+                {
+                    ClearName();
+                }
+                else if (bestHa != _lastNameOn)
+                {
+                    DisplayName(bestHa);
+                }
+            }
+
+            if (bestHa.flags.HasFlag(BoxFlags.kBFInvertTouch) && !bestHa.flags.HasFlag(BoxFlags.kBFBoxSelected))
+            {
+                HitareaLeave(bestHa, false);
+                bestHa.flags |= BoxFlags.kBFBoxSelected;
+            }
+        }
+
         protected override bool LoadTablesIntoMem(ushort subrId)
         {
             var p = _tblList;

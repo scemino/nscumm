@@ -28,13 +28,25 @@
         <WarningLevel>4</WarningLevel>
     </PropertyGroup>
     <ItemGroup>
+        <Compile Include="AgosEngine.Charset.cs"/>
         <Compile Include="AGOSEngine.cs"/>
+        <Compile Include="AgosEngine.Cursor.cs"/>
+        <Compile Include="AgosEngine.Draw.cs"/>
         <Compile Include="AgosEngine.Event.cs"/>
+        <Compile Include="AgosEngine.Gfx.cs"/>
+        <Compile Include="AgosEngine.Icons.cs"/>
         <Compile Include="AgosEngine.Input.cs"/>
+        <Compile Include="AgosEngine.Items.cs"/>
+        <Compile Include="AgosEngine.Menus.cs"/>
+        <Compile Include="AgosEngine.Res.cs"/>
         <Compile Include="AgosEngine.Script.cs"/>
         <Compile Include="AgosEngine.Sound.cs"/>
         <Compile Include="AgosEngine.String.cs"/>
+        <Compile Include="AgosEngine.Subroutine.cs"/>
         <Compile Include="AgosEngine.Verb.cs"/>
+        <Compile Include="AgosEngine.Window.cs"/>
+        <Compile Include="AgosEngine.Zones.cs"/>
+        <Compile Include="AgosEngines.SaveLoad.cs"/>
         <Compile Include="AGOSEngine_Elvira1.cs"/>
         <Compile Include="AGOSEngine_Elvira2.cs"/>
         <Compile Include="AGOSEngine_Waxworks.cs"/>
@@ -44,7 +56,6 @@
         <Compile Include="AnimationHeader_Simon.cs"/>
         <Compile Include="AnimTable.cs"/>
         <Compile Include="BaseSound.cs"/>
-        <Compile Include="Charset.cs"/>
         <Compile Include="CharsetFontData.cs"/>
         <Compile Include="Child.cs"/>
         <Compile Include="DebugLevels.cs"/>

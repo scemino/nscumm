@@ -181,6 +181,11 @@ namespace NScumm.Core
 
         public abstract void LoadMusic(byte[] data, int offset, int length);
 
+        public void LoadMusic(BytePtr data, int length)
+        {
+            LoadMusic(data.Data, data.Offset, length);
+        }
+
         public virtual void UnloadMusic()
         {
             ResetTracking();

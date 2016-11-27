@@ -187,7 +187,7 @@ namespace NScumm.Agos
 
         protected TimeEvent _firstTimeStruct;
         private TimeEvent _pendingDeleteTimeEvent;
-        private Stream _gameFile;
+        protected Stream _gameFile;
         protected readonly VgaPointersEntry[] _vgaBufferPointers = CreateArray<VgaPointersEntry>(450);
         private readonly VgaSprite[] _vgaSprites = CreateArray<VgaSprite>(200);
         protected short _scrollX;
@@ -286,8 +286,8 @@ namespace NScumm.Agos
         private Ptr<VgaTimerEntry> _nextVgaTimerToProcess;
         protected BytePtr _curVgaFile1;
         private ushort _zoneNumber;
-        private bool _scriptVar2;
-        private bool _skipVgaWait;
+        protected bool _scriptVar2;
+        protected bool _skipVgaWait;
         protected ushort _vgaCurSpriteId;
         protected ushort _vgaCurZoneNum;
         protected ushort _windowNum;
@@ -313,7 +313,7 @@ namespace NScumm.Agos
         private ushort _fastFadeCount;
         private bool _fastFadeOutFlag;
         protected Sound _sound;
-        private MidiPlayer _midi;
+        protected MidiPlayer _midi;
         private bool _midiEnabled;
 
         protected ushort _frameCount;

@@ -71,6 +71,7 @@
         <Compile Include="MusicInfo.cs"/>
         <Compile Include="Properties\AssemblyInfo.cs"/>
         <Compile Include="AgosEngineSimon1.cs"/>
+        <Compile Include="RawSound.cs"/>
         <Compile Include="RoomState.cs"/>
         <Compile Include="Sound.cs"/>
         <Compile Include="Subroutine.cs"/>
@@ -84,6 +85,7 @@
         <Compile Include="VgaSleepStruct.cs"/>
         <Compile Include="VgaSprite.cs"/>
         <Compile Include="VgaTimerEntry.cs"/>
+        <Compile Include="VocSound.cs"/>
         <Compile Include="WavSound.cs"/>
         <Compile Include="WindowBlock.cs"/>
     </ItemGroup>

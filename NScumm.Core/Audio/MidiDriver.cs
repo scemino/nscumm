@@ -90,6 +90,8 @@ namespace NScumm.Core.Audio
         // FM-TOWNS: Maps to MT_PC98
         Midi = 1 << 9,
         // Real MIDI
+        PreferMt32 = 1 << 10,		// MT-32 output is preferred
+        PreferGeneralMidi   = 1 << 11		// GM output is preferred
     }
 
     public abstract class MidiDriverBase : IMidiDriver

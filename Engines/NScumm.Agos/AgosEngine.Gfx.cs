@@ -221,7 +221,7 @@ namespace NScumm.Agos
             vc10_skip_cols(state);
 
             var dstPtr = state.surf_addr;
-            if (!state.flags.HasFlag(DrawFlags.kDFNonTrans) && ((ushort) (state.flags) & 0x40) != 0)
+            if (!state.flags.HasFlag(DrawFlags.kDFNonTrans) && (((ushort)state.flags & 0x40) != 0))
             {
                 /* reached */
                 dstPtr += (int) VcReadVar(252);
@@ -692,14 +692,14 @@ namespace NScumm.Agos
                 }
 
                 int xoffs = _videoWindows[updateWindow * 4 + 0] * 16;
-                int yoffs = (int) (_videoWindows[updateWindow * 4 + 1]);
+                int yoffs = _videoWindows[updateWindow * 4 + 1];
                 uint width = (uint) (_videoWindows[updateWindow * 4 + 2] * 16);
-                uint height = (uint) (_videoWindows[updateWindow * 4 + 3]);
+                uint height = _videoWindows[updateWindow * 4 + 3];
 
                 var screen = OSystem.GraphicsManager.Capture();
                 var dst = _backGroundBuf.GetBasePtr(xoffs, yoffs);
                 BytePtr src = BytePtr.Null;
-                int srcWidth = 0;
+                int srcWidth;
 
                 if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
                 {
@@ -828,10 +828,10 @@ namespace NScumm.Agos
                 {
                     byte color = (byte) ((_gd.Platform == Platform.DOS) ? 7 : 15);
                     dst = screen.GetBasePtr(48, 0);
-                    dst.Data.Set(dst.Offset, (byte) color, 224);
+                    dst.Data.Set(dst.Offset, color, 224);
 
                     dst = screen.GetBasePtr(48, 132);
-                    dst.Data.Set(dst.Offset, (byte) color, 224);
+                    dst.Data.Set(dst.Offset, color, 224);
                 }
                 else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 &&
                          updateWindow == 3 && _bottomPalette)

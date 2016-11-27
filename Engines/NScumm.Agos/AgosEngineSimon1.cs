@@ -1125,7 +1125,7 @@ namespace NScumm.Agos
                         if (GameType == SIMONGameType.GType_SIMON1 && GetBitFlag(88))
                         {
                             /* transparency */
-                            if (mask[i] != 0 && (dst[i] & 16) != 0)
+                            if (mask[i] != 0 && ((dst[i] & 16) != 0))
                                 dst[i] = src[i];
                         }
                         else
@@ -1161,9 +1161,9 @@ namespace NScumm.Agos
                         if (GameType == SIMONGameType.GType_SIMON1 && GetBitFlag(88))
                         {
                             /* transparency */
-                            if ((mask[0] & 0xF0) != 0 && (dst[0] & 0x0F0) == 0x20)
+                            if ((mask[0] & 0xF0) != 0 && ((dst[0] & 0x0F0) == 0x20))
                                 dst[0] = src[0];
-                            if ((mask[0] & 0x0F) != 0 && (dst[1] & 0x0F0) == 0x20)
+                            if ((mask[0] & 0x0F) != 0 && ((dst[1] & 0x0F0) == 0x20))
                                 dst[1] = src[1];
                         }
                         else
@@ -1220,7 +1220,100 @@ namespace NScumm.Agos
 
         private void PlaySpeech(ushort speechId, ushort vgaSpriteId)
         {
-            throw new NotImplementedException();
+            if (speechId == 9999)
+            {
+                if (_subtitles)
+                    return;
+                if (!GetBitFlag(14) && !GetBitFlag(28))
+                {
+                    SetBitFlag(14, true);
+                    _variableArray[100] = 15;
+                    Animate(4, 1, 130, 0, 0, 0);
+                    WaitForSync(130);
+                }
+                _skipVgaWait = true;
+            }
+            else
+            {
+                if (_subtitles && _scriptVar2)
+                {
+                    Animate(4, 2, 204, 0, 0, 0);
+                    WaitForSync(204);
+                    StopAnimate(204);
+                }
+                if (vgaSpriteId < 100)
+                    StopAnimate((ushort) (201 + vgaSpriteId));
+
+                LoadVoice(speechId);
+
+                if (vgaSpriteId < 100)
+                    Animate(4, 2, (ushort) (201 + vgaSpriteId), 0, 0, 0);
+            }
+        }
+
+        protected override void PlayMusic(ushort music, ushort track)
+        {
+            StopMusic();
+
+            // Support for compressed music from the ScummVM Music Enhancement Project
+            // TODO: _system.AudioCDManager().Stop();
+            //_system.getAudioCDManager().play(music + 1, -1, 0, 0, true);
+            //if (_system.getAudioCDManager().isPlaying())
+            //    return;
+
+            if (GamePlatform == Platform.Amiga)
+            {
+                PlayModule(music);
+            }
+            else if (Features.HasFlag(GameFeatures.GF_TALKIE))
+            {
+                byte[] buf = new byte[4];
+
+                // WORKAROUND: For a script bug in the CD versions
+                // We skip this music resource, as it was replaced by
+                // a sound effect, and the script was never updated.
+                if (music == 35)
+                    return;
+
+                _midi.SetLoop(true); // Must do this BEFORE loading music. (GMF may have its own override.)
+
+                _gameFile.Seek(_gameOffsetsPtr[_musicIndexBase + music], SeekOrigin.Begin);
+                _gameFile.Read(buf, 0, 4);
+                if (ScummHelper.ArrayEquals(buf, 0, "GMF\x1".GetBytes(), 0, 4))
+                {
+                    _gameFile.Seek(_gameOffsetsPtr[_musicIndexBase + music], SeekOrigin.Begin);
+                    _midi.LoadSMF(_gameFile, music);
+                }
+                else
+                {
+                    _gameFile.Seek(_gameOffsetsPtr[_musicIndexBase + music], SeekOrigin.Begin);
+                    _midi.LoadMultipleSMF(_gameFile);
+                }
+
+                _midi.StartTrack(0);
+                _midi.StartTrack(track);
+            }
+            else if (GamePlatform == Platform.Acorn)
+            {
+                // TODO: Add support for Desktop Tracker format in Acorn disk version
+            }
+            else
+            {
+                var filename = $"MOD{music}.MUS";
+                var f = OpenFileRead(filename);
+                if (f == null)
+                    Error("playMusic: Can't load music from '{0}'", filename);
+
+                _midi.SetLoop(true); // Must do this BEFORE loading music. (GMF may have its own override.)
+
+                if (Features.HasFlag(GameFeatures.GF_DEMO))
+                    _midi.LoadS1D(f);
+                else
+                    _midi.LoadSMF(f, music);
+
+                _midi.StartTrack(0);
+                _midi.StartTrack(track);
+            }
         }
 
         private void os1_animate()
@@ -1516,11 +1609,10 @@ namespace NScumm.Agos
             _soundFileId = (ushort) GetVarOrWord();
             if (_gd.Platform == Platform.Amiga && _gd.ADGameDescription.features.HasFlag(GameFeatures.GF_TALKIE))
             {
-                string buf;
-                buf = $"{_soundFileId}Effects";
+                string buf = $"{_soundFileId}Effects";
                 _sound.ReadSfxFile(buf);
                 buf = $"{_soundFileId}simon";
-                // TODO: vs: _sound.ReadVoiceFile(buf);
+                _sound.ReadVoiceFile(buf);
             }
         }
 

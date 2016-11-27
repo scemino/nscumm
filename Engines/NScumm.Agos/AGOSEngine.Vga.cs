@@ -1102,16 +1102,21 @@ namespace NScumm.Agos
 
         private void vc28_playSFX()
         {
-            throw new NotImplementedException();
+            ushort sound = (ushort) VcReadNextWord();
+            ushort chans = (ushort) VcReadNextWord();
+            ushort freq = (ushort) VcReadNextWord();
+            ushort flags = (ushort) VcReadNextWord();
+            Debug(0, "vc28_playSFX: (sound {0}, channels {1}, frequency {2}, flags {3})", sound, chans, freq, flags);
+
+            LoadSound(sound, freq, (SoundTypeFlags) flags);
         }
 
         private void vc29_stopAllSounds()
         {
-            // TODO: vs sound
-//            if (GameType != SIMONGameType.GType_PP)
-//                _sound.StopVoice();
-//
-//            _sound.StopAllSfx();
+            if (GameType != SIMONGameType.GType_PP)
+                _sound.StopVoice();
+
+            _sound.StopAllSfx();
         }
 
         private void vc30_setFrameRate()

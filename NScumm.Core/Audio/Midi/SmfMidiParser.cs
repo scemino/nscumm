@@ -40,7 +40,6 @@ namespace NScumm.Core.Audio.Midi
             }
             UnloadMusic();
 
-            int midiType;
             var isGmf = false;
             using (var ms = new MemoryStream(data, offset, length))
             {
@@ -54,6 +53,7 @@ namespace NScumm.Core.Audio.Midi
                     ms.Seek(8, SeekOrigin.Current);
                 }
 
+                int midiType;
                 if (AreEquals(sig, "MThd"))
                 {
                     // SMF with MTHd information.
@@ -61,7 +61,7 @@ namespace NScumm.Core.Audio.Midi
                     var len = br.ReadUInt32BigEndian();
                     if (len != 6)
                     {
-                        throw new InvalidOperationException(string.Format("MThd length 6 expected but found {0}", len));
+                        throw new InvalidOperationException($"MThd length 6 expected but found {len}");
                     }
                     br.ReadByte(); //?
                     midiType = br.ReadByte();
@@ -72,7 +72,8 @@ namespace NScumm.Core.Audio.Midi
 
                     if (midiType > 2 /*|| (midiType < 2 && _numTracks > 1)*/)
                     {
-                        throw new InvalidOperationException(string.Format("No support for a Type {0} MIDI with {1} tracks", midiType, NumTracks));
+                        throw new InvalidOperationException(
+                            $"No support for a Type {midiType} MIDI with {NumTracks} tracks");
                     }
                     PulsesPerQuarterNote = br.ReadUInt16BigEndian();
                 }
@@ -89,13 +90,15 @@ namespace NScumm.Core.Audio.Midi
                 }
                 else
                 {
-                    throw new InvalidOperationException(string.Format("Expected MThd or GMD header but found '{0}{1}{2}{3}' instead", sig[0], sig[1], sig[2], sig[3]));
+                    throw new InvalidOperationException(
+                        $"Expected MThd or GMD header but found '{sig[0]}{sig[1]}{sig[2]}{sig[3]}' instead");
                 }
 
                 // Now we identify and store the location for each track.
                 if (NumTracks > Tracks.Length)
                 {
-                    throw new InvalidOperationException(string.Format("Can only handle {0} tracks but was handed {1}", Tracks.Length, NumTracks));
+                    throw new InvalidOperationException(
+                        $"Can only handle {Tracks.Length} tracks but was handed {NumTracks}");
                 }
 
                 uint totalSize = 0;
@@ -106,13 +109,14 @@ namespace NScumm.Core.Audio.Midi
                     if (!AreEquals(sig, "MTrk") && !isGmf)
                     {
                         var msg = new StringBuilder();
-                        msg.AppendFormat("Position: {0} ('{1}')", ms.Position - 4, (char)sig[0]).AppendLine();
-                        msg.AppendFormat("Hit invalid block '{0}{1}{2}{3}' while scanning for track locations", sig[0], sig[1], sig[2], sig[3]);
+                        msg.AppendFormat("Position: {0} ('{1}')", ms.Position - 4, (char) sig[0]).AppendLine();
+                        msg.AppendFormat("Hit invalid block '{0}{1}{2}{3}' while scanning for track locations", sig[0],
+                            sig[1], sig[2], sig[3]);
                         throw new InvalidOperationException(msg.ToString());
                     }
 
                     // If needed, skip the MTrk and length bytes
-                    Tracks[tracksRead] = new BytePtr(data, (int)(offset + ms.Position + (isGmf ? -4 : 4)));
+                    Tracks[tracksRead] = new BytePtr(data, (int) (offset + ms.Position + (isGmf ? -4 : 4)));
                     if (!isGmf)
                     {
                         var len = br.ReadUInt32BigEndian();
@@ -121,13 +125,12 @@ namespace NScumm.Core.Audio.Midi
                     }
                     else
                     {
-                        // TODO: vs An SMF End of Track meta event must be placed
+                        // An SMF End of Track meta event must be placed
                         // at the end of the stream.
-                        //                    data[size++] = 0xFF;
-                        //                    data[size++] = 0x2F;
-                        //                    data[size++] = 0x00;
-                        //                    data[size++] = 0x00;
-                        throw new NotImplementedException("Gmf not implemented");
+                        data[length++] = 0xFF;
+                        data[length++] = 0x2F;
+                        data[length++] = 0x00;
+                        data[length++] = 0x00;
                     }
                     ++tracksRead;
                 }
@@ -182,7 +185,7 @@ namespace NScumm.Core.Audio.Midi
                 }
                 else
                 {
-                    info.Event = (byte)Position.RunningStatus;
+                    info.Event = (byte) Position.RunningStatus;
                 }
             } while (MalformedPitchBends && (info.Event & 0xF0) == 0xE0 && MoveNext());
 
@@ -193,17 +196,20 @@ namespace NScumm.Core.Audio.Midi
             switch (info.Command)
             {
                 case 0x9: // Note On
-                    info.Param1 = Position.PlayPos[0]; Position.PlayPos.Offset++;
-                    info.Param2 = Position.PlayPos[0]; Position.PlayPos.Offset++;
+                    info.Param1 = Position.PlayPos[0];
+                    Position.PlayPos.Offset++;
+                    info.Param2 = Position.PlayPos[0];
+                    Position.PlayPos.Offset++;
                     if (info.Param2 == 0)
-                        info.Event = (byte)(info.Channel | 0x80);
+                        info.Event = (byte) (info.Channel | 0x80);
                     info.Data = new byte[0];
                     info.Length = 0;
                     break;
 
                 case 0xC:
                 case 0xD:
-                    info.Param1 = Position.PlayPos[0]; Position.PlayPos.Offset++;
+                    info.Param1 = Position.PlayPos[0];
+                    Position.PlayPos.Offset++;
                     info.Param2 = 0;
                     info.Length = 0;
                     break;
@@ -212,8 +218,10 @@ namespace NScumm.Core.Audio.Midi
                 case 0xA:
                 case 0xB:
                 case 0xE:
-                    info.Param1 = Position.PlayPos[0]; Position.PlayPos.Offset++;
-                    info.Param2 = Position.PlayPos[0]; Position.PlayPos.Offset++;
+                    info.Param1 = Position.PlayPos[0];
+                    Position.PlayPos.Offset++;
+                    info.Param2 = Position.PlayPos[0];
+                    Position.PlayPos.Offset++;
                     info.Data = new byte[0];
                     info.Length = 0;
                     break;
@@ -222,13 +230,16 @@ namespace NScumm.Core.Audio.Midi
                     switch (info.Event & 0x0F)
                     {
                         case 0x2: // Song Position Pointer
-                            info.Param1 = Position.PlayPos[0]; Position.PlayPos.Offset++;
-                            info.Param2 = Position.PlayPos[0]; Position.PlayPos.Offset++;
+                            info.Param1 = Position.PlayPos[0];
+                            Position.PlayPos.Offset++;
+                            info.Param2 = Position.PlayPos[0];
+                            Position.PlayPos.Offset++;
                             info.Length = 0;
                             break;
 
                         case 0x3: // Song Select
-                            info.Param1 = Position.PlayPos[0]; Position.PlayPos.Offset++;
+                            info.Param1 = Position.PlayPos[0];
+                            Position.PlayPos.Offset++;
                             info.Param2 = 0;
                             info.Length = 0;
                             break;
@@ -244,21 +255,21 @@ namespace NScumm.Core.Audio.Midi
                             break;
 
                         case 0x0: // SysEx
-                            {
-                                info.Length = ReadVLQ(ref Position.PlayPos);
-                                info.Data = Position.PlayPos;
-                                Position.PlayPos.Offset += info.Length;
-                            }
+                        {
+                            info.Length = ReadVLQ(ref Position.PlayPos);
+                            info.Data = Position.PlayPos;
+                            Position.PlayPos.Offset += info.Length;
+                        }
                             break;
 
                         case 0xF: // META event
-                            {
-
-                                info.MetaType = Position.PlayPos[0]; Position.PlayPos.Offset++;
-                                info.Length = ReadVLQ(ref Position.PlayPos);
-                                info.Data = Position.PlayPos;
-                                Position.PlayPos.Offset += info.Length;
-                            }
+                        {
+                            info.MetaType = Position.PlayPos[0];
+                            Position.PlayPos.Offset++;
+                            info.Length = ReadVLQ(ref Position.PlayPos);
+                            info.Data = Position.PlayPos;
+                            Position.PlayPos.Offset += info.Length;
+                        }
                             break;
                         default:
                             Warning("MidiParser_SMF::parseNextEvent: Unsupported event code {0:X}", info.Event);

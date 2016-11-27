@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using NScumm.Core;
+using NScumm.Core.Audio;
 using NScumm.Core.IO;
 using static NScumm.Core.DebugHelper;
 
@@ -30,6 +31,8 @@ namespace NScumm.Agos
 {
     partial class AGOSEngine
     {
+        private SoundHandle _modHandle;
+
         private void vc52_playSound()
         {
             bool ambient = false;
@@ -159,14 +162,50 @@ namespace NScumm.Agos
             if (type == SoundTypeFlags.AMBIENT)
                 _sound.PlayAmbientData(dstPtr, sound, pan, vol);
             else if (type == SoundTypeFlags.SFX)
-                _sound.PlaySfxData(dstPtr, sound, pan, vol);
+                _sound.PlaySfxData(dstPtr, sound, pan, (uint) vol);
             else if (type == SoundTypeFlags.SFX5)
                 _sound.PlaySfx5Data(dstPtr, sound, pan, vol);
         }
 
-        private void PlayMusic(int i, int i1)
+        protected virtual void PlayMusic(ushort music, ushort track)
         {
-            // TODO: vs: PlayMusic
+            StopMusic();
+
+            if (GamePlatform == Platform.Amiga)
+            {
+                PlayModule(music);
+            }
+            else if (GamePlatform == Platform.AtariST)
+            {
+                // TODO: Add support for music formats used
+            }
+            else
+            {
+                _midi.SetLoop(true); // Must do this BEFORE loading music.
+
+                var filename = $"MOD{music}.MUS";
+                var f = OpenFileRead(filename);
+                if (f == null)
+                    Error("playMusic: Can't load music from '%s'", filename);
+
+                _midi.LoadS1D(f);
+                _midi.StartTrack(0);
+                _midi.StartTrack(track);
+            }
+        }
+
+        protected void PlayModule(ushort music)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected void StopMusic()
+        {
+            if (_midiEnabled)
+            {
+                _midi.Stop();
+            }
+            Mixer.StopHandle(_modHandle);
         }
 
         private bool LoadVGASoundFile(ushort id, byte type)
@@ -267,6 +306,11 @@ namespace NScumm.Agos
         }
 
         private void LoadMusic(short nextMusicToPlay)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected void LoadVoice(ushort speechId)
         {
             throw new NotImplementedException();
         }

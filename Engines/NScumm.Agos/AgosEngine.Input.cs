@@ -765,7 +765,7 @@ namespace NScumm.Agos
             return verbCode;
         }
 
-        private void WaitForSync(uint a)
+        protected void WaitForSync(uint a)
         {
             int maxCount = _gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1 ? 1000 : 2500;
 

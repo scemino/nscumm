@@ -20,8 +20,10 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using System.IO;
 using NScumm.Core;
 using NScumm.Core.Audio;
+using NScumm.Core.Audio.Decoders;
 using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
@@ -36,35 +38,36 @@ namespace NScumm.Agos
 
     internal class Sound
     {
-        AGOSEngine _vm;
+        public const bool SOUND_BIG_ENDIAN = true;
+        private readonly AGOSEngine _vm;
 
-        IMixer _mixer;
+        private readonly IMixer _mixer;
 
-        BaseSound _voice;
-        BaseSound _effects;
+        private BaseSound _voice;
+        private BaseSound _effects;
 
-        bool _effectsPaused;
-        bool _ambientPaused;
-        bool _sfx5Paused;
+        private bool _effectsPaused;
+        private bool _ambientPaused;
+        private bool _sfx5Paused;
 
         //uint16 *_filenums;
         //uint32 *_offsets;
-        ushort _lastVoiceFile;
+        private ushort _lastVoiceFile;
 
-        SoundHandle _voiceHandle;
-        SoundHandle _effectsHandle;
-        SoundHandle _ambientHandle;
-        SoundHandle _sfx5Handle;
+        private SoundHandle _voiceHandle;
+        private SoundHandle _effectsHandle;
+        private SoundHandle _ambientHandle;
+        private SoundHandle _sfx5Handle;
 
-        bool _hasEffectsFile;
-        bool _hasVoiceFile;
-        ushort _ambientPlaying;
+        private bool _hasEffectsFile;
+        private bool _hasVoiceFile;
+        private ushort _ambientPlaying;
 
         // Personal Nightmare specfic
-        BytePtr _soundQueuePtr;
-        ushort _soundQueueNum;
-        uint _soundQueueSize;
-        ushort _soundQueueFreq;
+        private BytePtr _soundQueuePtr;
+        private ushort _soundQueueNum;
+        private uint _soundQueueSize;
+        private ushort _soundQueueFreq;
 
         public Sound(AGOSEngine vm, GameSpecificSettings gss, IMixer mixer)
         {
@@ -101,8 +104,7 @@ namespace NScumm.Agos
             if (Engine.FileExists(gss.effects_filename))
             {
                 _hasEffectsFile = true;
-                throw new NotImplementedException();
-                //_effects = new VocSound(_mixer, gss.effects_filename, dataIsUnsigned);
+                _effects = new VocSound(_mixer, gss.effects_filename, dataIsUnsigned);
             }
         }
 
@@ -123,8 +125,7 @@ namespace NScumm.Agos
             if (Engine.FileExists(basename + ".wav"))
                 return new WavSound(mixer, basename + ".wav");
             if (Engine.FileExists(basename + ".voc"))
-                throw new NotImplementedException();
-            //return new VocSound(mixer, basename + ".voc", true);
+                return new VocSound(mixer, basename + ".voc", true);
             return null;
         }
 
@@ -132,7 +133,6 @@ namespace NScumm.Agos
         {
             throw new NotImplementedException();
         }
-
 
         // This method is only used by Simon1 Amiga CD32 & Windows
         public void ReadSfxFile(string filename)
@@ -151,8 +151,7 @@ namespace NScumm.Agos
 
             if (_vm._gd.ADGameDescription.gameId == GameIds.GID_SIMON1CD32)
             {
-                throw new NotImplementedException();
-                //_effects = new VocSound(_mixer, filename, dataIsUnsigned, 0, SOUND_BIG_ENDIAN);
+                _effects = new VocSound(_mixer, filename, dataIsUnsigned, 0, SOUND_BIG_ENDIAN);
             }
             else
             {
@@ -160,29 +159,156 @@ namespace NScumm.Agos
             }
         }
 
-        public void PlayAmbientData(BytePtr dstPtr, ushort sound, short pan, short vol)
+        // Feeble Files specific
+        public void PlayAmbientData(BytePtr soundData, ushort sound, short pan, short vol)
         {
-            throw new NotImplementedException();
+            if (sound == _ambientPlaying)
+                return;
+
+            _ambientPlaying = sound;
+
+            if (_ambientPaused)
+                return;
+
+            _mixer.StopHandle(_ambientHandle);
+            _ambientHandle = PlaySoundData(soundData, sound, pan, vol, true);
         }
 
-        public void PlaySfxData(BytePtr dstPtr, ushort sound, short pan, short vol)
+        public void PlaySfxData(BytePtr soundData, ushort sound, short pan, uint vol)
         {
-            throw new NotImplementedException();
+            if (_effectsPaused)
+                return;
+
+            _effectsHandle = PlaySoundData(soundData, sound, pan, (int) vol, false);
         }
 
-        public void PlaySfx5Data(BytePtr dstPtr, ushort sound, short pan, short vol)
+        private SoundHandle PlaySoundData(BytePtr soundData, uint sound, int pan, int vol, bool loop)
         {
-            throw new NotImplementedException();
+            int size = soundData.ToInt32(4) + 8;
+            var stream = new MemoryStream(soundData.Data, soundData.Offset, size);
+            var sndStream = Wave.MakeWAVStream(stream, true);
+
+            ConvertVolume(ref vol);
+            ConvertPan(ref pan);
+
+            return _mixer.PlayStream(SoundType.SFX,
+                new Core.Audio.LoopingAudioStream(sndStream, loop ? 0 : 1),
+                -1, vol, pan);
+        }
+
+
+        public void PlaySfx5Data(BytePtr soundData, ushort sound, short pan, short vol)
+        {
+            if (_sfx5Paused)
+                return;
+
+            _mixer.StopHandle(_sfx5Handle);
+            _sfx5Handle = PlaySoundData(soundData, sound, pan, vol, true);
         }
 
         public void PlayAmbient(ushort sound)
         {
-            throw new NotImplementedException();
+            if (_effects == null)
+                return;
+
+            if (sound == _ambientPlaying)
+                return;
+
+            _ambientPlaying = sound;
+
+            if (_ambientPaused)
+                return;
+
+            _mixer.StopHandle(_ambientHandle);
+            _ambientHandle = _effects.PlaySound(sound, SoundType.SFX, true);
         }
 
         public void PlayEffects(ushort sound)
         {
-            throw new NotImplementedException();
+            if (_effects == null)
+                return;
+
+            if (_effectsPaused)
+                return;
+
+            if (_vm.GameType == SIMONGameType.GType_SIMON1)
+                _mixer.StopHandle(_effectsHandle);
+            _effectsHandle = _effects.PlaySound(sound, SoundType.SFX, false);
+        }
+
+        public void StopAllSfx()
+        {
+            _mixer.StopHandle(_ambientHandle);
+            _mixer.StopHandle(_effectsHandle);
+            _mixer.StopHandle(_sfx5Handle);
+            _ambientPlaying = 0;
+        }
+
+        // This method is only used by Simon1 Amiga CD32
+        public void ReadVoiceFile(string filename)
+        {
+            _mixer.StopHandle(_voiceHandle);
+
+            if (!Engine.FileExists(filename))
+                Error("readVoiceFile: Can't load voice file {0}", filename);
+
+            const bool dataIsUnsigned = false;
+
+            _voice = new RawSound(_mixer, filename, dataIsUnsigned);
+        }
+
+        private static void ConvertVolume(ref int vol)
+        {
+            // DirectSound was originally used, which specifies volume
+            // and panning differently than ScummVM does, using a logarithmic scale
+            // rather than a linear one.
+            //
+            // Volume is a value between -10,000 and 0.
+            //
+            // In both cases, the -10,000 represents -100 dB. When panning, only
+            // one speaker's volume is affected - just like in ScummVM - with
+            // negative values affecting the left speaker, and positive values
+            // affecting the right speaker. Thus -10,000 means the left speaker is
+            // silent.
+
+            int v = ScummHelper.Clip(vol, -10000, 0);
+            if (v != 0)
+            {
+                vol = (int) (Mixer.MaxChannelVolume * Math.Pow(10.0, v / 2000.0) + 0.5);
+            }
+            else
+            {
+                vol = Mixer.MaxChannelVolume;
+            }
+        }
+
+        private static void ConvertPan(ref int pan)
+        {
+            // DirectSound was originally used, which specifies volume
+            // and panning differently than ScummVM does, using a logarithmic scale
+            // rather than a linear one.
+            //
+            // Panning is a value between -10,000 and 10,000.
+            //
+            // In both cases, the -10,000 represents -100 dB. When panning, only
+            // one speaker's volume is affected - just like in ScummVM - with
+            // negative values affecting the left speaker, and positive values
+            // affecting the right speaker. Thus -10,000 means the left speaker is
+            // silent.
+
+            int p = ScummHelper.Clip(pan, -10000, 10000);
+            if (p < 0)
+            {
+                pan = (int) (255.0 * Math.Pow(10.0, p / 2000.0) + 127.5);
+            }
+            else if (p > 0)
+            {
+                pan = (int) (255.0 * Math.Pow(10.0, p / -2000.0) - 127.5);
+            }
+            else
+            {
+                pan = 0;
+            }
         }
     }
 }

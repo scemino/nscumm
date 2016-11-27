@@ -167,7 +167,7 @@ namespace NScumm.Agos
 
             _mouseData.Data.Set(_mouseData.Offset, 0xFF, _maxCursorWidth * _maxCursorHeight);
 
-// CursorMan.replaceCursorPalette(mouseCursorPalette, 0, ARRAYSIZE(mouseCursorPalette) / 3);
+            OSystem.GraphicsManager.ReplaceCursorPalette(mouseCursorPalette, 0, mouseCursorPalette.Length);
         }
 
         private void MouseOn()
@@ -283,6 +283,7 @@ namespace NScumm.Agos
             _needHitAreaRecalc = 0;
             _litBoxFlag = false;
         }
+
 
         protected static readonly ushort[] _common_mouseInfo =
         {
@@ -639,6 +640,11 @@ namespace NScumm.Agos
             0, 0, 7, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 9, 9, 9, 10, 8, 11, 7, 11, 7, 11, 8, 11, 9, 10, 9, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 10, 7, 10, 6, 10, 5, 10, 4, 10, 3, 10, 4, 10, 5, 10, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        };
+
+        static readonly Color[] mouseCursorPalette = {
+            Color.FromRgb(0x00, 0x00, 0x00), // Black
+            Color.FromRgb(0xFF, 0xFF, 0xFF)  // White
         };
     }
 }

@@ -89,9 +89,6 @@
     </ItemGroup>
     <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets"/>
     <ItemGroup>
-        <None Include="packages.config"/>
-    </ItemGroup>
-    <ItemGroup>
         <ProjectReference Include="..\..\NScumm.Core\NScumm.Core.csproj">
             <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
             <Name>NScumm.Core</Name>

@@ -38,6 +38,7 @@ namespace NScumm.Core.Graphics
         Color[] GetPalette();
         void SetPalette(Color[] color, int first, int num);
 
+        void ReplaceCursorPalette(Ptr<Color> colors, int start, int num);
         void SetCursor(BytePtr pixels, int width, int height, Point hotspot, int keyColor = 0xFF);
         void FillScreen(int color);
     }

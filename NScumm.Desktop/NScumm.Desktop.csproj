@@ -99,6 +99,10 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Content.Builder.targets" />
   <ItemGroup>
+      <ProjectReference Include="..\Engines\NScumm.Scumm\NScumm.Scumm.csproj">
+          <Project>{97342112-448A-4636-827F-8D47B226D86F}</Project>
+          <Name>NScumm.Scumm</Name>
+      </ProjectReference>
     <ProjectReference Include="..\NScumm.Core\NScumm.Core.csproj">
       <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
       <Name>NScumm.Core</Name>

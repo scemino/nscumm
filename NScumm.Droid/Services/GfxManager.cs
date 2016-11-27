@@ -31,6 +31,7 @@ namespace NScumm.Droid.Services
         private readonly EditableSurfaceView _view;
         private Color[] _palColor;
         private Vector2 _hotspot;
+        private Ptr<Color> _cursorColors;
 
         public GfxManager(EditableSurfaceView view, Rect size)
         {
@@ -43,31 +44,15 @@ namespace NScumm.Droid.Services
             _palColor = new Color[256];
         }
 
-        public Rect Bounds
-        {
-            get;
-        }
+        public Rect Bounds { get; }
 
-        public bool IsCursorVisible
-        {
-            get; set;
-        }
+        public bool IsCursorVisible { get; set; }
 
-        public PixelFormat PixelFormat
-        {
-            get; set;
-        }
+        public PixelFormat PixelFormat { get; set; }
 
-        public byte[] Pixels
-        {
-            get; private set;
-        }
+        public byte[] Pixels { get; private set; }
 
-        public int ShakePosition
-        {
-            get;
-            set;
-        }
+        public int ShakePosition { get; set; }
 
         public Surface Capture()
         {
@@ -79,16 +64,18 @@ namespace NScumm.Droid.Services
             CopyRectToScreen(buffer, 0, sourceStride, x, y, width, height);
         }
 
-        public void CopyRectToScreen(BytePtr buffer, int startOffset, int sourceStride, int x, int y, int width, int height)
+        public void CopyRectToScreen(BytePtr buffer, int startOffset, int sourceStride, int x, int y, int width,
+            int height)
         {
             var w = Bounds.Width;
             for (int h = 0; h < height; h++)
             {
-                Array.Copy(buffer.Data, buffer.Offset+ startOffset + h * sourceStride, Pixels, x + (y + h) * w, width);
+                Array.Copy(buffer.Data, buffer.Offset + startOffset + h * sourceStride, Pixels, x + (y + h) * w, width);
             }
         }
 
-        public void CopyRectToScreen(BytePtr buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height)
+        public void CopyRectToScreen(BytePtr buffer, int sourceStride, int x, int y, int dstX, int dstY, int width,
+            int height)
         {
             var w = Bounds.Width;
             for (int h = 0; h < height; h++)
@@ -99,7 +86,7 @@ namespace NScumm.Droid.Services
 
         public void FillScreen(int color)
         {
-            Pixels.Set(0, (byte)color, Bounds.Width * Bounds.Height);
+            Pixels.Set(0, (byte) color, Bounds.Width * Bounds.Height);
         }
 
         public Color[] GetPalette()
@@ -111,6 +98,7 @@ namespace NScumm.Droid.Services
         {
             _hotspot = new Vector2(hotspot.X, hotspot.Y);
             _view._pixelsCursor = new byte[width * height * 4];
+            var pal = _cursorColors != Ptr<Color>.Null ? _cursorColors : _palColor;
 
             for (int h = 0; h < height; h++)
             {
@@ -123,13 +111,23 @@ namespace NScumm.Droid.Services
                     }
                     else
                     {
-                        var c = _palColor[palColor];
-                        _view._pixelsCursor[w * 4 + h * width * 4] = (byte)c.R;
-                        _view._pixelsCursor[w * 4 + h * width * 4 + 1] = (byte)c.G;
-                        _view._pixelsCursor[w * 4 + h * width * 4 + 2] = (byte)c.B;
+                        var c = pal[palColor];
+                        _view._pixelsCursor[w * 4 + h * width * 4] = (byte) c.R;
+                        _view._pixelsCursor[w * 4 + h * width * 4 + 1] = (byte) c.G;
+                        _view._pixelsCursor[w * 4 + h * width * 4 + 2] = (byte) c.B;
                         _view._pixelsCursor[w * 4 + h * width * 4 + 3] = 0xFF;
                     }
                 }
+            }
+        }
+
+        public void ReplaceCursorPalette(Ptr<Color> colors, int start, int num)
+        {
+            _cursorColors = new Color[num];
+            for (int i = 0; i < num; i++)
+            {
+                var c = colors[start + i];
+                _cursorColors[i] = c;
             }
         }
 
@@ -149,11 +147,10 @@ namespace NScumm.Droid.Services
             for (int i = 0; i < length; i++)
             {
                 var c = _palColor[Pixels[i]];
-                _view._color[i * 3] = (byte)c.R;
-                _view._color[i * 3 + 1] = (byte)c.G;
-                _view._color[i * 3 + 2] = (byte)c.B;
+                _view._color[i * 3] = (byte) c.R;
+                _view._color[i * 3 + 1] = (byte) c.G;
+                _view._color[i * 3 + 2] = (byte) c.B;
             }
         }
     }
-
 }

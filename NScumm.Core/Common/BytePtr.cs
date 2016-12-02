@@ -307,6 +307,11 @@ namespace NScumm.Core
 
     public static class BytePtrExtension
     {
+        public static void Copy(this BytePtr src, BytePtr dst, int length)
+        {
+            Array.Copy(src.Data, src.Offset, dst.Data, dst.Offset, length);
+        }
+
         public static void WriteByte(this BytePtr data, int startIndex, byte value)
         {
             data.Data[data.Offset + startIndex] = value;

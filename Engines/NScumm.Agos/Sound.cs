@@ -72,6 +72,8 @@ namespace NScumm.Agos
 
         public bool IsSfxActive => _mixer.IsSoundHandleActive(_effectsHandle);
 
+        public bool IsVoiceActive => _mixer.IsSoundHandleActive(_voiceHandle);
+
         public Sound(AGOSEngine vm, GameSpecificSettings gss, IMixer mixer)
         {
             _vm = vm;

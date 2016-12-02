@@ -22,6 +22,7 @@
 using System;
 using System.Linq;
 using NScumm.Core;
+using NScumm.Core.IO;
 using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
@@ -29,6 +30,8 @@ namespace NScumm.Agos
     partial class AGOSEngine
     {
         private bool _fastMode;
+        private byte _opcode177Var1, _opcode177Var2;
+        private byte _opcode178Var1, _opcode178Var2;
 
         protected void AddTimeEvent(ushort timeout, ushort subroutine_id)
         {
@@ -173,7 +176,17 @@ namespace NScumm.Agos
 
         private void RestartAnimation()
         {
-            throw new NotImplementedException();
+            if ((_videoLockOut & 0x10) == 0)
+                return;
+
+            if (GameType != SIMONGameType.GType_PN)
+            {
+                _window4Flag = 2;
+                SetMoveRect(0, 0, 224, 127);
+                DisplayScreen();
+            }
+
+            _videoLockOut = (ushort) (_videoLockOut & ~0x10);
         }
 
         private void AddVgaEvent(ushort num, EventType type, BytePtr codePtr, ushort curSprite, ushort curZoneNum)
@@ -246,11 +259,11 @@ namespace NScumm.Agos
                             vte = _nextVgaTimerToProcess;
                             break;
                         case EventType.PLAYER_DAMAGE_EVENT:
-                            PlayerDamageEvent(vte.Value, curZoneNum);
+                            PlayerDamageEvent(vte, curZoneNum);
                             vte = _nextVgaTimerToProcess;
                             break;
                         case EventType.MONSTER_DAMAGE_EVENT:
-                            MonsterDamageEvent(vte.Value, curZoneNum);
+                            MonsterDamageEvent(vte, curZoneNum);
                             vte = _nextVgaTimerToProcess;
                             break;
                         default:
@@ -285,17 +298,129 @@ namespace NScumm.Agos
 
         private void ScrollEvent()
         {
-            throw new NotImplementedException();
+            if (_scrollCount == 0)
+                return;
+
+            if (GameType == SIMONGameType.GType_FF)
+            {
+                if (_scrollCount < 0)
+                {
+                    if (_scrollFlag != -8)
+                    {
+                        _scrollFlag = -8;
+                        _scrollCount += 8;
+                    }
+                }
+                else
+                {
+                    if (_scrollFlag != 8)
+                    {
+                        _scrollFlag = 8;
+                        _scrollCount -= 8;
+                    }
+                }
+            }
+            else
+            {
+                if (_scrollCount < 0)
+                {
+                    if (_scrollFlag != -1)
+                    {
+                        _scrollFlag = -1;
+                        if (++_scrollCount == 0)
+                            return;
+                    }
+                }
+                else
+                {
+                    if (_scrollFlag != 1)
+                    {
+                        _scrollFlag = 1;
+                        if (--_scrollCount == 0)
+                            return;
+                    }
+                }
+
+                AddVgaEvent(6, EventType.SCROLL_EVENT, BytePtr.Null, 0, 0);
+            }
         }
 
-        private void PlayerDamageEvent(VgaTimerEntry vte, ushort curZoneNum)
+        private void PlayerDamageEvent(Ptr<VgaTimerEntry> vte, ushort dx)
         {
-            throw new NotImplementedException();
+            // Draws damage indicator gauge when player hit
+            _nextVgaTimerToProcess = new Ptr<VgaTimerEntry>(vte, 1);
+
+            if (_opcode177Var1 == 0)
+            {
+                DrawStuff(_image1, 4 + _opcode177Var2 * 4);
+                _opcode177Var2++;
+                if (_opcode177Var2 == dx)
+                {
+                    _opcode177Var1 = 1;
+                    vte.Value.delay = (short) (16 - dx);
+                }
+                else
+                {
+                    vte.Value.delay = 1;
+                }
+            }
+            else if (_opcode177Var2 != 0)
+            {
+                _opcode177Var2--;
+                DrawStuff(_image2, 4 + _opcode177Var2 * 4);
+                vte.Value.delay = 3;
+            }
+            else
+            {
+                DeleteVgaEvent(vte);
+            }
         }
 
-        private void MonsterDamageEvent(VgaTimerEntry vte, ushort curZoneNum)
+        private void DrawStuff(BytePtr src, int xoffs)
         {
-            throw new NotImplementedException();
+            LocksScreen(screen =>
+            {
+                var y = GamePlatform == Platform.AtariST ? 132 : 135;
+                var dst = screen.GetBasePtr(xoffs, y);
+
+                for (var h = 0; h < 6; h++)
+                {
+                    src.Copy(dst, 4);
+                    src += 4;
+                    dst += screen.Pitch;
+                }
+            });
+        }
+
+        private void MonsterDamageEvent(Ptr<VgaTimerEntry> vte, ushort dx)
+        {
+            // Draws damage indicator gauge when monster hit
+            _nextVgaTimerToProcess = new Ptr<VgaTimerEntry>(vte, 1);
+
+            if (_opcode178Var1 == 0)
+            {
+                DrawStuff(_image3, 275 + _opcode178Var2 * 4);
+                _opcode178Var2++;
+                if (_opcode178Var2 >= 10 || _opcode178Var2 == dx)
+                {
+                    _opcode178Var1 = 1;
+                    vte.Value.delay = (short) (16 - dx);
+                }
+                else
+                {
+                    vte.Value.delay = 1;
+                }
+            }
+            else if (_opcode178Var2 != 0)
+            {
+                _opcode178Var2--;
+                DrawStuff(_image4, 275 + _opcode178Var2 * 4);
+                vte.Value.delay = 3;
+            }
+            else
+            {
+                DeleteVgaEvent(vte);
+            }
         }
 
         protected void Delay(int amount)
@@ -519,5 +644,45 @@ namespace NScumm.Agos
 
             _videoLockOut = (ushort) (_videoLockOut & ~2);
         }
+
+        private static readonly byte[] _image1 =
+        {
+            0x3A, 0x37, 0x3B, 0x37,
+            0x3A, 0x3E, 0x3F, 0x3E,
+            0x37, 0x3F, 0x31, 0x3F,
+            0x37, 0x3F, 0x31, 0x3F,
+            0x3A, 0x3E, 0x3F, 0x3E,
+            0x3A, 0x37, 0x3B, 0x37,
+        };
+
+        private static readonly byte[] _image2 =
+        {
+            0x3A, 0x3A, 0x3B, 0x3A,
+            0x3A, 0x37, 0x3E, 0x37,
+            0x3A, 0x37, 0x3E, 0x37,
+            0x3A, 0x37, 0x3E, 0x37,
+            0x3A, 0x37, 0x3E, 0x37,
+            0x3A, 0x3A, 0x3B, 0x3A,
+        };
+
+        private static readonly byte[] _image3 =
+        {
+            0x3A, 0x32, 0x3B, 0x32,
+            0x3A, 0x39, 0x3F, 0x39,
+            0x32, 0x3F, 0x31, 0x3F,
+            0x32, 0x3F, 0x31, 0x3F,
+            0x3A, 0x39, 0x3F, 0x39,
+            0x3A, 0x32, 0x3B, 0x32,
+        };
+
+        private static readonly byte[] _image4 =
+        {
+            0x3A, 0x3A, 0x3B, 0x3A,
+            0x3A, 0x32, 0x39, 0x32,
+            0x3A, 0x32, 0x38, 0x32,
+            0x3A, 0x32, 0x38, 0x32,
+            0x3A, 0x32, 0x39, 0x32,
+            0x3A, 0x3A, 0x3B, 0x3A,
+        };
     }
 }

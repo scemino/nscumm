@@ -418,19 +418,133 @@ namespace NScumm.Agos
             _currentVerbBox = ha;
         }
 
-        private void InventoryUp(WindowBlock haWindow)
+        private void InventoryUp(WindowBlock window)
         {
-            throw new NotImplementedException();
+            if (window.iconPtr.line == 0)
+                return;
+
+            MouseOff();
+            int index = GetWindowNum(window);
+            DrawIconArray(index, window.iconPtr.itemRef, window.iconPtr.line - 1, window.iconPtr.classMask);
+            MouseOn();
         }
 
-        private void InventoryDown(WindowBlock haWindow)
+        private void InventoryDown(WindowBlock window)
         {
-            throw new NotImplementedException();
+            MouseOff();
+            int index = GetWindowNum(window);
+            DrawIconArray(index, window.iconPtr.itemRef, window.iconPtr.line + 1, window.iconPtr.classMask);
+            MouseOn();
         }
 
-        protected virtual void BoxController(uint mouseX, uint mouseY, uint mode)
+        protected virtual void BoxController(uint x, uint y, uint mode)
         {
-            throw new NotImplementedException();
+            Ptr<HitArea> ha = _hitAreas;
+            int count = _hitAreas.Length;
+            ushort priority = 0;
+
+            HitArea best_ha = null;
+
+            do
+            {
+                if ((ha.Value.flags & BoxFlags.kBFBoxInUse) != 0)
+                {
+                    if ((ha.Value.flags & BoxFlags.kBFBoxDead) == 0)
+                    {
+                        if (x >= ha.Value.x && y >= ha.Value.y &&
+                            x - ha.Value.x < ha.Value.width && y - ha.Value.y < ha.Value.height &&
+                            priority <= ha.Value.priority)
+                        {
+                            priority = ha.Value.priority;
+                            best_ha = ha.Value;
+                        }
+                        else
+                        {
+                            if ((ha.Value.flags & BoxFlags.kBFBoxSelected) != 0)
+                            {
+                                HitareaLeave(ha.Value, true);
+                                ha.Value.flags &= ~BoxFlags.kBFBoxSelected;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ha.Value.flags &= ~BoxFlags.kBFBoxSelected;
+                    }
+                }
+                ha.Offset++;
+            } while (--count != 0);
+
+            _currentBoxNum = 0;
+            _currentBox = best_ha;
+
+            if (best_ha == null)
+                return;
+
+            _currentBoxNum = best_ha.id;
+
+            if (mode != 0)
+            {
+                if (mode == 3)
+                {
+                    if ((best_ha.verb & 0x4000) != 0)
+                    {
+                        if (GameType == SIMONGameType.GType_ELVIRA1 && _variableArray[500] == 0)
+                        {
+                            _variableArray[500] = (short) (best_ha.verb & 0xBFFF);
+                        }
+
+                        if (_clickOnly && best_ha.id < 8)
+                        {
+                            uint id = best_ha.id;
+                            if (id >= 4)
+                                id -= 4;
+
+                            InvertBox(FindBox((int) id), 0, 0, 0, 0);
+                            _clickOnly = false;
+                            return;
+                        }
+                    }
+
+                    if ((best_ha.flags & BoxFlags.kBFDragBox) != 0)
+                        _lastClickRem = best_ha;
+                }
+                else
+                {
+                    _lastHitArea = best_ha;
+                }
+            }
+
+            if (_clickOnly)
+                return;
+
+            if ((best_ha.flags & BoxFlags.kBFInvertTouch) != 0)
+            {
+                if ((best_ha.flags & BoxFlags.kBFBoxSelected) == 0)
+                {
+                    HitareaLeave(best_ha, false);
+                    best_ha.flags |= BoxFlags.kBFBoxSelected;
+                }
+            }
+            else
+            {
+                if (mode == 0)
+                    return;
+
+                if ((best_ha.flags & BoxFlags.kBFInvertSelect) == 0)
+                    return;
+
+                if ((best_ha.flags & BoxFlags.kBFToggleBox) != 0)
+                {
+                    HitareaLeave(best_ha, false);
+                    best_ha.flags ^= BoxFlags.kBFInvertSelect;
+                }
+                else if ((best_ha.flags & BoxFlags.kBFBoxSelected) == 0)
+                {
+                    HitareaLeave(best_ha, false);
+                    best_ha.flags |= BoxFlags.kBFBoxSelected;
+                }
+            }
         }
 
         private void InvertBox(HitArea ha, byte a, byte b, byte c, byte d)
@@ -543,7 +657,5 @@ namespace NScumm.Agos
                     InvertBox(ha, 223, 213, 218, 5);
             }
         }
-
-
     }
 }

@@ -23,7 +23,7 @@ using NScumm.Core;
 
 namespace NScumm.Agos
 {
-    class VgaTimerEntry
+    internal class VgaTimerEntry
     {
         public short delay;
         public BytePtr codePtr;

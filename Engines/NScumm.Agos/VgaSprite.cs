@@ -21,13 +21,13 @@
 
 namespace NScumm.Agos
 {
-    class VgaSprite
+    internal class VgaSprite
     {
         public ushort id;
         public short image;
         public ushort palette;
         public short x, y;
-        public ushort flags;
+        public DrawFlags flags;
         public ushort priority;
         public ushort windowNum;
         public ushort zoneNum;

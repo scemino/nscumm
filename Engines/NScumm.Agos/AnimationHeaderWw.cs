@@ -1,5 +1,5 @@
 ﻿//
-//  AnimationHeader_Simon.cs
+//  AnimationHeaderWw.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -23,28 +23,21 @@ using NScumm.Core;
 
 namespace NScumm.Agos
 {
-    class AnimationHeader_Simon
+    internal class AnimationHeaderWw
     {
-        public const int Size = 6;
+        public const int Size = 8;
 
-        public ushort id
-        {
-            get { return Pointer.ToUInt16(); }
-        }
+        public ushort id => Pointer.ToUInt16();
 
-        public ushort x_2
-        {
-            get { return Pointer.ToUInt16(2); }
-        }
+        public ushort x_1 => Pointer.ToUInt16(2);
 
-        public ushort scriptOffs
-        {
-            get { return Pointer.ToUInt16(4); }
-        }
+        public ushort x_2 => Pointer.ToUInt16(4);
+
+        public ushort scriptOffs => Pointer.ToUInt16(6);
 
         public BytePtr Pointer;
 
-        public AnimationHeader_Simon(BytePtr pointer)
+        public AnimationHeaderWw(BytePtr pointer)
         {
             Pointer = pointer;
         }

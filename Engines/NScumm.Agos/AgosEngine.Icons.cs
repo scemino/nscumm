@@ -91,17 +91,83 @@ namespace NScumm.Agos
 
         // Thanks to Stuart Caie for providing the original
         // C conversion upon which this function is based.
-        protected void DecompressIconPlanar(BytePtr dst, BytePtr src, int i, int i1, byte color, int screenPitch)
+        protected void DecompressIconPlanar(BytePtr dst, BytePtr src, uint width, uint height, byte @base, uint pitch,
+            bool decompress = true)
         {
-            throw new NotImplementedException();
+            BytePtr i, icon_pln, o, srcPtr;
+            byte x, y;
+
+            icon_pln = BytePtr.Null;
+            srcPtr = src;
+
+            if (decompress)
+            {
+                icon_pln = new byte[width * height];
+
+                // Decode RLE planar icon data
+                i = src;
+                o = icon_pln;
+                while (o < icon_pln + (int) (width * height))
+                {
+                    x = i.Value;
+                    i.Offset++;
+                    if (x < 128)
+                    {
+                        do
+                        {
+                            o.Value = i.Value;
+                            o.Offset++;
+                            i.Offset++;
+                            o.Value = i.Value;
+                            o.Offset++;
+                            i.Offset++;
+                            o.Value = i.Value;
+                            o.Offset++;
+                            i.Offset++;
+                        } while (x-- > 0);
+                    }
+                    else
+                    {
+                        x = (byte) (256 - x);
+                        do
+                        {
+                            o.Value = i[0];
+                            o.Offset++;
+                            o.Value = i[1];
+                            o.Offset++;
+                            o.Value = i[2];
+                            o.Offset++;
+                        } while (x-- > 0);
+                        i += 3;
+                    }
+                }
+                srcPtr = icon_pln;
+            }
+
+            // Translate planar data to chunky (very slow method)
+            for (y = 0; y < height * 2; y++)
+            {
+                for (x = 0; x < width; x++)
+                {
+                    byte pixel =
+                        (byte)
+                        (((srcPtr[(int) (((height * 0 + y) * 3) + (x >> 3))] & (1 << (7 - (x & 7)))) != 0 ? 1 : 0)
+                         | ((srcPtr[(int) (((height * 2 + y) * 3) + (x >> 3))] & (1 << (7 - (x & 7)))) != 0 ? 2 : 0)
+                         | ((srcPtr[(int) (((height * 4 + y) * 3) + (x >> 3))] & (1 << (7 - (x & 7)))) != 0 ? 4 : 0)
+                         | ((srcPtr[(int) (((height * 6 + y) * 3) + (x >> 3))] & (1 << (7 - (x & 7)))) != 0 ? 8 : 0));
+                    if (pixel != 0)
+                        dst[x] = (byte) (pixel | @base);
+                }
+                dst += (int) pitch;
+            }
         }
 
-        protected void DecompressIcon(BytePtr dst, BytePtr src, int width, int height, byte @base, int pitch)
+        protected static void DecompressIcon(BytePtr dst, BytePtr src, int width, int height, byte @base, int pitch)
         {
-            BytePtr dstOrg = dst;
-            int h = height;
+            var dstOrg = dst;
+            var h = height;
 
-            for (;;)
+            while (true)
             {
                 var reps = (sbyte) src.Value;
                 src.Offset++;
@@ -351,12 +417,83 @@ namespace NScumm.Agos
 
         protected virtual void AddArrows(WindowBlock window, uint num)
         {
-            throw new NotImplementedException();
+            ushort x, y;
+
+            x = 30;
+            y = 151;
+            if (num != 2)
+            {
+                y = (ushort) (window.y + window.height * 4 - 19);
+                x = (ushort) (window.x + window.width);
+            }
+            DrawArrow(x, y, 16);
+
+            var ha = FindEmptyHitArea();
+            _scrollUpHitArea = (ushort) ha.Offset;
+
+            ha.Value.x = (ushort) (x * 8);
+            ha.Value.y = y;
+            ha.Value.width = 16;
+            ha.Value.height = 19;
+            ha.Value.flags = BoxFlags.kBFBoxInUse;
+            ha.Value.id = 0x7FFB;
+            ha.Value.priority = 100;
+            ha.Value.window = window;
+            ha.Value.verb = 1;
+
+            x = 30;
+            y = 170;
+            if (num != 2)
+            {
+                y = (ushort) (window.y + window.height * 4);
+                x = (ushort) (window.x + window.width);
+            }
+            DrawArrow(x, y, -16);
+
+            ha = FindEmptyHitArea();
+            _scrollDownHitArea = (ushort) ha.Offset;
+
+            ha.Value.x = (ushort) (x * 8);
+            ha.Value.y = y;
+            ha.Value.width = 16;
+            ha.Value.height = 19;
+            ha.Value.flags = BoxFlags.kBFBoxInUse;
+            ha.Value.id = 0x7FFC;
+            ha.Value.priority = 100;
+            ha.Value.window = window;
+            ha.Value.verb = 1;
         }
 
         protected virtual void RemoveArrows(WindowBlock window, int num)
         {
-            throw new NotImplementedException();
+            if (num != 2) {
+                uint y = (uint) (window.y + window.height * 4 - 19);
+                uint x = (uint) ((window.x + window.width) * 8);
+                RestoreBlock((ushort) x, (ushort) y, (ushort) (x + 16), (ushort) (y + 38));
+            } else {
+                ColorBlock(window, 240, 151, 16, 38);
+            }
+        }
+
+        private void DrawArrow(ushort x, ushort y, sbyte dir)
+        {
+            LocksScreen(screen =>
+            {
+                var src = dir < 0 ? new BytePtr(_arrowImage, 288) : _arrowImage;
+                var dst = screen.GetBasePtr(x * 8, y);
+
+                for (var h = 0; h < 19; h++)
+                {
+                    for (var w = 0; w < 16; w++)
+                    {
+                        if (src[w] != 0)
+                            dst[w] = (byte) (src[w] + 16);
+                    }
+
+                    src += dir;
+                    dst += screen.Pitch;
+                }
+            });
         }
 
         private void RemoveIconArray(int num)
@@ -399,5 +536,47 @@ namespace NScumm.Agos
             _fcsData1[num] = 0;
             _fcsData2[num] = false;
         }
+
+        private static readonly byte[] _arrowImage =
+        {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a,
+            0x0b, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x0b,
+            0x0a, 0x0b, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x0b, 0x0a,
+            0x0d, 0x0a, 0x0b, 0x0a, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x0a, 0x0b, 0x0a, 0x0d,
+            0x03, 0x0d, 0x0a, 0x0b, 0x0a, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x0a, 0x0b, 0x0a, 0x0d, 0x03,
+            0x04, 0x03, 0x0d, 0x0a, 0x0b, 0x0a, 0x00, 0x00,
+            0x00, 0x00, 0x0a, 0x0b, 0x0a, 0x0d, 0x03, 0x04,
+            0x0f, 0x04, 0x03, 0x0d, 0x0a, 0x0b, 0x0a, 0x00,
+            0x00, 0x0a, 0x0b, 0x0a, 0x0d, 0x0d, 0x0d, 0x03,
+            0x04, 0x03, 0x0d, 0x0d, 0x0d, 0x0a, 0x0b, 0x0a,
+            0x00, 0x0b, 0x0a, 0x0a, 0x0a, 0x0a, 0x09, 0x0d,
+            0x03, 0x0d, 0x09, 0x0a, 0x0a, 0x0a, 0x0a, 0x0b,
+            0x00, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0a, 0x0d,
+            0x0d, 0x0d, 0x0a, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+            0x00, 0x0a, 0x0a, 0x0a, 0x0e, 0x0b, 0x0b, 0x0c,
+            0x0e, 0x0c, 0x0b, 0x0b, 0x0e, 0x0a, 0x0a, 0x0a,
+            0x00, 0x00, 0x02, 0x02, 0x0a, 0x0b, 0x0a, 0x0d,
+            0x0d, 0x0d, 0x0a, 0x0b, 0x0a, 0x02, 0x02, 0x00,
+            0x00, 0x00, 0x00, 0x02, 0x0a, 0x0b, 0x0b, 0x0c,
+            0x0e, 0x0c, 0x0b, 0x0b, 0x0a, 0x02, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x0a, 0x0b, 0x0a, 0x0d,
+            0x0d, 0x0d, 0x0a, 0x0b, 0x0a, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x0a, 0x0b, 0x0b, 0x0c,
+            0x0e, 0x0c, 0x0b, 0x0b, 0x0a, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x0a, 0x0b, 0x0b, 0x0b,
+            0x0b, 0x0b, 0x0b, 0x0b, 0x0a, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x02, 0x0e, 0x0a, 0x0a,
+            0x0e, 0x0a, 0x0a, 0x0e, 0x02, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x00,
+            0x0a, 0x00, 0x00, 0x0a, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00,
+            0x02, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00,
+        };
     }
 }

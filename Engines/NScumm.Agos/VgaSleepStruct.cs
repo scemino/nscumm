@@ -23,7 +23,7 @@ using NScumm.Core;
 
 namespace NScumm.Agos
 {
-    class VgaSleepStruct
+    internal class VgaSleepStruct
     {
         public ushort ident;
         public BytePtr codePtr;

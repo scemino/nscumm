@@ -121,11 +121,12 @@ namespace NScumm.Agos
             {
                 uint opcode;
 
-                // TODO: vs
-//                if (DebugMan.isDebugChannelEnabled(kDebugVGAOpcode)) {
-//                    if (_vcPtr != (const byte *)&_vcGetOutOfCode) {
-//                        debugN("%.5d %.5X: %5d %4d ", _vgaTickCounter, (unsigned int)(_vcPtr - _curVgaFile1), _vgaCurSpriteId, _vgaCurZoneNum);
-//                        dumpVideoScript(_vcPtr, true);
+//                if(DebugManager.Instance.IsDebugChannelEnabled(DebugLevels.kDebugVGAOpcode))
+//                {
+//                    if (_vcPtr != _vcGetOutOfCode) {
+//                        DebugN("{0:D5} {1:D5}: {2:D5} {3:D4} ", _vgaTickCounter, _vcPtr.Offset - _curVgaFile1.Offset, _vgaCurSpriteId,
+//                            _vgaCurZoneNum);
+//                        DumpVideoScript(_vcPtr, true);
 //                    }
 //                }
 
@@ -490,7 +491,7 @@ namespace NScumm.Agos
                 dstPtr.Offset++;
             } while (--wCur != 0);
 
-            BytePtr srcPtr = dstPtr = new BytePtr(_videoBuf1, w);
+            var srcPtr = dstPtr = new BytePtr(_videoBuf1, w);
 
             do
             {
@@ -500,8 +501,8 @@ namespace NScumm.Agos
                 {
                     byte b = srcPtr[i];
                     b = (byte) ((b >> 4) | (b << 4));
-                    dst.Value = b;
                     dst.Offset--;
+                    dst.Value = b;
                 }
 
                 srcPtr += w;
@@ -513,7 +514,46 @@ namespace NScumm.Agos
 
         private BytePtr vc10_flip(BytePtr src, ushort w, ushort h)
         {
-            throw new NotImplementedException();
+            if (Features.HasFlag(GameFeatures.GF_32COLOR))
+            {
+                w *= 16;
+                var dstPtr = new BytePtr(_videoBuf1, w);
+
+                do
+                {
+                    BytePtr dst = dstPtr;
+                    for (var i = 0; i != w; ++i)
+                    {
+                        dst.Offset--;
+                        dst.Value = src[i];
+                    }
+
+                    src += w;
+                    dstPtr += w;
+                } while (--h != 0);
+            }
+            else
+            {
+                w *= 8;
+                var dstPtr = new BytePtr(_videoBuf1, w);
+
+                do
+                {
+                    BytePtr dst = dstPtr;
+                    for (var i = 0; i != w; ++i)
+                    {
+                        byte b = src[i];
+                        b = (byte) ((b >> 4) | (b << 4));
+                        dst.Offset--;
+                        dst.Value = b;
+                    }
+
+                    src += w;
+                    dstPtr += w;
+                } while (--h != 0);
+            }
+
+            return _videoBuf1;
         }
 
         private void vc10_draw()
@@ -537,15 +577,15 @@ namespace NScumm.Agos
             var x = (short) VcReadNextWord();
             var y = (short) VcReadNextWord();
 
-            ushort flags;
+            DrawFlags flags;
             if (GameType == SIMONGameType.GType_SIMON2 || GameType == SIMONGameType.GType_FF ||
                 GameType == SIMONGameType.GType_PP)
             {
-                flags = (ushort) VcReadNextByte();
+                flags = (DrawFlags) VcReadNextByte();
             }
             else
             {
-                flags = (ushort) VcReadNextWord();
+                flags = (DrawFlags) VcReadNextWord();
             }
 
             DrawImageInit(image, palette, x, y, flags);
@@ -556,13 +596,13 @@ namespace NScumm.Agos
             Array.Clear(_pathFindArray, 0, _pathFindArray.Length);
         }
 
-        protected void DrawImageInit(short image, ushort palette, short x, short y, ushort flags)
+        protected void DrawImageInit(short image, ushort palette, short x, short y, DrawFlags flags)
         {
             if (image == 0)
                 return;
 
             int width, height;
-            VC10_state state = new VC10_state();
+            Vc10State state = new Vc10State();
 
             state.image = image;
             if (state.image < 0)
@@ -574,7 +614,7 @@ namespace NScumm.Agos
             state.x = (short) (x - _scrollX);
             state.y = (short) (y - _scrollY);
 
-            state.flags = (DrawFlags) flags;
+            state.flags = flags;
 
             var src = _curVgaFile2 + state.image * 8;
             state.srcPtr = _curVgaFile2 + (int) ReadUint32Wrapper(src);
@@ -583,13 +623,13 @@ namespace NScumm.Agos
             {
                 width = src.ToUInt16(6);
                 height = src.ToUInt16(4) & 0x7FFF;
-                flags = src[5];
+                flags = (DrawFlags) src[5];
             }
             else
             {
                 width = src.ToUInt16BigEndian(6) / 16;
                 height = src[5];
-                flags = src[4];
+                flags = (DrawFlags) src[4];
             }
 
             if (height == 0 || width == 0)
@@ -613,7 +653,7 @@ namespace NScumm.Agos
                         state.flags.HasFlag(DrawFlags.kDFCompressed | DrawFlags.kDFCompressedFlip));
                 }
                 else
-                    state.srcPtr = ConvertImage(state, (flags & 0x80) != 0);
+                    state.srcPtr = ConvertImage(state, flags.HasFlag(DrawFlags.kDFShaded));
 
                 // converted planar clip is already uncompressed
                 if (state.flags.HasFlag(DrawFlags.kDFCompressedFlip))
@@ -629,14 +669,14 @@ namespace NScumm.Agos
             else if (GameType == SIMONGameType.GType_FF ||
                      GameType == SIMONGameType.GType_PP)
             {
-                if ((flags & 0x80) != 0)
+                if (flags.HasFlag(DrawFlags.kDFShaded))
                 {
                     state.flags |= DrawFlags.kDFCompressed;
                 }
             }
             else
             {
-                if (((flags & 0x80) != 0) && !state.flags.HasFlag(DrawFlags.kDFCompressedFlip))
+                if (flags.HasFlag(DrawFlags.kDFShaded) && !state.flags.HasFlag(DrawFlags.kDFCompressedFlip))
                 {
                     if (state.flags.HasFlag(DrawFlags.kDFFlip))
                     {
@@ -685,7 +725,6 @@ namespace NScumm.Agos
         private void CheckOnStopTable()
         {
             Ptr<VgaSleepStruct> vfs = _onStopTable;
-            Ptr<VgaSleepStruct> vfs_tmp;
             while (vfs.Value.ident != 0)
             {
                 if (vfs.Value.ident == _vgaCurSpriteId)
@@ -693,7 +732,7 @@ namespace NScumm.Agos
                     var vsp = FindCurSprite();
                     Animate(vsp.Value.windowNum, vsp.Value.zoneNum, vfs.Value.id, vsp.Value.x, vsp.Value.y,
                         vsp.Value.palette, true);
-                    vfs_tmp = vfs;
+                    var vfs_tmp = vfs;
                     do
                     {
                         vfs_tmp[0] = new VgaSleepStruct(vfs_tmp[1]);
@@ -875,7 +914,23 @@ namespace NScumm.Agos
 
         private void vc19_loop()
         {
-            throw new NotImplementedException();
+            var bb = _curVgaFile1;
+            var b = _curVgaFile1 + bb.ToUInt16BigEndian(10);
+            b.Offset += 20;
+
+            var header = new VgaFile1HeaderCommon(b);
+            var count = ScummHelper.SwapBytes(header.animationCount);
+            b = bb + ScummHelper.SwapBytes(header.animationTable);
+
+            var header2 = new AnimationHeaderWw(b);
+            while (count--!=0) {
+                if (ScummHelper.SwapBytes(header2.id) == _vgaCurSpriteId)
+                    break;
+                header2.Pointer += AnimationHeaderWw.Size;
+            }
+            System.Diagnostics.Debug.Assert(ScummHelper.SwapBytes(header2.id) == _vgaCurSpriteId);
+
+            _vcPtr = _curVgaFile1 + ScummHelper.SwapBytes(header2.scriptOffs);
         }
 
         private void vc20_setRepeat()
@@ -972,11 +1027,11 @@ namespace NScumm.Agos
                 GameType == SIMONGameType.GType_FF ||
                 GameType == SIMONGameType.GType_PP)
             {
-                vsp.Value.flags = (ushort) VcReadNextByte();
+                vsp.Value.flags = (DrawFlags) VcReadNextByte();
             }
             else
             {
-                vsp.Value.flags = (ushort) VcReadNextWord();
+                vsp.Value.flags = (DrawFlags) VcReadNextWord();
             }
 
             vsp.Value.windowNum |= 0x8000;
@@ -1121,7 +1176,7 @@ namespace NScumm.Agos
 
         private void vc30_setFrameRate()
         {
-            throw new NotImplementedException();
+            _frameCount = (ushort) VcReadNextWord();
         }
 
         private void vc31_setWindow()
@@ -1521,7 +1576,8 @@ namespace NScumm.Agos
 
         protected void vc59_ifSpeech()
         {
-            throw new NotImplementedException();
+            if (_sound.IsVoiceActive)
+                VcSkipNextInstruction();
         }
 
         protected void vc61_setMaskImage()
@@ -1531,7 +1587,7 @@ namespace NScumm.Agos
             vsp.Value.image = (short) VcReadVarOrWord();
             vsp.Value.x = (short) (vsp.Value.x + VcReadNextWord());
             vsp.Value.y = (short) (vsp.Value.y + VcReadNextWord());
-            vsp.Value.flags = (ushort) (DrawFlags.kDFMasked | DrawFlags.kDFSkipStoreBG);
+            vsp.Value.flags = DrawFlags.kDFMasked | DrawFlags.kDFSkipStoreBG;
 
             vsp.Value.windowNum |= 0x8000;
             DirtyBackGround();

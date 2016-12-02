@@ -121,9 +121,19 @@ namespace NScumm.Agos
             return subUserFlag.userFlags[a];
         }
 
-        protected int GetUserFlag1(Item haItemPtr, int a)
+        protected int GetUserFlag1(Item item, int a)
         {
-            throw new NotImplementedException();
+            if (item == null || item == _dummyItem2 || item == _dummyItem3)
+                return -1;
+
+            var subUserFlag = (SubUserFlag) FindChildOfType(item, ChildType.kUserFlagType);
+            if (subUserFlag == null)
+                return 0;
+
+            if (a < 0 || a > 7)
+                return 0;
+
+            return subUserFlag.userFlags[a];
         }
 
         protected void SetUserFlag(Item item, int a, int b)
@@ -380,6 +390,5 @@ namespace NScumm.Agos
             Error("itemPtrToID: not found");
             return 0; // for compilers that don't support NORETURN
         }
-
     }
 }

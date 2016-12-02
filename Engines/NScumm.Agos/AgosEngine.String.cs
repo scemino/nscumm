@@ -594,7 +594,13 @@ namespace NScumm.Agos
 
         private int LoadTextFile_gme(string filename, BytePtr dst)
         {
-            throw new NotImplementedException();
+            int res = int.Parse(filename.Substring(4)) + _textIndexBase - 1;
+            int offs = (int) _gameOffsetsPtr[res];
+            int size = (int) (_gameOffsetsPtr[res + 1] - offs);
+
+            ReadGameFile(dst, offs, size);
+
+            return size;
         }
 
         private void LoadTextIntoMem(ushort stringId)

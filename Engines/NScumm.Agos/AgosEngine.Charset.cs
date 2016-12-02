@@ -500,7 +500,7 @@ namespace NScumm.Agos
 
                     src = new BytePtr(english_pnFont, (chr - 32) * 8);
                 }
-                dst.Offset += (int) (y * dstPitch + x + window.textColumnOffset);
+                dst.Offset += y * dstPitch + x + window.textColumnOffset;
 
                 color = window.textColor;
                 if (GameType == SIMONGameType.GType_ELVIRA2 || GameType == SIMONGameType.GType_WW)

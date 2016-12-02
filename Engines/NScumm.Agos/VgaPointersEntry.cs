@@ -23,7 +23,7 @@ using NScumm.Core;
 
 namespace NScumm.Agos
 {
-    class VgaPointersEntry
+    internal class VgaPointersEntry
     {
         public BytePtr vgaFile1;
         public BytePtr vgaFile1End;

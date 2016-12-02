@@ -49,7 +49,7 @@ namespace NScumm.Agos
                 {
                     _wallOn--;
 
-                    var state = new VC10_state();
+                    var state = new Vc10State();
                     state.srcPtr = BackGround + 3 * _backGroundBuf.Pitch + 3 * 16;
                     state.height = state.draw_height = 127;
                     state.width = state.draw_width = 14;
@@ -121,7 +121,7 @@ namespace NScumm.Agos
                 // Used by the Fire Wall and Ice Wall spells
                 Debug(0, "Using special wall");
 
-                byte color, h, len;
+                byte color, h;
                 var dst = _window4BackScn.Pixels;
 
                 color = (byte) ((_variableArray[293] & 1) != 0 ? 13 : 15);
@@ -130,7 +130,7 @@ namespace NScumm.Agos
                 h = 127;
                 while (h != 0)
                 {
-                    len = 112;
+                    byte len = 112;
                     while (len-- != 0)
                     {
                         dst.Value = color;
@@ -158,13 +158,13 @@ namespace NScumm.Agos
                      (_variableArray[71] & 2) != 0)
             {
                 // Used by the Unholy Barrier spell
-                byte color, h;
+                byte color;
                 var dst = _window4BackScn.Pixels;
 
                 color = 1;
                 _wallOn = 2;
 
-                h = (byte) 43;
+                byte h = 43;
                 while (h != 0)
                 {
                     var len = (byte) 56;
@@ -267,7 +267,7 @@ namespace NScumm.Agos
 
                 var vpe = new Ptr<VgaPointersEntry>(_vgaBufferPointers, vsp.Value.zoneNum);
                 BytePtr ptr = vpe.Value.vgaFile2 + vsp.Value.image * 8;
-                width = (short) (ptr.ToUInt32BigEndian(6) / 8);
+                width = (short) (ptr.ToInt16BigEndian(6) / 8);
                 height = ptr[5];
 
                 tmp = vsp.Value.x;
@@ -368,7 +368,7 @@ namespace NScumm.Agos
 
                 _windowNum = (ushort) (animTable.Value.windowNum & ~0x8000);
 
-                VC10_state state = new VC10_state();
+                var state = new Vc10State();
                 state.srcPtr = animTable.Value.srcPtr;
                 state.height = state.draw_height = animTable.Value.height;
                 state.width = state.draw_width = animTable.Value.width;
@@ -416,7 +416,7 @@ namespace NScumm.Agos
                 return;
             }
 
-            if (((vsp.Value.flags & (ushort) DrawFlags.kDFSkipStoreBG) != 0) || vsp.Value.image == 0)
+            if (((vsp.Value.flags & DrawFlags.kDFSkipStoreBG) != 0) || vsp.Value.image == 0)
                 return;
 
             Ptr<AnimTable> animTable = _screenAnim1;
@@ -443,7 +443,7 @@ namespace NScumm.Agos
             animTable.Value.y = y;
 
             animTable.Value.width = (ushort) (ptr.ToUInt16BigEndian(6) / 16);
-            if ((vsp.Value.flags & 0x40) != 0)
+            if (vsp.Value.flags.HasFlag(DrawFlags.kDFScaled))
             {
                 animTable.Value.width++;
             }
@@ -459,12 +459,212 @@ namespace NScumm.Agos
 
         private void DisplayBoxStars()
         {
-            throw new NotImplementedException();
+            int count;
+            uint color;
+
+            o_haltAnimation();
+
+            if (GameType == SIMONGameType.GType_SIMON2)
+                color = 236;
+            else
+                color = 225;
+
+            uint curHeight = (uint) ((GameType == SIMONGameType.GType_SIMON2) ? _boxStarHeight : 134);
+
+
+            for (int i = 0; i < 5; i++)
+            {
+                Ptr<HitArea> ha = _hitAreas;
+                count = _hitAreas.Length;
+
+                LocksScreen(screen =>
+                {
+                    do
+                    {
+                        if (ha.Value.id != 0 && ha.Value.flags.HasFlag(BoxFlags.kBFBoxInUse) &&
+                            !(ha.Value.flags.HasFlag(BoxFlags.kBFBoxDead)))
+                        {
+                            Ptr<HitArea> dha = _hitAreas;
+                            if (ha.Value.flags.HasFlag(BoxFlags.kBFTextBox))
+                            {
+                                while (dha != ha && dha.Value.flags != ha.Value.flags)
+                                    ++dha.Offset;
+                                if (dha != ha && dha.Value.flags == ha.Value.flags)
+                                    continue;
+                            }
+                            else
+                            {
+                                dha = _hitAreas;
+                                while (dha != ha && dha.Value.itemPtr != ha.Value.itemPtr)
+                                    ++dha.Offset;
+                                if (dha != ha && dha.Value.itemPtr == ha.Value.itemPtr)
+                                    continue;
+                            }
+
+                            if (ha.Value.y >= curHeight)
+                                continue;
+
+                            var y_ = (uint) ((ha.Value.height / 2) - 4 + ha.Value.y);
+
+                            var x_ = (uint) ((ha.Value.width / 2) - 4 + ha.Value.x - (_scrollX * 8));
+
+                            if (x_ >= 311)
+                                continue;
+
+                            BytePtr dst = screen.Pixels;
+
+                            dst += (int)((((screen.Pitch / 4) * y_) * 4) + x_);
+
+                            dst[4] = (byte) color;
+                            dst += screen.Pitch;
+                            dst[1] = (byte) color;
+                            dst[4] = (byte) color;
+                            dst[7] = (byte) color;
+                            dst += screen.Pitch;
+                            dst[2] = (byte) color;
+                            dst[4] = (byte) color;
+                            dst[6] = (byte) color;
+                            dst += screen.Pitch;
+                            dst[3] = (byte) color;
+                            dst[5] = (byte) color;
+                            dst += screen.Pitch;
+                            dst[0] = (byte) color;
+                            dst[1] = (byte) color;
+                            dst[2] = (byte) color;
+                            dst[6] = (byte) color;
+                            dst[7] = (byte) color;
+                            dst[8] = (byte) color;
+                            dst += screen.Pitch;
+                            dst[3] = (byte) color;
+                            dst[5] = (byte) color;
+                            dst += screen.Pitch;
+                            dst[2] = (byte) color;
+                            dst[4] = (byte) color;
+                            dst[6] = (byte) color;
+                            dst += screen.Pitch;
+                            dst[1] = (byte) color;
+                            dst[4] = (byte) color;
+                            dst[7] = (byte) color;
+                            dst += screen.Pitch;
+                            dst[4] = (byte) color;
+                        }
+                        ha.Offset++;
+                    } while (--count != 0);
+                });
+
+                Delay(100);
+
+                SetMoveRect(0, 0, 320, (ushort) curHeight);
+                _window4Flag = 2;
+
+                DisplayScreen();
+                Delay(100);
+            }
+
+            o_restartAnimation();
         }
 
         private void ScrollScreen()
         {
-            throw new NotImplementedException();
+            BytePtr src;
+            var dst = BackGround;
+
+            if (_scrollXMax == 0)
+            {
+                int screenSize = 8 * _screenWidth;
+                if (_scrollFlag < 0)
+                {
+                    dst.Copy(dst + screenSize, _scrollWidth * _screenHeight - screenSize);
+                }
+                else
+                {
+                    (dst + screenSize).Copy(dst, _scrollWidth * _screenHeight - screenSize);
+                }
+
+                var y = _scrollY - 8;
+
+                if (_scrollFlag > 0)
+                {
+                    dst += _screenHeight * _screenWidth - screenSize;
+                    y += 488;
+                }
+
+                src = _scrollImage + y / 2;
+                DecodeRow(dst, src + (int) ReadUint32Wrapper(src), _scrollWidth, (ushort) _backGroundBuf.Pitch);
+
+                _scrollY += _scrollFlag;
+                VcWriteVar(250, _scrollY);
+
+                FillBackFromBackGround((ushort) _screenHeight, _scrollWidth);
+            }
+            else
+            {
+                if (_scrollFlag < 0)
+                {
+                    dst.Copy(dst + 8, _screenWidth * _scrollHeight - 8);
+                }
+                else
+                {
+                    (dst + 8).Copy(dst, _screenWidth * _scrollHeight - 8);
+                }
+
+                uint x = (uint) _scrollX;
+                x = (uint) (x - ((GameType == SIMONGameType.GType_FF) ? 8 : 1));
+
+                if (_scrollFlag > 0)
+                {
+                    dst += _screenWidth - 8;
+                    x = (uint) (x + ((GameType == SIMONGameType.GType_FF) ? 648 : 41));
+                }
+
+                if (GameType == SIMONGameType.GType_FF)
+                    src = _scrollImage + (int) (x / 2);
+                else
+                    src = _scrollImage + (int) (x * 4);
+                DecodeColumn(dst, src + (int) ReadUint32Wrapper(src), _scrollHeight, (ushort) _backGroundBuf.Pitch);
+
+                _scrollX += _scrollFlag;
+                VcWriteVar(251, _scrollX);
+
+                if (GameType == SIMONGameType.GType_SIMON2)
+                {
+                    src = BackGround;
+                    dst = _window4BackScn.Pixels;
+                    for (int i = 0; i < _scrollHeight; i++)
+                    {
+                        src.Copy(dst, _screenWidth);
+                        src += _backGroundBuf.Pitch;
+                        dst += _window4BackScn.Pitch;
+                    }
+                }
+                else
+                {
+                    FillBackFromBackGround(_scrollHeight, (ushort) _screenWidth);
+                }
+
+                SetMoveRect(0, 0, 320, _scrollHeight);
+
+                _window4Flag = 1;
+            }
+
+            _scrollFlag = 0;
+
+            if (GameType == SIMONGameType.GType_SIMON2)
+            {
+                Ptr<AnimTable> animTable = _screenAnim1;
+                while (animTable.Value.srcPtr != BytePtr.Null)
+                {
+                    animTable.Value.srcPtr = BytePtr.Null;
+                    animTable.Offset++;
+                }
+
+                Ptr<VgaSprite> vsp = _vgaSprites;
+                while (vsp.Value.id != 0)
+                {
+                    vsp.Value.windowNum |= 0x8000;
+                    vsp.Offset++;
+                }
+            }
         }
 
         private void ClearSurfaces()
@@ -477,9 +677,16 @@ namespace NScumm.Agos
             }
         }
 
-        private void FillBackFromBackGround(int screenHeight, int screenWidth)
+        private void FillBackFromBackGround(ushort height, ushort width)
         {
-            throw new NotImplementedException();
+            var src = BackGround;
+            var dst = BackBuf;
+            for (int i = 0; i < height; i++)
+            {
+                Array.Copy(src.Data, src.Offset, dst.Data, dst.Offset, width);
+                src += _backGroundBuf.Pitch;
+                dst += _backBuf.Pitch;
+            }
         }
 
         private void FillBackGroundFromBack()
@@ -535,7 +742,7 @@ namespace NScumm.Agos
                         dst += screen.Pitch;
                     }
                     if (_gd.ADGameDescription.gameId != GameIds.GID_DIMP)
-                        FillBackFromBackGround(_screenHeight, _screenWidth);
+                        FillBackFromBackGround((ushort) _screenHeight, (ushort) _screenWidth);
                 }
                 else
                 {

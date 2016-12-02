@@ -232,7 +232,7 @@ namespace NScumm.Agos
             _videoLockOut = (ushort) (_videoLockOut & ~0x8000);
         }
 
-        private void RestoreBlock(ushort x, ushort y, ushort w, ushort h)
+        protected void RestoreBlock(ushort x, ushort y, ushort w, ushort h)
         {
             LocksScreen(screen =>
             {
@@ -292,9 +292,48 @@ namespace NScumm.Agos
             }
         }
 
-        private void WaitWindow(WindowBlock textWindow)
+        private void WaitWindow(WindowBlock window)
         {
-            throw new NotImplementedException();
+            window.textColumn = (short) ((window.width / 2) - 3);
+            window.textRow = (short) (window.height - 1);
+            window.textLength = 0;
+
+            var message = "[ OK ]";
+            foreach (var c in message)
+                WindowPutChar(window, (byte) c);
+
+            var ha = FindEmptyHitArea().Value;
+            ha.x = (ushort) ((window.width / 2 + window.x - 3) * 8);
+            ha.y = (ushort) (window.height * 8 + window.y - 8);
+            ha.width = 48;
+            ha.height = 8;
+            ha.flags = BoxFlags.kBFBoxInUse;
+            ha.id = 0x7FFF;
+            ha.priority = 999;
+
+            while (!HasToQuit)
+            {
+                _lastHitArea = null;
+                _lastHitArea3 = null;
+
+                while (!HasToQuit)
+                {
+                    if (_lastHitArea3 != null)
+                        break;
+                    Delay(1);
+                }
+
+                ha = _lastHitArea;
+                if (ha == null)
+                {
+                }
+                else if (ha.id == 0x7FFF)
+                {
+                    break;
+                }
+            }
+
+            UndefineBox(0x7FFF);
         }
     }
 }

@@ -21,7 +21,7 @@
 
 namespace NScumm.Agos
 {
-    class Item
+    internal class Item
     {
         public ushort parent;
         public ushort child;

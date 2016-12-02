@@ -1,5 +1,5 @@
 ﻿//
-//  WindowBlock.cs
+//  VgaFile1HeaderFeeble.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -19,18 +19,26 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using NScumm.Core;
+
 namespace NScumm.Agos
 {
-    internal class WindowBlock
+    internal class VgaFile1HeaderFeeble
     {
-        public byte mode;
-        public byte flags;
-        public short x, y;
-        public short width, height;
-        public short textColumn, textRow;
-        public short scrollY;
-        public ushort textColumnOffset, textLength, textMaxLength;
-        public byte fillColor, textColor;
-        public IconBlock iconPtr;
+        public ushort imageCount => Pointer.ToUInt16();
+        public ushort x_2 => Pointer.ToUInt16(2);
+        public ushort animationCount => Pointer.ToUInt16(4);
+        public ushort x_3 => Pointer.ToUInt16(6);
+        public ushort imageTable => Pointer.ToUInt16(8);
+        public ushort x_4 => Pointer.ToUInt16(10);
+        public ushort animationTable => Pointer.ToUInt16(12);
+        public ushort x_5 => Pointer.ToUInt16(14);
+
+        public BytePtr Pointer;
+
+        public VgaFile1HeaderFeeble(BytePtr pointer)
+        {
+            Pointer = pointer;
+        }
     }
 }

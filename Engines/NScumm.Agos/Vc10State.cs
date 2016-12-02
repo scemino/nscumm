@@ -40,7 +40,7 @@ namespace NScumm.Agos
         kDFShaded = 0x80
     }
 
-    class VC10_state
+    internal class Vc10State
     {
         public short image;
         public DrawFlags flags;

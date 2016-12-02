@@ -29,7 +29,9 @@ namespace NScumm.Agos
 {
     partial class AGOSEngine
     {
-        protected BytePtr vc10_depackColumn(VC10_state vs)
+        private BytePtr _scrollImage;
+
+        protected BytePtr vc10_depackColumn(Vc10State vs)
         {
             sbyte a = vs.depack_cont;
             var src = vs.srcPtr;
@@ -87,7 +89,7 @@ namespace NScumm.Agos
             return new BytePtr(vs.depack_dest, vs.y_skip);
         }
 
-        protected void vc10_skip_cols(VC10_state vs)
+        protected void vc10_skip_cols(Vc10State vs)
         {
             while (vs.x_skip != 0)
             {
@@ -96,7 +98,7 @@ namespace NScumm.Agos
             }
         }
 
-        protected bool DrawImageClip(VC10_state state)
+        protected bool DrawImageClip(Vc10State state)
         {
             var vlut = new Ptr<ushort>(_videoWindows, _windowNum * 4);
 
@@ -167,7 +169,7 @@ namespace NScumm.Agos
             return state.draw_width != 0 && state.draw_height != 0;
         }
 
-        protected void DrawBackGroundImage(VC10_state state)
+        protected void DrawBackGroundImage(Vc10State state)
         {
             state.width = (ushort) _screenWidth;
             if (_window3Flag == 1)
@@ -197,7 +199,7 @@ namespace NScumm.Agos
             } while (--h != 0);
         }
 
-        protected void DrawVertImage(VC10_state state)
+        protected void DrawVertImage(Vc10State state)
         {
             if (state.flags.HasFlag(DrawFlags.kDFCompressed))
             {
@@ -209,7 +211,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void DrawVertImageCompressed(VC10_state state)
+        private void DrawVertImageCompressed(Vc10State state)
         {
             System.Diagnostics.Debug.Assert(state.flags.HasFlag(DrawFlags.kDFCompressed));
 
@@ -221,7 +223,7 @@ namespace NScumm.Agos
             vc10_skip_cols(state);
 
             var dstPtr = state.surf_addr;
-            if (!state.flags.HasFlag(DrawFlags.kDFNonTrans) && (((ushort)state.flags & 0x40) != 0))
+            if (!state.flags.HasFlag(DrawFlags.kDFNonTrans) && state.flags.HasFlag(DrawFlags.kDFScaled))
             {
                 /* reached */
                 dstPtr += (int) VcReadVar(252);
@@ -267,7 +269,7 @@ namespace NScumm.Agos
             } while (++w != state.draw_width);
         }
 
-        private void DrawVertImageUncompressed(VC10_state state)
+        private void DrawVertImageUncompressed(Vc10State state)
         {
             System.Diagnostics.Debug.Assert(!state.flags.HasFlag(DrawFlags.kDFCompressed));
 
@@ -287,23 +289,192 @@ namespace NScumm.Agos
                         dst[count * 2 + 1] = (byte) (color | state.palette);
                 }
                 dst.Offset += (int) state.surf_pitch;
-                src.Offset += (state.width * 8);
+                src.Offset += state.width * 8;
             } while (--state.draw_height != 0);
         }
 
-        protected virtual void DrawImage(VC10_state state)
+        protected virtual void DrawImage(Vc10State state)
         {
             throw new NotImplementedException();
         }
 
-        private void HorizontalScroll(VC10_state state)
+        private void HorizontalScroll(Vc10State state)
         {
-            throw new NotImplementedException();
+            int dstPitch, w;
+
+            if (GameType == SIMONGameType.GType_FF)
+                _scrollXMax = (short) (state.width - 640);
+            else
+                _scrollXMax = (short) (state.width * 2 - 40);
+            _scrollYMax = 0;
+            _scrollImage = state.srcPtr;
+            _scrollHeight = state.height;
+            if (_variableArrayPtr[34] < 0)
+                state.x = _variableArrayPtr[251];
+
+            _scrollX = state.x;
+
+            VcWriteVar(251, _scrollX);
+
+            BytePtr dst, src;
+            if (GameType == SIMONGameType.GType_SIMON2)
+            {
+                dst = _window4BackScn.Pixels;
+                dstPitch = _window4BackScn.Pitch;
+            }
+            else
+            {
+                dst = BackBuf;
+                dstPitch = _backBuf.Pitch;
+            }
+
+            if (GameType == SIMONGameType.GType_FF)
+                src = state.srcPtr + _scrollX / 2;
+            else
+                src = state.srcPtr + _scrollX * 4;
+
+            for (w = 0; w < _screenWidth; w += 8)
+            {
+                DecodeColumn(dst, src + (int) ReadUint32Wrapper(src), state.height, (ushort) dstPitch);
+                dst += 8;
+                src += 4;
+            }
+
+            SetMoveRect(0, 0, 320, _scrollHeight);
+
+            _window4Flag = 1;
         }
 
-        private void VerticalScroll(VC10_state state)
+        private static void DecodeColumn(BytePtr dst, BytePtr src, ushort height, ushort pitch)
         {
-            throw new NotImplementedException();
+            var dstPtr = dst;
+            uint h = height, w = 8;
+
+            for (;;)
+            {
+                var reps = (sbyte) src.Value;
+                src.Offset++;
+                if (reps >= 0)
+                {
+                    byte color = src.Value;
+                    src.Offset++;
+
+                    do
+                    {
+                        dst.Value = color;
+                        dst += pitch;
+
+                        /* reached bottom? */
+                        if (--h == 0)
+                        {
+                            /* reached right edge? */
+                            if (--w == 0)
+                                return;
+                            dstPtr.Offset++;
+                            dst = dstPtr;
+                            h = height;
+                        }
+                    } while (--reps >= 0);
+                }
+                else
+                {
+                    do
+                    {
+                        dst.Value = src.Value;
+                        src.Offset++;
+                        dst += pitch;
+
+                        /* reached bottom? */
+                        if (--h == 0)
+                        {
+                            /* reached right edge? */
+                            if (--w == 0)
+                                return;
+                            dstPtr.Offset++;
+                            dst = dstPtr;
+                            h = height;
+                        }
+                    } while (++reps != 0);
+                }
+            }
+        }
+
+        private void VerticalScroll(Vc10State state)
+        {
+            _scrollXMax = 0;
+            _scrollYMax = (short) (state.height - 480);
+            _scrollImage = state.srcPtr;
+            _scrollWidth = state.width;
+            if (_variableArrayPtr[34] < 0)
+                state.y = _variableArrayPtr[250];
+
+            _scrollY = state.y;
+
+            VcWriteVar(250, _scrollY);
+
+            var dst = BackBuf;
+            var src = state.srcPtr + _scrollY / 2;
+
+            for (var h = 0; h < _screenHeight; h += 8)
+            {
+                DecodeRow(dst, src + src.ToInt32(), state.width, (ushort) _backBuf.Pitch);
+                dst += 8 * state.width;
+                src.Offset += 4;
+            }
+        }
+
+        private static void DecodeRow(BytePtr dst, BytePtr src, ushort width, ushort pitch)
+        {
+            var dstPtr = dst;
+            uint w = width, h = 8;
+
+            while (true)
+            {
+                var reps = (sbyte) src.Value;
+                src.Offset++;
+                if (reps >= 0)
+                {
+                    byte color = src.Value;
+                    src.Offset++;
+
+                    do
+                    {
+                        dst.Value = color;
+                        dst.Offset++;
+
+                        /* reached right edge? */
+                        if (--w == 0)
+                        {
+                            /* reached bottom? */
+                            if (--h == 0)
+                                return;
+                            dstPtr += pitch;
+                            dst = dstPtr;
+                            w = width;
+                        }
+                    } while (--reps >= 0);
+                }
+                else
+                {
+                    do
+                    {
+                        dst.Value = src.Value;
+                        src.Offset++;
+                        dst.Offset++;
+
+                        /* reached right edge? */
+                        if (--w == 0)
+                        {
+                            /* reached bottom? */
+                            if (--h == 0)
+                                return;
+                            dstPtr += pitch;
+                            dst = dstPtr;
+                            w = width;
+                        }
+                    } while (++reps != 0);
+                }
+            }
         }
 
         protected void PaletteFadeOut(Ptr<Color> palPtr, int num, int size)
@@ -376,31 +547,59 @@ namespace NScumm.Agos
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
                 _gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
             {
-                throw new NotImplementedException();
+                p = pp + pp.ToUInt16(2);
+                var header = new VgaFile1HeaderFeeble(p);
+                var count = header.animationCount;
+                p = pp + header.animationTable;
+
+                var h = new AnimationHeaderFeeble(p);
+                while (count-- != 0)
+                {
+                    h.Pointer = p;
+                    if (h.id == vgaSpriteId)
+                        break;
+                    p += AnimationHeaderFeeble.Size;
+                }
+                System.Diagnostics.Debug.Assert(h.id == vgaSpriteId);
             }
             else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1 ||
                      _gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
             {
                 p = pp + pp.ToUInt16BigEndian(4);
-                var header = new VgaFile1Header_Common(p);
+                var header = new VgaFile1HeaderCommon(p);
                 int count = ScummHelper.SwapBytes(header.animationCount);
                 p = pp + ScummHelper.SwapBytes(header.animationTable);
 
-                AnimationHeader_Simon animHeader;
+                AnimationHeaderSimon animHeader;
                 while (count-- != 0)
                 {
-                    animHeader = new AnimationHeader_Simon(p);
+                    animHeader = new AnimationHeaderSimon(p);
                     if (ScummHelper.SwapBytes(animHeader.id) == vgaSpriteId)
                         break;
-                    p += AnimationHeader_Simon.Size;
+                    p += AnimationHeaderSimon.Size;
                 }
 
-                animHeader = new AnimationHeader_Simon(p);
+                animHeader = new AnimationHeaderSimon(p);
                 System.Diagnostics.Debug.Assert(ScummHelper.SwapBytes(animHeader.id) == vgaSpriteId);
             }
             else
             {
-                throw new NotImplementedException();
+                p = pp + pp.ToUInt16BigEndian(10);
+                p += 20;
+
+                var header = new VgaFile1HeaderCommon(p);
+                var count = ScummHelper.SwapBytes(header.animationCount);
+                p = pp + ScummHelper.SwapBytes(header.animationTable);
+
+                var h = new AnimationHeaderWw(p);
+                while (count-- != 0)
+                {
+                    h.Pointer = p;
+                    if (ScummHelper.SwapBytes(h.id) == vgaSpriteId)
+                        break;
+                    p += AnimationHeaderWw.Size;
+                }
+                System.Diagnostics.Debug.Assert(ScummHelper.SwapBytes(h.id) == vgaSpriteId);
             }
 
 //            if (DebugMan.isDebugChannelEnabled(kDebugVGAScript)) {
@@ -416,19 +615,19 @@ namespace NScumm.Agos
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
                 _gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
             {
-                throw new NotImplementedException();
-                // AddVgaEvent(_vgaBaseDelay, ANIMATE_EVENT,_curVgaFile1 + READ_LE_UINT16(&((AnimationHeader_Feeble*) p).scriptOffs), vgaSpriteId, zoneNum);
+                AddVgaEvent(_vgaBaseDelay, EventType.ANIMATE_EVENT,
+                    _curVgaFile1 + new AnimationHeaderFeeble(p).scriptOffs, vgaSpriteId, zoneNum);
             }
             else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1 ||
                      _gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
             {
                 AddVgaEvent(_vgaBaseDelay, EventType.ANIMATE_EVENT,
-                    _curVgaFile1 + ScummHelper.SwapBytes(new AnimationHeader_Simon(p).scriptOffs), vgaSpriteId, zoneNum);
+                    _curVgaFile1 + ScummHelper.SwapBytes(new AnimationHeaderSimon(p).scriptOffs), vgaSpriteId, zoneNum);
             }
             else
             {
-                throw new NotImplementedException();
-                // AddVgaEvent(_vgaBaseDelay, ANIMATE_EVENT,_curVgaFile1 + READ_BE_UINT16(&((AnimationHeader_WW*) p).scriptOffs), vgaSpriteId, zoneNum);
+                AddVgaEvent(_vgaBaseDelay, EventType.ANIMATE_EVENT,
+                    _curVgaFile1 + ScummHelper.SwapBytes(new AnimationHeaderWw(p).scriptOffs), vgaSpriteId, zoneNum);
             }
         }
 
@@ -471,23 +670,26 @@ namespace NScumm.Agos
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
                 _gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
             {
-                throw new NotImplementedException();
-//                b = bb + READ_LE_UINT16(bb + 2);
-//                count = READ_LE_UINT16(&((VgaFile1Header_Feeble *) b).imageCount);
-//                b = bb + READ_LE_UINT16(&((VgaFile1Header_Feeble *) b).imageTable);
-//
-//                while (count--) {
-//                    if (READ_LE_UINT16(&((ImageHeader_Feeble *) b).id) == vgaSpriteId)
-//                        break;
-//                    b += sizeof(ImageHeader_Feeble);
-//                }
-//                assert(READ_LE_UINT16(&((ImageHeader_Feeble *) b).id) == vgaSpriteId);
+                b = bb + bb.ToUInt16(2);
+                var header = new VgaFile1HeaderCommon(b);
+                var count = header.imageCount;
+                b = bb + header.imageTable;
+
+                var h = new ImageHeaderFeeble(b);
+                while (count-- != 0)
+                {
+                    h.Pointer = b;
+                    if (h.id == vgaSpriteId)
+                        break;
+                    b += ImageHeaderFeeble.Size;
+                }
+                System.Diagnostics.Debug.Assert(h.id == vgaSpriteId);
             }
             else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1 ||
                      _gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
             {
                 b = bb + bb.ToUInt16BigEndian(4);
-                var header = new VgaFile1Header_Common(b);
+                var header = new VgaFile1HeaderCommon(b);
                 var count = ScummHelper.SwapBytes(header.imageCount);
                 b = bb + ScummHelper.SwapBytes(header.imageTable);
 
@@ -504,31 +706,36 @@ namespace NScumm.Agos
             }
             else
             {
-                throw new NotImplementedException();
-//                b = bb + READ_BE_UINT16(bb + 10);
-//                b += 20;
-//
-//                count = READ_BE_UINT16(&((VgaFile1Header_Common *) b).imageCount);
-//                b = bb + READ_BE_UINT16(&((VgaFile1Header_Common *) b).imageTable);
-//
-//                while (count--!=0) {
-//                    if (READ_BE_UINT16(&((ImageHeader_WW *) b).id) == vgaSpriteId)
-//                        break;
-//                    b += sizeof(ImageHeader_WW);
-//                }
-//                assert(READ_BE_UINT16(&((ImageHeader_WW *) b).id) == vgaSpriteId);
-//
-//                if (!vgaScript) {
-//                    ushort color = READ_BE_UINT16(&((ImageHeader_WW *) b).color);
-//                    if (_gd.ADGameDescription.gameType == GType_PN) {
-//                        if (color & 0x80)
-//                            _wiped = true;
-//                        else if (_wiped == true)
-//                            RestoreMenu();
-//                        color &= 0xFF7F;
-//                    }
-//                    ClearVideoWindow(_windowNum, color);
-//                }
+                b = bb + bb.ToUInt16BigEndian(10);
+                b += 20;
+
+                var header = new VgaFile1HeaderCommon(b);
+                var count = ScummHelper.SwapBytes(header.imageCount);
+                b = bb + ScummHelper.SwapBytes(header.imageTable);
+
+                var h = new ImageHeaderWw(b);
+                while (count-- != 0)
+                {
+                    h.Pointer = b;
+                    if (ScummHelper.SwapBytes(h.id) == vgaSpriteId)
+                        break;
+                    b += ImageHeaderWw.Size;
+                }
+                System.Diagnostics.Debug.Assert(ScummHelper.SwapBytes(h.id) == vgaSpriteId);
+
+                if (!vgaScript)
+                {
+                    ushort color = ScummHelper.SwapBytes(h.color);
+                    if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PN)
+                    {
+                        if ((color & 0x80) != 0)
+                            _wiped = true;
+                        else if (_wiped == true)
+                            RestoreMenu();
+                        color &= 0xFF7F;
+                    }
+                    ClearVideoWindow(_windowNum, color);
+                }
             }
 
 //            if (DebugMan.isDebugChannelEnabled(kDebugVGAScript)) {
@@ -546,8 +753,7 @@ namespace NScumm.Agos
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
                 _gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
             {
-                throw new NotImplementedException();
-//                _vcPtr = _curVgaFile1 + READ_LE_UINT16(&((ImageHeader_Feeble*) b).scriptOffs);
+                _vcPtr = _curVgaFile1 + new ImageHeaderFeeble(b).scriptOffs;
             }
             else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1 ||
                      _gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
@@ -556,12 +762,55 @@ namespace NScumm.Agos
             }
             else
             {
-                throw new NotImplementedException();
-//                _vcPtr = _curVgaFile1 + READ_BE_UINT16(&((ImageHeader_WW*) b).scriptOffs);
+                _vcPtr = _curVgaFile1 + ScummHelper.SwapBytes(new ImageHeaderWw(b).scriptOffs);
             }
 
             RunVgaScript();
             _vcPtr = vc_ptr_org;
+        }
+
+        // Personal Nightmare specific
+        private void RestoreMenu()
+        {
+            _wiped = false;
+
+            _videoLockOut |= 0x80;
+
+            ClearVideoWindow(3, 0);
+
+            ushort oldWindowNum = _windowNum;
+
+            SetWindowImage(1, 1);
+            SetWindowImage(2, 2);
+
+            DrawEdging();
+
+            _windowNum = oldWindowNum;
+
+            _videoLockOut |= 0x20;
+            _videoLockOut = (ushort) (_videoLockOut & ~0x80);
+        }
+
+        // Personal Nightmare specific
+        private void DrawEdging()
+        {
+            byte color = (byte) (GamePlatform == Platform.DOS ? 7 : 15);
+
+            LocksScreen(screen =>
+            {
+                var dst = screen.GetBasePtr(0, 136);
+                byte len = 52;
+
+                while (len-- != 0)
+                {
+                    dst[0] = color;
+                    dst[319] = color;
+                    dst += screen.Pitch;
+                }
+
+                dst = screen.GetBasePtr(0, 187);
+                dst.Data.Set(dst.Offset, color, _screenWidth);
+            });
         }
 
         private void SetWindowImageEx(ushort mode, ushort vgaSpriteId)

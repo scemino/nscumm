@@ -53,7 +53,9 @@
         <Compile Include="AGOSGameDescription.cs"/>
         <Compile Include="AgosGameDescriptor.cs"/>
         <Compile Include="AgosMetaEngine.cs"/>
-        <Compile Include="AnimationHeader_Simon.cs"/>
+        <Compile Include="AnimationHeaderFeeble.cs"/>
+        <Compile Include="AnimationHeaderWw.cs"/>
+        <Compile Include="AnimationHeaderSimon.cs"/>
         <Compile Include="AnimTable.cs"/>
         <Compile Include="BaseSound.cs"/>
         <Compile Include="CharsetFontData.cs"/>
@@ -64,6 +66,7 @@
         <Compile Include="HitArea.cs"/>
         <Compile Include="IconBlock.cs"/>
         <Compile Include="IconEntry.cs"/>
+        <Compile Include="ImageHeaderFeeble.cs"/>
         <Compile Include="ImageHeader_Simon.cs"/>
         <Compile Include="Item.cs"/>
         <Compile Include="LoopingAudioStream.cs"/>
@@ -78,9 +81,10 @@
         <Compile Include="SubroutineLine.cs"/>
         <Compile Include="TextLocation.cs"/>
         <Compile Include="TimeEvent.cs"/>
-        <Compile Include="VC10_state.cs"/>
+        <Compile Include="Vc10State.cs"/>
         <Compile Include="AgosEngine.Vga.cs"/>
-        <Compile Include="VgaFile1Header_Common.cs"/>
+        <Compile Include="VgaFile1HeaderCommon.cs"/>
+        <Compile Include="VgaFile1HeaderFeeble.cs"/>
         <Compile Include="VgaPointersEntry.cs"/>
         <Compile Include="VgaSleepStruct.cs"/>
         <Compile Include="VgaSprite.cs"/>

@@ -1,5 +1,5 @@
 ﻿//
-//  WindowBlock.cs
+//  AnimationHeader_Simon.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -19,18 +19,25 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using NScumm.Core;
+
 namespace NScumm.Agos
 {
-    internal class WindowBlock
+    internal class AnimationHeaderSimon
     {
-        public byte mode;
-        public byte flags;
-        public short x, y;
-        public short width, height;
-        public short textColumn, textRow;
-        public short scrollY;
-        public ushort textColumnOffset, textLength, textMaxLength;
-        public byte fillColor, textColor;
-        public IconBlock iconPtr;
+        public const int Size = 6;
+
+        public ushort id => Pointer.ToUInt16();
+
+        public ushort x_2 => Pointer.ToUInt16(2);
+
+        public ushort scriptOffs => Pointer.ToUInt16(4);
+
+        public BytePtr Pointer;
+
+        public AnimationHeaderSimon(BytePtr pointer)
+        {
+            Pointer = pointer;
+        }
     }
 }

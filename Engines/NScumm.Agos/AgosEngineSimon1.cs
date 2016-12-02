@@ -64,17 +64,14 @@ namespace NScumm.Agos
 
         protected override void UserGame(bool load)
         {
-            uint saveTime;
-            int i, numSaveGames;
-            bool b;
             Array.Clear(_saveBuf, 0, _saveBuf.Length);
-            int maxChar = (_language == Language.HE_ISR) ? 155 : 128;
+            var maxChar = (_language == Language.HE_ISR) ? 155 : 128;
 
             _saveOrLoad = load;
 
-            saveTime = GetTime();
+            var saveTime = GetTime();
 
-            numSaveGames = CountSaveGames();
+            var numSaveGames = CountSaveGames();
             if (!load)
                 numSaveGames++;
             numSaveGames -= 6;
@@ -90,7 +87,8 @@ namespace NScumm.Agos
             _saveLoadEdit = false;
 
             restart:
-            i = UserGameGetKey(out b, maxChar);
+            bool b;
+            var i = UserGameGetKey(out b, maxChar);
 
             if (i == 205)
                 goto get_out;
@@ -98,7 +96,6 @@ namespace NScumm.Agos
             {
                 // if_1
                 if_1:
-                ;
                 var result = i;
 
                 DisableBox(208 + i);
@@ -202,7 +199,7 @@ namespace NScumm.Agos
                             byte m, x;
 
                             _saveGameNameLen--;
-                            m = (byte) name[_saveGameNameLen];
+                            m = name[_saveGameNameLen];
 
                             if (_language == Language.HE_ISR)
                                 x = 8;
@@ -232,7 +229,6 @@ namespace NScumm.Agos
             }
 
             get_out:
-            ;
             DisableFileBoxes();
 
             _gameStoppedClock = GetTime() - saveTime + _gameStoppedClock;
@@ -420,7 +416,7 @@ namespace NScumm.Agos
                 do
                 {
                     var keyCode = _keyPressed.GetKeys().FirstOrDefault();
-                    char ascii = keyCode == 0 ? '\0' : ToChar(keyCode);
+                    var ascii = keyCode == 0 ? '\0' : ToChar(keyCode);
                     if (_saveLoadEdit && ascii != 0 && ascii < maxChar)
                     {
                         b = false;
@@ -476,9 +472,9 @@ namespace NScumm.Agos
             InitMouseCore();
 
             var src = new Ptr<ushort>(_common_mouseInfo);
-            for (int i = 0; i < 16; i++)
+            for (var i = 0; i < 16; i++)
             {
-                for (int j = 0; j < 16; j++)
+                for (var j = 0; j < 16; j++)
                 {
                     if ((src[0] & (1 << (15 - j % 16))) == 0) continue;
                     if ((src[1] & (1 << (15 - j % 16))) != 0)
@@ -645,7 +641,7 @@ namespace NScumm.Agos
                     src = _iconFilePtr;
                     src += src.ToInt32BigEndian(icon * 4);
                     var color = (byte) (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_32COLOR) ? 224 : 240);
-                    DecompressIconPlanar(dst, src, 24, 12, color, screen.Pitch);
+                    DecompressIconPlanar(dst, src, 24, 12, color, (uint) screen.Pitch);
                 }
                 else
                 {
@@ -732,7 +728,7 @@ namespace NScumm.Agos
             base.SetupGame();
         }
 
-        protected override void DrawImage(VC10_state state)
+        protected override void DrawImage(Vc10State state)
         {
             var vlut = new Ptr<ushort>(_videoWindows, _windowNum * 4);
 
@@ -911,7 +907,7 @@ namespace NScumm.Agos
 
             _windowNum = 0;
             _curVgaFile2 = vpe.Value.vgaFile2;
-            DrawImageInit(1, palette, 38, 150, 4);
+            DrawImageInit(1, palette, 38, 150, DrawFlags.kDFSkipStoreBG);
 
             _curVgaFile2 = curVgaFile2Orig;
             _windowNum = windowNumOrig;
@@ -921,7 +917,10 @@ namespace NScumm.Agos
 
         protected override void RemoveArrows(WindowBlock window, int num)
         {
-            throw new NotImplementedException();
+            if (GameType == SIMONGameType.GType_SIMON1)
+            {
+                RestoreBlock(304, 146, 320, 200);
+            }
         }
 
         protected override int SetupIconHitArea(WindowBlock window, uint num, int x, int y, Item itemPtr)
@@ -1025,14 +1024,14 @@ namespace NScumm.Agos
             } while (--i != 0);
         }
 
-        private void Draw32ColorImage(VC10_state state)
+        private void Draw32ColorImage(Vc10State state)
         {
             BytePtr src;
             BytePtr dst;
 
             if (state.flags.HasFlag(DrawFlags.kDFCompressed))
             {
-                BytePtr dstPtr = state.surf_addr;
+                var dstPtr = state.surf_addr;
                 src = state.srcPtr;
                 /* AAAAAAAA BBBBBBBB CCCCCCCC DDDDDDDD EEEEEEEE
                  * aaaaabbb bbcccccd ddddeeee efffffgg ggghhhhh
@@ -1040,12 +1039,12 @@ namespace NScumm.Agos
 
                 do
                 {
-                    int count = state.draw_width / 4;
+                    var count = state.draw_width / 4;
 
                     dst = dstPtr;
                     do
                     {
-                        int bits = (src[0] << 24) | (src[1] << 16) | (src[2] << 8) | src[3];
+                        var bits = (src[0] << 24) | (src[1] << 16) | (src[2] << 8) | src[3];
                         byte color;
 
                         color = (byte) ((bits >> (32 - 5)) & 31);
@@ -1102,7 +1101,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void DrawMaskedImage(VC10_state state)
+        private void DrawMaskedImage(Vc10State state)
         {
             if (GameType == SIMONGameType.GType_SIMON1 && (_windowNum == 3 || _windowNum == 4 || _windowNum >= 10))
             {
@@ -1111,9 +1110,9 @@ namespace NScumm.Agos
 
             if (Features.HasFlag(GameFeatures.GF_32COLOR))
             {
-                BytePtr mask = state.srcPtr + (state.width * state.y_skip * 16) + (state.x_skip * 8);
-                BytePtr src = state.surf2_addr;
-                BytePtr dst = state.surf_addr;
+                var mask = state.srcPtr + (state.width * state.y_skip * 16) + (state.x_skip * 8);
+                var src = state.surf2_addr;
+                var dst = state.surf_addr;
 
                 state.draw_width *= 2;
 
@@ -1148,7 +1147,7 @@ namespace NScumm.Agos
 
                 vc10_skip_cols(state);
 
-                int w = 0;
+                var w = 0;
                 do
                 {
                     var mask = vc10_depackColumn(state);
@@ -1161,9 +1160,9 @@ namespace NScumm.Agos
                         if (GameType == SIMONGameType.GType_SIMON1 && GetBitFlag(88))
                         {
                             /* transparency */
-                            if ((mask[0] & 0xF0) != 0 && ((dst[0] & 0x0F0) == 0x20))
+                            if (((mask[0] & 0xF0) != 0) && ((dst[0] & 0x0F0) == 0x20))
                                 dst[0] = src[0];
-                            if ((mask[0] & 0x0F) != 0 && ((dst[1] & 0x0F0) == 0x20))
+                            if (((mask[0] & 0x0F) != 0) && ((dst[1] & 0x0F0) == 0x20))
                                 dst[1] = src[1];
                         }
                         else
@@ -1182,15 +1181,15 @@ namespace NScumm.Agos
             }
             else
             {
-                BytePtr mask = state.srcPtr + (state.width * state.y_skip) * 8;
-                BytePtr src = state.surf2_addr;
-                BytePtr dst = state.surf_addr;
+                var mask = state.srcPtr + (state.width * state.y_skip) * 8;
+                var src = state.surf2_addr;
+                var dst = state.surf_addr;
 
                 state.x_skip *= 4;
 
                 do
                 {
-                    for (int count = 0; count != state.draw_width; count++)
+                    for (var count = 0; count != state.draw_width; count++)
                     {
                         if (GameType == SIMONGameType.GType_SIMON1 && GetBitFlag(88))
                         {
@@ -1267,7 +1266,7 @@ namespace NScumm.Agos
             }
             else if (Features.HasFlag(GameFeatures.GF_TALKIE))
             {
-                byte[] buf = new byte[4];
+                var buf = new byte[4];
 
                 // WORKAROUND: For a script bug in the CD versions
                 // We skip this music resource, as it was replaced by
@@ -1420,7 +1419,7 @@ namespace NScumm.Agos
         private void os1_playEffect()
         {
             // 163: play sound
-            ushort soundId = (ushort) GetVarOrWord();
+            var soundId = (ushort) GetVarOrWord();
 
             if (GameId == GameIds.GID_SIMON1DOS)
                 PlaySting(soundId);
@@ -1431,20 +1430,20 @@ namespace NScumm.Agos
         private void os1_screenTextPObj()
         {
             // 177: inventory descriptions
-            uint vgaSpriteId = GetVarOrByte();
-            uint color = GetVarOrByte();
+            var vgaSpriteId = GetVarOrByte();
+            var color = GetVarOrByte();
 
             var subObject = (SubObject) FindChildOfType(GetNextItemPtr(), ChildType.kObjectType);
             if (Features.HasFlag(GameFeatures.GF_TALKIE))
             {
                 if (subObject != null && subObject.objectFlags.HasFlag(SubObjectFlags.kOFVoice))
                 {
-                    int offs = GetOffsetOfChild2Param(subObject, (int) SubObjectFlags.kOFVoice);
+                    var offs = GetOffsetOfChild2Param(subObject, (int) SubObjectFlags.kOFVoice);
                     PlaySpeech((ushort) subObject.objectFlagValue[offs], (ushort) vgaSpriteId);
                 }
                 else if (subObject != null && subObject.objectFlags.HasFlag(SubObjectFlags.kOFNumber))
                 {
-                    int offs = GetOffsetOfChild2Param(subObject, (int) SubObjectFlags.kOFNumber);
+                    var offs = GetOffsetOfChild2Param(subObject, (int) SubObjectFlags.kOFNumber);
                     PlaySpeech((ushort) (subObject.objectFlagValue[offs] + 3550), (ushort) vgaSpriteId);
                 }
             }
@@ -1452,7 +1451,7 @@ namespace NScumm.Agos
             if (subObject != null && subObject.objectFlags.HasFlag(SubObjectFlags.kOFText) && _subtitles)
             {
                 var stringPtr = GetStringPtrById((ushort) subObject.objectFlagValue[0]);
-                TextLocation tl = GetTextLocation(vgaSpriteId);
+                var tl = GetTextLocation(vgaSpriteId);
 
                 if (subObject.objectFlags.HasFlag(SubObjectFlags.kOFNumber))
                 {
@@ -1476,7 +1475,7 @@ namespace NScumm.Agos
                     }
                     stringPtr = buf;
                 }
-                if (stringPtr != null && stringPtr[0] != 0)
+                if (!string.IsNullOrEmpty(stringPtr))
                     PrintScreenText(vgaSpriteId, color, stringPtr, tl.x, tl.y, tl.width);
             }
         }
@@ -1484,13 +1483,13 @@ namespace NScumm.Agos
         private void os1_getPathPosn()
         {
             // 178: path find
-            uint x = GetVarOrWord();
-            uint y = GetVarOrWord();
-            uint var1 = GetVarOrByte();
-            uint var2 = GetVarOrByte();
+            var x = GetVarOrWord();
+            var y = GetVarOrWord();
+            var var1 = GetVarOrByte();
+            var var2 = GetVarOrByte();
 
             uint bestI = 0, bestJ = 0, bestDist = 0xFFFFFFFF;
-            int maxPath = GameType == SIMONGameType.GType_FF || GameType == SIMONGameType.GType_PP ? 100 : 20;
+            var maxPath = GameType == SIMONGameType.GType_FF || GameType == SIMONGameType.GType_PP ? 100 : 20;
 
             if (GameType == SIMONGameType.GType_FF || GameType == SIMONGameType.GType_PP)
             {
@@ -1502,7 +1501,7 @@ namespace NScumm.Agos
                 x = (uint) (x + _scrollX * 8);
             }
 
-            int end = (GameType == SIMONGameType.GType_FF) ? 9999 : 999;
+            var end = (GameType == SIMONGameType.GType_FF) ? 9999 : 999;
             var prevI = (uint) (maxPath + 1 - ReadVariable(12));
             for (var i = maxPath; i != 0; --i)
             {
@@ -1512,15 +1511,15 @@ namespace NScumm.Agos
 
                 for (var j = 0; ReadUint16Wrapper(p) != end; j++, p += 4)
                 {
-                    uint xDiff = (uint) Math.Abs((short) (ReadUint16Wrapper(p) - x));
-                    uint yDiff = (uint) Math.Abs((short) (ReadUint16Wrapper(p + 2) - 12 - y));
+                    var xDiff = (uint) Math.Abs((short) (ReadUint16Wrapper(p) - x));
+                    var yDiff = (uint) Math.Abs((short) (ReadUint16Wrapper(p + 2) - 12 - y));
 
                     if (xDiff < yDiff)
                     {
                         xDiff /= 4;
                         yDiff *= 4;
                     }
-                    xDiff += yDiff /= 4;
+                    xDiff += yDiff / 4;
 
                     if ((xDiff < bestDist) || ((xDiff == bestDist) && (prevI == i)))
                     {
@@ -1538,9 +1537,9 @@ namespace NScumm.Agos
         private void os1_scnTxtLongText()
         {
             // 179: conversation responses and room descriptions
-            uint vgaSpriteId = GetVarOrByte();
-            uint color = GetVarOrByte();
-            uint stringId = GetVarOrByte();
+            var vgaSpriteId = GetVarOrByte();
+            var color = GetVarOrByte();
+            var stringId = GetVarOrByte();
             uint speechId = 0;
 
             var stringPtr = GetStringPtrById(_longText[stringId]);
@@ -1596,7 +1595,7 @@ namespace NScumm.Agos
         private void os1_unloadZone()
         {
             // 184: unload zone
-            uint a = GetVarOrWord();
+            var a = GetVarOrWord();
             var vpe = _vgaBufferPointers[a];
             vpe.sfxFile = BytePtr.Null;
             vpe.vgaFile1 = BytePtr.Null;

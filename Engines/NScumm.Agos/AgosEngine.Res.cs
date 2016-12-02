@@ -47,7 +47,7 @@ namespace NScumm.Agos
 
         private void DecompressData(string filename, BytePtr dst, int offs, int srcSize, int dstSize)
         {
-            throw new NotImplementedException();
+            Error("Zlib support is required for Amiga and Macintosh versions");
         }
 
         private void LoadOffsets(string filename, int number, out int file,
@@ -461,17 +461,62 @@ namespace NScumm.Agos
             throw new NotImplementedException();
         }
 
-        protected void LoadVGABeardFile(int i)
+        protected void LoadVGABeardFile(ushort id)
         {
-            throw new NotImplementedException();
+            int size;
+
+            if (Features.HasFlag(GameFeatures.GF_OLD_BUNDLE))
+            {
+                string filename;
+                if (id == 23)
+                    id = 112;
+                else if (id == 328)
+                    id = 119;
+
+                if (GamePlatform == Platform.Amiga)
+                {
+                    if (Features.HasFlag(GameFeatures.GF_TALKIE))
+                        filename = $"0{id}.out";
+                    else
+                        filename = $"0{id}.pkd";
+                }
+                else
+                {
+                    filename = $"0{id}.VGA";
+                }
+
+                var @in = OpenFileRead(filename);
+                if (@in == null)
+                    Error("loadSimonVGAFile: Can't load {0}", filename);
+
+                size = (int) @in.Length;
+                if (Features.HasFlag(GameFeatures.GF_CRUNCHED))
+                {
+                    var srcBuffer = new byte[size];
+                    if (@in.Read(srcBuffer, 0, size) != size)
+                        Error("loadSimonVGAFile: Read failed");
+                    DecrunchFile(srcBuffer, _vgaBufferPointers[11].vgaFile2, size);
+                }
+                else
+                {
+                    var ptr = _vgaBufferPointers[11].vgaFile2;
+                    if (@in.Read(ptr.Data, ptr.Offset, size) != size)
+                        Error("loadSimonVGAFile: Read failed");
+                }
+            }
+            else
+            {
+                int offs = (int) _gameOffsetsPtr[id];
+                size = (int) (_gameOffsetsPtr[id + 1] - offs);
+                ReadGameFile(_vgaBufferPointers[11].vgaFile2, offs, size);
+            }
         }
 
         private void LoadVGAVideoFile(ushort id, byte type, bool useError)
         {
-            Stream @in;
             BytePtr dst;
             string filename;
-            int file, offs, srcSize, dstSize;
+            int offs, srcSize, dstSize;
             int extraBuffer = 0;
 
             if ((_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1 ||
@@ -487,6 +532,7 @@ namespace NScumm.Agos
 
             if (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_ZLIBCOMP))
             {
+                int file;
                 LoadOffsets(GetFileName(GameFileTypes.GAME_GFXIDXFILE), id * 3 + type, out file, out offs,
                     out srcSize, out dstSize);
 
@@ -550,7 +596,7 @@ namespace NScumm.Agos
                     }
                 }
 
-                @in = OpenFileRead(filename);
+                var @in = OpenFileRead(filename);
                 if (@in == null)
                 {
                     if (useError)
@@ -628,7 +674,7 @@ namespace NScumm.Agos
             }
         }
 
-        private BytePtr ConvertImage(VC10_state state, bool hasFlag)
+        private BytePtr ConvertImage(Vc10State state, bool compressed)
         {
             throw new NotImplementedException();
         }

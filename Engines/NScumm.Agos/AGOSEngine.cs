@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Core.Common;
@@ -351,6 +352,8 @@ namespace NScumm.Agos
 #if Undefined
     DebugMan.addDebugChannel(kDebugImageDump, "image_dump", "Enable dumping of images to files");
 #endif
+            _opcode177Var1 = 1;
+            _opcode178Var1 = 1;
         }
 
         public override void Run()
@@ -943,9 +946,125 @@ namespace NScumm.Agos
         }
 
         // Waxworks specific
-        protected void LoadRoomItems(ushort currentRoom)
+        protected bool LoadRoomItems(ushort room)
         {
-            throw new NotImplementedException();
+            BytePtr p;
+            uint i, minNum, maxNum;
+            Item item;
+
+            if (_roomsList == null)
+                return false;
+
+            _currentRoom = room;
+            room -= 2;
+
+            if (_roomsListPtr != BytePtr.Null)
+            {
+                p = _roomsListPtr;
+                for (;;)
+                {
+                    minNum = p.ToUInt16BigEndian();
+                    p += 2;
+                    if (minNum == 0)
+                        break;
+
+                    maxNum = p.ToUInt16BigEndian();
+                    p += 2;
+
+                    for (ushort z = (ushort) minNum; z <= maxNum; z++)
+                    {
+                        ushort itemNum = (ushort) (z + 2);
+                        item = DerefItem(itemNum);
+                        _itemArrayPtr[itemNum] = null;
+
+                        ushort num = (ushort) (itemNum - _itemArrayInited);
+                        _roomStates[num].state = (ushort) item.state;
+                        _roomStates[num].classFlags = item.classFlags;
+                        var subRoom = (SubRoom) FindChildOfType(item, ChildType.kRoomType);
+                        _roomStates[num].roomExitStates = subRoom.roomExitStates;
+                    }
+                }
+            }
+
+            p = _roomsList;
+            var filename = new StringBuilder();
+            while (p.Value != 0)
+            {
+                for (i = 0; p.Value != 0; p.Offset++, i++)
+                    filename.Append((char) p.Value);
+                p.Offset++;
+
+                _roomsListPtr = p;
+
+                for (;;)
+                {
+                    minNum = p.ToUInt16BigEndian();
+                    p += 2;
+                    if (minNum == 0)
+                        break;
+
+                    maxNum = p.ToUInt16BigEndian();
+                    p += 2;
+
+                    if (room >= minNum && room <= maxNum)
+                    {
+                        var @in = OpenFileRead(filename.ToString());
+                        if (@in == null)
+                        {
+                            Error("loadRoomItems: Can't load rooms file '{0}'", filename);
+                        }
+
+                        var br = new BinaryReader(@in);
+                        while ((i = br.ReadUInt16BigEndian()) != 0)
+                        {
+                            ushort itemNum = (ushort) (i + 2);
+
+                            _itemArrayPtr[itemNum] = AllocateItem<Item>();
+                            ReadItemFromGamePc(@in, _itemArrayPtr[itemNum]);
+
+                            item = DerefItem(itemNum);
+                            item.parent = 0;
+                            item.child = 0;
+
+                            for (ushort z = (ushort) _itemArrayInited; z != 0; z--)
+                            {
+                                Item itemTmp = DerefItem(z);
+
+                                if (itemTmp?.parent != itemNum)
+                                    continue;
+                                if (item.child == 0)
+                                {
+                                    item.child = z;
+                                    continue;
+                                }
+                                ushort child = item.child;
+                                while (itemTmp.next != 0)
+                                {
+                                    if (itemTmp.next == child)
+                                    {
+                                        item.child = z;
+                                        break;
+                                    }
+
+                                    itemTmp = DerefItem(itemTmp.next);
+                                }
+                            }
+
+                            ushort num = (ushort) (itemNum - _itemArrayInited);
+                            item.state = (short) _roomStates[num].state;
+                            item.classFlags = _roomStates[num].classFlags;
+                            var subRoom = (SubRoom) FindChildOfType(item, ChildType.kRoomType);
+                            subRoom.roomExitStates = _roomStates[num].roomExitStates;
+                        }
+                        @in.Dispose();
+
+                        return true;
+                    }
+                }
+            }
+
+            Debug(1, "loadRoomItems: didn't find {0}", room);
+            return false;
         }
 
         private static readonly byte[] polish4CD_feebleFontSize =

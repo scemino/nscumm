@@ -3,7 +3,7 @@ using NScumm.Core.IO;
 
 namespace NScumm.Agos
 {
-    partial class AGOSEngine
+    partial class AgosEngine
     {
         private void FreezeBottom()
         {

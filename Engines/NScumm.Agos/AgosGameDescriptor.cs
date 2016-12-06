@@ -27,7 +27,7 @@ namespace NScumm.Agos
 {
     class AgosGameDescriptor : IGameDescriptor
     {
-        public AgosGameDescriptor(string path, AGOSGameDescription desc)
+        public AgosGameDescriptor(string path, AgosGameDescription desc)
         {
             ADGameDescription = desc;
             Path = path;
@@ -36,7 +36,7 @@ namespace NScumm.Agos
             Platform = desc.platform;
         }
 
-        public AGOSGameDescription ADGameDescription { get; }
+        public AgosGameDescription ADGameDescription { get; }
 
         public string Description => "";
 

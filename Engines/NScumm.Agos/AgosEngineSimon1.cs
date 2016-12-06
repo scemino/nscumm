@@ -31,7 +31,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
 {
-    internal class AgosEngineSimon1 : AGOSEngine_Waxworks
+    internal class AgosEngineSimon1 : AgosEngineWaxworks
     {
         private Dictionary<int, Action> _opcodes;
 
@@ -46,14 +46,14 @@ namespace NScumm.Agos
             };
 
 
-        public AgosEngineSimon1(ISystem system, GameSettings settings, AGOSGameDescription gd)
+        public AgosEngineSimon1(ISystem system, GameSettings settings, AgosGameDescription gd)
             : base(system, settings, gd)
         {
         }
 
         protected override void ExecuteOpcode(int opcode)
         {
-            Debug($"ExecuteOpcode({opcode})");
+            Debug($"ExecuteOpcode({opcode} {_opcodes[opcode].Method.Name})");
             if (_opcodes.ContainsKey(opcode))
             {
                 _opcodes[opcode]();
@@ -1048,37 +1048,37 @@ namespace NScumm.Agos
                         byte color;
 
                         color = (byte) ((bits >> (32 - 5)) & 31);
-                        if ((state.flags.HasFlag(DrawFlags.kDFNonTrans)) || color != 0)
+                        if (state.flags.HasFlag(DrawFlags.kDFNonTrans) || color != 0)
                             dst[0] = color;
                         color = (byte) ((bits >> (32 - 10)) & 31);
-                        if ((state.flags.HasFlag(DrawFlags.kDFNonTrans)) || color != 0)
+                        if (state.flags.HasFlag(DrawFlags.kDFNonTrans) || color != 0)
                             dst[1] = color;
                         color = (byte) ((bits >> (32 - 15)) & 31);
-                        if ((state.flags.HasFlag(DrawFlags.kDFNonTrans)) || color != 0)
+                        if (state.flags.HasFlag(DrawFlags.kDFNonTrans) || color != 0)
                             dst[2] = color;
                         color = (byte) ((bits >> (32 - 20)) & 31);
-                        if ((state.flags.HasFlag(DrawFlags.kDFNonTrans)) || color != 0)
+                        if (state.flags.HasFlag(DrawFlags.kDFNonTrans) || color != 0)
                             dst[3] = color;
                         color = (byte) ((bits >> (32 - 25)) & 31);
-                        if ((state.flags.HasFlag(DrawFlags.kDFNonTrans)) || color != 0)
+                        if (state.flags.HasFlag(DrawFlags.kDFNonTrans) || color != 0)
                             dst[4] = color;
                         color = (byte) ((bits >> (32 - 30)) & 31);
-                        if ((state.flags.HasFlag(DrawFlags.kDFNonTrans)) || color != 0)
+                        if (state.flags.HasFlag(DrawFlags.kDFNonTrans) || color != 0)
                             dst[5] = color;
 
                         bits = (bits << 8) | src[4];
 
                         color = (byte) ((bits >> (40 - 35)) & 31);
-                        if ((state.flags.HasFlag(DrawFlags.kDFNonTrans)) || color != 0)
+                        if (state.flags.HasFlag(DrawFlags.kDFNonTrans) || color != 0)
                             dst[6] = color;
-                        color = (byte) ((bits) & 31);
-                        if ((state.flags.HasFlag(DrawFlags.kDFNonTrans)) || color != 0)
+                        color = (byte) (bits & 31);
+                        if (state.flags.HasFlag(DrawFlags.kDFNonTrans) || color != 0)
                             dst[7] = color;
 
                         dst += 8;
                         src += 5;
                     } while (--count != 0);
-                    dstPtr.Offset = (int) (dstPtr.Offset + state.surf_pitch);
+                    dstPtr += (int)state.surf_pitch;
                 } while (--state.draw_height != 0);
             }
             else
@@ -1091,8 +1091,7 @@ namespace NScumm.Agos
                 int h = state.draw_height;
                 do
                 {
-                    int i;
-                    for (i = 0; i != state.draw_width; i++)
+                    for (var i = 0; i != state.draw_width; i++)
                         if (state.flags.HasFlag(DrawFlags.kDFNonTrans) || src[i] != 0)
                             dst[i] = (byte) (src[i] + state.paletteMod);
                     dst.Offset = (int) (dst.Offset + state.surf_pitch);
@@ -1501,7 +1500,7 @@ namespace NScumm.Agos
                 x = (uint) (x + _scrollX * 8);
             }
 
-            var end = (GameType == SIMONGameType.GType_FF) ? 9999 : 999;
+            var end = GameType == SIMONGameType.GType_FF ? 9999 : 999;
             var prevI = (uint) (maxPath + 1 - ReadVariable(12));
             for (var i = maxPath; i != 0; --i)
             {

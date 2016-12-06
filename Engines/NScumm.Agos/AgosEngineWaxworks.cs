@@ -25,9 +25,9 @@ using NScumm.Core.IO;
 
 namespace NScumm.Agos
 {
-    internal abstract class AGOSEngine_Waxworks : AGOSEngine_Elvira2
+    internal abstract class AgosEngineWaxworks : AgosEngineElvira2
     {
-        public AGOSEngine_Waxworks(ISystem system, GameSettings settings, AGOSGameDescription gd)
+        public AgosEngineWaxworks(ISystem system, GameSettings settings, AgosGameDescription gd)
             : base(system, settings, gd)
         {
         }
@@ -83,7 +83,7 @@ namespace NScumm.Agos
         {
             // 70: show string from array
             var str = GetStringPtrById(_longText[GetVarOrByte()]);
-            ShowMessageFormat("%s\n", str);
+            ShowMessageFormat("{0}\n", str);
         }
 
         protected void oww_lockZones()

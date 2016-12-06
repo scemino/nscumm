@@ -24,7 +24,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
 {
-    partial class AGOSEngine
+    partial class AgosEngine
     {
         protected T AllocateChildBlock<T>(Item i, ChildType type) where T : Child, new()
         {

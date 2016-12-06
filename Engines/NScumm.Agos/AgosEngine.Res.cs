@@ -28,7 +28,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
 {
-    partial class AGOSEngine
+    partial class AgosEngine
     {
         private ushort To16Wrapper(uint value)
         {

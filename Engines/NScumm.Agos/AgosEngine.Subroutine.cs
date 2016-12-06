@@ -26,7 +26,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
 {
-    partial class AGOSEngine
+    partial class AgosEngine
     {
         private static readonly string[] opcodeArgTable_elvira1 =
         {

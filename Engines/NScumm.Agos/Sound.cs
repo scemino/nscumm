@@ -40,7 +40,7 @@ namespace NScumm.Agos
     internal class Sound
     {
         public const bool SOUND_BIG_ENDIAN = true;
-        private readonly AGOSEngine _vm;
+        private readonly AgosEngine _vm;
 
         private readonly IMixer _mixer;
 
@@ -74,7 +74,7 @@ namespace NScumm.Agos
 
         public bool IsVoiceActive => _mixer.IsSoundHandleActive(_voiceHandle);
 
-        public Sound(AGOSEngine vm, GameSpecificSettings gss, IMixer mixer)
+        public Sound(AgosEngine vm, GameSpecificSettings gss, IMixer mixer)
         {
             _vm = vm;
             _mixer = mixer;

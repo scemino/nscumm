@@ -96,7 +96,7 @@ namespace NScumm.Agos
         private static readonly ADGameDescription[] gameDescriptions =
         {
             // Simon the Sorcerer 1 - English DOS Floppy
-            new AGOSGameDescription(new ADGameDescription("simon1","Floppy",
+            new AgosGameDescription(new ADGameDescription("simon1","Floppy",
                 new[]
                 {
                     new ADGameFileDescription("gamepc", (ushort)GameFileTypes.GAME_BASEFILE,"c392e494dcabed797b98cbcfc687b33a",-1),
@@ -158,7 +158,7 @@ namespace NScumm.Agos
 
         protected override IGameDescriptor CreateGameDescriptor(string path, ADGameDescription desc)
         {
-            return new AgosGameDescriptor(path, (AGOSGameDescription)desc);
+            return new AgosGameDescriptor(path, (AgosGameDescription)desc);
         }
     }
 }

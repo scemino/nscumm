@@ -28,7 +28,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
 {
-    partial class AGOSEngine
+    partial class AgosEngine
     {
         private readonly Item[] _objectArray = new Item[50];
         protected readonly Item[] _itemStore = new Item[50];
@@ -149,7 +149,7 @@ namespace NScumm.Agos
                 if (opcode >= _numVideoOpcodes || _vga_opcode_table[opcode] == null)
                     Error("runVgaScript: Invalid VGA opcode '{0}' encountered", opcode);
 
-                Debug($"runVgaScript {opcode}");
+                Debug($"runVgaScript {opcode} {_vga_opcode_table[opcode].Method.Name}");
                 _vga_opcode_table[opcode]();
             }
         }
@@ -1737,7 +1737,7 @@ namespace NScumm.Agos
         {
             uint a = _codePtr.ToUInt16BigEndian();
             _codePtr += 2;
-            if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
+            if (GameType == SIMONGameType.GType_PP)
             {
                 if (a >= 60000 && a < 62048)
                 {

@@ -23,13 +23,13 @@ using NScumm.Core.IO;
 
 namespace NScumm.Agos
 {
-    class AGOSGameDescription : ADGameDescription
+    internal class AgosGameDescription : ADGameDescription
     {
         public SIMONGameType gameType;
         public GameIds gameId;
         public GameFeatures features;
 
-        public AGOSGameDescription(ADGameDescription desc, SIMONGameType gameType,
+        public AgosGameDescription(ADGameDescription desc, SIMONGameType gameType,
             GameIds gameId, GameFeatures features)
             : base(desc.gameid, desc.extra, desc.filesDescriptions, desc.language, desc.platform, desc.flags,
                 desc.guioptions)

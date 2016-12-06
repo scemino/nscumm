@@ -34,7 +34,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
 {
-    abstract partial class AGOSEngine : Engine
+    abstract partial class AgosEngine : Engine
     {
         private const int SUBROUTINE_LINE_SMALL_SIZE = 2;
         private const int SUBROUTINE_LINE_BIG_SIZE = 8;
@@ -339,7 +339,7 @@ namespace NScumm.Agos
         protected BytePtr _roomsListPtr;
         private bool _effectsPaused;
 
-        protected AGOSEngine(ISystem system, GameSettings settings, AGOSGameDescription gd)
+        protected AgosEngine(ISystem system, GameSettings settings, AgosGameDescription gd)
             : base(system, settings)
         {
             _gd = (AgosGameDescriptor) Settings.Game;

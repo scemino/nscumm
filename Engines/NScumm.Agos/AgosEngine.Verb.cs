@@ -25,7 +25,7 @@ using NScumm.Core.IO;
 
 namespace NScumm.Agos
 {
-    partial class AGOSEngine
+    partial class AgosEngine
     {
         protected virtual void ClearName()
         {

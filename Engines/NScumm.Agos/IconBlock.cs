@@ -25,7 +25,7 @@ namespace NScumm.Agos
     {
         public short line;
         public Item itemRef;
-        public IconEntry[] iconArray = AGOSEngine.CreateArray<IconEntry>(64);
+        public IconEntry[] iconArray = AgosEngine.CreateArray<IconEntry>(64);
         public short upArrow;
         public short downArrow;
         public ushort classMask;

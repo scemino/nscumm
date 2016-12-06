@@ -24,7 +24,7 @@ using NScumm.Core.Graphics;
 
 namespace NScumm.Agos
 {
-    partial class AGOSEngine
+    partial class AgosEngine
     {
         protected virtual void DrawMousePointer()
         {

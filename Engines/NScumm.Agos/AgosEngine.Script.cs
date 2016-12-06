@@ -26,7 +26,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
 {
-    partial class AGOSEngine
+    partial class AgosEngine
     {
         private short _chanceModifier;
 
@@ -252,7 +252,7 @@ namespace NScumm.Agos
         {
             // 43: add
             uint var = GetVarWrapper();
-            WriteVariable((ushort) var, (ushort) ReadVariable((ushort) (var + GetVarOrWord())));
+            WriteVariable((ushort) var, (ushort) (ReadVariable((ushort)var) + GetVarOrWord()));
 
             // WORKAROUND: The conversation of the male in Vid-Phone Booth at Dave's Space Bar
             // is based on variable 116, but stops due to a missing option (37).

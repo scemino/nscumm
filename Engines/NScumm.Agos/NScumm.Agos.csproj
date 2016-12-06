@@ -29,7 +29,7 @@
     </PropertyGroup>
     <ItemGroup>
         <Compile Include="AgosEngine.Charset.cs"/>
-        <Compile Include="AGOSEngine.cs"/>
+        <Compile Include="AgosEngine.cs"/>
         <Compile Include="AgosEngine.Cursor.cs"/>
         <Compile Include="AgosEngine.Draw.cs"/>
         <Compile Include="AgosEngine.Event.cs"/>
@@ -47,10 +47,10 @@
         <Compile Include="AgosEngine.Window.cs"/>
         <Compile Include="AgosEngine.Zones.cs"/>
         <Compile Include="AgosEngines.SaveLoad.cs"/>
-        <Compile Include="AGOSEngine_Elvira1.cs"/>
-        <Compile Include="AGOSEngine_Elvira2.cs"/>
-        <Compile Include="AGOSEngine_Waxworks.cs"/>
-        <Compile Include="AGOSGameDescription.cs"/>
+        <Compile Include="AgosEngineElvira1.cs"/>
+        <Compile Include="AgosEngineElvira2.cs"/>
+        <Compile Include="AgosEngineWaxworks.cs"/>
+        <Compile Include="AgosGameDescription.cs"/>
         <Compile Include="AgosGameDescriptor.cs"/>
         <Compile Include="AgosMetaEngine.cs"/>
         <Compile Include="AnimationHeaderFeeble.cs"/>

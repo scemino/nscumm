@@ -27,7 +27,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
 {
-    partial class AGOSEngine
+    partial class AgosEngine
     {
         private BytePtr BackBuf => _backBuf.Pixels;
 

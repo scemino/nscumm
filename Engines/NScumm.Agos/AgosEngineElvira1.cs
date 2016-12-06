@@ -24,9 +24,9 @@ using NScumm.Core.IO;
 
 namespace NScumm.Agos
 {
-    internal abstract class AGOSEngine_Elvira1 : AGOSEngine
+    internal abstract class AgosEngineElvira1 : AgosEngine
     {
-        public AGOSEngine_Elvira1(ISystem system, GameSettings settings, AGOSGameDescription gd)
+        public AgosEngineElvira1(ISystem system, GameSettings settings, AgosGameDescription gd)
             : base(system, settings, gd)
         {
         }

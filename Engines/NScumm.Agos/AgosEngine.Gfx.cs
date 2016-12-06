@@ -27,7 +27,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
 {
-    partial class AGOSEngine
+    partial class AgosEngine
     {
         private BytePtr _scrollImage;
 
@@ -570,16 +570,16 @@ namespace NScumm.Agos
                 int count = ScummHelper.SwapBytes(header.animationCount);
                 p = pp + ScummHelper.SwapBytes(header.animationTable);
 
-                AnimationHeaderSimon animHeader;
+                var animHeader= new AnimationHeaderSimon(p);
                 while (count-- != 0)
                 {
-                    animHeader = new AnimationHeaderSimon(p);
+                    animHeader.Pointer = p;
                     if (ScummHelper.SwapBytes(animHeader.id) == vgaSpriteId)
                         break;
                     p += AnimationHeaderSimon.Size;
                 }
 
-                animHeader = new AnimationHeaderSimon(p);
+                animHeader.Pointer = p;
                 System.Diagnostics.Debug.Assert(ScummHelper.SwapBytes(animHeader.id) == vgaSpriteId);
             }
             else

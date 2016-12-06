@@ -27,7 +27,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
 {
-    partial class AGOSEngine
+    partial class AgosEngine
     {
         private bool _fastMode;
         private byte _opcode177Var1, _opcode177Var2;
@@ -191,7 +191,6 @@ namespace NScumm.Agos
 
         private void AddVgaEvent(ushort num, EventType type, BytePtr codePtr, ushort curSprite, ushort curZoneNum)
         {
-            Debug($"AddVgaEvent({num})");
             _videoLockOut |= 1;
 
             var vte = _vgaTimerList.FirstOrDefault(o => o.delay == 0);

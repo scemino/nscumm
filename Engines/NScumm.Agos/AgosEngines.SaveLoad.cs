@@ -25,7 +25,7 @@ using NScumm.Core;
 
 namespace NScumm.Agos
 {
-    partial class AGOSEngine
+    partial class AgosEngine
     {
         // FIXME: This code counts savegames, but callers in many cases assume
         // that the return value + 1 indicates an empty slot.

@@ -312,6 +312,11 @@ namespace NScumm.Core
             Array.Copy(src.Data, src.Offset, dst.Data, dst.Offset, length);
         }
 
+        public static void Copy(this BytePtr src, int srcOffset, BytePtr dst, int dstOffset, int length)
+        {
+            Array.Copy(src.Data, src.Offset + srcOffset, dst.Data, dst.Offset + dstOffset, length);
+        }
+
         public static void WriteByte(this BytePtr data, int startIndex, byte value)
         {
             data.Data[data.Offset + startIndex] = value;

@@ -29,6 +29,7 @@ Copy the original files of the game you want to play in a directory.
     Beneath a Steel Sky by Revolution Software
     Broken Sword: The Shadow of the Templars by Revolution Software
     Flight of the Amazon Queen by Interactive Binary Illusions
+    Simon the Sorcerer 1 by Adventuresoft
 
 ## Hotkeys
 
@@ -49,6 +50,21 @@ Copy the original files of the game you want to play in a directory.
     F12                    - Quickload
     Escape                 - Skips cutscenes
     Space                  - Skips current line of text
+### Adventuresoft/Horrorsoft (AGOS) Games
+    Ctrl 0-9 and Alt 0-9   - Load and save game state
+    Ctrl-f                 - Toggle fast mode
+    F1 - F3                - Text speed, faster - slower
+    F10                    - Shows all characters and objects you can
+                             interact with
+    Escape                 - Skip cutscenes
+    - and +                - Music volume, down/up
+    m                      - Music on/off
+    s                      - Sound effects on/off
+    Pause                  - Pauses
+    t                      - Switch between speech only and
+                             combined speech and subtitles
+                             [Simon the Sorcerer 1 CD (other than
+                             English and German)]
 
 ## Contact
 

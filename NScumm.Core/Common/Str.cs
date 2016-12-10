@@ -19,14 +19,14 @@
             return new string(str);
         }
 
-        private static bool IsPrint(int c)
+        public static bool IsPrint(int c)
         {
             if (!IsAsciiChar(c)) return false;
             // TODO: check this
             return c > 0x1f && c != 0x7f;
         }
 
-        private static bool IsAsciiChar(int c)
+        public static bool IsAsciiChar(int c)
         {
             if (c < 0 || c > 127)
                 return false;

@@ -340,7 +340,7 @@ namespace NScumm.Sci.Sound.Drivers
             if (_opl == null)
                 return -1;
 
-            _opl.Init(rate);
+            _opl.Init();
 
             SetRegister(0xBD, 0);
             SetRegister(0x08, 0);

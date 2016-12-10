@@ -30,6 +30,10 @@ namespace NScumm.Agos
 {
     partial class AgosEngine
     {
+        const int SD_TYPE_LITERAL = 0;
+        const int SD_TYPE_MATCH = 1;
+        const int kMaxColorDepth = 5;
+
         private ushort To16Wrapper(uint value)
         {
             return ScummHelper.SwapBytes((ushort) value);
@@ -451,14 +455,256 @@ namespace NScumm.Agos
                 Error("readGameFile: Read failed ({0},{1})", offs, size);
         }
 
-        private void DecrunchFile(BytePtr srcBuf, BytePtr dstBuf, int srcSize)
+        private static bool SD_GETBIT(ref int bb, BytePtr s, ref byte bits, BytePtr src, ref int var)
         {
-            throw new NotImplementedException();
+            if (bits-- == 0)
+            {
+                s -= 4;
+                if (s < src)
+                    return false;
+                bb = s.ToInt32BigEndian();
+                bits = 31;
+            }
+            var = (byte) (bb & 1);
+            bb >>= 1;
+            return true;
         }
 
-        private void DecompressPN(Stack<uint> data, out BytePtr dataOut, ref int dataOutSize)
+        private static bool SD_GETBITS(ref int bb, BytePtr s, ref byte bits, BytePtr src, ref byte bc, ref int bit, ref int var,
+            int nbits)
         {
-            throw new NotImplementedException();
+            bc = (byte) nbits;
+            var = 0;
+            while (bc-- != 0)
+            {
+                var <<= 1;
+                if (!SD_GETBIT(ref bb, s, ref bits, src, ref bit))
+                    return false;
+                var |= bit;
+            }
+            return true;
+        }
+
+        private bool DecrunchFile(BytePtr src, BytePtr dst, int size)
+        {
+            BytePtr s = src + size - 4;
+            int destlen = s.ToInt32BigEndian();
+            int bb, x;
+            BytePtr d = dst + destlen;
+            byte bits;
+
+            // Initialize bit buffer.
+            s -= 4;
+            bb = x = s.ToInt32BigEndian();
+            bits = 0;
+            do
+            {
+                x >>= 1;
+                bits++;
+            } while (x != 0);
+            bits--;
+
+            while (d > dst)
+            {
+                if (!SD_GETBIT(ref bb, s, ref bits, src, ref x))
+                    return false;
+                byte type;
+                byte bc = 0;
+                int bit = 0;
+                int y = 0;
+                if (x != 0)
+                {
+                    if (!SD_GETBITS(ref bb, s, ref bits, src, ref bc, ref bit, ref x, 2))
+                        return false;
+                    switch (x)
+                    {
+                        case 0:
+                            type = SD_TYPE_MATCH;
+                            x = 9;
+                            y = 2;
+                            break;
+
+                        case 1:
+                            type = SD_TYPE_MATCH;
+                            x = 10;
+                            y = 3;
+                            break;
+
+                        case 2:
+                            type = SD_TYPE_MATCH;
+                            x = 12;
+                            if (!SD_GETBITS(ref bb, s, ref bits, src, ref bc, ref bit, ref y, 8))
+                                return false;
+                            break;
+
+                        default:
+                            type = SD_TYPE_LITERAL;
+                            x = 8;
+                            y = 8;
+                            break;
+                    }
+                }
+                else
+                {
+                    if (!SD_GETBIT(ref bb, s, ref bits, src, ref x))
+                        return false;
+                    if (x != 0)
+                    {
+                        type = SD_TYPE_MATCH;
+                        x = 8;
+                        y = 1;
+                    }
+                    else
+                    {
+                        type = SD_TYPE_LITERAL;
+                        x = 3;
+                        y = 0;
+                    }
+                }
+
+                if (type == SD_TYPE_LITERAL)
+                {
+                    if (!SD_GETBITS(ref bb, s, ref bits, src, ref bc, ref bit, ref x, x))
+                        return false;
+                    y += x;
+                    if (y + 1 > d.Offset - dst.Offset)
+                        return false; // Overflow?
+                    do
+                    {
+                        if (!SD_GETBITS(ref bb, s, ref bits, src, ref bc, ref bit, ref x, 8))
+                            return false;
+                        d.Offset--;
+                        d.Value = (byte) x;
+                    } while (y-- > 0);
+                }
+                else
+                {
+                    if (y + 1 > d.Offset - dst.Offset)
+                        return false; // Overflow?
+                    if (!SD_GETBITS(ref bb, s, ref bits, src, ref bc, ref bit, ref x, x))
+                        return false;
+                    if ((d + x) > (dst + destlen))
+                        return false; // Offset overflow?
+                    do
+                    {
+                        d.Offset--;
+                        d.Value = d[x];
+                    } while (y-- > 0);
+                }
+            }
+
+            // Successful decrunch.
+            return true;
+        }
+
+        private void DecompressPN(Stack<uint> dataList, out BytePtr dataOut, ref int dataOutSize)
+        {
+            // Set up the output data area
+            dataOutSize = (int) dataList.Pop();
+            dataOut = new byte[dataOutSize];
+            int outIndex = dataOutSize;
+
+            // Decompression routine
+            uint srcVal = dataList.Pop();
+
+            while (outIndex > 0)
+            {
+                int numBits = 0;
+                int count = 0;
+
+                int destVal;
+                if (GetBit(dataList, ref srcVal))
+                {
+                    destVal = CopyBits(dataList, ref srcVal, 2);
+
+                    if (destVal < 2)
+                    {
+                        count = (int) (destVal + 2);
+                        destVal = CopyBits(dataList, ref srcVal, destVal + 9);
+                        TransferLoop(dataOut, ref outIndex, (uint) destVal, count);
+                        continue;
+                    }
+                    else if (destVal != 3)
+                    {
+                        count = CopyBits(dataList, ref srcVal, 8);
+                        destVal = CopyBits(dataList, ref srcVal, 8);
+                        TransferLoop(dataOut, ref outIndex, (uint) destVal, count);
+                        continue;
+                    }
+                    else
+                    {
+                        numBits = 8;
+                        count = 8;
+                    }
+                }
+                else if (GetBit(dataList, ref srcVal))
+                {
+                    destVal = CopyBits(dataList, ref srcVal, 8);
+                    TransferLoop(dataOut, ref outIndex, (uint) destVal, 1);
+                    continue;
+                }
+                else
+                {
+                    numBits = 3;
+                    count = 0;
+                }
+
+                destVal = CopyBits(dataList, ref srcVal, numBits);
+                count += destVal;
+
+                // Loop through extracting specified number of bytes
+                for (int i = 0; i <= count; ++i)
+                {
+                    // Shift 8 bits from the source to the destination
+                    for (int bitCtr = 0; bitCtr < 8; ++bitCtr)
+                    {
+                        bool flag = GetBit(dataList, ref srcVal);
+                        destVal = (destVal << 1) | (flag ? 1 : 0);
+                    }
+
+                    dataOut[--outIndex] = (byte) (destVal & 0xff);
+                }
+            }
+        }
+
+        private static bool GetBit(Stack<uint> dataList, ref uint srcVal)
+        {
+            bool result = (srcVal & 1) != 0;
+            srcVal >>= 1;
+            if (srcVal == 0)
+            {
+                srcVal = dataList.Pop();
+
+                result = (srcVal & 1) != 0;
+                srcVal = (uint) ((srcVal >> 1) | 0x80000000L);
+            }
+
+            return result;
+        }
+
+        private static int CopyBits(Stack<uint> dataList, ref uint srcVal, int numBits)
+        {
+            int destVal = 0;
+
+            for (int i = 0; i < numBits; ++i)
+            {
+                bool f = GetBit(dataList, ref srcVal);
+                destVal = (destVal << 1) | (f ? 1 : 0);
+            }
+
+            return destVal;
+        }
+
+        private static void TransferLoop(BytePtr dataOut, ref int outIndex, uint destVal, int max)
+        {
+            System.Diagnostics.Debug.Assert(outIndex > max - 1);
+            BytePtr pDest = dataOut + outIndex;
+
+            for (int i = 0; (i <= max) && (outIndex > 0); ++i)
+            {
+                pDest = dataOut + --outIndex;
+                pDest.Value = pDest[(int) destVal];
+            }
         }
 
         protected void LoadVGABeardFile(ushort id)
@@ -626,7 +872,7 @@ namespace NScumm.Agos
                     for (int i = 0; i < srcSize / 4; ++i)
                     {
                         uint dataVal = br.ReadUInt32BigEndian();
-// Correct incorrect byte, in corrupt 72.out file, included in some PC versions.
+                        // Correct incorrect byte, in corrupt 72.out file, included in some PC versions.
                         if (dataVal == 168042714)
                             data.Push(168050906);
                         else
@@ -676,7 +922,204 @@ namespace NScumm.Agos
 
         private BytePtr ConvertImage(Vc10State state, bool compressed)
         {
-            throw new NotImplementedException();
+            byte colorDepth = 4;
+            if (GameType == SIMONGameType.GType_SIMON1)
+            {
+                if ((((_videoLockOut & 0x20) != 0) && state.palette == null) ||
+                    ((Features.HasFlag(GameFeatures.GF_32COLOR)) &&
+                     state.palette != 0xC0))
+                {
+                    colorDepth = 5;
+                }
+            }
+
+            var src = state.srcPtr;
+            int width = state.width * 16;
+            int height = state.height;
+
+            _planarBuf = new byte[width * height];
+            BytePtr dst = _planarBuf;
+
+            if (compressed)
+            {
+                ConvertCompressedImage(src, dst, colorDepth, height, width, GameType == SIMONGameType.GType_PN);
+            }
+            else
+            {
+                var length = (width + 15) / 16 * height;
+                int i;
+                for (i = 0; i < length; i++)
+                {
+                    ushort[] w = new ushort[kMaxColorDepth];
+                    int j;
+                    if (GameType == SIMONGameType.GType_SIMON1 && colorDepth == 4)
+                    {
+                        for (j = 0; j < colorDepth; ++j)
+                        {
+                            w[j] = src.ToUInt16BigEndian(j * length * 2);
+                        }
+                        if (state.palette == 0xC0)
+                        {
+                            BitplaneToChunkyText(w, colorDepth, ref dst);
+                        }
+                        else
+                        {
+                            BitplaneToChunky(w, colorDepth, ref dst);
+                        }
+                        src += 2;
+                    }
+                    else
+                    {
+                        for (j = 0; j < colorDepth; ++j)
+                        {
+                            w[j] = src.ToUInt16BigEndian();
+                            src += 2;
+                        }
+                        BitplaneToChunky(w, colorDepth, ref dst);
+                    }
+                }
+            }
+
+            return _planarBuf;
+        }
+
+        private static void ConvertCompressedImage(BytePtr src, BytePtr dst, byte colorDepth, int height, int width,
+            bool horizontal = true)
+        {
+            BytePtr[] plane = new BytePtr[kMaxColorDepth];
+            BytePtr[] uncptr = new BytePtr[kMaxColorDepth];
+            int length, i, j;
+
+            var uncbfrout = new byte[width * height];
+
+            length = (width + 15) / 16 * height;
+
+            for (i = 0; i < colorDepth; ++i)
+            {
+                plane[i] = src + src.ToUInt16BigEndian(i * 4) + src.ToUInt16BigEndian(i * 4 + 2);
+                uncptr[i] = new byte[length * 2];
+                UncompressPlane(plane[i], uncptr[i], length);
+                plane[i] = uncptr[i];
+            }
+
+            BytePtr uncbfroutptr = uncbfrout;
+            for (i = 0; i < length; ++i)
+            {
+                ushort[] w = new ushort[kMaxColorDepth];
+                for (j = 0; j < colorDepth; ++j)
+                {
+                    w[j] = plane[j].ToUInt16BigEndian();
+                    plane[j] += 2;
+                }
+                BitplaneToChunky(w, colorDepth, ref uncbfroutptr);
+            }
+
+            uncbfroutptr = uncbfrout;
+            int chunkSize = colorDepth > 4 ? 16 : 8;
+            if (horizontal)
+            {
+                for (j = 0; j < height; ++j)
+                {
+                    for (i = 0; i < width / 16; ++i)
+                    {
+                        uncbfroutptr.Copy(dst + width * chunkSize / 16 * j + chunkSize * i, chunkSize);
+                        uncbfroutptr += chunkSize;
+                    }
+                }
+            }
+            else
+            {
+                for (i = 0; i < width / 16; ++i)
+                {
+                    for (j = 0; j < height; ++j)
+                    {
+                        uncbfroutptr.Copy(dst + width * chunkSize / 16 * j + chunkSize * i, chunkSize);
+                        uncbfroutptr += chunkSize;
+                    }
+                }
+            }
+        }
+
+        private static void UncompressPlane(BytePtr plane, BytePtr outptr, int length)
+        {
+            while (length != 0)
+            {
+                int wordlen;
+                sbyte x = (sbyte) plane.Value;
+                plane.Offset++;
+                if (x >= 0)
+                {
+                    wordlen = Math.Min(x + 1, length);
+                    ushort w = plane.ToUInt16();
+                    plane += 2;
+                    for (int i = 0; i < wordlen; ++i)
+                    {
+                        outptr.WriteUInt16(0, w);
+                        outptr += 2;
+                    }
+                }
+                else
+                {
+                    wordlen = Math.Min(-x, length);
+                    plane.Copy(outptr, wordlen * 2);
+                    outptr += wordlen * 2;
+                    plane += wordlen * 2;
+                }
+                length -= wordlen;
+            }
+        }
+
+        private static void BitplaneToChunky(Ptr<ushort> w, byte colorDepth, ref BytePtr dst)
+        {
+            for (int j = 0; j < 8; j++)
+            {
+                byte color1 = 0;
+                byte color2 = 0;
+                for (int p = 0; p < colorDepth; ++p)
+                {
+                    if ((w[p] & 0x8000) != 0)
+                    {
+                        color1 = (byte) (color1 | 1 << p);
+                    }
+                    if ((w[p] & 0x4000) != 0)
+                    {
+                        color2 = (byte) (color2 | 1 << p);
+                    }
+                    w[p] <<= 2;
+                }
+                if (colorDepth > 4)
+                {
+                    dst.Value = color1;
+                    dst.Offset++;
+                    dst.Value = color2;
+                    dst.Offset++;
+                }
+                else
+                {
+                    dst.Value = (byte) ((color1 << 4) | color2);
+                    dst.Offset++;
+                }
+            }
+        }
+
+        private static void BitplaneToChunkyText(Ptr<ushort> w, byte colorDepth, ref BytePtr dst)
+        {
+            for (int j = 0; j < 16; j++)
+            {
+                byte color = 0;
+                for (int p = 0; p < colorDepth; ++p)
+                {
+                    if ((w[p] & 0x8000) != 0)
+                    {
+                        color = (byte) (color | 1 << p);
+                    }
+                    w[p] <<= 1;
+                }
+                if (color != 0)
+                    color |= 0xC0;
+                dst.Value = color;
+                dst.Offset++;
+            }
         }
     }
 }

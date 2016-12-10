@@ -39,7 +39,7 @@ namespace NScumm.Scumm.Audio.Players
             // TODO: vs OPL
             //        _opl2 = OPL::Config::create();
             _opl2 = new DosBoxOPL(OplType.Opl2);
-            _opl2.Init(_rate);
+            _opl2.Init();
 
             _samplesPerCallback = _rate / AD_CALLBACK_FREQUENCY;
             _samplesPerCallbackRemainder = _rate % AD_CALLBACK_FREQUENCY;

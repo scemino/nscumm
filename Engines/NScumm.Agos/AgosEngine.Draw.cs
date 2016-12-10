@@ -459,61 +459,49 @@ namespace NScumm.Agos
 
         private void DisplayBoxStars()
         {
-            int count;
-            uint color;
-
             o_haltAnimation();
 
-            if (GameType == SIMONGameType.GType_SIMON2)
-                color = 236;
-            else
-                color = 225;
-
-            uint curHeight = (uint) ((GameType == SIMONGameType.GType_SIMON2) ? _boxStarHeight : 134);
-
+            var color = GameType == SIMONGameType.GType_SIMON2 ? 236 : 225;
+            uint curHeight = (uint) (GameType == SIMONGameType.GType_SIMON2 ? _boxStarHeight : 134);
 
             for (int i = 0; i < 5; i++)
             {
-                Ptr<HitArea> ha = _hitAreas;
-                count = _hitAreas.Length;
-
                 LocksScreen(screen =>
                 {
-                    do
+                    foreach(var ha in _hitAreas)
                     {
-                        if (ha.Value.id != 0 && ha.Value.flags.HasFlag(BoxFlags.kBFBoxInUse) &&
-                            !(ha.Value.flags.HasFlag(BoxFlags.kBFBoxDead)))
+                        if (ha.id != 0 && ha.flags.HasFlag(BoxFlags.kBFBoxInUse) &&
+                            !ha.flags.HasFlag(BoxFlags.kBFBoxDead))
                         {
                             Ptr<HitArea> dha = _hitAreas;
-                            if (ha.Value.flags.HasFlag(BoxFlags.kBFTextBox))
+                            if (ha.flags.HasFlag(BoxFlags.kBFTextBox))
                             {
-                                while (dha != ha && dha.Value.flags != ha.Value.flags)
+                                while (dha.Value != ha && dha.Value.flags != ha.flags)
                                     ++dha.Offset;
-                                if (dha != ha && dha.Value.flags == ha.Value.flags)
+                                if (dha.Value != ha && dha.Value.flags == ha.flags)
                                     continue;
                             }
                             else
                             {
                                 dha = _hitAreas;
-                                while (dha != ha && dha.Value.itemPtr != ha.Value.itemPtr)
+                                while (dha.Value != ha && dha.Value.itemPtr != ha.itemPtr)
                                     ++dha.Offset;
-                                if (dha != ha && dha.Value.itemPtr == ha.Value.itemPtr)
+                                if (dha.Value != ha && dha.Value.itemPtr == ha.itemPtr)
                                     continue;
                             }
 
-                            if (ha.Value.y >= curHeight)
+                            if (ha.y >= curHeight)
                                 continue;
 
-                            var y_ = (uint) ((ha.Value.height / 2) - 4 + ha.Value.y);
-
-                            var x_ = (uint) ((ha.Value.width / 2) - 4 + ha.Value.x - (_scrollX * 8));
+                            var y_ = (uint) (ha.height / 2 - 4 + ha.y);
+                            var x_ = (uint) (ha.width / 2 - 4 + ha.x - _scrollX * 8);
 
                             if (x_ >= 311)
                                 continue;
 
                             BytePtr dst = screen.Pixels;
 
-                            dst += (int)((((screen.Pitch / 4) * y_) * 4) + x_);
+                            dst += (int)(screen.Pitch / 4 * y_ * 4 + x_);
 
                             dst[4] = (byte) color;
                             dst += screen.Pitch;
@@ -548,8 +536,7 @@ namespace NScumm.Agos
                             dst += screen.Pitch;
                             dst[4] = (byte) color;
                         }
-                        ha.Offset++;
-                    } while (--count != 0);
+                    }
                 });
 
                 Delay(100);

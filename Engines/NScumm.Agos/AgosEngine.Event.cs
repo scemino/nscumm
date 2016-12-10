@@ -458,22 +458,22 @@ namespace NScumm.Agos
                     _inCallBack = false;
                 }
 
-                // TODO: vs
                 var inputState = OSystem.InputManager.GetState();
-                /*if (inputState.IsKeyDown(KeyCode.D0) && inputState.IsKeyDown(KeyCode.D9)
-                    && (inputState.IsKeyDown(KeyCode.ALT) ||
+                if (inputState.IsKeyDown(KeyCode.D0) && inputState.IsKeyDown(KeyCode.D9)
+                    && (inputState.IsKeyDown(KeyCode.LeftAlt) ||
                         inputState.IsKeyDown(KeyCode.LeftControl)))
                 {
-                    _saveLoadSlot = @event.kbd.keycode - KeyCode.D0;
+                    var key = inputState.GetKeys().FirstOrDefault(k => k >= KeyCode.D0 && k <= KeyCode.D9);
+                    _saveLoadSlot = (byte) (key - KeyCode.D0);
 
                     // There is no save slot 0
                     if (_saveLoadSlot == 0)
                         _saveLoadSlot = 10;
 
                     _saveLoadName=$"Quick {_saveLoadSlot}";
-                    _saveLoadType = inputState.IsKeyDown(KeyCode.ALT) ? 1 : 2;
+                    _saveLoadType = (byte) (inputState.IsKeyDown(KeyCode.LeftAlt) ? 1 : 2);
                     QuickLoadOrSave();
-                }*/
+                }
                 if (inputState.IsKeyDown(KeyCode.LeftControl))
                 {
                     if (inputState.IsKeyDown(KeyCode.A))
@@ -683,5 +683,9 @@ namespace NScumm.Agos
             0x3A, 0x32, 0x39, 0x32,
             0x3A, 0x3A, 0x3B, 0x3A,
         };
+
+        private byte _saveLoadSlot;
+        private string _saveLoadName;
+        private byte _saveLoadType;
     }
 }

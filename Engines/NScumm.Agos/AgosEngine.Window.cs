@@ -335,5 +335,43 @@ namespace NScumm.Agos
 
             UndefineBox(0x7FFF);
         }
+
+        private void WriteChar(WindowBlock window, int x, int y, int offs, int val)
+        {
+            int chr;
+
+            // Clear background of first digit
+            window.textColumnOffset = (ushort) offs;
+            window.textColor = 0;
+            WindowDrawChar(window, x * 8, y, 129);
+
+            if (val != -1)
+            {
+                // Print first digit
+                chr = val / 10 + 48;
+                window.textColor = 15;
+                WindowDrawChar(window, x * 8, y, (byte) chr);
+            }
+
+            offs += 6;
+            if (offs >= 7)
+            {
+                offs -= 8;
+                x++;
+            }
+
+            // Clear background of second digit
+            window.textColumnOffset = (ushort) offs;
+            window.textColor = 0;
+            WindowDrawChar(window, x * 8, y, 129);
+
+            if (val != -1)
+            {
+                // Print second digit
+                chr = val % 10 + 48;
+                window.textColor = 15;
+                WindowDrawChar(window, x * 8, y, (byte) chr);
+            }
+        }
     }
 }

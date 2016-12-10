@@ -295,7 +295,126 @@ namespace NScumm.Agos
 
         protected virtual void DrawImage(Vc10State state)
         {
-            throw new NotImplementedException();
+            Ptr<ushort> vlut = new Ptr<ushort>(_videoWindows, _windowNum * 4);
+
+            if (!DrawImageClip(state))
+                return;
+
+            LocksScreen(screen =>
+            {
+                ushort xoffs = 0, yoffs = 0;
+                if (GameType == SIMONGameType.GType_WW)
+                {
+                    if (_windowNum == 4 || (_windowNum >= 10 && _windowNum <= 27))
+                    {
+                        state.surf_addr = _window4BackScn.Pixels;
+                        state.surf_pitch = (uint) (_videoWindows[18] * 16);
+
+                        xoffs = (ushort) (((vlut[0] - _videoWindows[16]) * 2 + state.x) * 8);
+                        yoffs = (ushort) (vlut[1] - _videoWindows[17] + state.y);
+
+                        uint xmax = (uint) (xoffs + state.draw_width * 2);
+                        uint ymax = (uint) (yoffs + state.draw_height);
+                        SetMoveRect(xoffs, yoffs, (ushort) xmax, (ushort) ymax);
+
+                        _window4Flag = 1;
+                    }
+                    else
+                    {
+                        state.surf_addr = screen.Pixels;
+                        state.surf_pitch = (uint) screen.Pitch;
+
+                        xoffs = (ushort) ((vlut[0] * 2 + state.x) * 8);
+                        yoffs = (ushort) (vlut[1] + state.y);
+                    }
+                }
+                else if (GameType == SIMONGameType.GType_ELVIRA2)
+                {
+                    if (_windowNum == 4 || _windowNum >= 10)
+                    {
+                        state.surf_addr = _window4BackScn.Pixels;
+                        state.surf_pitch = (uint) (_videoWindows[18] * 16);
+
+                        xoffs = (ushort) (((vlut[0] - _videoWindows[16]) * 2 + state.x) * 8);
+                        yoffs = (ushort) (vlut[1] - _videoWindows[17] + state.y);
+
+                        uint xmax = (uint) (xoffs + state.draw_width * 2);
+                        uint ymax = (uint) (yoffs + state.draw_height);
+                        SetMoveRect(xoffs, yoffs, (ushort) xmax, (ushort) ymax);
+
+                        _window4Flag = 1;
+                    }
+                    else
+                    {
+                        state.surf_addr = screen.Pixels;
+                        state.surf_pitch = (uint) screen.Pitch;
+
+                        xoffs = (ushort) ((vlut[0] * 2 + state.x) * 8);
+                        yoffs = (ushort) (vlut[1] + state.y);
+                    }
+                }
+                else if (GameType == SIMONGameType.GType_ELVIRA1)
+                {
+                    if (_windowNum == 6)
+                    {
+                        state.surf_addr = _window6BackScn.Pixels;
+                        state.surf_pitch = (uint) _window6BackScn.Pitch;
+
+                        xoffs = (ushort) (state.x * 8);
+                        yoffs = (ushort) state.y;
+                    }
+                    else if (_windowNum == 2 || _windowNum == 3)
+                    {
+                        state.surf_addr = screen.Pixels;
+                        state.surf_pitch = (uint) screen.Pitch;
+
+                        xoffs = (ushort) ((vlut[0] * 2 + state.x) * 8);
+                        yoffs = (ushort) (vlut[1] + state.y);
+                    }
+                    else
+                    {
+                        state.surf_addr = _window4BackScn.Pixels;
+                        state.surf_pitch = (uint) (_videoWindows[18] * 16);
+
+                        xoffs = (ushort) (((vlut[0] - _videoWindows[16]) * 2 + state.x) * 8);
+                        yoffs = (ushort) (vlut[1] - _videoWindows[17] + state.y);
+
+                        uint xmax = (uint) (xoffs + state.draw_width * 2);
+                        uint ymax = (uint) (yoffs + state.draw_height);
+                        SetMoveRect(xoffs, yoffs, (ushort) xmax, (ushort) ymax);
+
+                        _window4Flag = 1;
+                    }
+                }
+                else
+                {
+                    state.surf_addr = screen.Pixels;
+                    state.surf_pitch = (uint) screen.Pitch;
+
+                    xoffs = (ushort) ((vlut[0] * 2 + state.x) * 8);
+                    yoffs = (ushort) (vlut[1] + state.y);
+                }
+
+                state.surf_addr.Offset += (int) (xoffs + yoffs * state.surf_pitch);
+
+                if (GameType == SIMONGameType.GType_ELVIRA1 && state.flags.HasFlag(DrawFlags.kDFNonTrans) && yoffs > 133)
+                    state.paletteMod = 16;
+
+                if (GameType == SIMONGameType.GType_ELVIRA2 || GameType == SIMONGameType.GType_WW)
+                    state.palette = (byte) (state.surf_addr[0] & 0xF0);
+
+                if (GameType == SIMONGameType.GType_ELVIRA2 && GamePlatform == Platform.AtariST && yoffs > 133)
+                    state.palette = 208;
+
+                if (_backFlag)
+                {
+                    DrawBackGroundImage(state);
+                }
+                else
+                {
+                    DrawVertImage(state);
+                }
+            });
         }
 
         private void HorizontalScroll(Vc10State state)
@@ -570,7 +689,7 @@ namespace NScumm.Agos
                 int count = ScummHelper.SwapBytes(header.animationCount);
                 p = pp + ScummHelper.SwapBytes(header.animationTable);
 
-                var animHeader= new AnimationHeaderSimon(p);
+                var animHeader = new AnimationHeaderSimon(p);
                 while (count-- != 0)
                 {
                     animHeader.Pointer = p;

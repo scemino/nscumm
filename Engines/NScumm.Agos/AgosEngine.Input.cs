@@ -20,12 +20,15 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using NScumm.Core;
+using NScumm.Core.Audio;
 using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
 {
     partial class AgosEngine
     {
+        private bool _ambientPaused;
+
         private uint SetVerbText(HitArea ha)
         {
             uint id = 0xFFFF;
@@ -40,7 +43,7 @@ namespace NScumm.Agos
                 else if (GameType == SIMONGameType.GType_FF && ha.flags.HasFlag(BoxFlags.kBFHyperBox))
                     id = ha.data;
                 else
-                    id = (uint) ((int)ha.flags / 256);
+                    id = (uint) ((int) ha.flags / 256);
             }
             if (GameType == SIMONGameType.GType_PP)
                 _variableArray[199] = (short) id;
@@ -719,22 +722,26 @@ namespace NScumm.Agos
                         _speech = !_speech;
                 }
             }
-            // TODO:
-            /*if(keys.IsKeyDown('+')){
-                if (_midiEnabled) {
-                    _midi.SetVolume(_midi.GetMusicVolume() + 16, _midi.GetSFXVolume() + 16);
+            if (keys.IsKeyDown(KeyCode.Plus))
+            {
+                if (_midiEnabled)
+                {
+                    _midi.SetVolume(_midi.MusicVolume + 16, _midi.SfxVolume + 16);
                 }
-                ConfMan.setInt("music_volume", _mixer.getVolumeForSoundType(Audio::Mixer::kMusicSoundType) + 16);
-                syncSoundSettings();
+                ConfigManager.Instance.Set<int>("music_volume", Mixer.GetVolumeForSoundType(SoundType.Music) + 16);
+                SyncSoundSettings();
+            }
+            if (keys.IsKeyDown(KeyCode.Minus))
+            {
+                if (_midiEnabled)
+                {
+                    _midi.SetVolume(_midi.MusicVolume - 16, _midi.SfxVolume - 16);
                 }
-            if(keys.IsKeyDown('-')){
-                if (_midiEnabled) {
-                    _midi.setVolume(_midi.getMusicVolume() - 16, _midi.getSFXVolume() - 16);
-                }
-                ConfMan.setInt("music_volume", _mixer.getVolumeForSoundType(Audio::Mixer::kMusicSoundType) - 16);
-                syncSoundSettings();
-                }
-            if(keys.IsKeyDown(KeyCode.M)){
+                ConfigManager.Instance.Set<int>("music_volume", Mixer.GetVolumeForSoundType(SoundType.Music) - 16);
+                SyncSoundSettings();
+            }
+            if (keys.IsKeyDown(KeyCode.M))
+            {
                 _musicPaused = !_musicPaused;
                 if (_midiEnabled)
                 {
@@ -742,25 +749,27 @@ namespace NScumm.Agos
                 }
                 Mixer.PauseHandle(_modHandle, _musicPaused);
                 SyncSoundSettings();
-                }
-            if(keys.IsKeyDown(KeyCode.S)){
-                if (getGameId() == GID_SIMON1DOS)
+            }
+            if (keys.IsKeyDown(KeyCode.S))
+            {
+                if (GameId == GameIds.GID_SIMON1DOS)
                 {
                     _midi._enable_sfx = !_midi._enable_sfx;
                 }
                 else
                 {
                     _effectsPaused = !_effectsPaused;
-                    _sound.effectsPause(_effectsPaused);
+                    _sound.EffectsPause(_effectsPaused);
                 }
-                }
-            if(keys.IsKeyDown(KeyCode.B)){
-                if (_gd.ADGameDescription.gameType == GType_SIMON2)
+            }
+            if (keys.IsKeyDown(KeyCode.B))
+            {
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
                 {
                     _ambientPaused = !_ambientPaused;
-                    _sound.ambientPause(_ambientPaused);
+                    _sound.AmbientPause(_ambientPaused);
                 }
-                }*/
+            }
 
             return verbCode;
         }

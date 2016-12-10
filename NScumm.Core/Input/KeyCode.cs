@@ -37,25 +37,24 @@ namespace NScumm.Core
 
         Backspace = 8,
         Tab = 9,
+        Clear = 12,
         Return = 13,
         Pause = 19,
         Escape = 27,
         Space = 32,
+        Exclaim = 33,        // !
+        QuoteDouble = 34,    // "
+        Hash = 35,           // #
+        Dollar = 36,         // $
+        Ampersand = 38,      // &
+        Quote = 39,          // '
+        LeftParenthesis = 40,
+        RightParenthesis = 41,
+        Asterisk = 42,
+        Plus = 43,
         Comma = 44,
+        Minus = 45,
         OemPeriod = 46,
-
-        F1 = 315,
-        F2 = 316,
-        F3 = 317,
-        F4 = 318,
-        F5 = 319,
-        F6 = 320,
-        F7 = 321,
-        F8 = 322,
-        F9 = 323,
-        F10 = 324,
-        F11 = 325,
-        F12 = 326,
 
         A = 97,
         B = 98,
@@ -118,6 +117,22 @@ namespace NScumm.Core
         PageUp = 280,
         PageDown = 281,
 
+        // Function keys
+        F1 = 282,
+        F2 = 283,
+        F3 = 284,
+        F4 = 285,
+        F5 = 286,
+        F6 = 287,
+        F7 = 288,
+        F8 = 289,
+        F9 = 290,
+        F10 = 291,
+        F11 = 292,
+        F12 = 293,
+
         LeftShift = 304,
+        RightAlt = 307,
+        LeftAlt = 308,
     }
 }

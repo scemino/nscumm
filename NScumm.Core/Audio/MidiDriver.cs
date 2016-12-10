@@ -18,6 +18,7 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Linq;
 using NScumm.Core.Audio.Midi;
@@ -90,8 +91,8 @@ namespace NScumm.Core.Audio
         // FM-TOWNS: Maps to MT_PC98
         Midi = 1 << 9,
         // Real MIDI
-        PreferMt32 = 1 << 10,		// MT-32 output is preferred
-        PreferGeneralMidi   = 1 << 11		// GM output is preferred
+        PreferMt32 = 1 << 10, // MT-32 output is preferred
+        PreferGeneralMidi = 1 << 11 // GM output is preferred
     }
 
     public abstract class MidiDriverBase : IMidiDriver
@@ -147,7 +148,7 @@ namespace NScumm.Core.Audio
         //      MERR_STREAMING_NOT_AVAILABLE = 2,
         DeviceNotAvailable = 3,
         AlreadyOpen = 4,
-        UnknownError               ///< Catch-all error, used if no other error code matches
+        UnknownError ///< Catch-all error, used if no other error code matches
     }
 
     public abstract class MidiDriver : MidiDriverBase, IDisposable
@@ -186,7 +187,8 @@ namespace NScumm.Core.Audio
             var p = MusicManager.GetPlugins();
 
             if (p.Count == 0)
-                throw new NotSupportedException("MidiDriver.GetDeviceHandle: Music plugins must be loaded prior to calling this method");
+                throw new NotSupportedException(
+                    "MidiDriver.GetDeviceHandle: Music plugins must be loaded prior to calling this method");
 
             foreach (var m in p)
             {
@@ -196,7 +198,8 @@ namespace NScumm.Core.Audio
                     // The music driver id isn't unique, but it will match
                     // driver's first device. This is useful when selecting
                     // the driver from the command line.
-                    if (identifier.Equals(d.MusicDriverId) || identifier.Equals(d.CompleteId) || identifier.Equals(d.CompleteName))
+                    if (identifier.Equals(d.MusicDriverId) || identifier.Equals(d.CompleteId) ||
+                        identifier.Equals(d.CompleteName))
                     {
                         return d.Handle;
                     }
@@ -212,11 +215,12 @@ namespace NScumm.Core.Audio
         /// <returns>The device handle based on the present devices and the flags parameter.</returns>
         /// <param name="flags">Flags.</param>
         /// <param name = "selectedDevice">The selected device</param>
-        public static DeviceHandle DetectDevice(MusicDriverTypes flags, string selectedDevice)
+        public static DeviceHandle DetectDevice(MusicDriverTypes flags, string selectedDevice = null)
         {
             var result = new DeviceHandle();
             var handle = GetDeviceHandle(selectedDevice);
             var musicType = GetMusicType(handle);
+            selectedDevice = selectedDevice ?? Engine.Instance.Settings.AudioDevice;
             switch (musicType)
             {
                 case MusicType.PCSpeaker:
@@ -279,7 +283,8 @@ namespace NScumm.Core.Audio
                 {
                     mt = MusicType.PCSpeaker;
                 }
-                var device = MusicManager.GetPlugins().SelectMany(p => p.GetDevices()).FirstOrDefault(d => d.MusicType == mt);
+                var device =
+                    MusicManager.GetPlugins().SelectMany(p => p.GetDevices()).FirstOrDefault(d => d.MusicType == mt);
                 if (device != null)
                 {
                     result = device.Handle;
@@ -292,7 +297,8 @@ namespace NScumm.Core.Audio
         public static MusicType GetMusicType(DeviceHandle handle)
         {
             var musicType = MusicType.Invalid;
-            var device = MusicManager.GetPlugins().SelectMany(p => p.GetDevices()).FirstOrDefault(d => Equals(d.Handle, handle));
+            var device =
+                MusicManager.GetPlugins().SelectMany(p => p.GetDevices()).FirstOrDefault(d => Equals(d.Handle, handle));
             if (device != null)
             {
                 musicType = device.MusicType;
@@ -369,12 +375,12 @@ namespace NScumm.Core.Audio
         // HIGH-LEVEL SEMANTIC METHODS
         public virtual void SetPitchBendRange(byte channel, uint range)
         {
-            Send((byte)(0xB0 | channel), 101, 0);
-            Send((byte)(0xB0 | channel), 100, 0);
-            Send((byte)(0xB0 | channel), 6, (byte)range);
-            Send((byte)(0xB0 | channel), 38, 0);
-            Send((byte)(0xB0 | channel), 101, 127);
-            Send((byte)(0xB0 | channel), 100, 127);
+            Send((byte) (0xB0 | channel), 101, 0);
+            Send((byte) (0xB0 | channel), 100, 0);
+            Send((byte) (0xB0 | channel), 6, (byte) range);
+            Send((byte) (0xB0 | channel), 38, 0);
+            Send((byte) (0xB0 | channel), 101, 127);
+            Send((byte) (0xB0 | channel), 100, 127);
         }
 
         public delegate void TimerProc(object param);
@@ -394,31 +400,33 @@ namespace NScumm.Core.Audio
 
         public void SendMt32Reset()
         {
-            byte[] resetSysEx = { 0x41, 0x10, 0x16, 0x12, 0x7F, 0x00, 0x00, 0x01, 0x00 };
-            SysEx(resetSysEx, (ushort)resetSysEx.Length);
+            byte[] resetSysEx = {0x41, 0x10, 0x16, 0x12, 0x7F, 0x00, 0x00, 0x01, 0x00};
+            SysEx(resetSysEx, (ushort) resetSysEx.Length);
             ServiceLocator.Platform.Sleep(100);
         }
 
         public void SendGmReset()
         {
-            byte[] resetSysEx = { 0x7E, 0x7F, 0x09, 0x01 };
-            SysEx(resetSysEx, (ushort)resetSysEx.Length);
+            byte[] resetSysEx = {0x7E, 0x7F, 0x09, 0x01};
+            SysEx(resetSysEx, (ushort) resetSysEx.Length);
             ServiceLocator.Platform.Sleep(100);
         }
 
-        public virtual void Dispose() { }
+        public virtual void Dispose()
+        {
+        }
 
-        public static readonly byte[] Mt32ToGm = {
-        //	  0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
-	            0,   1,   0,   2,   4,   4,   5,   3,  16,  17,  18,  16,  16,  19,  20,  21, // 0x
-	            6,   6,   6,   7,   7,   7,   8, 112,  62,  62,  63,  63,  38,  38,  39,  39, // 1x
-	            88,  95,  52,  98,  97,  99,  14,  54, 102,  96,  53, 102,  81, 100,  14,  80, // 2x
-	            48,  48,  49,  45,  41,  40,  42,  42,  43,  46,  45,  24,  25,  28,  27, 104, // 3x
-	            32,  32,  34,  33,  36,  37,  35,  35,  79,  73,  72,  72,  74,  75,  64,  65, // 4x
-	            66,  67,  71,  71,  68,  69,  70,  22,  56,  59,  57,  57,  60,  60,  58,  61, // 5x
-	            61,  11,  11,  98,  14,   9,  14,  13,  12, 107, 107,  77,  78,  78,  76,  76, // 6x
-	            47, 117, 127, 118, 118, 116, 115, 119, 115, 112,  55, 124, 123,   0,  14, 117  // 7x
+        public static readonly byte[] Mt32ToGm =
+        {
+            //	  0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
+            0, 1, 0, 2, 4, 4, 5, 3, 16, 17, 18, 16, 16, 19, 20, 21, // 0x
+            6, 6, 6, 7, 7, 7, 8, 112, 62, 62, 63, 63, 38, 38, 39, 39, // 1x
+            88, 95, 52, 98, 97, 99, 14, 54, 102, 96, 53, 102, 81, 100, 14, 80, // 2x
+            48, 48, 49, 45, 41, 40, 42, 42, 43, 46, 45, 24, 25, 28, 27, 104, // 3x
+            32, 32, 34, 33, 36, 37, 35, 35, 79, 73, 72, 72, 74, 75, 64, 65, // 4x
+            66, 67, 71, 71, 68, 69, 70, 22, 56, 59, 57, 57, 60, 60, 58, 61, // 5x
+            61, 11, 11, 98, 14, 9, 14, 13, 12, 107, 107, 77, 78, 78, 76, 76, // 6x
+            47, 117, 127, 118, 118, 116, 115, 119, 115, 112, 55, 124, 123, 0, 14, 117 // 7x
         };
     }
 }
-

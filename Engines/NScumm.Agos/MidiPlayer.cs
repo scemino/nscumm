@@ -27,7 +27,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
 {
-    enum kMusicMode
+    internal enum kMusicMode
     {
         kMusicModeDisabled = 0,
         kMusicModeAccolade = 1,
@@ -62,6 +62,9 @@ namespace NScumm.Agos
         protected bool _loopQueuedTrack;
 
         private kMusicMode _musicMode;
+
+        public int MusicVolume => _musicVolume;
+        public int SfxVolume => _sfxVolume;
 
         public MidiPlayer()
         {
@@ -192,7 +195,7 @@ namespace NScumm.Agos
             // Don't call open() twice!
             System.Diagnostics.Debug.Assert(_driver == null);
 
-            string accoladeDriverFilename;
+            string accoladeDriverFilename = null;
             MusicType musicType = MusicType.Invalid;
 
             switch (gameType)
@@ -271,12 +274,10 @@ namespace NScumm.Agos
                     switch (musicType)
                     {
                         case MusicType.AdLib:
-                            throw new NotImplementedException();
-                            //_driver = MidiDriver_Accolade_AdLib_create(accoladeDriverFilename);
+                            _driver = MidiDriver_Accolade_AdLib_create(accoladeDriverFilename);
                             break;
                         case MusicType.MT32:
-                            throw new NotImplementedException();
-                            //_driver = MidiDriver_Accolade_MT32_create(accoladeDriverFilename);
+                            _driver = MidiDriverAccoladeMt32Create(accoladeDriverFilename);
                             break;
                     }
                     if (_driver == null)
@@ -285,9 +286,8 @@ namespace NScumm.Agos
                     ret = _driver.Open();
                     if (ret == 0)
                     {
-                        throw new NotImplementedException();
                         // Reset is done inside our MIDI driver
-                        //_driver.SetTimerCallback(this, OnTimer);
+                        _driver.SetTimerCallback(this, OnTimer);
                     }
 
                     //setTimerRate(_driver.getBaseTempo());
@@ -361,16 +361,15 @@ namespace NScumm.Agos
                         _map_mt32_to_gm = false;
                         _nativeMT32 = false;
 
-                        throw new NotImplementedException();
-//                        _driver = CreateMidiDriverSimon1AdLib("MT_FM.IBK");
-//                        if (_driver != null && _driver.Open() == 0)
-//                        {
-//                            _driver.SetTimerCallback(this, OnTimer);
-//                            // Like the original, we enable the rhythm support by default.
-//                            _driver.Send(0xB0, 0x67, 0x01);
-//                            return 0;
-//                        }
-//                        _driver = null;
+                        _driver = CreateMidiDriverSimon1AdLib("MT_FM.IBK");
+                        if (_driver != null && _driver.Open() == 0)
+                        {
+                            _driver.SetTimerCallback(this, OnTimer);
+                            // Like the original, we enable the rhythm support by default.
+                            _driver.Send(0xB0, 0x67, 0x01);
+                            return 0;
+                        }
+                        _driver = null;
                     }
 
                     _musicMode = kMusicMode.kMusicModeDisabled;
@@ -395,7 +394,7 @@ namespace NScumm.Agos
             if (_nativeMT32)
                 _driver.Property(MidiDriver.PROP_CHANNEL_MASK, 0x03FE);
 
-            _map_mt32_to_gm = (gameType != SIMONGameType.GType_SIMON2 && !_nativeMT32);
+            _map_mt32_to_gm = gameType != SIMONGameType.GType_SIMON2 && !_nativeMT32;
 
             ret = _driver.Open();
             if (ret != MidiDriverError.None)
@@ -441,6 +440,220 @@ namespace NScumm.Agos
                     }
                 }
             }
+        }
+
+        private MidiDriver CreateMidiDriverSimon1AdLib(string instrumentFilename)
+        {
+            // Load instrument data.
+            var ibk = Engine.OpenFileRead(instrumentFilename);
+
+            if (ibk == null)
+            {
+                return null;
+            }
+
+            var br = new BinaryReader(ibk);
+            if (br.ReadUInt32BigEndian() != 0x49424b1a)
+            {
+                return null;
+            }
+
+            byte[] instrumentData = new byte[128 * 16];
+            if (ibk.Read(instrumentData, 0, 128 * 16) != 128 * 16)
+            {
+                return null;
+            }
+
+            return new MidiDriverSimon1AdLib(instrumentData);
+        }
+
+        private static MidiDriver MidiDriver_Accolade_AdLib_create(string driverFilename)
+        {
+            byte[] driverData;
+            ushort driverDataSize;
+            bool isMusicDrvFile;
+
+            MidiDriverAccoladeReadDriver(driverFilename, MusicType.AdLib, out driverData, out driverDataSize,
+                out isMusicDrvFile);
+            if (driverData == null)
+                Error("ACCOLADE-ADLIB: error during readDriver()");
+
+            var driver = new MidiDriverAccoladeAdLib();
+            if (driver != null)
+            {
+                if (!driver.SetupInstruments(driverData, driverDataSize, isMusicDrvFile))
+                {
+                    driver = null;
+                }
+            }
+
+            return driver;
+        }
+
+        // this reads and gets Accolade driver data
+        // we need it for channel mapping, instrument mapping and other things
+        // this driver data chunk gets passed to the actual music driver (MT32 / AdLib)
+        private static void MidiDriverAccoladeReadDriver(string filename, MusicType requestedDriverType, out byte[] driverData, out ushort driverDataSize, out bool isMusicDrvFile)
+        {
+            driverData = null;
+            driverDataSize = 0;
+            isMusicDrvFile = false;
+
+            var driverStream = Engine.OpenFileRead(filename);
+            if (driverStream == null)
+            {
+                Error("{0}: unable to open file", filename);
+            }
+
+            var br = new BinaryReader(driverStream);
+            if (filename == "INSTR.DAT")
+            {
+                // INSTR.DAT: used by Elvira 1
+                int streamSize = (int) driverStream.Length;
+                int streamLeft = streamSize;
+                ushort skipChunks = 0; // 1 for MT32, 0 for AdLib
+                ushort chunkSize = 0;
+
+                switch (requestedDriverType)
+                {
+                    case MusicType.AdLib:
+                        skipChunks = 0;
+                        break;
+                    case MusicType.MT32:
+                        skipChunks = 1; // Skip one entry for MT32
+                        break;
+                    default:
+                        System.Diagnostics.Debug.Assert(false);
+                        break;
+                }
+
+                do
+                {
+                    if (streamLeft < 2)
+                        Error("{0}: unexpected EOF", filename);
+
+                    chunkSize = br.ReadUInt16();
+                    streamLeft -= 2;
+
+                    if (streamLeft < chunkSize)
+                        Error("{0}: unexpected EOF", filename);
+
+                    if (skipChunks != 0)
+                    {
+                        // Skip the chunk
+                        driverStream.Seek(chunkSize, SeekOrigin.Current);
+                        streamLeft -= chunkSize;
+
+                        skipChunks--;
+                    }
+                } while (skipChunks != 0);
+
+                // Seek over the ASCII string until there is a NUL terminator
+                byte curByte = 0;
+
+                do
+                {
+                    if (chunkSize == 0)
+                        Error("{0}: no actual instrument data found", filename);
+
+                    curByte = br.ReadByte();
+                    chunkSize--;
+                } while (curByte != 0);
+
+                driverDataSize = chunkSize;
+
+                // Read the requested instrument data entry
+                driverData = new byte[driverDataSize];
+                driverStream.Read(driverData, 0, driverDataSize);
+            }
+            else if (filename == "MUSIC.DRV")
+            {
+                // MUSIC.DRV / used by Elvira 2 / Waxworks / Simon 1 demo
+                int streamSize = (int) driverStream.Length;
+                int streamLeft = streamSize;
+                ushort getChunk = 0; // 4 for MT32, 2 for AdLib
+
+                switch (requestedDriverType)
+                {
+                    case MusicType.AdLib:
+                        getChunk = 2;
+                        break;
+                    case MusicType.MT32:
+                        getChunk = 4;
+                        break;
+                    default:
+                        System.Diagnostics.Debug.Assert(false);
+                        break;
+                }
+
+                if (streamLeft < 2)
+                    Error("{0}: unexpected EOF", filename);
+
+                ushort chunkCount = br.ReadUInt16();
+                streamLeft -= 2;
+
+                if (getChunk >= chunkCount)
+                    Error("{0}: required chunk not available", filename);
+
+                ushort headerOffset = (ushort) (2 + (28 * getChunk));
+                streamLeft -= (28 * getChunk);
+
+                if (streamLeft < 28)
+                    Error("{0}: unexpected EOF", filename);
+
+                // Seek to required chunk
+                driverStream.Seek(headerOffset, SeekOrigin.Begin);
+                driverStream.Seek(20, SeekOrigin.Current); // skip over name
+                streamLeft -= 20;
+
+                ushort musicDrvSignature = br.ReadUInt16();
+                ushort musicDrvType = br.ReadUInt16();
+                ushort chunkOffset = br.ReadUInt16();
+                ushort chunkSize = br.ReadUInt16();
+
+                // Security checks
+                if (musicDrvSignature != 0xFEDC)
+                    Error("{0}: chunk signature mismatch", filename);
+                if (musicDrvType != 1)
+                    Error("{0}: not a music driver", filename);
+                if (chunkOffset >= streamSize)
+                    Error("{0}: driver chunk points outside of file", filename);
+
+                streamLeft = streamSize - chunkOffset;
+                if (streamLeft < chunkSize)
+                    Error("{0}: driver chunk is larger than file", filename);
+
+                driverDataSize = chunkSize;
+
+                // Read the requested instrument data entry
+                driverData = new byte[driverDataSize];
+
+                driverStream.Seek(chunkOffset, SeekOrigin.Begin);
+                driverStream.Read(driverData, 0, driverDataSize);
+                isMusicDrvFile = true;
+            }
+
+            driverStream.Dispose();
+        }
+
+        private static MidiDriver MidiDriverAccoladeMt32Create(string driverFilename)
+        {
+            byte[] driverData;
+            ushort driverDataSize;
+            bool isMusicDrvFile;
+
+            MidiDriverAccoladeReadDriver(driverFilename, MusicType.MT32, out driverData, out driverDataSize,
+                out isMusicDrvFile);
+            if (driverData == null)
+                Error("ACCOLADE-ADLIB: error during readDriver()");
+
+            var driver = new MidiDriverAccoladeMt32();
+            if (driver.SetupInstruments(driverData, driverDataSize, isMusicDrvFile)) return driver;
+
+            driver.Dispose();
+            driver = null;
+
+            return driver;
         }
 
         private void ResetVolumeTable()
@@ -694,17 +907,128 @@ namespace NScumm.Agos
 
         private MidiParser MidiParser_createS1D()
         {
-            throw new NotImplementedException();
+            return new MidiParserS1D();
         }
 
-        public void LoadMultipleSMF(Stream gameFile)
+        public void LoadMultipleSMF(Stream @in, bool sfx = false)
         {
-            throw new NotImplementedException();
+            // This is a special case for Simon 2 Windows.
+            // Instead of having multiple sequences as
+            // separate tracks in a Type 2 file, simon2win
+            // has multiple songs, each of which is a Type 1
+            // file. Thus, preceding the songs is a single
+            // byte specifying how many songs are coming.
+            // We need to load ALL the songs and then
+            // treat them as separate tracks -- for the
+            // purpose of jumps, anyway.
+            lock (_mutex)
+            {
+                var br = new BinaryReader(@in);
+                MusicInfo p = sfx ? _sfx : _music;
+                ClearConstructs(p);
+
+                p.num_songs = br.ReadByte();
+                if (p.num_songs > 16)
+                {
+                    Warning("PlayMultipleSMF: {0} is too many songs to keep track of", (int) p.num_songs);
+                    return;
+                }
+
+                byte i;
+                for (i = 0; i < p.num_songs; ++i)
+                {
+                    byte[] buf = new byte[5];
+                    int pos = (int) @in.Position;
+
+                    // Make sure there's a MThd
+                    @in.Read(buf, 0, 4);
+                    if (buf.GetRawText(4) != "MThd")
+                    {
+                        Warning("Expected MThd but found '{0}{1}{2}{3}' instead", buf[0], buf[1], buf[2], buf[3]);
+                        return;
+                    }
+                    @in.Seek(br.ReadUInt32BigEndian(), SeekOrigin.Current);
+
+                    // Now skip all the MTrk blocks
+                    while (true)
+                    {
+                        @in.Read(buf, 0, 4);
+                        if (buf.GetRawText(4) != "MTrk")
+                            break;
+                        @in.Seek(br.ReadUInt32BigEndian(), SeekOrigin.Current);
+                    }
+
+                    int pos2 = (int) (@in.Position - 4);
+                    int size = pos2 - pos;
+                    p.songs[i] = new byte[size];
+                    @in.Seek(pos, SeekOrigin.Begin);
+                    var tmp = p.songs[i];
+                    @in.Read(tmp.Data, tmp.Offset, size);
+                    p.song_sizes[i] = size;
+                }
+
+                if (!sfx)
+                {
+                    _currentTrack = 255;
+                    ResetVolumeTable();
+                }
+            }
         }
 
-        public void LoadXMIDI(Stream gameFile)
+        public void LoadXMIDI(Stream @in, bool sfx = false)
         {
-            throw new NotImplementedException();
+            lock (_mutex)
+            {
+                var br = new BinaryReader(@in);
+                MusicInfo p = sfx ? _sfx : _music;
+                ClearConstructs(p);
+
+                byte[] buf = new byte[4];
+                int pos = (int) @in.Position;
+                int size = 4;
+                @in.Read(buf, 0, 4);
+                if (buf.GetRawText(4) == "FORM")
+                {
+                    for (var i = 0; i < 16; ++i)
+                    {
+                        if (buf.GetRawText(4) == "CAT ")
+                            break;
+                        size += 2;
+                        Array.Copy(buf, 2, buf, 0, 2);
+                        @in.Read(buf, 2, 2);
+                    }
+                    if (buf.GetRawText(4) != "CAT ")
+                    {
+                        Error("Could not find 'CAT ' tag to determine resource size");
+                    }
+                    size += 4 + br.ReadInt32BigEndian();
+                    @in.Seek(pos, 0);
+                    p.data = new byte[size];
+                    @in.Read(p.data.Data, 0, size);
+                }
+                else
+                {
+                    Error("Expected 'FORM' tag but found '{0}{1}{2}{3}' instead", buf[0], buf[1], buf[2], buf[3]);
+                }
+
+                // In the DOS version of Simon the Sorcerer 2, the music contains lots
+                // of XMIDI callback controller events. As far as we know, they aren't
+                // actually used, so we disable the callback handler explicitly.
+
+                MidiParser parser = null;
+                throw new NotImplementedException();
+                //MidiParser parser = MidiParser::createParser_XMIDI(null);
+                parser.MidiDriver = this;
+                parser.TimerRate = _driver.BaseTempo;
+                parser.LoadMusic(p.data, size);
+
+                if (!sfx)
+                {
+                    _currentTrack = 255;
+                    ResetVolumeTable();
+                }
+                p.parser = parser; // That plugs the power cord into the wall
+            }
         }
 
         public void Pause(bool b)
@@ -732,7 +1056,5 @@ namespace NScumm.Agos
             9444, 5800, 1381, 5660, 6684, 2456, 4744, 2455, 1177, 1232,
             17256, 5103, 8794, 4884, 16
         };
-
-
     }
 }

@@ -26,7 +26,7 @@ using System.Runtime.InteropServices;
 
 namespace NScumm.Core.Audio.OPL.DosBox
 {
-    public partial class DosBoxOPL: IOpl
+    public partial class DosBoxOPL: EmulatedOPL
     {
         [StructLayout(LayoutKind.Explicit)]
         struct Reg
@@ -48,7 +48,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
 
         #region IOpl implementation
 
-        public void Init(int rate)
+        public override void Init()
         {
             Free();
 
@@ -60,23 +60,21 @@ namespace NScumm.Core.Audio.OPL.DosBox
             _emulator = new Chip();
 
             InitTables();
-            _emulator.Setup(rate);
+            _emulator.Setup(Rate);
 
             if (_type == OplType.DualOpl2)
             {
                 // Setup opl3 mode in the hander
                 _emulator.WriteReg(0x105, 1);
             }
-
-            _rate = rate;
         }
 
         private void Reset()
         {
-            Init(_rate);
+            Init();
         }
 
-        public void WriteReg(int r, int v)
+        public override void WriteReg(int r, int v)
         {
             int tempReg;
             switch (_type)
@@ -120,7 +118,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
             }
         }
 
-        public void ReadBuffer(short[] buffer, int pos, int length)
+        public override void ReadBuffer(short[] buffer, int pos, int length)
         {
             // For stereo OPL cards, we divide the sample count by 2,
             // to match stereo AudioStream behavior.
@@ -162,12 +160,16 @@ namespace NScumm.Core.Audio.OPL.DosBox
             }
         }
 
-        public bool IsStereo
+        protected override void GenerateSamples(Ptr<short> buffer, int numSamples)
         {
-            get
-            {
-                return _type != OplType.Opl2;
-            }
+            ReadBuffer(buffer.Data, buffer.Offset, numSamples);
+        }
+
+        public override bool IsStereo => _type != OplType.Opl2;
+
+        public override void Dispose()
+        {
+            Free();
         }
 
         #endregion
@@ -221,7 +223,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
             return 0;
         }
 
-        public void Write(int port, int val)
+        public override void Write(int port, int val)
         {
             if ((port & 1) != 0)
             {
@@ -284,7 +286,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
             }
         }
 
-        void Free()
+        private void Free()
         {
             _emulator = null;
         }

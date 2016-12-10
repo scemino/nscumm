@@ -70,6 +70,10 @@
         <Compile Include="ImageHeader_Simon.cs"/>
         <Compile Include="Item.cs"/>
         <Compile Include="LoopingAudioStream.cs"/>
+        <Compile Include="MidiDriverAccoladeAdLib.cs"/>
+        <Compile Include="MidiDriverAccoladeMt32.cs"/>
+        <Compile Include="MidiDriverSimon1AdLib.cs"/>
+        <Compile Include="MidiParserS1D.cs"/>
         <Compile Include="MidiPlayer.cs"/>
         <Compile Include="MusicInfo.cs"/>
         <Compile Include="Properties\AssemblyInfo.cs"/>

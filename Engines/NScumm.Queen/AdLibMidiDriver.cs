@@ -174,7 +174,7 @@ namespace NScumm.Queen
         public override MidiDriverError Open()
         {
             base.Open();
-            _opl = MakeAdLibOPL(Rate);
+            _opl = MakeAdLibOPL();
             AdlibSetupCard();
             for (int i = 0; i < 11; ++i)
             {
@@ -586,10 +586,10 @@ namespace NScumm.Queen
             _opl.WriteReg(port, value);
         }
 
-        IOpl MakeAdLibOPL(int rate)
+        IOpl MakeAdLibOPL()
         {
             var opl = new DosBoxOPL(OplType.Opl2);
-            opl.Init(rate);
+            opl.Init();
             return opl;
         }
 

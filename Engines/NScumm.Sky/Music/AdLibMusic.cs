@@ -33,42 +33,18 @@ namespace NScumm.Sky.Music
             _sampleRate = mixer.OutputRate;
 
             _opl = new DosBoxOPL(OplType.Opl2);
-            _opl.Init(_sampleRate);
+            _opl.Init();
 
             _soundHandle = _mixer.PlayStream(SoundType.Music, this, -1, Mixer.MaxChannelVolume, 0, false, true);
         }
 
-        public bool IsEndOfData
-        {
-            get
-            {
-                return false;
-            }
-        }
+        public bool IsEndOfData => false;
 
-        public bool IsEndOfStream
-        {
-            get
-            {
-                return false;
-            }
-        }
+        public bool IsEndOfStream => false;
 
-        public bool IsStereo
-        {
-            get
-            {
-                return false;
-            }
-        }
+        public bool IsStereo => false;
 
-        public int Rate
-        {
-            get
-            {
-                return _sampleRate;
-            }
-        }
+        public int Rate => _sampleRate;
 
         public override void Dispose()
         {

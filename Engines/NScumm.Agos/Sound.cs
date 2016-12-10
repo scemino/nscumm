@@ -93,6 +93,22 @@ namespace NScumm.Agos
             _mixer.StopHandle(_voiceHandle);
         }
 
+        public void AmbientPause(bool b)
+        {
+            _ambientPaused = b;
+
+            if (_ambientPaused && _ambientPlaying != 0)
+            {
+                _mixer.StopHandle(_ambientHandle);
+            }
+            else if (_ambientPlaying != 0)
+            {
+                uint tmp = _ambientPlaying;
+                _ambientPlaying = 0;
+                PlayAmbient((ushort) tmp);
+            }
+        }
+
         private void LoadSfxFile(GameSpecificSettings gss)
         {
             if (_hasEffectsFile)

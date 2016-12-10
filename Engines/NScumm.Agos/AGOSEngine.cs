@@ -20,9 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using NScumm.Core;
 using NScumm.Core.Audio;
@@ -189,8 +187,8 @@ namespace NScumm.Agos
         protected TimeEvent _firstTimeStruct;
         private TimeEvent _pendingDeleteTimeEvent;
         protected Stream _gameFile;
-        protected readonly VgaPointersEntry[] _vgaBufferPointers = CreateArray<VgaPointersEntry>(450);
-        private readonly VgaSprite[] _vgaSprites = CreateArray<VgaSprite>(200);
+        protected readonly VgaPointersEntry[] _vgaBufferPointers = ScummHelper.CreateArray<VgaPointersEntry>(450);
+        private readonly VgaSprite[] _vgaSprites = ScummHelper.CreateArray<VgaSprite>(200);
         protected short _scrollX;
         protected short _scrollXMax;
         protected short _scrollY;
@@ -258,7 +256,7 @@ namespace NScumm.Agos
         private HitArea _currentVerbBox, _lastVerbOn;
         protected ushort _defaultVerb;
 
-        protected HitArea[] _hitAreas = CreateArray<HitArea>(250);
+        protected HitArea[] _hitAreas = ScummHelper.CreateArray<HitArea>(250);
         private bool _exitCutscene, _picture8600;
 
         protected ushort _numOpcodes, _opcode;
@@ -268,7 +266,7 @@ namespace NScumm.Agos
         private int _awaitTwoByteToken;
         private readonly byte[] _textBuffer = new byte[180];
         private BytePtr[] _localStringtable;
-        private readonly WindowBlock[] _windowList = CreateArray<WindowBlock>(16);
+        private readonly WindowBlock[] _windowList = ScummHelper.CreateArray<WindowBlock>(16);
         private ushort _hyperLink, _newLines;
         private ushort _oracleMaxScrollY, _noOracleScroll;
         private ushort _interactY;
@@ -302,10 +300,10 @@ namespace NScumm.Agos
         protected BytePtr _curVgaFile2;
         private BytePtr _curSfxFile;
         private int _curSfxFileSize;
-        private readonly VgaSleepStruct[] _onStopTable = CreateArray<VgaSleepStruct>(60);
-        private readonly VgaSleepStruct[] _waitEndTable = CreateArray<VgaSleepStruct>(60);
-        protected readonly VgaSleepStruct[] _waitSyncTable = CreateArray<VgaSleepStruct>(60);
-        private readonly AnimTable[] _screenAnim1 = CreateArray<AnimTable>(90);
+        private readonly VgaSleepStruct[] _onStopTable = ScummHelper.CreateArray<VgaSleepStruct>(60);
+        private readonly VgaSleepStruct[] _waitEndTable = ScummHelper.CreateArray<VgaSleepStruct>(60);
+        protected readonly VgaSleepStruct[] _waitSyncTable = ScummHelper.CreateArray<VgaSleepStruct>(60);
+        private readonly AnimTable[] _screenAnim1 = ScummHelper.CreateArray<AnimTable>(90);
         private volatile ushort _fastFadeInFlag;
         protected readonly Color[] _currentPalette = new Color[256];
         protected Color[] _displayPalette = new Color[256];
@@ -325,7 +323,7 @@ namespace NScumm.Agos
         protected ushort _copyScnFlag, _vgaSpriteChanged;
         protected bool _bottomPalette;
         private bool _syncFlag2;
-        protected readonly VgaTimerEntry[] _vgaTimerList = CreateArray<VgaTimerEntry>(205);
+        protected readonly VgaTimerEntry[] _vgaTimerList = ScummHelper.CreateArray<VgaTimerEntry>(205);
         private ushort _verbHitArea;
         private int _textSize;
         private byte[] _textMem;
@@ -719,16 +717,6 @@ namespace NScumm.Agos
         {
             OSystem.GraphicsManager.CopyRectToScreen(screen.Pixels, screen.Pitch, 0, 0, screen.Width,
                 screen.Height);
-        }
-
-        public static T[] CreateArray<T>(int length) where T : new()
-        {
-            var objs = new T[length];
-            for (var i = 0; i < objs.Length; i++)
-            {
-                objs[i] = new T();
-            }
-            return objs;
         }
 
         private static byte[][] CreateStringReturnBuffer()

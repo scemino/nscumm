@@ -21,8 +21,10 @@
 
 using System;
 using System.IO;
+using System.Text;
 using NScumm.Core;
 using NScumm.Core.Audio;
+using NScumm.Core.Common;
 using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
@@ -37,6 +39,10 @@ namespace NScumm.Agos
 
     internal class MidiPlayer : MidiDriverBase
     {
+        private const int MIDI_SETUP_BUNDLE_HEADER_SIZE = 56;
+        private const int MIDI_SETUP_BUNDLE_FILEHEADER_SIZE = 48;
+        private const int MIDI_SETUP_BUNDLE_FILENAME_MAX_SIZE = 12;
+
         public bool _adLibMusic;
         public bool _enable_sfx;
 
@@ -300,42 +306,39 @@ namespace NScumm.Agos
                     {
                         case MusicType.AdLib:
                         {
-                            throw new NotImplementedException();
-                            /*Common::File instrumentDataFile;
-                            if (instrumentDataFile.exists("MIDPAK.AD"))
+                            if (Engine.FileExists("MIDPAK.AD"))
                             {
                                 // if there is a file called MIDPAK.AD, use it directly
                                 Warning("SIMON 2: using MIDPAK.AD");
-                                _driver = MidiDriver_Miles_AdLib_create("MIDPAK.AD", "MIDPAK.AD");
+                                _driver = MidiDriverMilesAdLib.Create("MIDPAK.AD", "MIDPAK.AD");
                             }
                             else
                             {
                                 // if there is no file called MIDPAK.AD, try to extract it from the file SETUP.SHR
                                 // if we didn't do this, the user would be forced to "install" the game instead of simply
                                 // copying all files from CD-ROM.
-                                var midpakAdLibStream = simon2SetupExtractFile("MIDPAK.AD");
-                                if (!midpakAdLibStream)
-                                    Error("MidiPlayer: could not extract MIDPAK.AD from SETUP.SHR");
+                                using (var midpakAdLibStream = Simon2SetupExtractFile("MIDPAK.AD"))
+                                {
+                                    if (midpakAdLibStream == null)
+                                        Error("MidiPlayer: could not extract MIDPAK.AD from SETUP.SHR");
 
-                                // Pass this extracted data to the driver
-                                Warning("SIMON 2: using MIDPAK.AD extracted from SETUP.SHR");
-                                _driver = Audio::MidiDriver_Miles_AdLib_create("", "", midpakAdLibStream);
-                                delete midpakAdLibStream;
+                                    // Pass this extracted data to the driver
+                                    Warning("SIMON 2: using MIDPAK.AD extracted from SETUP.SHR");
+                                    _driver = MidiDriverMilesAdLib.Create("", "", midpakAdLibStream);
+                                }
                             }
                             // TODO: not sure what's going wrong with AdLib
                             // it doesn't seem to matter if we use the regular XMIDI tracks or the 2nd set meant for MT32
-                            break;*/
+                            break;
                         }
                         case MusicType.MT32:
-                            throw new NotImplementedException();
-                            //_driver = Audio::MidiDriver_Miles_MT32_create("");
+                            _driver = MidiDriverMilesMt32.Create(string.Empty);
                             _nativeMT32 = true; // use 2nd set of XMIDI tracks
                             break;
                         case MusicType.GeneralMidi:
                             if (ConfigManager.Instance.Get<bool>("native_mt32"))
                             {
-                                throw new NotImplementedException();
-                                //_driver = Audio::MidiDriver_Miles_MT32_create("");
+                                _driver = MidiDriverMilesMt32.Create(string.Empty);
                                 _nativeMT32 = true; // use 2nd set of XMIDI tracks
                             }
                             break;
@@ -493,7 +496,8 @@ namespace NScumm.Agos
         // this reads and gets Accolade driver data
         // we need it for channel mapping, instrument mapping and other things
         // this driver data chunk gets passed to the actual music driver (MT32 / AdLib)
-        private static void MidiDriverAccoladeReadDriver(string filename, MusicType requestedDriverType, out byte[] driverData, out ushort driverDataSize, out bool isMusicDrvFile)
+        private static void MidiDriverAccoladeReadDriver(string filename, MusicType requestedDriverType,
+            out byte[] driverData, out ushort driverDataSize, out bool isMusicDrvFile)
         {
             driverData = null;
             driverDataSize = 0;
@@ -1015,9 +1019,7 @@ namespace NScumm.Agos
                 // of XMIDI callback controller events. As far as we know, they aren't
                 // actually used, so we disable the callback handler explicitly.
 
-                MidiParser parser = null;
-                throw new NotImplementedException();
-                //MidiParser parser = MidiParser::createParser_XMIDI(null);
+                var parser = MidiParser.CreateXMidiParser();
                 parser.MidiDriver = this;
                 parser.TimerRate = _driver.BaseTempo;
                 parser.LoadMusic(p.data, size);
@@ -1047,6 +1049,100 @@ namespace NScumm.Agos
                         _sfx.channel[i].Volume((byte) (_paused ? 0 : (_sfx.volume[i] * _sfxVolume / 255)));
                 }
             }
+        }
+
+        // PKWARE data compression library (called "DCL" in ScummVM) was used for storing files within SETUP.SHR
+        // we need it to be able to get the file MIDPAK.AD, otherwise we would have to require the user
+        // to "install" the game before being able to actually play it, when using AdLib.
+        //
+        // SETUP.SHR file format:
+        //  [bundle file header]
+        //    [compressed file header] [compressed file data]
+        //     * compressed file count
+        private Stream Simon2SetupExtractFile(string requestedFileName)
+        {
+            int bundleSize = 0;
+            int bundleBytesLeft = 0;
+            byte[] bundleHeader = new byte[MIDI_SETUP_BUNDLE_HEADER_SIZE];
+            byte[] bundleFileHeader = new byte[MIDI_SETUP_BUNDLE_FILEHEADER_SIZE];
+            ushort bundleFileCount = 0;
+            ushort bundleFileNr = 0;
+
+            StringBuilder fileName = new StringBuilder();
+
+            Stream extractedStream = null;
+
+            var setupBundleStream = Engine.OpenFileRead("setup.shr");
+            if (setupBundleStream == null)
+                Error("MidiPlayer: could not open setup.shr");
+
+            bundleSize = (int) setupBundleStream.Length;
+            bundleBytesLeft = bundleSize;
+
+            if (bundleSize < MIDI_SETUP_BUNDLE_HEADER_SIZE)
+                Error("MidiPlayer: unexpected EOF in setup.shr");
+
+            if (setupBundleStream.Read(bundleHeader, 0, MIDI_SETUP_BUNDLE_HEADER_SIZE) != MIDI_SETUP_BUNDLE_HEADER_SIZE)
+                Error("MidiPlayer: setup.shr read error");
+            bundleBytesLeft -= MIDI_SETUP_BUNDLE_HEADER_SIZE;
+
+            // Verify header byte
+            if (bundleHeader[13] != 't')
+                Error("MidiPlayer: setup.shr bundle header data mismatch");
+
+            bundleFileCount = bundleHeader.ToUInt16(14);
+
+            // Search for requested file
+            while (bundleFileNr < bundleFileCount)
+            {
+                if (bundleBytesLeft < bundleFileHeader.Length)
+                    Error("MidiPlayer: unexpected EOF in setup.shr");
+
+                if (setupBundleStream.Read(bundleFileHeader, 0, bundleFileHeader.Length) != bundleFileHeader.Length)
+                    Error("MidiPlayer: setup.shr read error");
+                bundleBytesLeft -= MIDI_SETUP_BUNDLE_FILEHEADER_SIZE;
+
+                // Extract filename from file-header
+                fileName.Clear();
+                for (var curPos = 0; curPos < MIDI_SETUP_BUNDLE_FILENAME_MAX_SIZE; curPos++)
+                {
+                    if (bundleFileHeader[curPos] == 0) // terminating NUL
+                        break;
+                    fileName.Insert(curPos, new[] {(char) bundleFileHeader[curPos]});
+                }
+
+                // Get compressed
+                int fileCompressedSize = bundleFileHeader.ToInt32(20);
+                if (fileCompressedSize == 0)
+                    Error("MidiPlayer: compressed file is 0 bytes, data corruption?");
+                if (bundleBytesLeft < fileCompressedSize)
+                    Error("MidiPlayer: unexpected EOF in setup.shr");
+
+                if (fileName.ToString() == requestedFileName)
+                {
+                    // requested file found
+                    var fileCompressedDataPtr = new byte[fileCompressedSize];
+
+                    if (setupBundleStream.Read(fileCompressedDataPtr, 0, fileCompressedSize) != fileCompressedSize)
+                        Error("MidiPlayer: setup.shr read error");
+
+                    using (var compressedStream = new MemoryStream(fileCompressedDataPtr, 0, fileCompressedSize))
+                    {
+                        // we don't know the unpacked size, let decompressor figure it out
+                        extractedStream = DecompressorDCL.Decompress(compressedStream);
+                    }
+                    break;
+                }
+
+                // skip compressed size
+                setupBundleStream.Seek(fileCompressedSize, SeekOrigin.Current);
+                bundleBytesLeft -= fileCompressedSize;
+
+                bundleFileNr++;
+            }
+            setupBundleStream.Dispose();
+
+            return extractedStream;
         }
 
         private static readonly int[] simon1_gmf_size =

@@ -18,10 +18,12 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Linq;
 using NScumm.Core.Audio.Midi;
-using System.Diagnostics;
+using NScumm.Core.Audio;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Core
 {
@@ -124,13 +126,13 @@ namespace NScumm.Core
         /// Gets the the MIDI channel.
         /// </summary>
         /// <value>The MIDI channel.</value>
-        public byte Channel { get { return (byte)(Event & 0x0F); } }
+        public byte Channel => (byte) (Event & 0x0F);
 
         /// <summary>
         /// Gets the the command code.
         /// </summary>
         /// <value>The command.</value>
-        public byte Command { get { return (byte)(Event >> 4); } }
+        public byte Command => (byte) (Event >> 4);
 
         public EventInfo()
         {
@@ -156,9 +158,10 @@ namespace NScumm.Core
             throw new NotImplementedException();
         }
 
-        public static MidiParser CreateXMidiParser()
+        public static MidiParser CreateXMidiParser(XMidiCallbackProc proc = null, object data = null,
+            XMidiNewTimbreListProc newTimbreListProc = null, MidiDriver newTimbreListDriver = null)
         {
-            throw new NotImplementedException();
+            return new MidiParserXMidi(proc ?? DefaultXMidiCallback, data, newTimbreListProc, newTimbreListDriver);
         }
 
         public static MidiParser CreateSmfParser()
@@ -214,29 +217,35 @@ namespace NScumm.Core
         /// <summary>
         /// Pulses Per Quarter Note. (We refer to "pulses" as "ticks".)
         /// </summary>
-        uint _ppqn;
+        protected uint _ppqn;
+
         /// <summary>
         /// Microseconds per quarter note.
         /// </summary>
         int tempo;
+
         /// <summary>
         /// Microseconds per tick (_tempo / _ppqn). default = 500000 / 96
         /// </summary>
         int _psecPerTick = 5208;
+
         /// <summary>
         /// For lightweight clients that don't provide their own flow control.
         /// </summary>
         bool _autoLoop;
+
         /// <summary>
         /// Support smart expiration of hanging notes when jumping.
         /// </summary>
         bool _smartJump;
+
         /// <summary>
         /// The next event to transmit. Events are preparsed
         /// so each event is parsed only once; this permits
         /// simulated events in certain formats.
         /// </summary>
         EventInfo _nextEvent;
+
         /// <summary>
         /// True if currently inside jumpToTick.
         /// </summary>
@@ -244,7 +253,7 @@ namespace NScumm.Core
 
         public int Tempo
         {
-            get{ return tempo; }
+            get { return tempo; }
             set
             {
                 tempo = value;
@@ -255,17 +264,13 @@ namespace NScumm.Core
             }
         }
 
-        public uint TimerRate
-        {
-            get;
-            set;
-        }
+        public uint TimerRate { get; set; }
 
-        public bool IsPlaying { get { return (Position.PlayPos != BytePtr.Null); } }
+        public bool IsPlaying => (Position.PlayPos != BytePtr.Null);
 
-        public uint PPQN { get { return _ppqn; } }
+        public uint PPQN => _ppqn;
 
-        public virtual int Tick { get { return Position.PlayTick; } }
+        public virtual int Tick => Position.PlayTick;
 
         int activeTrack;
 
@@ -275,10 +280,9 @@ namespace NScumm.Core
         /// <value>The active track.</value>
         public int ActiveTrack
         {
-            get{ return activeTrack; }
+            get { return activeTrack; }
             set
             {
-
                 if (value < 0 || value >= NumTracks)
                     return;
 
@@ -314,7 +318,7 @@ namespace NScumm.Core
             if (ActiveTrack >= NumTracks)
                 return false;
 
-            Debug.Assert(!_jumpingToTick); // This function is not re-entrant
+            System.Diagnostics.Debug.Assert(!_jumpingToTick); // This function is not re-entrant
             _jumpingToTick = true;
 
             Tracker currentPos = new Tracker(Position);
@@ -330,14 +334,14 @@ namespace NScumm.Core
                     EventInfo info = _nextEvent;
                     if (Position.LastEventTick + info.Delta >= tick)
                     {
-                        Position.PlayTime += (int)(tick - Position.LastEventTick) * _psecPerTick;
-                        Position.PlayTick = (int)tick;
+                        Position.PlayTime += (int) (tick - Position.LastEventTick) * _psecPerTick;
+                        Position.PlayTick = (int) tick;
                         break;
                     }
 
                     Position.LastEventTick += info.Delta;
                     Position.LastEventTime += info.Delta * _psecPerTick;
-                    Position.PlayTick = (int)Position.LastEventTick;
+                    Position.PlayTick = (int) Position.LastEventTick;
                     Position.PlayTime = Position.LastEventTime;
 
                     // Some special processing for the fast-forward case
@@ -398,9 +402,9 @@ namespace NScumm.Core
                 if (fireEvents)
                 {
                     if (info.Data[info.Length - 1] == 0xF7)
-                        MidiDriver.SysEx(info.Data, (ushort)(info.Length - 1));
+                        MidiDriver.SysEx(info.Data, (ushort) (info.Length - 1));
                     else
-                        MidiDriver.SysEx(info.Data, (ushort)info.Length);
+                        MidiDriver.SysEx(info.Data, (ushort) info.Length);
                 }
             }
             else if (info.Event == 0xFF)
@@ -419,7 +423,7 @@ namespace NScumm.Core
                     {
                         StopPlaying();
                         if (fireEvents)
-                            MidiDriver.MetaEvent(info.MetaType, info.Data, (ushort)info.Length);
+                            MidiDriver.MetaEvent(info.MetaType, info.Data, (ushort) info.Length);
                     }
                     return false;
                 }
@@ -431,7 +435,7 @@ namespace NScumm.Core
                     }
                 }
                 if (fireEvents)
-                    MidiDriver.MetaEvent(info.MetaType, info.Data, (ushort)info.Length);
+                    MidiDriver.MetaEvent(info.MetaType, info.Data, (ushort) info.Length);
             }
             else
             {
@@ -456,7 +460,11 @@ namespace NScumm.Core
         /// Events are preparsed so each event is parsed only once; this permits
         /// simulated events in certain formats.
         /// </remarks>
-        protected EventInfo NextEvent { get { return _nextEvent; } set { _nextEvent = value; } }
+        protected EventInfo NextEvent
+        {
+            get { return _nextEvent; }
+            set { _nextEvent = value; }
+        }
 
         protected abstract void ParseNextEvent(EventInfo info);
 
@@ -482,8 +490,9 @@ namespace NScumm.Core
                 {
                     if ((tempActive[NextEvent.Param1] & (1 << NextEvent.Channel)) != 0)
                     {
-                        HangingNote(NextEvent.Channel, NextEvent.Param1, (int)(advanceTick - Position.LastEventTick) * _psecPerTick, false);
-                        tempActive[NextEvent.Param1] &= (ushort)~(1 << NextEvent.Channel);
+                        HangingNote(NextEvent.Channel, NextEvent.Param1,
+                            (int) (advanceTick - Position.LastEventTick) * _psecPerTick, false);
+                        tempActive[NextEvent.Param1] &= (ushort) ~(1 << NextEvent.Channel);
                     }
                 }
                 else if (NextEvent.Event == 0xFF && NextEvent.MetaType == 0x2F)
@@ -563,9 +572,9 @@ namespace NScumm.Core
                 return;
 
             if (active)
-                ActiveNotes[note] |= (ushort)(1 << channel);
+                ActiveNotes[note] |= (ushort) (1 << channel);
             else
-                ActiveNotes[note] &= (ushort)~(1 << channel);
+                ActiveNotes[note] &= (ushort) ~(1 << channel);
 
             // See if there are hanging notes that we can cancel
             foreach (var hangingNote in HangingNotes.Reverse())
@@ -649,7 +658,7 @@ namespace NScumm.Core
             TimerRate = 0x4A0000;
             _ppqn = 96;
             tempo = 500000;
-            _psecPerTick = 5208;// 500000 / 96
+            _psecPerTick = 5208; // 500000 / 96
             _nextEvent = new EventInfo();
             _nextEvent.Start = BytePtr.Null;
             _nextEvent.Delta = 0;
@@ -739,13 +748,12 @@ namespace NScumm.Core
         public void OnTimer()
         {
             uint endTime;
-            uint eventTime;
 
             if (Position.PlayPos == BytePtr.Null || MidiDriver == null)
                 return;
 
             AbortParse = false;
-            endTime = (uint)Position.PlayTime + TimerRate;
+            endTime = (uint) Position.PlayTime + TimerRate;
 
             // Scan our hanging notes for any
             // that should be turned off.
@@ -763,7 +771,7 @@ namespace NScumm.Core
                         }
                         else
                         {
-                            ptr.TimeLeft -= (int)TimerRate;
+                            ptr.TimeLeft -= (int) TimerRate;
                         }
                     }
                 }
@@ -773,7 +781,7 @@ namespace NScumm.Core
             {
                 var info = _nextEvent;
 
-                eventTime = (uint)(Position.LastEventTime + info.Delta * _psecPerTick);
+                var eventTime = (uint) (Position.LastEventTime + info.Delta * _psecPerTick);
                 if (eventTime > endTime)
                     break;
 
@@ -793,7 +801,8 @@ namespace NScumm.Core
                 else if (info.Command == 0x9)
                 {
                     if (info.Length > 0)
-                        HangingNote(info.Channel, info.Param1, (int)(info.Length * _psecPerTick - (endTime - eventTime)));
+                        HangingNote(info.Channel, info.Param1,
+                            (int) (info.Length * _psecPerTick - (endTime - eventTime)));
                     else
                         ActiveNote(info.Channel, info.Param1, true);
                 }
@@ -806,17 +815,52 @@ namespace NScumm.Core
 
                 if (!AbortParse)
                 {
-                    Position.LastEventTime = (int)eventTime;
+                    Position.LastEventTime = (int) eventTime;
                     ParseNextEvent(_nextEvent);
                 }
             }
 
             if (!AbortParse)
             {
-                Position.PlayTime = (int)endTime;
-                Position.PlayTick = (int)((Position.PlayTime - Position.LastEventTime) / _psecPerTick + Position.LastEventTick);
+                Position.PlayTime = (int) endTime;
+                Position.PlayTick =
+                    (int) ((Position.PlayTime - Position.LastEventTime) / _psecPerTick + Position.LastEventTick);
             }
+        }
+
+        /// <summary>
+        /// Platform independent BE uint32 read-and-advance.
+        /// This helper function reads Big Endian 32-bit numbers
+        /// from a memory pointer, at the same time advancing
+        /// the pointer.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        protected int Read4High(ref BytePtr data)
+        {
+            int val = data.ToInt32BigEndian();
+            data += 4;
+            return val;
+        }
+
+        /// <summary>
+        /// Platform independent LE uint16 read-and-advance.
+        /// This helper function reads Little Endian 16-bit numbers
+        /// from a memory pointer, at the same time advancing
+        /// the pointer.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        protected int Read2Low(ref BytePtr data)
+        {
+            int val = data.ToInt16();
+            data += 2;
+            return val;
+        }
+
+        private static void DefaultXMidiCallback(byte eventData, object data)
+        {
+            Warning("MidiParser: defaultXMidiCallback({0})", eventData);
         }
     }
 }
-

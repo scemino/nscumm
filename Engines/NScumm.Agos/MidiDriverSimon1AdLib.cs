@@ -58,14 +58,14 @@ namespace NScumm.Agos
         private const int ChannelOrphanedFlag = 0x80;
         private const int ChannelUnused = 0xFF;
 
-        private byte[] _instruments;
+        private readonly byte[] _instruments;
         private IOpl _opl;
         private bool _isOpen;
         private object _timerParam;
         private TimerProc _timerProc;
 
-        private Voice[] _voices = AgosEngine.CreateArray<Voice>(NumberOfVoices);
-        private uint[] _midiPrograms = new uint[NumberOfMidiChannels];
+        private readonly Voice[] _voices = ScummHelper.CreateArray<Voice>(NumberOfVoices);
+        private readonly uint[] _midiPrograms = new uint[NumberOfMidiChannels];
 
         private int _melodyVoices;
         private byte _amvdrBits;

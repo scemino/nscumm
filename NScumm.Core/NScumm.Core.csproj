@@ -40,6 +40,9 @@
   <ItemGroup>
     <Compile Include="Audio\Decoders\XAStream.cs" />
     <Compile Include="Audio\ISoundRepository.cs" />
+      <Compile Include="Audio\MidiDriverMilesAdLib.cs"/>
+      <Compile Include="Audio\MidiDriverMilesMt32.cs"/>
+      <Compile Include="Audio\MidiParserXMidi.cs"/>
     <Compile Include="Audio\SampleProviders\AudioSampleProviderToAudioStream.cs" />
     <Compile Include="Audio\SampleProviders\MonoToStereoAudioSampleProvider16.cs" />
     <Compile Include="Audio\SampleProviders\ResampleAudioSampleProvider.cs" />

@@ -26,6 +26,16 @@ namespace NScumm.Core
 {
     public static class ScummHelper
     {
+        public static T[] CreateArray<T>(int length) where T : new()
+        {
+            var objs = new T[length];
+            for (var i = 0; i < objs.Length; i++)
+            {
+                objs[i] = new T();
+            }
+            return objs;
+        }
+
         public static string GetString(this System.Text.Encoding encoding, byte[] bytes)
         {
             if (bytes == null)

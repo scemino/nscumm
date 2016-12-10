@@ -19,13 +19,15 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using NScumm.Core;
+
 namespace NScumm.Agos
 {
     class IconBlock
     {
         public short line;
         public Item itemRef;
-        public IconEntry[] iconArray = AgosEngine.CreateArray<IconEntry>(64);
+        public readonly IconEntry[] iconArray = ScummHelper.CreateArray<IconEntry>(64);
         public short upArrow;
         public short downArrow;
         public ushort classMask;

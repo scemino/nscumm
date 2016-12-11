@@ -279,7 +279,7 @@ namespace NScumm.Agos
             if (GamePlatform == Platform.Amiga && GameType == SIMONGameType.GType_WW)
             {
                 // Multiple tunes are stored in music files for main locations
-                for (uint i = 0; i < 20; i++)
+                for (var i = 0; i < 20; i++)
                 {
                     if (amigaWaxworksOffs[i].tune == music)
                     {

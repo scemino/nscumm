@@ -485,7 +485,7 @@ namespace NScumm.Agos
             return true;
         }
 
-        private bool DecrunchFile(BytePtr src, BytePtr dst, int size)
+        private static bool DecrunchFile(BytePtr src, BytePtr dst, int size)
         {
             BytePtr s = src + size - 4;
             int destlen = s.ToInt32BigEndian();
@@ -583,7 +583,7 @@ namespace NScumm.Agos
                         return false; // Overflow?
                     if (!SD_GETBITS(ref bb, s, ref bits, src, ref bc, ref bit, ref x, x))
                         return false;
-                    if ((d + x) > (dst + destlen))
+                    if (d + x > dst + destlen)
                         return false; // Offset overflow?
                     do
                     {

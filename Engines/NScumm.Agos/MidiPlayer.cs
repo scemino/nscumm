@@ -946,9 +946,10 @@ namespace NScumm.Agos
 
                     // Make sure there's a MThd
                     @in.Read(buf, 0, 4);
-                    if (buf.GetRawText(4) != "MThd")
+                    if (buf.GetRawText(0,4) != "MThd")
                     {
-                        Warning("Expected MThd but found '{0}{1}{2}{3}' instead", buf[0], buf[1], buf[2], buf[3]);
+                        Warning("Expected MThd but found '{0}{1}{2}{3}' instead", (char)buf[0], (char)buf[1],
+                            (char)buf[2], (char)buf[3]);
                         return;
                     }
                     @in.Seek(br.ReadUInt32BigEndian(), SeekOrigin.Current);
@@ -957,7 +958,7 @@ namespace NScumm.Agos
                     while (true)
                     {
                         @in.Read(buf, 0, 4);
-                        if (buf.GetRawText(4) != "MTrk")
+                        if (buf.GetRawText(0, 4) != "MTrk")
                             break;
                         @in.Seek(br.ReadUInt32BigEndian(), SeekOrigin.Current);
                     }

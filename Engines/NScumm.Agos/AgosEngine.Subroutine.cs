@@ -288,7 +288,7 @@ namespace NScumm.Agos
 
         private Stream OpenTablesFileGme(string filename)
         {
-            var res = int.Parse(filename.Substring(0, 6)) + _tableIndexBase - 1;
+            var res = int.Parse(filename.Substring(6)) + _tableIndexBase - 1;
             var offs = _gameOffsetsPtr[res];
 
             _gameFile.Seek(offs, SeekOrigin.Begin);

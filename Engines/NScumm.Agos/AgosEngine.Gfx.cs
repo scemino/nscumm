@@ -721,15 +721,26 @@ namespace NScumm.Agos
                 System.Diagnostics.Debug.Assert(ScummHelper.SwapBytes(h.id) == vgaSpriteId);
             }
 
-//            if (DebugMan.isDebugChannelEnabled(kDebugVGAScript)) {
-//                if (_gd.ADGameDescription.gameType == GType_FF || _gd.ADGameDescription.gameType == GType_PP) {
-//                    DumpVgaScript(_curVgaFile1 + READ_LE_UINT16(&((AnimationHeader_Feeble*)p).scriptOffs), zoneNum, vgaSpriteId);
-//                } else if (_gd.ADGameDescription.gameType == GType_SIMON1 || _gd.ADGameDescription.gameType == GType_SIMON2) {
-//                    DumpVgaScript(_curVgaFile1 + READ_BE_UINT16(&((AnimationHeader_Simon*)p).scriptOffs), zoneNum, vgaSpriteId);
-//                } else {
-//                    DumpVgaScript(_curVgaFile1 + READ_BE_UINT16(&((AnimationHeader_WW*)p).scriptOffs), zoneNum, vgaSpriteId);
-//                }
-//            }
+            if (DebugManager.Instance.IsDebugChannelEnabled(DebugLevels.kDebugVGAScript))
+            {
+                switch (_gd.ADGameDescription.gameType)
+                {
+                    case SIMONGameType.GType_FF:
+                    case SIMONGameType.GType_PP:
+                        DumpVgaScript(_curVgaFile1 + new AnimationHeaderFeeble(p).scriptOffs, zoneNum, vgaSpriteId);
+                        break;
+                    case SIMONGameType.GType_SIMON1:
+                    case SIMONGameType.GType_SIMON2:
+                        DumpVgaScript(_curVgaFile1 + ScummHelper.SwapBytes(new AnimationHeaderSimon(p).scriptOffs),
+                            zoneNum,
+                            vgaSpriteId);
+                        break;
+                    default:
+                        DumpVgaScript(_curVgaFile1 + ScummHelper.SwapBytes(new AnimationHeaderWw(p).scriptOffs), zoneNum,
+                            vgaSpriteId);
+                        break;
+                }
+            }
 
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
                 _gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
@@ -857,15 +868,27 @@ namespace NScumm.Agos
                 }
             }
 
-//            if (DebugMan.isDebugChannelEnabled(kDebugVGAScript)) {
-//                if (_gd.ADGameDescription.gameType == GType_FF || _gd.ADGameDescription.gameType == GType_PP) {
-//                    DumpVgaScript(_curVgaFile1 + READ_LE_UINT16(&((ImageHeader_Feeble*)b).scriptOffs), zoneNum, vgaSpriteId);
-//                } else if (_gd.ADGameDescription.gameType == GType_SIMON1 || _gd.ADGameDescription.gameType == GType_SIMON2) {
-//                    DumpVgaScript(_curVgaFile1 + READ_BE_UINT16(&((ImageHeader_Simon*)b).scriptOffs), zoneNum, vgaSpriteId);
-//                } else {
-//                    DumpVgaScript(_curVgaFile1 + READ_BE_UINT16(&((ImageHeader_WW*)b).scriptOffs), zoneNum, vgaSpriteId);
-//                }
-//            }
+            if (DebugManager.Instance.IsDebugChannelEnabled(DebugLevels.kDebugVGAScript))
+            {
+                switch (_gd.ADGameDescription.gameType)
+                {
+                    case SIMONGameType.GType_FF:
+                    case SIMONGameType.GType_PP:
+                        DumpVgaScript(_curVgaFile1 + new ImageHeaderFeeble(b).scriptOffs, (ushort) zoneNum,
+                            vgaSpriteId);
+                        break;
+                    case SIMONGameType.GType_SIMON1:
+                    case SIMONGameType.GType_SIMON2:
+                        DumpVgaScript(_curVgaFile1 + ScummHelper.SwapBytes(new ImageHeader_Simon(b).scriptOffs),
+                            (ushort) zoneNum,
+                            vgaSpriteId);
+                        break;
+                    default:
+                        DumpVgaScript(_curVgaFile1 + ScummHelper.SwapBytes(new ImageHeaderWw(b).scriptOffs),
+                            (ushort) zoneNum, vgaSpriteId);
+                        break;
+                }
+            }
 
             var vc_ptr_org = _vcPtr;
 

@@ -28,11 +28,173 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
 {
-    partial class AgosEngine
+    internal partial class AgosEngine
     {
-        const int SD_TYPE_LITERAL = 0;
-        const int SD_TYPE_MATCH = 1;
-        const int kMaxColorDepth = 5;
+        private const int SD_TYPE_LITERAL = 0;
+        private const int SD_TYPE_MATCH = 1;
+        private const int kMaxColorDepth = 5;
+
+        private class Decrunch
+        {
+            private readonly BytePtr src;
+            private BytePtr s;
+            private readonly BytePtr d;
+            private readonly int destlen;
+            private uint bb;
+            private readonly uint x;
+            private readonly uint y;
+            private byte bc, bit, bits;
+            private readonly byte type;
+
+            public Decrunch(BytePtr src, BytePtr dst, int size)
+            {
+                this.src = src;
+                s = src + size - 4;
+                destlen = s.ToInt32BigEndian();
+                d = dst + destlen;
+
+                // Initialize bit buffer.
+                s -= 4;
+                bb = x = s.ToUInt32BigEndian();
+                bits = 0;
+                do
+                {
+                    x >>= 1;
+                    bits++;
+                } while (x != 0);
+                bits--;
+
+                while (d > dst)
+                {
+                    SD_GETBIT(ref x);
+                    if (x != 0)
+                    {
+                        SD_GETBITS(ref x, 2);
+                        switch (x)
+                        {
+                            case 0:
+                                type = SD_TYPE_MATCH;
+                                x = 9;
+                                y = 2;
+                                break;
+
+                            case 1:
+                                type = SD_TYPE_MATCH;
+                                x = 10;
+                                y = 3;
+                                break;
+
+                            case 2:
+                                type = SD_TYPE_MATCH;
+                                x = 12;
+                                SD_GETBITS(ref y, 8);
+                                break;
+
+                            default:
+                                type = SD_TYPE_LITERAL;
+                                x = 8;
+                                y = 8;
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        SD_GETBIT(ref x);
+                        if (x != 0)
+                        {
+                            type = SD_TYPE_MATCH;
+                            x = 8;
+                            y = 1;
+                        }
+                        else
+                        {
+                            type = SD_TYPE_LITERAL;
+                            x = 3;
+                            y = 0;
+                        }
+                    }
+
+                    if (type == SD_TYPE_LITERAL)
+                    {
+                        SD_GETBITS(ref x, x);
+                        y += x;
+                        if (y + 1 > d.Offset - dst.Offset)
+                        {
+                            throw new OverflowException();
+                        }
+                        do
+                        {
+                            SD_GETBITS(ref x, 8);
+                            d.Offset--;
+                            d.Value = (byte) x;
+                        } while (y-- > 0);
+                    }
+                    else
+                    {
+                        if (y + 1 > d.Offset - dst.Offset)
+                        {
+                            throw new OverflowException();
+                        }
+                        SD_GETBITS(ref x, x);
+                        if (d.Offset + x > dst.Offset + destlen)
+                        {
+                            throw new OverflowException();
+                        }
+                        do
+                        {
+                            d.Offset--;
+                            d.Value = d[(int) x];
+                        } while (y-- > 0);
+                    }
+                }
+
+                // Successful decrunch.
+            }
+
+            private bool SD_GETBIT(ref uint var)
+            {
+                if (bits-- == 0)
+                {
+                    s -= 4;
+                    if (s < src)
+                        return false;
+                    bb = s.ToUInt32BigEndian();
+                    bits = 31;
+                }
+                var = bb & 1;
+                bb >>= 1;
+                return true;
+            }
+
+            private bool SD_GETBIT(ref byte var)
+            {
+                if (bits-- == 0)
+                {
+                    s -= 4;
+                    if (s < src)
+                        return false;
+                    bb = s.ToUInt32BigEndian();
+                    bits = 31;
+                }
+                var = (byte) (bb & 1);
+                bb >>= 1;
+                return true;
+            }
+
+            private bool SD_GETBITS(ref uint var, uint nbits)
+            {
+                bc = (byte) nbits;
+                var = 0;
+                while (bc-- != 0)
+                {
+                    var <<= 1;
+                    if (!SD_GETBIT(ref bit))
+                        return false;
+                    var |= bit;
+                }
+                return true;
+            }
+        }
 
         private ushort To16Wrapper(uint value)
         {
@@ -455,144 +617,9 @@ namespace NScumm.Agos
                 Error("readGameFile: Read failed ({0},{1})", offs, size);
         }
 
-        private static bool SD_GETBIT(ref int bb, BytePtr s, ref byte bits, BytePtr src, ref int var)
-        {
-            if (bits-- == 0)
-            {
-                s -= 4;
-                if (s < src)
-                    return false;
-                bb = s.ToInt32BigEndian();
-                bits = 31;
-            }
-            var = (byte) (bb & 1);
-            bb >>= 1;
-            return true;
-        }
-
-        private static bool SD_GETBITS(ref int bb, BytePtr s, ref byte bits, BytePtr src, ref byte bc, ref int bit, ref int var,
-            int nbits)
-        {
-            bc = (byte) nbits;
-            var = 0;
-            while (bc-- != 0)
-            {
-                var <<= 1;
-                if (!SD_GETBIT(ref bb, s, ref bits, src, ref bit))
-                    return false;
-                var |= bit;
-            }
-            return true;
-        }
-
         private static bool DecrunchFile(BytePtr src, BytePtr dst, int size)
         {
-            BytePtr s = src + size - 4;
-            int destlen = s.ToInt32BigEndian();
-            int bb, x;
-            BytePtr d = dst + destlen;
-            byte bits;
-
-            // Initialize bit buffer.
-            s -= 4;
-            bb = x = s.ToInt32BigEndian();
-            bits = 0;
-            do
-            {
-                x >>= 1;
-                bits++;
-            } while (x != 0);
-            bits--;
-
-            while (d > dst)
-            {
-                if (!SD_GETBIT(ref bb, s, ref bits, src, ref x))
-                    return false;
-                byte type;
-                byte bc = 0;
-                int bit = 0;
-                int y = 0;
-                if (x != 0)
-                {
-                    if (!SD_GETBITS(ref bb, s, ref bits, src, ref bc, ref bit, ref x, 2))
-                        return false;
-                    switch (x)
-                    {
-                        case 0:
-                            type = SD_TYPE_MATCH;
-                            x = 9;
-                            y = 2;
-                            break;
-
-                        case 1:
-                            type = SD_TYPE_MATCH;
-                            x = 10;
-                            y = 3;
-                            break;
-
-                        case 2:
-                            type = SD_TYPE_MATCH;
-                            x = 12;
-                            if (!SD_GETBITS(ref bb, s, ref bits, src, ref bc, ref bit, ref y, 8))
-                                return false;
-                            break;
-
-                        default:
-                            type = SD_TYPE_LITERAL;
-                            x = 8;
-                            y = 8;
-                            break;
-                    }
-                }
-                else
-                {
-                    if (!SD_GETBIT(ref bb, s, ref bits, src, ref x))
-                        return false;
-                    if (x != 0)
-                    {
-                        type = SD_TYPE_MATCH;
-                        x = 8;
-                        y = 1;
-                    }
-                    else
-                    {
-                        type = SD_TYPE_LITERAL;
-                        x = 3;
-                        y = 0;
-                    }
-                }
-
-                if (type == SD_TYPE_LITERAL)
-                {
-                    if (!SD_GETBITS(ref bb, s, ref bits, src, ref bc, ref bit, ref x, x))
-                        return false;
-                    y += x;
-                    if (y + 1 > d.Offset - dst.Offset)
-                        return false; // Overflow?
-                    do
-                    {
-                        if (!SD_GETBITS(ref bb, s, ref bits, src, ref bc, ref bit, ref x, 8))
-                            return false;
-                        d.Offset--;
-                        d.Value = (byte) x;
-                    } while (y-- > 0);
-                }
-                else
-                {
-                    if (y + 1 > d.Offset - dst.Offset)
-                        return false; // Overflow?
-                    if (!SD_GETBITS(ref bb, s, ref bits, src, ref bc, ref bit, ref x, x))
-                        return false;
-                    if (d + x > dst + destlen)
-                        return false; // Offset overflow?
-                    do
-                    {
-                        d.Offset--;
-                        d.Value = d[x];
-                    } while (y-- > 0);
-                }
-            }
-
+            var decrunch = new Decrunch(src, dst, size);
             // Successful decrunch.
             return true;
         }

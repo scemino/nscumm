@@ -31,6 +31,7 @@
         <Compile Include="AgosEngine.Charset.cs"/>
         <Compile Include="AgosEngine.cs"/>
         <Compile Include="AgosEngine.Cursor.cs"/>
+        <Compile Include="AgosEngine.Debug.cs"/>
         <Compile Include="AgosEngine.Draw.cs"/>
         <Compile Include="AgosEngine.Event.cs"/>
         <Compile Include="AgosEngine.Gfx.cs"/>

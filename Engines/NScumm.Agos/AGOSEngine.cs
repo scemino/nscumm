@@ -348,7 +348,7 @@ namespace NScumm.Agos
             DebugManager.Instance.AddDebugChannel(DebugLevels.kDebugVGAScript, "vga_script", "VGA Script debug level");
             //Image dumping command disabled as it doesn't work well
 #if Undefined
-    DebugMan.addDebugChannel(kDebugImageDump, "image_dump", "Enable dumping of images to files");
+            DebugManager.Instance.AddDebugChannel(DebugLevels.kDebugImageDump, "image_dump", "Enable dumping of images to files");
 #endif
             _opcode177Var1 = 1;
             _opcode178Var1 = 1;

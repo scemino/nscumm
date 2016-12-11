@@ -314,7 +314,7 @@ namespace NScumm.Agos
 
                 int dstSize = srcBuf.ToInt32BigEndian(srcSize - 4);
                 var dstBuf = new byte[dstSize];
-                DecrunchFile(srcBuf, dstBuf, srcSize);
+                var b = DecrunchFile(srcBuf, dstBuf, srcSize);
 
                 var stream = new MemoryStream(dstBuf, 0, dstSize);
                 audioStream = new ProtrackerStream(stream, offs);

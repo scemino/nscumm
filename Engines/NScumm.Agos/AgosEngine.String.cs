@@ -329,8 +329,9 @@ namespace NScumm.Agos
             }
         }
 
-        private void RenderStringAmiga(uint vgaSpriteId, uint color, uint width, uint height, string txt)
+        private void RenderStringAmiga(uint vgaSpriteId, uint color, uint width, uint height, string text)
         {
+            var txt = text.GetBytes();
             var vpe = new Ptr<VgaPointersEntry>(_vgaBufferPointers, 2);
             int count;
 
@@ -389,7 +390,7 @@ namespace NScumm.Agos
                     dstOrg = dst;
                     delta = 0;
                 }
-                else if ((chr -= '!') < 0)
+                else if ((sbyte)(chr -= (byte)'!') < 0)
                 {
                     imgWidth = 7;
                 }
@@ -403,7 +404,7 @@ namespace NScumm.Agos
                         int col = (int) color;
                         for (int plane = 0; plane < 3; plane++)
                         {
-                            chr = (char) (img[plane] >> delta);
+                            chr = (byte) (img[plane] >> delta);
                             if (chr != 0)
                             {
                                 if ((col & 1) != 0) curDst[charsize * 0] = (byte) (curDst[charsize * 0] | chr);
@@ -411,7 +412,7 @@ namespace NScumm.Agos
                                 if ((col & 4) != 0) curDst[charsize * 2] = (byte) (curDst[charsize * 2] | chr);
                                 if ((col & 8) != 0) curDst[charsize * 3] = (byte) (curDst[charsize * 3] | chr);
                             }
-                            chr = (char) (img[plane] << (8 - delta));
+                            chr = (byte) (img[plane] << (8 - delta));
                             if (((8 - delta) < imgWidth) && (chr != 0))
                             {
                                 if ((col & 1) != 0)
@@ -425,7 +426,7 @@ namespace NScumm.Agos
                             }
                             col++;
                         }
-                        chr = (char) (img[3] >> delta);
+                        chr = (byte) (img[3] >> delta);
                         if (chr != 0)
                         {
                             curDst[charsize * 0] = (byte) (curDst[charsize * 0] | chr);
@@ -433,8 +434,8 @@ namespace NScumm.Agos
                             curDst[charsize * 2] = (byte) (curDst[charsize * 2] | chr);
                             curDst[charsize * 3] = (byte) (curDst[charsize * 3] | chr);
                         }
-                        chr = (char) (img[3] << (8 - delta));
-                        if (((8 - delta) < imgWidth) && (chr != 0))
+                        chr = (byte) (img[3] << (8 - delta));
+                        if ((8 - delta < imgWidth) && (chr != 0))
                         {
                             curDst[charsize * 0 + 1] = (byte) (curDst[charsize * 0 + 1] | chr);
                             curDst[charsize * 1 + 1] = (byte) (curDst[charsize * 1 + 1] | chr);

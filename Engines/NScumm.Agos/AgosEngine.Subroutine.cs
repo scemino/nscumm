@@ -483,8 +483,8 @@ namespace NScumm.Agos
             _classMode1 = 0;
             _classMode2 = 0;
 
-            //            if (DebugMan.isDebugChannelEnabled(kDebugSubroutine))
-            //                DumpSubroutine(sub);
+            if (DebugManager.Instance.IsDebugChannelEnabled(DebugLevels.kDebugSubroutine))
+                DumpSubroutine(sub);
 
             if (++_recursionDepth > 40)
                 Error("Recursion error");
@@ -837,7 +837,5 @@ namespace NScumm.Agos
                 }
             }
         }
-
-
     }
 }

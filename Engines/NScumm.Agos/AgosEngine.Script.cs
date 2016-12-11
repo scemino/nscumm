@@ -969,8 +969,8 @@ namespace NScumm.Agos
 
             do
             {
-//                if (DebugMan.isDebugChannelEnabled(kDebugOpcode))
-//                    dumpOpcode(_codePtr);
+                if (DebugManager.Instance.IsDebugChannelEnabled(DebugLevels.kDebugOpcode))
+                    DumpOpcode(_codePtr);
 
                 if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1)
                 {

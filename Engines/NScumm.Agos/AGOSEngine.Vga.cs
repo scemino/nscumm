@@ -121,14 +121,14 @@ namespace NScumm.Agos
             {
                 uint opcode;
 
-//                if(DebugManager.Instance.IsDebugChannelEnabled(DebugLevels.kDebugVGAOpcode))
-//                {
-//                    if (_vcPtr != _vcGetOutOfCode) {
-//                        DebugN("{0:D5} {1:D5}: {2:D5} {3:D4} ", _vgaTickCounter, _vcPtr.Offset - _curVgaFile1.Offset, _vgaCurSpriteId,
-//                            _vgaCurZoneNum);
-//                        DumpVideoScript(_vcPtr, true);
-//                    }
-//                }
+                if(DebugManager.Instance.IsDebugChannelEnabled(DebugLevels.kDebugVGAOpcode))
+                {
+                    if (_vcPtr != _vcGetOutOfCode) {
+                        DebugN("{0:D5} {1:D5}: {2:D5} {3:D4} ", _vgaTickCounter, _vcPtr.Offset - _curVgaFile1.Offset, _vgaCurSpriteId,
+                            _vgaCurZoneNum);
+                        DumpVideoScript(_vcPtr, true);
+                    }
+                }
 
                 if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2 ||
                     _gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
@@ -635,8 +635,8 @@ namespace NScumm.Agos
             if (height == 0 || width == 0)
                 return;
 
-//            if (DebugMan.isDebugChannelEnabled(kDebugImageDump))
-//                DumpSingleBitmap(_vgaCurZoneNum, state.image, state.srcPtr, width, height,state.palette);
+            if (DebugManager.Instance.IsDebugChannelEnabled(DebugLevels.kDebugImageDump))
+                DumpSingleBitmap(_vgaCurZoneNum, state.image, state.srcPtr, width, height,state.palette);
             state.width = state.draw_width = (ushort) width; /* cl */
             state.height = state.draw_height = (ushort) height; /* ch */
 

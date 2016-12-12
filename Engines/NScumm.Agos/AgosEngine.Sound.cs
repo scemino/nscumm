@@ -264,7 +264,7 @@ namespace NScumm.Agos
                 var filename = $"MOD{music}.MUS";
                 var f = OpenFileRead(filename);
                 if (f == null)
-                    Error("playMusic: Can't load music from '%s'", filename);
+                    Error("playMusic: Can't load music from '{0}'", filename);
 
                 _midi.LoadS1D(f);
                 _midi.StartTrack(0);
@@ -481,7 +481,7 @@ namespace NScumm.Agos
                 // Voice segment doesn't exist
                 if (offset == 0xFFFFFFFF && srcSize == 0xFFFFFFFF && dstSize == 0xFFFFFFFF)
                 {
-                    Debug(0, "loadVoice: speechId %d removed", speechId);
+                    Debug(0, "loadVoice: speechId {0} removed", speechId);
                     return;
                 }
 

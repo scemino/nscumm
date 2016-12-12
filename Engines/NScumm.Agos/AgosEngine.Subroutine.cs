@@ -317,7 +317,7 @@ namespace NScumm.Agos
                     _stringIdLocalMin = 1;
                     _stringIdLocalMax = 0;
 
-                    var filename = $"TABLES%.{fileNum:D2}";
+                    var filename = $"TABLES.{fileNum:D2}";
                     var @in = OpenTablesFile(filename);
                     ReadSubroutineBlock(@in);
                     CloseTablesFile(@in);

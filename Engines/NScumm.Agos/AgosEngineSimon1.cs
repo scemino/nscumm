@@ -744,10 +744,10 @@ namespace NScumm.Agos
                 if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
                 {
                     state.surf2_addr = BackGround;
-                    state.surf2_pitch = (uint) _backGroundBuf.Pitch;
+                    state.surf2_pitch = _backGroundBuf.Pitch;
 
                     state.surf_addr = _window4BackScn.Pixels;
-                    state.surf_pitch = (uint) _window4BackScn.Pitch;
+                    state.surf_pitch = _window4BackScn.Pitch;
 
                     xoffs = (ushort) (((vlut[0] - _videoWindows[16]) * 2 + state.x) * 8);
                     yoffs = (ushort) (vlut[1] - _videoWindows[17] + state.y);
@@ -765,10 +765,10 @@ namespace NScumm.Agos
                     if (_windowNum == 4 || (_windowNum >= 10 && _windowNum <= 27))
                     {
                         state.surf2_addr = BackGround;
-                        state.surf2_pitch = (uint) _backGroundBuf.Pitch;
+                        state.surf2_pitch = _backGroundBuf.Pitch;
 
                         state.surf_addr = _window4BackScn.Pixels;
-                        state.surf_pitch = (uint) (_videoWindows[18] * 16);
+                        state.surf_pitch = _videoWindows[18] * 16;
 
                         xoffs = (ushort) (((vlut[0] - _videoWindows[16]) * 2 + state.x) * 8);
                         yoffs = (ushort) (vlut[1] - _videoWindows[17] + state.y);
@@ -782,7 +782,7 @@ namespace NScumm.Agos
                     else
                     {
                         state.surf_addr = screen.Pixels;
-                        state.surf_pitch = (uint) screen.Pitch;
+                        state.surf_pitch = screen.Pitch;
 
                         xoffs = (ushort) ((vlut[0] * 2 + state.x) * 8);
                         yoffs = (ushort) (vlut[1] + state.y);
@@ -795,18 +795,18 @@ namespace NScumm.Agos
                         if (_window3Flag == 1)
                         {
                             state.surf2_addr = BackGround;
-                            state.surf2_pitch = (uint) _backGroundBuf.Pitch;
+                            state.surf2_pitch = _backGroundBuf.Pitch;
 
                             state.surf_addr = BackGround;
-                            state.surf_pitch = (uint) _backGroundBuf.Pitch;
+                            state.surf_pitch = _backGroundBuf.Pitch;
                         }
                         else
                         {
                             state.surf2_addr = BackGround;
-                            state.surf2_pitch = (uint) _backGroundBuf.Pitch;
+                            state.surf2_pitch = _backGroundBuf.Pitch;
 
                             state.surf_addr = _window4BackScn.Pixels;
-                            state.surf_pitch = (uint) _window4BackScn.Pitch;
+                            state.surf_pitch = _window4BackScn.Pitch;
                         }
 
                         xoffs = (ushort) (((vlut[0] - _videoWindows[16]) * 2 + state.x) * 8);
@@ -821,18 +821,18 @@ namespace NScumm.Agos
                     else
                     {
                         state.surf2_addr = BackGround;
-                        state.surf2_pitch = (uint) _backGroundBuf.Pitch;
+                        state.surf2_pitch = _backGroundBuf.Pitch;
 
                         state.surf_addr = screen.Pixels;
-                        state.surf_pitch = (uint) screen.Pitch;
+                        state.surf_pitch = screen.Pitch;
 
                         xoffs = (ushort) ((vlut[0] * 2 + state.x) * 8);
                         yoffs = (ushort) (vlut[1] + state.y);
                     }
                 }
 
-                state.surf_addr += (int) (xoffs + yoffs * state.surf_pitch);
-                state.surf2_addr += (int) (xoffs + yoffs * state.surf2_pitch);
+                state.surf_addr += xoffs + yoffs * state.surf_pitch;
+                state.surf2_addr += xoffs + yoffs * state.surf2_pitch;
 
                 if (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_32COLOR) && _window3Flag == 0 && yoffs > 133)
                 {
@@ -1024,7 +1024,7 @@ namespace NScumm.Agos
             } while (--i != 0);
         }
 
-        private void Draw32ColorImage(Vc10State state)
+        private static void Draw32ColorImage(Vc10State state)
         {
             BytePtr src;
             BytePtr dst;
@@ -1045,9 +1045,8 @@ namespace NScumm.Agos
                     do
                     {
                         var bits = (src[0] << 24) | (src[1] << 16) | (src[2] << 8) | src[3];
-                        byte color;
 
-                        color = (byte) ((bits >> (32 - 5)) & 31);
+                        var color = (byte) ((bits >> (32 - 5)) & 31);
                         if (state.flags.HasFlag(DrawFlags.kDFNonTrans) || color != 0)
                             dst[0] = color;
                         color = (byte) ((bits >> (32 - 10)) & 31);
@@ -1078,12 +1077,12 @@ namespace NScumm.Agos
                         dst += 8;
                         src += 5;
                     } while (--count != 0);
-                    dstPtr += (int)state.surf_pitch;
+                    dstPtr += (int) state.surf_pitch;
                 } while (--state.draw_height != 0);
             }
             else
             {
-                src = state.srcPtr + (state.width * state.y_skip * 16) + (state.x_skip * 8);
+                src = state.srcPtr + state.width * state.y_skip * 16 + state.x_skip * 8;
                 dst = state.surf_addr;
 
                 state.draw_width *= 2;
@@ -1094,7 +1093,7 @@ namespace NScumm.Agos
                     for (var i = 0; i != state.draw_width; i++)
                         if (state.flags.HasFlag(DrawFlags.kDFNonTrans) || src[i] != 0)
                             dst[i] = (byte) (src[i] + state.paletteMod);
-                    dst.Offset = (int) (dst.Offset + state.surf_pitch);
+                    dst.Offset += (int)state.surf_pitch;
                     src += state.width * 16;
                 } while (--h != 0);
             }
@@ -1689,6 +1688,37 @@ namespace NScumm.Agos
 
             _paletteFlag = 2;
             _vgaSpriteChanged++;
+        }
+
+        protected override void DumpVgaFile(BytePtr vga)
+        {
+            var pp = vga;
+            var p = pp + pp.ToUInt16BigEndian(4);
+            var count = (short) ScummHelper.SwapBytes(new VgaFile1HeaderCommon(p).animationCount);
+            p = pp + ScummHelper.SwapBytes(new VgaFile1HeaderCommon(p).animationTable);
+
+            while (--count >= 0)
+            {
+                ushort id = ScummHelper.SwapBytes(new AnimationHeaderSimon(p).id);
+
+                DumpVgaScriptAlways(vga + ScummHelper.SwapBytes(new AnimationHeaderSimon(p).scriptOffs),
+                    (ushort) (id / 100), id);
+                p += AnimationHeaderSimon.Size;
+            }
+
+            pp = vga;
+            p = pp + pp.ToUInt16BigEndian(4);
+            count = (short) ScummHelper.SwapBytes(new VgaFile1HeaderCommon(p).imageCount);
+            p = pp + ScummHelper.SwapBytes(new VgaFile1HeaderCommon(p).imageTable);
+
+            while (--count >= 0)
+            {
+                ushort id = ScummHelper.SwapBytes(new ImageHeader_Simon(p).id);
+
+                DumpVgaScriptAlways(vga + ScummHelper.SwapBytes(new ImageHeader_Simon(p).scriptOffs),
+                    (ushort) (id / 100), id);
+                p += ImageHeader_Simon.Size;
+            }
         }
 
         private static readonly byte[] CustomPalette =

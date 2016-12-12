@@ -53,10 +53,10 @@ namespace NScumm.Agos
         public ushort x_skip, y_skip;
 
         public BytePtr surf2_addr;
-        public uint surf2_pitch;
+        public int surf2_pitch;
 
         public BytePtr surf_addr;
-        public uint surf_pitch;
+        public int surf_pitch;
 
         public ushort dl, dh;
 

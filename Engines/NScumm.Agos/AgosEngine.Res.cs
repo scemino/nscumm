@@ -619,7 +619,7 @@ namespace NScumm.Agos
 
         private static bool DecrunchFile(BytePtr src, BytePtr dst, int size)
         {
-            var decrunch = new Decrunch(src, dst, size);
+            new Decrunch(src, dst, size);
             // Successful decrunch.
             return true;
         }
@@ -952,7 +952,7 @@ namespace NScumm.Agos
             byte colorDepth = 4;
             if (GameType == SIMONGameType.GType_SIMON1)
             {
-                if ((((_videoLockOut & 0x20) != 0) && state.palette == null) ||
+                if ((((_videoLockOut & 0x20) != 0) && state.palette == 0) ||
                     ((Features.HasFlag(GameFeatures.GF_32COLOR)) &&
                      state.palette != 0xC0))
                 {
@@ -1015,13 +1015,13 @@ namespace NScumm.Agos
         {
             BytePtr[] plane = new BytePtr[kMaxColorDepth];
             BytePtr[] uncptr = new BytePtr[kMaxColorDepth];
-            int length, i, j;
+            int length;
 
             var uncbfrout = new byte[width * height];
 
             length = (width + 15) / 16 * height;
 
-            for (i = 0; i < colorDepth; ++i)
+            for (var i = 0; i < colorDepth; ++i)
             {
                 plane[i] = src + src.ToUInt16BigEndian(i * 4) + src.ToUInt16BigEndian(i * 4 + 2);
                 uncptr[i] = new byte[length * 2];
@@ -1030,10 +1030,10 @@ namespace NScumm.Agos
             }
 
             BytePtr uncbfroutptr = uncbfrout;
-            for (i = 0; i < length; ++i)
+            for (var i = 0; i < length; ++i)
             {
                 ushort[] w = new ushort[kMaxColorDepth];
-                for (j = 0; j < colorDepth; ++j)
+                for (var j = 0; j < colorDepth; ++j)
                 {
                     w[j] = plane[j].ToUInt16BigEndian();
                     plane[j] += 2;
@@ -1045,9 +1045,9 @@ namespace NScumm.Agos
             int chunkSize = colorDepth > 4 ? 16 : 8;
             if (horizontal)
             {
-                for (j = 0; j < height; ++j)
+                for (var j = 0; j < height; ++j)
                 {
-                    for (i = 0; i < width / 16; ++i)
+                    for (var i = 0; i < width / 16; ++i)
                     {
                         uncbfroutptr.Copy(dst + width * chunkSize / 16 * j + chunkSize * i, chunkSize);
                         uncbfroutptr += chunkSize;
@@ -1056,9 +1056,9 @@ namespace NScumm.Agos
             }
             else
             {
-                for (i = 0; i < width / 16; ++i)
+                for (var i = 0; i < width / 16; ++i)
                 {
-                    for (j = 0; j < height; ++j)
+                    for (var j = 0; j < height; ++j)
                     {
                         uncbfroutptr.Copy(dst + width * chunkSize / 16 * j + chunkSize * i, chunkSize);
                         uncbfroutptr += chunkSize;

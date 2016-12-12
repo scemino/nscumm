@@ -308,7 +308,7 @@ namespace NScumm.Agos
                     if (_windowNum == 4 || (_windowNum >= 10 && _windowNum <= 27))
                     {
                         state.surf_addr = _window4BackScn.Pixels;
-                        state.surf_pitch = (uint) (_videoWindows[18] * 16);
+                        state.surf_pitch = _videoWindows[18] * 16;
 
                         xoffs = (ushort) (((vlut[0] - _videoWindows[16]) * 2 + state.x) * 8);
                         yoffs = (ushort) (vlut[1] - _videoWindows[17] + state.y);
@@ -322,7 +322,7 @@ namespace NScumm.Agos
                     else
                     {
                         state.surf_addr = screen.Pixels;
-                        state.surf_pitch = (uint) screen.Pitch;
+                        state.surf_pitch = screen.Pitch;
 
                         xoffs = (ushort) ((vlut[0] * 2 + state.x) * 8);
                         yoffs = (ushort) (vlut[1] + state.y);
@@ -333,7 +333,7 @@ namespace NScumm.Agos
                     if (_windowNum == 4 || _windowNum >= 10)
                     {
                         state.surf_addr = _window4BackScn.Pixels;
-                        state.surf_pitch = (uint) (_videoWindows[18] * 16);
+                        state.surf_pitch = _videoWindows[18] * 16;
 
                         xoffs = (ushort) (((vlut[0] - _videoWindows[16]) * 2 + state.x) * 8);
                         yoffs = (ushort) (vlut[1] - _videoWindows[17] + state.y);
@@ -347,7 +347,7 @@ namespace NScumm.Agos
                     else
                     {
                         state.surf_addr = screen.Pixels;
-                        state.surf_pitch = (uint) screen.Pitch;
+                        state.surf_pitch = screen.Pitch;
 
                         xoffs = (ushort) ((vlut[0] * 2 + state.x) * 8);
                         yoffs = (ushort) (vlut[1] + state.y);
@@ -358,7 +358,7 @@ namespace NScumm.Agos
                     if (_windowNum == 6)
                     {
                         state.surf_addr = _window6BackScn.Pixels;
-                        state.surf_pitch = (uint) _window6BackScn.Pitch;
+                        state.surf_pitch = _window6BackScn.Pitch;
 
                         xoffs = (ushort) (state.x * 8);
                         yoffs = (ushort) state.y;
@@ -366,7 +366,7 @@ namespace NScumm.Agos
                     else if (_windowNum == 2 || _windowNum == 3)
                     {
                         state.surf_addr = screen.Pixels;
-                        state.surf_pitch = (uint) screen.Pitch;
+                        state.surf_pitch = screen.Pitch;
 
                         xoffs = (ushort) ((vlut[0] * 2 + state.x) * 8);
                         yoffs = (ushort) (vlut[1] + state.y);
@@ -374,7 +374,7 @@ namespace NScumm.Agos
                     else
                     {
                         state.surf_addr = _window4BackScn.Pixels;
-                        state.surf_pitch = (uint) (_videoWindows[18] * 16);
+                        state.surf_pitch = _videoWindows[18] * 16;
 
                         xoffs = (ushort) (((vlut[0] - _videoWindows[16]) * 2 + state.x) * 8);
                         yoffs = (ushort) (vlut[1] - _videoWindows[17] + state.y);
@@ -389,7 +389,7 @@ namespace NScumm.Agos
                 else
                 {
                     state.surf_addr = screen.Pixels;
-                    state.surf_pitch = (uint) screen.Pitch;
+                    state.surf_pitch = screen.Pitch;
 
                     xoffs = (ushort) ((vlut[0] * 2 + state.x) * 8);
                     yoffs = (ushort) (vlut[1] + state.y);

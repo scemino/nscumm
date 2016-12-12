@@ -394,7 +394,7 @@ namespace NScumm.Agos
                     _lastVoiceFile = (ushort) _filenums[sound];
                     var filename = "voices{_filenums[sound]}.dat";
                     if (!Engine.FileExists(filename))
-                        Error("playVoice: Can't load voice file %s", filename);
+                        Error("playVoice: Can't load voice file {0}", filename);
 
                     _voice = new WavSound(_mixer, filename, _offsets);
                 }

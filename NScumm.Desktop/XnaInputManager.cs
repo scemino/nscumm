@@ -258,6 +258,8 @@ namespace NScumm
         private static readonly Dictionary<Keys, KeyCode> KeyToKeyCode = new Dictionary<Keys, KeyCode>
         {
             { Keys.LeftControl,   KeyCode.LeftControl },
+            { Keys.LeftAlt,   KeyCode.LeftAlt },
+            { Keys.RightAlt,   KeyCode.RightAlt },
             { Keys.OemPeriod,   KeyCode.OemPeriod },
             { Keys.Back,   KeyCode.Backspace },
             { Keys.Tab,    KeyCode.Tab       },

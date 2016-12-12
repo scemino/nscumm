@@ -246,7 +246,7 @@ namespace NScumm.Agos
             info.Delta += delta;
         }
 
-        private void ResetTracking()
+        protected override void ResetTracking()
         {
             base.ResetTracking();
             // The first event never contains any delta.

@@ -491,37 +491,33 @@ namespace NScumm.Agos
                         // TODO: _debugger.attach();
                     }
                 }
+                if (inputState.IsKeyDown(KeyCode.LeftAlt))
+                {
+                    if (inputState.IsKeyDown(KeyCode.U))
+                    {
+                        DumpAllSubroutines();
+                    }
+                    else if (inputState.IsKeyDown(KeyCode.I))
+                    {
+                        DumpAllVgaImageFiles();
+                    }
+                    else if (inputState.IsKeyDown(KeyCode.V))
+                    {
+                        DumpAllVgaScriptFiles();
+                    }
+                }
+
+                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
+                {
+                    if (inputState.IsKeyDown(KeyCode.LeftShift))
+                        _variableArray[41] = 0;
+                    else
+                        _variableArray[41] = 1;
+                }
                 /*while (_eventMan.pollEvent(@event))
                 {
                     switch (@event.type)
                     {
-                        case Common::EVENT_KEYDOWN:
-                            if (@event.kbd.hasFlags(Common::KBD_ALT))
-                            {
-                                if (@event.kbd.keycode == Common::KEYCODE_u)
-                                {
-                                    DumpAllSubroutines();
-                                }
-                                else if (@event.kbd.keycode == Common::KEYCODE_i)
-                                {
-                                    DumpAllVgaImageFiles();
-                                }
-                                else if (@event.kbd.keycode == Common::KEYCODE_v)
-                                {
-                                    DumpAllVgaScriptFiles();
-                                }
-                            }
-
-                            if (_gd.ADGameDescription.gameType == GType_PP)
-                            {
-                                if (@event.kbd.hasFlags(Common::KBD_SHIFT))
-                                    _variableArray[41] = 0;
-                                else
-                                    _variableArray[41] = 1;
-                            }
-
-                            _keyPressed = @event.kbd;
-                            break;
                         case Common::EVENT_RTL:
                         case Common::EVENT_QUIT:
                             return;

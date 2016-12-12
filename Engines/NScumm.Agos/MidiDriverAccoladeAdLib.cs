@@ -322,7 +322,7 @@ namespace NScumm.Agos
             }
 
             // setup instrument
-            //warning("ADLIB: program change for FM voice channel %d, instrument id %d", FMvoiceChannel, mappedInstrumentNr);
+            //warning("ADLIB: program change for FM voice channel {0}, instrument id {1}", FMvoiceChannel, mappedInstrumentNr);
 
             if (FMvoiceChannel < AGOS_ADLIB_VOICES_PERCUSSION_START)
             {
@@ -667,7 +667,7 @@ namespace NScumm.Agos
         private void SetRegister(int reg, int value)
         {
             _opl.WriteReg(reg, value);
-            //warning("OPL %x %x (%d)", reg, value, value);
+            //warning("OPL {0:x} {1:x} ({2})", reg, value, value);
         }
 
         private void ResetAdLibOperatorRegisters(byte baseRegister, byte value)
@@ -713,7 +713,7 @@ namespace NScumm.Agos
 
             // setup instrument
             var instrumentPtr = new Ptr<InstrumentEntry>(_instrumentTable, mappedInstrumentNr);
-            //warning("set instrument for FM voice channel %d, instrument id %d", FMvoiceChannel, mappedInstrumentNr);
+            //warning("set instrument for FM voice channel {0}, instrument id {1}", FMvoiceChannel, mappedInstrumentNr);
 
             op1Reg = operator1Register[FMvoiceChannel];
             op2Reg = operator2Register[FMvoiceChannel];

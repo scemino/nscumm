@@ -234,7 +234,7 @@ namespace NScumm.Agos
             SetScriptCondition((_bitArrayTwo[bit / 16] & (1 << (bit & 15))) != 0);
         }
 
-        protected bool SaveGame(int slot, string caption)
+        protected override bool SaveGame(int slot, string caption)
         {
             int item_index, num_item, i;
             TimeEvent te;

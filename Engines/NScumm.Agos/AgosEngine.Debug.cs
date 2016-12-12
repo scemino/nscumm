@@ -21,7 +21,6 @@
 
 using System;
 using NScumm.Core;
-using NScumm.Core.Common;
 using NScumm.Core.Graphics;
 using static NScumm.Core.DebugHelper;
 
@@ -758,7 +757,7 @@ namespace NScumm.Agos
 
                     case 'J':
                     {
-                        DebugN("-> ");
+                        DebugN(". ");
                     }
                         break;
 
@@ -811,7 +810,7 @@ namespace NScumm.Agos
             DumpVgaScriptAlways(ptr, res, id);
         }
 
-        private void DumpVgaScriptAlways(BytePtr ptr, ushort res, ushort id)
+        protected void DumpVgaScriptAlways(BytePtr ptr, ushort res, ushort id)
         {
             DebugN("; address={0:X}, vgafile={1}  vgasprite={2}\n",
                 (uint) (ptr.Offset - _vgaBufferPointers[res].vgaFile1.Offset), res, id);
@@ -879,7 +878,7 @@ namespace NScumm.Agos
                 int strn = 0;
                 while (str[strn] != '|')
                     strn++;
-                DebugN("%{0:D2}: {1} ", opcode, str.Substring(strn + 1));
+                DebugN("{0:D2}: {1} ", opcode, str.Substring(strn + 1));
 
                 int end = (GameType == SIMONGameType.GType_FF || GameType == SIMONGameType.GType_PP) ? 9999 : 999;
                 for (; str[strn] != '|'; strn++)
@@ -924,7 +923,7 @@ namespace NScumm.Agos
                         }
                         case 'j':
                         {
-                            DebugN("-> ");
+                            DebugN(". ");
                             break;
                         }
                         case 'q':
@@ -1116,6 +1115,153 @@ namespace NScumm.Agos
                 return;
 
             DumpBitmap(buf, offs, (ushort) w, (ushort) h, 0, _displayPalette, @base);
+        }
+
+        private void DumpAllSubroutines()
+        {
+            for (int i = 0; i < 65536; i++)
+            {
+                var sub = GetSubroutineByID((uint) i);
+                if (sub != null)
+                {
+                    DumpSubroutine(sub);
+                }
+            }
+        }
+
+        private void DumpAllVgaImageFiles()
+        {
+            byte start = (byte) ((GameType == SIMONGameType.GType_PN) ? 0 : 2);
+
+            for (int z = start; z < _numZone; z++)
+            {
+                LoadZone((ushort) z, false);
+                DumpVgaBitmaps((ushort) z);
+            }
+        }
+
+        private void DumpAllVgaScriptFiles()
+        {
+            byte start = (byte) ((GameType == SIMONGameType.GType_PN) ? 0 : 2);
+
+            for (int z = start; z < _numZone; z++)
+            {
+                ushort zoneNum = (ushort) ((GameType == SIMONGameType.GType_PN) ? 0 : z);
+                LoadZone((ushort) z, false);
+
+                VgaPointersEntry vpe = _vgaBufferPointers[zoneNum];
+                if (vpe.vgaFile1 != BytePtr.Null)
+                {
+                    _curVgaFile1 = vpe.vgaFile1;
+                    DumpVgaFile(_curVgaFile1);
+                }
+            }
+        }
+
+        protected virtual void DumpVgaFile(BytePtr vga)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void DumpVgaBitmaps(ushort zoneNum)
+        {
+            ushort zone = (ushort) (GameType == SIMONGameType.GType_PN ? 0 : zoneNum);
+            VgaPointersEntry vpe = _vgaBufferPointers[zone];
+            if (vpe.vgaFile1 == BytePtr.Null || vpe.vgaFile2 == BytePtr.Null)
+                return;
+
+            var vga1 = vpe.vgaFile1;
+            var vga2 = vpe.vgaFile2;
+            int imageBlockSize = vpe.vgaFile2End.Offset - vpe.vgaFile2.Offset;
+
+            var pal = PalLoad(vga1, 0, 0);
+
+            var offsEnd = (int) ReadUint32Wrapper(vga2 + 8);
+            for (var i = 1;; i++)
+            {
+                if (i * 8 >= offsEnd)
+                    break;
+
+                BytePtr p2 = vga2 + i * 8;
+                var offs = (int) ReadUint32Wrapper(p2);
+
+                var width = ReadUint16Wrapper(p2 + 6);
+                ushort height;
+                ushort flags;
+                if (GameType == SIMONGameType.GType_FF || GameType == SIMONGameType.GType_PP)
+                {
+                    height = (ushort) (p2.ToUInt16(4) & 0x7FFF);
+                    flags = p2[5];
+                }
+                else
+                {
+                    height = p2[5];
+                    flags = p2[4];
+                }
+
+                Debug(1, "Zone {0}: Image {1}. Offs= {2} Width={3}, Height={4}, Flags=0x{5:X}", zoneNum, i, offs, width, height,
+                    flags);
+                if (offs >= imageBlockSize || width == 0 || height == 0)
+                    break;
+
+                /* dump bitmap */
+                var buf = $"dumps/Res{zoneNum}_Image{i}.bmp";
+
+                DumpBitmap(buf, vga2 + offs, width, height, flags, pal, 0);
+            }
+        }
+
+        private Color[] PalLoad(BytePtr vga1, int a, int b)
+        {
+            Color[] pal = new Color[256];
+            BytePtr src;
+            ushort num, palSize;
+
+            if (GameType == SIMONGameType.GType_FF || GameType == SIMONGameType.GType_PP)
+            {
+                num = 256;
+                palSize = 768;
+            }
+            else
+            {
+                num = 32;
+                palSize = 96;
+            }
+
+            if (GameType == SIMONGameType.GType_PN && (Features.HasFlag(GameFeatures.GF_EGA)))
+            {
+                Array.Copy(_displayPalette, pal, 16);
+            }
+            else if (GameType == SIMONGameType.GType_PN || GameType == SIMONGameType.GType_ELVIRA1 ||
+                     GameType == SIMONGameType.GType_ELVIRA2 || GameType == SIMONGameType.GType_WW)
+            {
+                src = vga1 + vga1.ToUInt16BigEndian(6) + b * 32;
+
+                for (int i = 0; i < num; i++)
+                {
+                    ushort color = src.ToUInt16BigEndian();
+                    pal[i] = Color.FromRgb(
+                        ((color & 0xf00) >> 8) * 32,
+                        ((color & 0x0f0) >> 4) * 32,
+                        ((color & 0x00f) >> 0) * 32);
+                    src += 2;
+                }
+            }
+            else
+            {
+                src = vga1 + 6 + b * palSize;
+
+                for (int i = 0; i < num; i++)
+                {
+                    pal[i] = Color.FromRgb(
+                        src[0] << 2,
+                        src[1] << 2,
+                        src[2] << 2);
+
+                    src += 3;
+                }
+            }
+            return pal;
         }
     }
 }

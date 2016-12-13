@@ -61,7 +61,7 @@ namespace NScumm.Agos
         private bool _musicPaused;
 
         protected BytePtr _vcPtr; /* video code ptr */
-        private readonly byte[] _vcGetOutOfCode = new byte[2];
+        protected readonly byte[] _vcGetOutOfCode = new byte[2];
 
         protected Ptr<uint> _gameOffsetsPtr;
 
@@ -138,8 +138,8 @@ namespace NScumm.Agos
         private bool _rejectBlock;
 
         protected ushort _soundFileId;
-        private short _lastMusicPlayed;
-        private short _nextMusicToPlay;
+        protected short _lastMusicPlayed;
+        protected short _nextMusicToPlay;
         protected bool _showPreposition;
         private bool _showMessageFlag;
 
@@ -253,11 +253,13 @@ namespace NScumm.Agos
         protected Point _mouse;
         protected Point _mouseOld;
         protected HitArea _currentBox;
-        private HitArea _currentVerbBox, _lastVerbOn;
+        protected HitArea _currentVerbBox;
+        protected HitArea _lastVerbOn;
         protected ushort _defaultVerb;
 
         protected HitArea[] _hitAreas = ScummHelper.CreateArray<HitArea>(250);
-        private bool _exitCutscene, _picture8600;
+        protected bool _exitCutscene;
+        protected bool _picture8600;
 
         protected ushort _numOpcodes, _opcode;
         private int _freeStringSlot;
@@ -304,13 +306,13 @@ namespace NScumm.Agos
         private readonly VgaSleepStruct[] _waitEndTable = ScummHelper.CreateArray<VgaSleepStruct>(60);
         protected readonly VgaSleepStruct[] _waitSyncTable = ScummHelper.CreateArray<VgaSleepStruct>(60);
         private readonly AnimTable[] _screenAnim1 = ScummHelper.CreateArray<AnimTable>(90);
-        private volatile ushort _fastFadeInFlag;
+        protected volatile ushort _fastFadeInFlag;
         protected readonly Color[] _currentPalette = new Color[256];
         protected Color[] _displayPalette = new Color[256];
         private ushort _moveXMin, _moveYMin;
         private ushort _moveXMax, _moveYMax;
-        private ushort _fastFadeCount;
-        private bool _fastFadeOutFlag;
+        protected ushort _fastFadeCount;
+        protected bool _fastFadeOutFlag;
         protected Sound _sound;
         protected MidiPlayer _midi;
         private bool _midiEnabled;
@@ -361,6 +363,10 @@ namespace NScumm.Agos
         }
 
         protected virtual void SetupGame()
+        {
+        }
+
+        protected void SetupGameCore()
         {
             AllocItemHeap();
             AllocTablesHeap();

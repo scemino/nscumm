@@ -204,7 +204,7 @@ namespace NScumm.Agos
             _bitArray[bit / 16] = (ushort) ((bits & ~(1 << (bit & 15))) | ((value ? 1 : 0) << (bit & 15)));
         }
 
-        private int VcReadVarOrWord()
+        protected int VcReadVarOrWord()
         {
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PN ||
                 _gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1)
@@ -230,7 +230,7 @@ namespace NScumm.Agos
             return _vcPtr[-1];
         }
 
-        private uint VcReadVar(int var)
+        protected uint VcReadVar(int var)
         {
             System.Diagnostics.Debug.Assert(var < _numVars);
             return (ushort) _variableArrayPtr[var];
@@ -322,7 +322,7 @@ namespace NScumm.Agos
                 VcSkipNextInstruction();
         }
 
-        private void VcSkipNextInstruction()
+        protected void VcSkipNextInstruction()
         {
             ushort opcode;
             if (GameType == SIMONGameType.GType_FF ||
@@ -961,7 +961,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void vc23_setPriority()
+        protected void vc23_setPriority()
         {
             var vsp = FindCurSprite();
             var pri = (ushort) VcReadNextWord();
@@ -1258,7 +1258,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void ClearVideoWindow(ushort num, ushort color)
+        protected virtual void ClearVideoWindow(ushort num, ushort color)
         {
             if (GameType == SIMONGameType.GType_ELVIRA1)
             {

@@ -556,7 +556,7 @@ namespace NScumm.Agos
             _mortalFlag = false;
         }
 
-        private bool ProcessSpecialKeys()
+        protected bool ProcessSpecialKeys()
         {
             bool verbCode = false;
 

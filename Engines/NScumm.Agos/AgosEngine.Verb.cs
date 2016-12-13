@@ -39,7 +39,7 @@ namespace NScumm.Agos
             ResetNameWindow();
         }
 
-        private void ShowActionString(string @string)
+        protected void ShowActionString(string @string)
         {
             int len = GameType == SIMONGameType.GType_WW ? 29 : 53;
 

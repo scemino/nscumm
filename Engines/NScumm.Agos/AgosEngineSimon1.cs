@@ -1,5 +1,5 @@
 ﻿//
-//  AGOSEngine_Simon1.cs
+//  AgosEngineSimon1.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -725,7 +725,7 @@ namespace NScumm.Agos
             _numSpeech = 3623;
             _numZone = 164;
 
-            base.SetupGame();
+            SetupGameCore();
         }
 
         protected override void DrawImage(Vc10State state)
@@ -1215,7 +1215,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void PlaySpeech(ushort speechId, ushort vgaSpriteId)
+        protected virtual void PlaySpeech(ushort speechId, ushort vgaSpriteId)
         {
             if (speechId == 9999)
             {
@@ -1332,7 +1332,7 @@ namespace NScumm.Agos
             _videoLockOut = (ushort) (_videoLockOut & ~0x40);
         }
 
-        private void os1_pauseGame()
+        protected void os1_pauseGame()
         {
             // 135: pause game
             OSystem.InputManager.ShowVirtualKeyboard();
@@ -1353,7 +1353,7 @@ namespace NScumm.Agos
             OSystem.InputManager.HideVirtualKeyboard();
         }
 
-        private void os1_screenTextBox()
+        protected void os1_screenTextBox()
         {
             // 161: setup text
             var tl = GetTextLocation(GetVarOrByte());
@@ -1363,7 +1363,7 @@ namespace NScumm.Agos
             tl.width = (short) GetVarOrWord();
         }
 
-        private void os1_screenTextMsg()
+        protected void os1_screenTextMsg()
         {
             // 162: print string
             var vgaSpriteId = GetVarOrByte();
@@ -1414,7 +1414,7 @@ namespace NScumm.Agos
                 PrintScreenText(vgaSpriteId, color, stringPtr, tl.x, tl.y, tl.width);
         }
 
-        private void os1_playEffect()
+        protected void os1_playEffect()
         {
             // 163: play sound
             var soundId = (ushort) GetVarOrWord();
@@ -1478,7 +1478,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void os1_getPathPosn()
+        protected void os1_getPathPosn()
         {
             // 178: path find
             var x = GetVarOrWord();
@@ -1532,7 +1532,7 @@ namespace NScumm.Agos
             WriteVariable((ushort) var2, (ushort) bestJ);
         }
 
-        private void os1_scnTxtLongText()
+        protected void os1_scnTxtLongText()
         {
             // 179: conversation responses and room descriptions
             var vgaSpriteId = GetVarOrByte();
@@ -1590,7 +1590,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void os1_unloadZone()
+        protected void os1_unloadZone()
         {
             // 184: unload zone
             var a = GetVarOrWord();
@@ -1613,7 +1613,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void os1_unfreezeZones()
+        protected void os1_unfreezeZones()
         {
             // 186: freeze zone
             UnfreezeBottom();
@@ -1635,7 +1635,7 @@ namespace NScumm.Agos
             Array.Copy(_currentPalette, _displayPalette, _currentPalette.Length);
         }
 
-        private void ScriptMouseOff()
+        protected void ScriptMouseOff()
         {
             _videoLockOut |= 0x8000;
             vc34_setMouseOff();

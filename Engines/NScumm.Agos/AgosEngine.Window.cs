@@ -83,7 +83,7 @@ namespace NScumm.Agos
             return window;
         }
 
-        private void ChangeWindow(uint a)
+        protected void ChangeWindow(uint a)
         {
             a &= 7;
 

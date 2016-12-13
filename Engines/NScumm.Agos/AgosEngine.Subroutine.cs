@@ -260,7 +260,7 @@ namespace NScumm.Agos
             _tablesHeapPtr = new byte[_tableMemSize];
         }
 
-        private void EndCutscene()
+        protected void EndCutscene()
         {
             _sound.StopVoice();
 

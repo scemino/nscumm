@@ -196,7 +196,7 @@ namespace NScumm.Agos
             }
         }
 
-        private ushort To16Wrapper(uint value)
+        protected ushort To16Wrapper(uint value)
         {
             return ScummHelper.SwapBytes((ushort) value);
         }

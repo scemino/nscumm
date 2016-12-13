@@ -514,7 +514,19 @@ namespace NScumm.Agos
                         new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"40d68bec54042ef930f084ad9a4342a1",-1),
                         new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"d198a80de2c59e4a0cd24b98814849e8",-1),
                     }, Language.DE_DEU, Platform.Windows, ADGameFlags.CD, GuiOptions.NOSUBTITLES),
-                SIMONGameType.GType_SIMON1, GameIds.GID_SIMON1, GameFeatures.GF_TALKIE)
+                SIMONGameType.GType_SIMON1, GameIds.GID_SIMON1, GameFeatures.GF_TALKIE),
+
+            // Simon the Sorcerer 2 - English DOS Floppy
+            new AgosGameDescription(new ADGameDescription("simon2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("game32", (ushort)GameFileTypes.GAME_BASEFILE,"604d04315935e77624bd356ac926e068",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",-1),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"aa6840420899a31874204f90bb214108",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"e229f84d46fa83f99b4a7115679f3fb6",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",-1),
+                    }, Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, 0)
         };
 
         public AgosMetaEngine()
@@ -543,9 +555,9 @@ namespace NScumm.Agos
                 //    break;
                 case SIMONGameType.GType_SIMON1:
                     return new AgosEngineSimon1(system, settings, gd);
-                //case AGOS::GType_SIMON2:
-                //    *engine = new AGOS::AGOSEngine_Simon2(syst, gd);
-                //    break;
+                case SIMONGameType.GType_SIMON2:
+                    return new AgosEngineSimon2(system, settings, gd);
+                    break;
 # if ENABLE_AGOS2
 //                case AGOS::GType_FF:
 //                    if (gd->features & GF_DEMO)

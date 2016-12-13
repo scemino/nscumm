@@ -50,6 +50,7 @@
         <Compile Include="AgosEngines.SaveLoad.cs"/>
         <Compile Include="AgosEngineElvira1.cs"/>
         <Compile Include="AgosEngineElvira2.cs"/>
+        <Compile Include="AgosEngineSimon2.cs"/>
         <Compile Include="AgosEngineWaxworks.cs"/>
         <Compile Include="AgosGameDescription.cs"/>
         <Compile Include="AgosGameDescriptor.cs"/>

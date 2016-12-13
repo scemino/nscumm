@@ -827,7 +827,7 @@ namespace NScumm.Agos
             WriteVariable((ushort) GetVarWrapper(), contents);
         }
 
-        private void SendSync(uint a)
+        protected void SendSync(uint a)
         {
             ushort id = To16Wrapper(a);
             _videoLockOut |= 0x8000;

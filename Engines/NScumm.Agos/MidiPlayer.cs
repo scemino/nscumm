@@ -22,6 +22,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Threading;
 using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Core.Common;
@@ -71,6 +72,7 @@ namespace NScumm.Agos
 
         public int MusicVolume => _musicVolume;
         public int SfxVolume => _sfxVolume;
+        public bool HasNativeMt32 => _nativeMT32;
 
         public MidiPlayer()
         {
@@ -946,10 +948,10 @@ namespace NScumm.Agos
 
                     // Make sure there's a MThd
                     @in.Read(buf, 0, 4);
-                    if (buf.GetRawText(0,4) != "MThd")
+                    if (buf.GetRawText(0, 4) != "MThd")
                     {
-                        Warning("Expected MThd but found '{0}{1}{2}{3}' instead", (char)buf[0], (char)buf[1],
-                            (char)buf[2], (char)buf[3]);
+                        Warning("Expected MThd but found '{0}{1}{2}{3}' instead", (char) buf[0], (char) buf[1],
+                            (char) buf[2], (char) buf[3]);
                         return;
                     }
                     @in.Seek(br.ReadUInt32BigEndian(), SeekOrigin.Current);
@@ -992,17 +994,17 @@ namespace NScumm.Agos
                 int pos = (int) @in.Position;
                 int size = 4;
                 @in.Read(buf, 0, 4);
-                if (buf.GetRawText(4) == "FORM")
+                if (buf.GetRawText(0, 4) == "FORM")
                 {
                     for (var i = 0; i < 16; ++i)
                     {
-                        if (buf.GetRawText(4) == "CAT ")
+                        if (buf.GetRawText(0, 4) == "CAT ")
                             break;
                         size += 2;
                         Array.Copy(buf, 2, buf, 0, 2);
                         @in.Read(buf, 2, 2);
                     }
-                    if (buf.GetRawText(4) != "CAT ")
+                    if (buf.GetRawText(0, 4) != "CAT ")
                     {
                         Error("Could not find 'CAT ' tag to determine resource size");
                     }
@@ -1144,6 +1146,28 @@ namespace NScumm.Agos
             setupBundleStream.Dispose();
 
             return extractedStream;
+        }
+
+        public void QueueTrack(ushort track, bool loop)
+        {
+            Monitor.Enter(_mutex);
+            if (_currentTrack == 255)
+            {
+                Monitor.Exit(_mutex);
+                SetLoop(loop);
+                StartTrack(track);
+            }
+            else
+            {
+                _queuedTrack = (byte) track;
+                _loopQueuedTrack = loop;
+                Monitor.Exit(_mutex);
+            }
+        }
+
+        public bool IsPlaying(bool check_queued = false)
+        {
+            return (_currentTrack != 255 && (_queuedTrack != 255 || !check_queued));
         }
 
         private static readonly int[] simon1_gmf_size =

@@ -526,7 +526,260 @@ namespace NScumm.Agos
                         new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"e229f84d46fa83f99b4a7115679f3fb6",-1),
                         new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",-1),
                     }, Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH),
-                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, 0)
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, 0),
+
+            // Simon the Sorcerer 2 - English DOS Floppy with Russian patch
+            new AgosGameDescription(new ADGameDescription("simon2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("game32", (ushort)GameFileTypes.GAME_BASEFILE,"7edfc633dd50f8caa719c478443db70b",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",-1),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"aa6840420899a31874204f90bb214108",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"e229f84d46fa83f99b4a7115679f3fb6",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",-1),
+                    }, Language.RU_RUS, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, 0),
+
+            // Simon the Sorcerer 2 - German DOS Floppy
+            new AgosGameDescription(new ADGameDescription("simon2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("game32", (ushort)GameFileTypes.GAME_BASEFILE,"eb6e3e37fe52993f948d7e2d6b869828",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",-1),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"5fa9d080b04c610f526bd685be1bf747",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"fd30df01cc248ecbaef302af855e0212",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",-1),
+                    }, Language.DE_DEU, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, 0),
+
+            // Simon the Sorcerer 2 - German DOS Floppy alternate?
+            new AgosGameDescription(new ADGameDescription("simon2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("game32", (ushort)GameFileTypes.GAME_BASEFILE,"604d04315935e77624bd356ac926e068",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",-1),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"ec9f0f24fd895e7ea72e3c8e448c0240",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"6de6292c9ac11bfb2e70fdb0f773ba85",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",-1),
+                    }, Language.DE_DEU, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, 0),
+
+            // Simon the Sorcerer 2 - Italian DOS Floppy
+            new AgosGameDescription(new ADGameDescription("simon2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gsptr30", (ushort)GameFileTypes.GAME_BASEFILE,"3e11d400bea0638f360a724687005cd1",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",-1),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"f306a397565d7f13bec7ecf14c723de7",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"bea6843fb9f3b2144fcb146d62db0b9a",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",-1),
+                    }, Language.IT_ITA, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, 0),
+
+            // Simon the Sorcerer 2 - English DOS CD Demo
+            new AgosGameDescription(new ADGameDescription("simon2","CD Demo",
+                    new[]
+                    {
+                        new ADGameFileDescription("gsptr30", (ushort)GameFileTypes.GAME_BASEFILE,"3794c15887539b8578bacab694ccf08a",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",-1),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"f8c9e6df1e55923a749e115ba74210c4",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"e229f84d46fa83f99b4a7115679f3fb6",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"a0d5a494b5d3d209d1a1d76cc8d76601",-1),
+                    }, Language.EN_ANY, Platform.DOS, ADGameFlags.DEMO, GuiOptions.NONE),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, GameFeatures.GF_TALKIE),
+
+            // Simon the Sorcerer 2 - German DOS CD Demo
+            new AgosGameDescription(new ADGameDescription("simon2","CD Demo",
+                    new[]
+                    {
+                        new ADGameFileDescription("gsptr30", (ushort)GameFileTypes.GAME_BASEFILE,"7596ef2644fde56ee5fad0dcd483a01e",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",-1),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"3f308f201f6b1ddf7c2704c1fc43a3e1",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"4c68cf64e581a9bd638a56c900b08bfe",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"a0d5a494b5d3d209d1a1d76cc8d76601",-1),
+                    }, Language.DE_DEU, Platform.DOS, ADGameFlags.DEMO, GuiOptions.NONE),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, GameFeatures.GF_TALKIE),
+
+            // Simon the Sorcerer 2 - German DOS CD Non-Interactive Demo
+            new AgosGameDescription(new ADGameDescription("simon2","CD Non-Interactive Demo",
+                    new[]
+                    {
+                        new ADGameFileDescription("gsptr30", (ushort)GameFileTypes.GAME_BASEFILE,"c45facd0605860684d464b6a62323567",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",-1),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"30ea02d374327cab6c78444f3c198c1c",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"4c68cf64e581a9bd638a56c900b08bfe",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"a0d5a494b5d3d209d1a1d76cc8d76601",-1),
+                    }, Language.DE_DEU, Platform.DOS, ADGameFlags.DEMO, GuiOptions.NONE),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, GameFeatures.GF_TALKIE),
+
+            // Simon the Sorcerer 2 - English DOS CD
+            new AgosGameDescription(new ADGameDescription("simon2","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("gsptr30", (ushort)GameFileTypes.GAME_BASEFILE,"8c301fb9c4fcf119d2730ccd2a565eb3",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",-1),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"9c535d403966750ae98bdaf698375a38",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"e229f84d46fa83f99b4a7115679f3fb6",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",-1),
+                    }, Language.EN_ANY, Platform.DOS, ADGameFlags.CD, GuiOptions.NONE),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, GameFeatures.GF_TALKIE),
+
+            // Simon the Sorcerer 2 - English DOS CD alternate?
+            new AgosGameDescription(new ADGameDescription("simon2","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("gsptr30", (ushort)GameFileTypes.GAME_BASEFILE,"608e277904d87dd28725fa08eacc2c0d",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",-1),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"8d6dcc65577e285dbca03ff6d7d9323c",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"e229f84d46fa83f99b4a7115679f3fb6",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"a0d5a494b5d3d209d1a1d76cc8d76601",-1),
+                    }, Language.EN_ANY, Platform.DOS, ADGameFlags.CD, GuiOptions.NONE),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, GameFeatures.GF_TALKIE),
+
+            // Simon the Sorcerer 2 - French DOS CD
+            new AgosGameDescription(new ADGameDescription("simon2","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("gsptr30", (ushort)GameFileTypes.GAME_BASEFILE,"43b3a04d2f0a0cbd1b024c814856561a",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",-1),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"8af0e02c0c3344db64dffc12196eb59d",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"5ea27977b4d7dcfd50eb5074e162ebbf",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",-1),
+                    }, Language.FR_FRA, Platform.DOS, ADGameFlags.CD, GuiOptions.NONE),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, GameFeatures.GF_TALKIE),
+
+            // Simon the Sorcerer 2 - German DOS CD
+            new AgosGameDescription(new ADGameDescription("simon2","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("gsptr30", (ushort)GameFileTypes.GAME_BASEFILE,"0d05c3f4c06c9a4ceb3d2f5bc0b18e11",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",-1),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"6c5fdfdd0eab9038767c2d22858406b2",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"6de6292c9ac11bfb2e70fdb0f773ba85",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",-1),
+                    }, Language.DE_DEU, Platform.DOS, ADGameFlags.CD, GuiOptions.NONE),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, GameFeatures.GF_TALKIE),
+
+            // Simon the Sorcerer 2 - German DOS CD alternate?
+            new AgosGameDescription(new ADGameDescription("simon2","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("gsptr30", (ushort)GameFileTypes.GAME_BASEFILE,"a76ea940076b5d9316796dea225a9b69",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",-1),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"ec9f0f24fd895e7ea72e3c8e448c0240",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"6de6292c9ac11bfb2e70fdb0f773ba85",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",-1),
+                    }, Language.DE_DEU, Platform.DOS, ADGameFlags.CD, GuiOptions.NONE),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, GameFeatures.GF_TALKIE),
+
+            // Simon the Sorcerer 2 - Hebrew DOS CD
+            new AgosGameDescription(new ADGameDescription("simon2","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("gsptr30", (ushort)GameFileTypes.GAME_BASEFILE,"952a2b1be23c3c609ba8d988a9a1627d",53366),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",18089),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"a2b249a82ea182af09789eb95fb6c5be",19650639),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"de9dbc24158660e153483fa0cf6c3172",171),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",513),
+                    }, Language.HE_ISR, Platform.DOS, ADGameFlags.CD, GuiOptions.NONE),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, GameFeatures.GF_TALKIE),
+
+            // Simon the Sorcerer 2 - Italian DOS CD
+            new AgosGameDescription(new ADGameDescription("simon2","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("gsptr30", (ushort)GameFileTypes.GAME_BASEFILE,"3e11d400bea0638f360a724687005cd1",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",-1),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"344aca58e5ad5e25c517d5eb1d85c435",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"bea6843fb9f3b2144fcb146d62db0b9a",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",-1),
+                    }, Language.IT_ITA, Platform.Windows,// FIXME: DOS version which uses WAV format
+                    ADGameFlags.CD, GuiOptions.NONE),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, GameFeatures.GF_TALKIE),
+
+            // Simon the Sorcerer 2 - Spanish DOS CD
+            new AgosGameDescription(new ADGameDescription("simon2","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("gsptr30", (ushort)GameFileTypes.GAME_BASEFILE,"268dc322aa73bcf27bb016b8e8ceb889",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",-1),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"4f43bd06b6cc78dbd25a7475ca964eb1",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"d13753796bd81bf313a2449f34d8b112",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",-1),
+                    }, Language.ES_ESP, Platform.DOS, ADGameFlags.CD, GuiOptions.NONE),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, GameFeatures.GF_TALKIE),
+
+            // Simon the Sorcerer 2 - Russian DOS CD
+            new AgosGameDescription(new ADGameDescription("simon2","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("gsptr30", (ushort)GameFileTypes.GAME_BASEFILE,"e26d162e573587f4601b88701292212c",58851),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",18089),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"9c535d403966750ae98bdaf698375a38",19687892),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"e229f84d46fa83f99b4a7115679f3fb6",171),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",513),
+                    }, Language.RU_RUS, Platform.DOS, ADGameFlags.CD, GuiOptions.NONE),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, GameFeatures.GF_TALKIE),
+
+            // Simon the Sorcerer 2 - Czech Windows CD
+            new AgosGameDescription(new ADGameDescription("simon2","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("gsptr30", (ushort)GameFileTypes.GAME_BASEFILE,"eb8217f9ec4628d12ca606033146c48c",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",-1),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"2d1074788501c55dcd9e59269ea0aaed",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"e229f84d46fa83f99b4a7115679f3fb6",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",-1),
+                    }, Language.CZ_CZE, Platform.Windows, ADGameFlags.CD, GuiOptions.NONE),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, GameFeatures.GF_TALKIE),
+
+            // Simon the Sorcerer 2 - English Windows CD
+            new AgosGameDescription(new ADGameDescription("simon2","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("gsptr30", (ushort)GameFileTypes.GAME_BASEFILE,"608e277904d87dd28725fa08eacc2c0d",58652),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",18089),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"e749c4c103d7e7d51b34620ed76c5a04",20046789),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"e229f84d46fa83f99b4a7115679f3fb6",171),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",513),
+                    }, Language.EN_ANY, Platform.Windows, ADGameFlags.CD, GuiOptions.NONE),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, GameFeatures.GF_TALKIE),
+
+            // Simon the Sorcerer 2 - French Windows CD
+            new AgosGameDescription(new ADGameDescription("simon2","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("gsptr30", (ushort)GameFileTypes.GAME_BASEFILE,"6e217d75f4089b92270fad879e091e29",58652),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",18089),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"1d2f867a7eba818c85c1e4849821e812",20046789),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"5ea27977b4d7dcfd50eb5074e162ebbf",171),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",513),
+                    }, Language.FR_FRA, Platform.Windows, ADGameFlags.CD, GuiOptions.NONE),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, GameFeatures.GF_TALKIE),
+
+            // Simon the Sorcerer 2 - German Windows CD
+            new AgosGameDescription(new ADGameDescription("simon2","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("gsptr30", (ushort)GameFileTypes.GAME_BASEFILE,"a76ea940076b5d9316796dea225a9b69",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",-1),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"9609a933c541fed2e00c6c3479d7c181",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"6de6292c9ac11bfb2e70fdb0f773ba85",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",-1),
+                    }, Language.DE_DEU, Platform.Windows, ADGameFlags.CD, GuiOptions.NONE),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, GameFeatures.GF_TALKIE),
+
+            // Simon the Sorcerer 2 - Polish Windows CD
+            new AgosGameDescription(new ADGameDescription("simon2","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("gsptr30", (ushort)GameFileTypes.GAME_BASEFILE,"657fd873f5d0637097ee02315b447e6f",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"72096a62d36e6034ea9fecc13b2dbdab",-1),
+                        new ADGameFileDescription("simon2.gme", (ushort)GameFileTypes.GAME_GMEFILE,"7b9afcf82a94722707e0d025c0192be8",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"e229f84d46fa83f99b4a7115679f3fb6",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",-1),
+                    }, Language.PL_POL, Platform.Windows, ADGameFlags.CD, GuiOptions.NONE),
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, GameFeatures.GF_TALKIE)
         };
 
         public AgosMetaEngine()

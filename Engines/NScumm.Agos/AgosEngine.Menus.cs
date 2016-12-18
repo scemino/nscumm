@@ -68,7 +68,7 @@ namespace NScumm.Agos
 
             MouseOff();
 
-            LocksScreen(screen =>
+            LockScreen(screen =>
             {
                 src = screen.GetBasePtr(ha.x, ha.y);
                 w = ha.width;
@@ -92,7 +92,7 @@ namespace NScumm.Agos
         {
             MouseOff();
 
-            LocksScreen(screen =>
+            LockScreen(screen =>
             {
                 var src = screen.GetBasePtr(272, 8);
                 var w = 48;

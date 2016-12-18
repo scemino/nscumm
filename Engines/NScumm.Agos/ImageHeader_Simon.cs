@@ -24,33 +24,21 @@ using NScumm.Core;
 namespace NScumm.Agos
 {
     // Simon 1/2
-    class ImageHeader_Simon
+    internal class ImageHeaderSimon
     {
         public const int Size = 8;
 
-        public ushort id
-        {
-            get { return Pointer.ToUInt16(); }
-        }
+        public ushort id => Pointer.ToUInt16();
 
-        public ushort color
-        {
-            get { return Pointer.ToUInt16(2); }
-        }
+        public ushort color => Pointer.ToUInt16(2);
 
-        public ushort x_2
-        {
-            get { return Pointer.ToUInt16(4); }
-        }
+        public ushort x_2 => Pointer.ToUInt16(4);
 
-        public ushort scriptOffs
-        {
-            get { return Pointer.ToUInt16(6); }
-        }
+        public ushort scriptOffs => Pointer.ToUInt16(6);
 
         public BytePtr Pointer;
 
-        public ImageHeader_Simon(BytePtr pointer)
+        public ImageHeaderSimon(BytePtr pointer)
         {
             Pointer = pointer;
         }

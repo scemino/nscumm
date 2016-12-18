@@ -776,6 +776,7 @@ namespace NScumm.Agos
 
         protected void WaitForSync(uint a)
         {
+            Debug("WaitForSync({0})", a);
             int maxCount = _gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1 ? 1000 : 2500;
 
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1 &&

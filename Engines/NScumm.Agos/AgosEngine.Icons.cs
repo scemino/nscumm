@@ -239,7 +239,7 @@ namespace NScumm.Agos
         {
             _videoLockOut |= 0x8000;
 
-            LocksScreen(screen =>
+            LockScreen(screen =>
             {
                 var dst = screen.GetBasePtr(x * 8, y);
                 var src = new BytePtr(_iconFilePtr, icon * 146);
@@ -393,7 +393,7 @@ namespace NScumm.Agos
             if (showArrows || window.iconPtr.line != 0)
             {
                 /* Plot arrows and add their boxes */
-                AddArrows(window, (uint) num);
+                AddArrows(window, (byte) num);
                 window.iconPtr.upArrow = (short) _scrollUpHitArea;
                 window.iconPtr.downArrow = (short) _scrollDownHitArea;
             }
@@ -415,12 +415,10 @@ namespace NScumm.Agos
             return Array.IndexOf(_hitAreas, ha.Value);
         }
 
-        protected virtual void AddArrows(WindowBlock window, uint num)
+        protected virtual void AddArrows(WindowBlock window, byte num)
         {
-            ushort x, y;
-
-            x = 30;
-            y = 151;
+            ushort x = 30;
+            ushort y = 151;
             if (num != 2)
             {
                 y = (ushort) (window.y + window.height * 4 - 19);
@@ -477,7 +475,7 @@ namespace NScumm.Agos
 
         private void DrawArrow(ushort x, ushort y, sbyte dir)
         {
-            LocksScreen(screen =>
+            LockScreen(screen =>
             {
                 var src = dir < 0 ? new BytePtr(_arrowImage, 288) : _arrowImage;
                 var dst = screen.GetBasePtr(x * 8, y);

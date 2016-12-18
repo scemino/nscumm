@@ -95,6 +95,110 @@ namespace NScumm.Agos
     {
         private static readonly ADGameDescription[] gameDescriptions =
         {
+            // Waxworks - English Amiga Floppy
+            new AgosGameDescription(new ADGameDescription("waxworks","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gameamiga", (ushort)GameFileTypes.GAME_BASEFILE,"eca24fe7c3e005caca47cecac56f7245",43392),
+                        new ADGameFileDescription("icon.pkd", (ushort)GameFileTypes.GAME_ICONFILE,"4822a91c18b1b2005ac17fc617f7dcbe",18940),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"3409eeb8ca8b46fc04da99de67573f5e",320),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"b575b336e741dde1725edd4079d5ab67",20902),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"6faaebff2786216900061eeb978f10af",225),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"95c44bfc380770a6b6dd0dfcc69e80a0",309),
+                        new ADGameFileDescription("xtbllist", (ushort)GameFileTypes.GAME_XTBLFILE,"6c7b3db345d46349a5226f695c03e20f",88),
+                    }, Language.EN_ANY, Platform.Amiga, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH | GuiOptions.NOMIDI),
+                SIMONGameType.GType_WW, GameIds.GID_WAXWORKS, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_CRUNCHED|
+                                                              GameFeatures.GF_CRUNCHED_GAMEPC|GameFeatures.GF_PLANAR),
+
+            // Waxworks - German Amiga Floppy
+            new AgosGameDescription(new ADGameDescription("waxworks","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gameamiga", (ushort)GameFileTypes.GAME_BASEFILE,"2938a17103de603c4c6f05e6a433b365",44640),
+                        new ADGameFileDescription("icon.pkd", (ushort)GameFileTypes.GAME_ICONFILE,"4822a91c18b1b2005ac17fc617f7dcbe",18940),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"3409eeb8ca8b46fc04da99de67573f5e",320),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"b575b336e741dde1725edd4079d5ab67",20902),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"6faaebff2786216900061eeb978f10af",225),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"95c44bfc380770a6b6dd0dfcc69e80a0",309),
+                        new ADGameFileDescription("xtbllist", (ushort)GameFileTypes.GAME_XTBLFILE,"6c7b3db345d46349a5226f695c03e20f",88),
+                    }, Language.DE_DEU, Platform.Amiga, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH | GuiOptions.NOMIDI),
+                SIMONGameType.GType_WW, GameIds.GID_WAXWORKS, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_CRUNCHED|
+                                                              GameFeatures.GF_CRUNCHED_GAMEPC|GameFeatures.GF_PLANAR),
+
+            // Waxworks - English DOS Floppy Demo
+            new AgosGameDescription(new ADGameDescription("waxworks","Non-Interactive Demo",
+                    new[]
+                    {
+                        new ADGameFileDescription("demo", (ushort)GameFileTypes.GAME_BASEFILE,"50704abde6c68a226001400461620129",7238),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"ef1b8ad3494cf103dc10a99fe152ef9a",20901),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"c4103f122d27677c9db144cae1394a66",2),
+                    }, Language.EN_ANY, Platform.DOS, ADGameFlags.DEMO, GuiOptions.NOSPEECH),
+                SIMONGameType.GType_WW, GameIds.GID_WAXWORKS, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_DEMO),
+
+            // Waxworks - English DOS Floppy
+            new AgosGameDescription(new ADGameDescription("waxworks","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gamepc", (ushort)GameFileTypes.GAME_BASEFILE,"7751e9358e894e32ef40ef3b3bae0f2a",51327),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"ef1b8ad3494cf103dc10a99fe152ef9a",20901),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"3409eeb8ca8b46fc04da99de67573f5e",320),
+                        new ADGameFileDescription("roomslst", (ushort)GameFileTypes.GAME_RMSLFILE,"e3758c46ab8f3c23a1ac012bd607108d",128),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"036b647973d6884cdfc2042a3d12df83",15354),
+                        new ADGameFileDescription("statelst", (ushort)GameFileTypes.GAME_STATFILE,"469e98c69f00928a8366ba415d91902d",11104),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"f259e3e07a1cde8d0404a767d815e12c",225),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"95c44bfc380770a6b6dd0dfcc69e80a0",309),
+                        new ADGameFileDescription("xtbllist", (ushort)GameFileTypes.GAME_XTBLFILE,"6c7b3db345d46349a5226f695c03e20f",88),
+                    }, Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH),
+                SIMONGameType.GType_WW, GameIds.GID_WAXWORKS, GameFeatures.GF_OLD_BUNDLE),
+
+            // Waxworks - French DOS Floppy
+            new AgosGameDescription(new ADGameDescription("waxworks","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gamepc", (ushort)GameFileTypes.GAME_BASEFILE,"7edfdcccbf7627532882192c1a356150",53681),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"ef1b8ad3494cf103dc10a99fe152ef9a",20901),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"3409eeb8ca8b46fc04da99de67573f5e",320),
+                        new ADGameFileDescription("roomslst", (ushort)GameFileTypes.GAME_RMSLFILE,"e3758c46ab8f3c23a1ac012bd607108d",128),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"036b647973d6884cdfc2042a3d12df83",15354),
+                        new ADGameFileDescription("statelst", (ushort)GameFileTypes.GAME_STATFILE,"469e98c69f00928a8366ba415d91902d",11104),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"f259e3e07a1cde8d0404a767d815e12c",225),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"95c44bfc380770a6b6dd0dfcc69e80a0",309),
+                        new ADGameFileDescription("xtbllist", (ushort)GameFileTypes.GAME_XTBLFILE,"6c7b3db345d46349a5226f695c03e20f",88),
+                    }, Language.FR_FRA, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH),
+                SIMONGameType.GType_WW, GameIds.GID_WAXWORKS, GameFeatures.GF_OLD_BUNDLE),
+
+            // Waxworks - German DOS Floppy
+            new AgosGameDescription(new ADGameDescription("waxworks","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gamepc", (ushort)GameFileTypes.GAME_BASEFILE,"32ee34134422e286525c73e71bd0ea2d",53523),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"ef1b8ad3494cf103dc10a99fe152ef9a",20901),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"3409eeb8ca8b46fc04da99de67573f5e",320),
+                        new ADGameFileDescription("roomslst", (ushort)GameFileTypes.GAME_RMSLFILE,"e3758c46ab8f3c23a1ac012bd607108d",128),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"036b647973d6884cdfc2042a3d12df83",15354),
+                        new ADGameFileDescription("statelst", (ushort)GameFileTypes.GAME_STATFILE,"469e98c69f00928a8366ba415d91902d",11104),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"f259e3e07a1cde8d0404a767d815e12c",225),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"95c44bfc380770a6b6dd0dfcc69e80a0",309),
+                        new ADGameFileDescription("xtbllist", (ushort)GameFileTypes.GAME_XTBLFILE,"6c7b3db345d46349a5226f695c03e20f",88),
+                    }, Language.DE_DEU, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH),
+                SIMONGameType.GType_WW, GameIds.GID_WAXWORKS, GameFeatures.GF_OLD_BUNDLE),
+
+            // Waxworks - Spanish DOS Floppy
+            new AgosGameDescription(new ADGameDescription("waxworks","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gamepc", (ushort)GameFileTypes.GAME_BASEFILE,"b0d513069920a5e2eac2ea5d290692f1",53307),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"ef1b8ad3494cf103dc10a99fe152ef9a",20901),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"3409eeb8ca8b46fc04da99de67573f5e",320),
+                        new ADGameFileDescription("roomslst", (ushort)GameFileTypes.GAME_RMSLFILE,"e3758c46ab8f3c23a1ac012bd607108d",128),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"036b647973d6884cdfc2042a3d12df83",15354),
+                        new ADGameFileDescription("statelst", (ushort)GameFileTypes.GAME_STATFILE,"469e98c69f00928a8366ba415d91902d",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"f259e3e07a1cde8d0404a767d815e12c",225),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"95c44bfc380770a6b6dd0dfcc69e80a0",309),
+                        new ADGameFileDescription("xtbllist", (ushort)GameFileTypes.GAME_XTBLFILE,"6c7b3db345d46349a5226f695c03e20f",88),
+                    }, Language.ES_ESP, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH),
+                SIMONGameType.GType_WW, GameIds.GID_WAXWORKS, GameFeatures.GF_OLD_BUNDLE),
+
             // Simon the Sorcerer 1 - English Acorn Floppy
             new AgosGameDescription(new ADGameDescription("simon1","Floppy",
                     new[]
@@ -794,31 +898,27 @@ namespace NScumm.Agos
             var gd = ((AgosGameDescriptor)settings.Game).ADGameDescription;
             switch (gd.gameType)
             {
-                //case AGOS::GType_PN:
-                //    *engine = new AGOS::AGOSEngine_PN(syst, gd);
+                //case SIMONGameType.GType_PN:
+                //    *engine = new AGOSEngine_PN(syst, gd);
                 //    break;
-                //case AGOS::GType_ELVIRA1:
-                //    *engine = new AGOS::AGOSEngine_Elvira1(syst, gd);
-                //    break;
-                //case AGOS::GType_ELVIRA2:
-                //    *engine = new AGOS::AGOSEngine_Elvira2(syst, gd);
-                //    break;
-                //case AGOS::GType_WW:
-                //    *engine = new AGOS::AGOSEngine_Waxworks(syst, gd);
-                //    break;
+                case SIMONGameType.GType_ELVIRA1:
+                    return new AgosEngineElvira1(system, settings, gd);
+                case SIMONGameType.GType_ELVIRA2:
+                    return new AgosEngineElvira2(system, settings, gd);
+                case SIMONGameType.GType_WW:
+                    return new AgosEngineWaxworks(system, settings, gd);
                 case SIMONGameType.GType_SIMON1:
                     return new AgosEngineSimon1(system, settings, gd);
                 case SIMONGameType.GType_SIMON2:
                     return new AgosEngineSimon2(system, settings, gd);
-                    break;
 # if ENABLE_AGOS2
-//                case AGOS::GType_FF:
+//                case SIMONGameType.GType_FF:
 //                    if (gd->features & GF_DEMO)
 //                        *engine = new AGOS::AGOSEngine_FeebleDemo(syst, gd);
 //                    else
 //                        *engine = new AGOS::AGOSEngine_Feeble(syst, gd);
 //                    break;
-//                case AGOS::GType_PP:
+//                case SIMONGameType.GType_PP:
 //                    if (gd->gameId == GID_DIMP)
 //                        *engine = new AGOS::AGOSEngine_DIMP(syst, gd);
 //                    else

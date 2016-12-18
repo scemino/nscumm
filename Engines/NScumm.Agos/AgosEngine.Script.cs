@@ -848,7 +848,7 @@ namespace NScumm.Agos
             _curVgaFile2 = curVgaFile2Orig;
         }
 
-        private uint GetNextVarContents()
+        protected uint GetNextVarContents()
         {
             return (ushort) ReadVariable((ushort) GetVarWrapper());
         }

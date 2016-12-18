@@ -34,7 +34,7 @@ namespace NScumm
 
         public void LogMessage(LogMessageType type, string format, params object[] args)
         {
-            Console.WriteLine(format, args);
+            Console.Write(format, args);
         }
 
         public void Sleep(int timeInMs)

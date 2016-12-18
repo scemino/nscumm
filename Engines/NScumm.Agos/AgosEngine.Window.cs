@@ -153,7 +153,7 @@ namespace NScumm.Agos
         {
             _videoLockOut |= 0x8000;
 
-            LocksScreen(screen =>
+            LockScreen(screen =>
             {
                 var dst = screen.GetBasePtr(x, y);
 
@@ -234,7 +234,7 @@ namespace NScumm.Agos
 
         protected void RestoreBlock(ushort x, ushort y, ushort w, ushort h)
         {
-            LocksScreen(screen =>
+            LockScreen(screen =>
             {
                 var dst = screen.Pixels;
                 var src = BackGround;

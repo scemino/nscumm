@@ -44,7 +44,7 @@ namespace NScumm.Agos
                 src.Offset++;
             }
 
-            for (;;)
+            while(true)
             {
                 if (a >= 0)
                 {
@@ -194,7 +194,7 @@ namespace NScumm.Agos
                     dst[i] = (byte) (src[i] + paletteMod);
                     dst[i + 1] = (byte) (src[i + 1] + paletteMod);
                 }
-                dst += (int) state.surf_pitch;
+                dst += state.surf_pitch;
                 src += state.width;
             } while (--h != 0);
         }
@@ -246,7 +246,7 @@ namespace NScumm.Agos
                         dst[0] = (byte) (color | state.palette);
                         color = (byte) (colors & 15);
                         dst[1] = (byte) (color | state.palette);
-                        dst += (int) state.surf_pitch;
+                        dst += state.surf_pitch;
                         src.Offset++;
                     } while (++h != state.draw_height);
                 }
@@ -261,7 +261,7 @@ namespace NScumm.Agos
                         color = (byte) (colors & 15);
                         if (color != 0)
                             dst[1] = (byte) (color | state.palette);
-                        dst += (int) state.surf_pitch;
+                        dst += state.surf_pitch;
                         src.Offset++;
                     } while (++h != state.draw_height);
                 }
@@ -288,7 +288,7 @@ namespace NScumm.Agos
                     if (state.flags.HasFlag(DrawFlags.kDFNonTrans) || color != 0)
                         dst[count * 2 + 1] = (byte) (color | state.palette);
                 }
-                dst.Offset += (int) state.surf_pitch;
+                dst.Offset += state.surf_pitch;
                 src.Offset += state.width * 8;
             } while (--state.draw_height != 0);
         }
@@ -300,9 +300,9 @@ namespace NScumm.Agos
             if (!DrawImageClip(state))
                 return;
 
-            LocksScreen(screen =>
+            LockScreen(screen =>
             {
-                ushort xoffs = 0, yoffs = 0;
+                ushort xoffs, yoffs;
                 if (GameType == SIMONGameType.GType_WW)
                 {
                     if (_windowNum == 4 || (_windowNum >= 10 && _windowNum <= 27))
@@ -395,7 +395,7 @@ namespace NScumm.Agos
                     yoffs = (ushort) (vlut[1] + state.y);
                 }
 
-                state.surf_addr.Offset += (int) (xoffs + yoffs * state.surf_pitch);
+                state.surf_addr.Offset += xoffs + yoffs * state.surf_pitch;
 
                 if (GameType == SIMONGameType.GType_ELVIRA1 && state.flags.HasFlag(DrawFlags.kDFNonTrans) && yoffs > 133)
                     state.paletteMod = 16;
@@ -825,14 +825,14 @@ namespace NScumm.Agos
 
                 while (count-- != 0)
                 {
-                    if (ScummHelper.SwapBytes(new ImageHeader_Simon(b).id) == vgaSpriteId)
+                    if (ScummHelper.SwapBytes(new ImageHeaderSimon(b).id) == vgaSpriteId)
                         break;
-                    b += ImageHeader_Simon.Size;
+                    b += ImageHeaderSimon.Size;
                 }
-                System.Diagnostics.Debug.Assert(ScummHelper.SwapBytes(new ImageHeader_Simon(b).id) == vgaSpriteId);
+                System.Diagnostics.Debug.Assert(ScummHelper.SwapBytes(new ImageHeaderSimon(b).id) == vgaSpriteId);
 
                 if (!vgaScript)
-                    ClearVideoWindow(_windowNum, ScummHelper.SwapBytes(new ImageHeader_Simon(b).color));
+                    ClearVideoWindow(_windowNum, ScummHelper.SwapBytes(new ImageHeaderSimon(b).color));
             }
             else
             {
@@ -860,7 +860,7 @@ namespace NScumm.Agos
                     {
                         if ((color & 0x80) != 0)
                             _wiped = true;
-                        else if (_wiped == true)
+                        else if (_wiped)
                             RestoreMenu();
                         color &= 0xFF7F;
                     }
@@ -879,7 +879,7 @@ namespace NScumm.Agos
                         break;
                     case SIMONGameType.GType_SIMON1:
                     case SIMONGameType.GType_SIMON2:
-                        DumpVgaScript(_curVgaFile1 + ScummHelper.SwapBytes(new ImageHeader_Simon(b).scriptOffs),
+                        DumpVgaScript(_curVgaFile1 + ScummHelper.SwapBytes(new ImageHeaderSimon(b).scriptOffs),
                             (ushort) zoneNum,
                             vgaSpriteId);
                         break;
@@ -890,7 +890,7 @@ namespace NScumm.Agos
                 }
             }
 
-            var vc_ptr_org = _vcPtr;
+            var vcPtrOrg = _vcPtr;
 
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
                 _gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
@@ -900,7 +900,7 @@ namespace NScumm.Agos
             else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1 ||
                      _gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
             {
-                _vcPtr = _curVgaFile1 + ScummHelper.SwapBytes(new ImageHeader_Simon(b).scriptOffs);
+                _vcPtr = _curVgaFile1 + ScummHelper.SwapBytes(new ImageHeaderSimon(b).scriptOffs);
             }
             else
             {
@@ -908,7 +908,7 @@ namespace NScumm.Agos
             }
 
             RunVgaScript();
-            _vcPtr = vc_ptr_org;
+            _vcPtr = vcPtrOrg;
         }
 
         // Personal Nightmare specific
@@ -936,9 +936,9 @@ namespace NScumm.Agos
         // Personal Nightmare specific
         private void DrawEdging()
         {
-            byte color = (byte) (GamePlatform == Platform.DOS ? 7 : 15);
+            var color = (byte) (GamePlatform == Platform.DOS ? 7 : 15);
 
-            LocksScreen(screen =>
+            LockScreen(screen =>
             {
                 var dst = screen.GetBasePtr(0, 136);
                 byte len = 52;
@@ -955,7 +955,7 @@ namespace NScumm.Agos
             });
         }
 
-        private void SetWindowImageEx(ushort mode, ushort vgaSpriteId)
+        protected void SetWindowImageEx(ushort mode, ushort vgaSpriteId)
         {
             _window3Flag = 0;
 
@@ -1089,7 +1089,7 @@ namespace NScumm.Agos
 
                 var screen = OSystem.GraphicsManager.Capture();
                 var dst = _backGroundBuf.GetBasePtr(xoffs, yoffs);
-                BytePtr src = BytePtr.Null;
+                BytePtr src;
                 int srcWidth;
 
                 if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)

@@ -24,6 +24,7 @@ using System.Linq;
 using NScumm.Core;
 using NScumm.Core.IO;
 using static NScumm.Core.DebugHelper;
+using Debug = System.Diagnostics.Debug;
 
 namespace NScumm.Agos
 {
@@ -33,7 +34,7 @@ namespace NScumm.Agos
         private byte _opcode177Var1, _opcode177Var2;
         private byte _opcode178Var1, _opcode178Var2;
 
-        protected void AddTimeEvent(ushort timeout, ushort subroutine_id)
+        protected void AddTimeEvent(ushort timeout, ushort subroutineId)
         {
             TimeEvent te = new TimeEvent(), last = null;
             uint curTime = GetTime();
@@ -46,7 +47,7 @@ namespace NScumm.Agos
             te.time = curTime + timeout - _gameStoppedClock;
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF && _clockStopped != 0)
                 te.time -= GetTime() - _clockStopped;
-            te.subroutine_id = subroutine_id;
+            te.subroutine_id = subroutineId;
 
             var first = _firstTimeStruct;
             while (first != null)
@@ -95,8 +96,9 @@ namespace NScumm.Agos
             if (cur == null)
                 Error("delTimeEvent: none available");
 
-            for (;;)
+            while(true)
             {
+                System.Diagnostics.Debug.Assert(cur != null, "cur != null");
                 if (cur.next == null)
                     Error("delTimeEvent: no such te");
                 if (te == cur.next)
@@ -136,16 +138,14 @@ namespace NScumm.Agos
 
         private bool KickoffTimeEvents()
         {
-            uint cur_time;
-            TimeEvent te;
-            bool result = false;
-
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF && _clockStopped != 0)
-                return result;
+                return false;
 
-            cur_time = GetTime() - _gameStoppedClock;
+            var curTime = GetTime() - _gameStoppedClock;
 
-            while ((te = _firstTimeStruct) != null && te.time <= cur_time && !HasToQuit)
+            TimeEvent te;
+            var result = false;
+            while ((te = _firstTimeStruct) != null && te.time <= curTime && !HasToQuit)
             {
                 result = true;
                 _pendingDeleteTimeEvent = te;
@@ -160,7 +160,7 @@ namespace NScumm.Agos
             return result;
         }
 
-        private void HaltAnimation()
+        protected void HaltAnimation()
         {
             if ((_videoLockOut & 0x10) != 0)
                 return;
@@ -174,7 +174,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void RestartAnimation()
+        protected void RestartAnimation()
         {
             if ((_videoLockOut & 0x10) == 0)
                 return;
@@ -191,9 +191,10 @@ namespace NScumm.Agos
 
         protected void AddVgaEvent(ushort num, EventType type, BytePtr codePtr, ushort curSprite, ushort curZoneNum)
         {
+            Debug("AddVgaEvent({0})",num);
             _videoLockOut |= 1;
 
-            var vte = _vgaTimerList.FirstOrDefault(o => o.delay == 0);
+            var vte = _vgaTimerList.First(o => o.delay == 0);
             vte.delay = (short) num;
             vte.codePtr = codePtr;
             vte.id = curSprite;
@@ -351,7 +352,7 @@ namespace NScumm.Agos
 
             if (_opcode177Var1 == 0)
             {
-                DrawStuff(_image1, 4 + _opcode177Var2 * 4);
+                DrawStuff(Image1, 4 + _opcode177Var2 * 4);
                 _opcode177Var2++;
                 if (_opcode177Var2 == dx)
                 {
@@ -366,7 +367,7 @@ namespace NScumm.Agos
             else if (_opcode177Var2 != 0)
             {
                 _opcode177Var2--;
-                DrawStuff(_image2, 4 + _opcode177Var2 * 4);
+                DrawStuff(Image2, 4 + _opcode177Var2 * 4);
                 vte.Value.delay = 3;
             }
             else
@@ -377,7 +378,7 @@ namespace NScumm.Agos
 
         private void DrawStuff(BytePtr src, int xoffs)
         {
-            LocksScreen(screen =>
+            LockScreen(screen =>
             {
                 var y = GamePlatform == Platform.AtariST ? 132 : 135;
                 var dst = screen.GetBasePtr(xoffs, y);
@@ -398,7 +399,7 @@ namespace NScumm.Agos
 
             if (_opcode178Var1 == 0)
             {
-                DrawStuff(_image3, 275 + _opcode178Var2 * 4);
+                DrawStuff(Image3, 275 + _opcode178Var2 * 4);
                 _opcode178Var2++;
                 if (_opcode178Var2 >= 10 || _opcode178Var2 == dx)
                 {
@@ -413,7 +414,7 @@ namespace NScumm.Agos
             else if (_opcode178Var2 != 0)
             {
                 _opcode178Var2--;
-                DrawStuff(_image4, 275 + _opcode178Var2 * 4);
+                DrawStuff(Image4, 275 + _opcode178Var2 * 4);
                 vte.Value.delay = 3;
             }
             else
@@ -580,7 +581,7 @@ namespace NScumm.Agos
         }
 
         // TODO: share this
-        public static char ToChar(KeyCode key)
+        protected static char ToChar(KeyCode key)
         {
             if (key >= KeyCode.A && key <= KeyCode.Z)
             {
@@ -640,7 +641,7 @@ namespace NScumm.Agos
             _videoLockOut = (ushort) (_videoLockOut & ~2);
         }
 
-        private static readonly byte[] _image1 =
+        private static readonly byte[] Image1 =
         {
             0x3A, 0x37, 0x3B, 0x37,
             0x3A, 0x3E, 0x3F, 0x3E,
@@ -650,7 +651,7 @@ namespace NScumm.Agos
             0x3A, 0x37, 0x3B, 0x37,
         };
 
-        private static readonly byte[] _image2 =
+        private static readonly byte[] Image2 =
         {
             0x3A, 0x3A, 0x3B, 0x3A,
             0x3A, 0x37, 0x3E, 0x37,
@@ -660,7 +661,7 @@ namespace NScumm.Agos
             0x3A, 0x3A, 0x3B, 0x3A,
         };
 
-        private static readonly byte[] _image3 =
+        private static readonly byte[] Image3 =
         {
             0x3A, 0x32, 0x3B, 0x32,
             0x3A, 0x39, 0x3F, 0x39,
@@ -670,7 +671,7 @@ namespace NScumm.Agos
             0x3A, 0x32, 0x3B, 0x32,
         };
 
-        private static readonly byte[] _image4 =
+        private static readonly byte[] Image4 =
         {
             0x3A, 0x3A, 0x3B, 0x3A,
             0x3A, 0x32, 0x39, 0x32,

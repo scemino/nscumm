@@ -98,7 +98,7 @@ namespace NScumm.Agos
                 JustifyOutPut((byte) buf[i]);
         }
 
-        private void JustifyStart()
+        protected void JustifyStart()
         {
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
                 _gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
@@ -116,7 +116,7 @@ namespace NScumm.Agos
             _newLines = 0;
         }
 
-        private void JustifyOutPut(byte chr)
+        protected void JustifyOutPut(byte chr)
         {
             if (chr == 12)
             {
@@ -362,7 +362,7 @@ namespace NScumm.Agos
 
             if (window.height != 1)
             {
-                LocksScreen(screen =>
+                LockScreen(screen =>
                 {
                     ushort w = (ushort)(window.width * 8);
                     ushort h = (ushort)((window.height - 1) * 8);
@@ -410,7 +410,7 @@ namespace NScumm.Agos
 
             _videoLockOut |= 0x8000;
 
-            LocksScreen(screen =>
+            LockScreen(screen =>
             {
                 if (GameType == SIMONGameType.GType_SIMON1 || GameType == SIMONGameType.GType_SIMON2)
                 {

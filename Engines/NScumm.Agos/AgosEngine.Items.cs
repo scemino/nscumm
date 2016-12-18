@@ -19,7 +19,6 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System;
 using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
@@ -108,7 +107,7 @@ namespace NScumm.Agos
             return null;
         }
 
-        private int GetUserFlag(Item item, int a)
+        protected int GetUserFlag(Item item, int a)
         {
             var subUserFlag = (SubUserFlag) FindChildOfType(item, ChildType.kUserFlagType);
             if (subUserFlag == null)
@@ -121,7 +120,7 @@ namespace NScumm.Agos
             return subUserFlag.userFlags[a];
         }
 
-        protected int GetUserFlag1(Item item, int a)
+        private int GetUserFlag1(Item item, int a)
         {
             if (item == null || item == _dummyItem2 || item == _dummyItem3)
                 return -1;
@@ -229,7 +228,7 @@ namespace NScumm.Agos
             }
         }
 
-        private int GetNextItemID()
+        protected int GetNextItemID()
         {
             int a = GetNextWord();
             switch (a)
@@ -251,29 +250,27 @@ namespace NScumm.Agos
 
         protected void SetItemParent(Item item, Item parent)
         {
-            Item old_parent = DerefItem(item.parent);
+            Item oldParent = DerefItem(item.parent);
 
             if (item == parent)
                 Error("setItemParent: Trying to set item as its own parent");
 
             // unlink it if it has a parent
-            if (old_parent != null)
+            if (oldParent != null)
                 UnlinkItem(item);
-            ItemChildrenChanged(old_parent);
+            ItemChildrenChanged(oldParent);
             LinkItem(item, parent);
             ItemChildrenChanged(parent);
         }
 
         private void ItemChildrenChanged(Item item)
         {
-            int i;
-
             if (_noParentNotify)
                 return;
 
             MouseOff();
 
-            for (i = 0; i != 8; i++)
+            for (var i = 0; i != 8; i++)
             {
                 var window = _windowArray[i];
                 if (window?.iconPtr != null && window.iconPtr.itemRef == item)
@@ -295,15 +292,13 @@ namespace NScumm.Agos
 
         private void UnlinkItem(Item item)
         {
-            Item first, parent, next;
-
             // can't unlink item without parent
             if (item.parent == 0)
                 return;
 
             // get parent and first child of parent
-            parent = DerefItem(item.parent);
-            first = DerefItem(parent.child);
+            var parent = DerefItem(item.parent);
+            var first = DerefItem(parent.child);
 
             // the node to remove is first in the parent's children?
             if (first == item)
@@ -321,7 +316,7 @@ namespace NScumm.Agos
                 if (first.next == 0)
                     Error("unlinkItem: parent does not contain child");
 
-                next = DerefItem(first.next);
+                var next = DerefItem(first.next);
                 if (next == item)
                 {
                     first.next = next.next;
@@ -389,6 +384,53 @@ namespace NScumm.Agos
                     return i;
             Error("itemPtrToID: not found");
             return 0; // for compilers that don't support NORETURN
+        }
+
+        protected Item FindMaster(short a, short n)
+        {
+            for (var j = 1; j < _itemArraySize; j++)
+            {
+                Item item = DerefItem((uint) j);
+                if (item == null)
+                    continue;
+
+                if (WordMatch(item, a, n) != 0)
+                    return item;
+            }
+
+            return null;
+        }
+
+        protected Item NextMaster(Item i, short a, short n)
+        {
+            var first = ItemPtrToID(i) + 1;
+
+            for (var j = first; j < _itemArraySize; j++)
+            {
+                Item item = DerefItem((uint) j);
+                if (item == null)
+                    continue;
+
+                if (WordMatch(item, a, n) != 0)
+                    return item;
+            }
+
+            return null;
+        }
+
+        private int WordMatch(Item item, short a, short n)
+        {
+            if (GameType == SIMONGameType.GType_ELVIRA2 || GameType == SIMONGameType.GType_WW)
+            {
+                if (a == -1 && n == -1)
+                    return 1;
+            }
+            if (a == -1 && n == item.noun)
+                return 1;
+            if (a == item.adjective && n == item.noun)
+                return 1;
+
+            return 0;
         }
     }
 }

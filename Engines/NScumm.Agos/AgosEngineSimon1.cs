@@ -35,17 +35,6 @@ namespace NScumm.Agos
     {
         private Dictionary<int, Action> _opcodes;
 
-        private static readonly GameSpecificSettings Simon1Settings =
-            new GameSpecificSettings
-            {
-                base_filename = string.Empty, // base_filename
-                restore_filename = string.Empty, // restore_filename
-                tbl_filename = string.Empty, // tbl_filename
-                effects_filename = "EFFECTS", // effects_filename
-                speech_filename = "SIMON" // speech_filename
-            };
-
-
         public AgosEngineSimon1(ISystem system, GameSettings settings, AgosGameDescription gd)
             : base(system, settings, gd)
         {
@@ -377,7 +366,7 @@ namespace NScumm.Agos
 
         protected override void SetupVideoOpcodes(Action[] op)
         {
-            base.SetupVideoOpcodes(op);
+            SetupVideoOpcodesCore(op);
 
             op[11] = vc11_clearPathFinder;
             op[17] = vc17_setPathfinderItem;
@@ -629,7 +618,7 @@ namespace NScumm.Agos
 
             _videoLockOut |= 0x8000;
 
-            LocksScreen(screen =>
+            LockScreen(screen =>
             {
                 dst = screen.Pixels;
 
@@ -735,7 +724,7 @@ namespace NScumm.Agos
             if (!DrawImageClip(state))
                 return;
 
-            LocksScreen(screen =>
+            LockScreen(screen =>
             {
                 if (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_32COLOR))
                     state.palette = 0xC0;
@@ -870,7 +859,7 @@ namespace NScumm.Agos
             ResetNameWindow();
         }
 
-        protected override void AddArrows(WindowBlock window, uint num)
+        protected override void AddArrows(WindowBlock window, byte num)
         {
             var ha = FindEmptyHitArea();
             _scrollUpHitArea = (ushort) ha.Offset;
@@ -1642,7 +1631,7 @@ namespace NScumm.Agos
             _videoLockOut = (ushort) (_videoLockOut & ~0x8000);
         }
 
-        private void vc22_setPalette()
+        protected override void vc22_setPalette()
         {
             Ptr<Color> palptr;
             ushort num, palSize;
@@ -1713,11 +1702,11 @@ namespace NScumm.Agos
 
             while (--count >= 0)
             {
-                ushort id = ScummHelper.SwapBytes(new ImageHeader_Simon(p).id);
+                ushort id = ScummHelper.SwapBytes(new ImageHeaderSimon(p).id);
 
-                DumpVgaScriptAlways(vga + ScummHelper.SwapBytes(new ImageHeader_Simon(p).scriptOffs),
+                DumpVgaScriptAlways(vga + ScummHelper.SwapBytes(new ImageHeaderSimon(p).scriptOffs),
                     (ushort) (id / 100), id);
-                p += ImageHeader_Simon.Size;
+                p += ImageHeaderSimon.Size;
             }
         }
 

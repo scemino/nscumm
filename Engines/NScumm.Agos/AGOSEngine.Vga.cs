@@ -45,6 +45,11 @@ namespace NScumm.Agos
 
         protected virtual void SetupVideoOpcodes(Action[] op)
         {
+            SetupVideoOpcodesCore(op);
+        }
+
+        protected void SetupVideoOpcodesCore(Action[] op)
+        {
             op[1] = vc1_fadeOut;
             op[2] = vc2_call;
             op[3] = vc3_loadSprite;
@@ -121,10 +126,12 @@ namespace NScumm.Agos
             {
                 uint opcode;
 
-                if(DebugManager.Instance.IsDebugChannelEnabled(DebugLevels.kDebugVGAOpcode))
+                if (DebugManager.Instance.IsDebugChannelEnabled(DebugLevels.kDebugVGAOpcode))
                 {
-                    if (_vcPtr != _vcGetOutOfCode) {
-                        DebugN("{0:D5} {1:D5}: {2:D5} {3:D4} ", _vgaTickCounter, _vcPtr.Offset - _curVgaFile1.Offset, _vgaCurSpriteId,
+                    if (_vcPtr != _vcGetOutOfCode)
+                    {
+                        DebugN("{0:D5} {1:D5}: {2:D5} {3:D4} ", _vgaTickCounter, _vcPtr.Offset - _curVgaFile1.Offset,
+                            _vgaCurSpriteId,
                             _vgaCurZoneNum);
                         DumpVideoScript(_vcPtr, true);
                     }
@@ -601,6 +608,8 @@ namespace NScumm.Agos
             if (image == 0)
                 return;
 
+            Debug("drawImage_init({0},{1},{2},{3},{4})",image,palette,x,y,flags);
+
             int width, height;
             Vc10State state = new Vc10State();
 
@@ -636,7 +645,7 @@ namespace NScumm.Agos
                 return;
 
             if (DebugManager.Instance.IsDebugChannelEnabled(DebugLevels.kDebugImageDump))
-                DumpSingleBitmap(_vgaCurZoneNum, state.image, state.srcPtr, width, height,state.palette);
+                DumpSingleBitmap(_vgaCurZoneNum, state.image, state.srcPtr, width, height, state.palette);
             state.width = state.draw_width = (ushort) width; /* cl */
             state.height = state.draw_height = (ushort) height; /* ch */
 
@@ -887,7 +896,7 @@ namespace NScumm.Agos
             _vcPtr += 2;
         }
 
-        private void vc17_waitEnd()
+        protected void vc17_waitEnd()
         {
             ushort id = (ushort) VcReadNextWord();
             ushort zoneNum = (ushort) (GameType == SIMONGameType.GType_PN ? 0 : id / 100);
@@ -912,7 +921,7 @@ namespace NScumm.Agos
             _vcPtr += offs;
         }
 
-        private void vc19_loop()
+        protected void vc19_loop()
         {
             var bb = _curVgaFile1;
             var b = _curVgaFile1 + bb.ToUInt16BigEndian(10);
@@ -923,7 +932,8 @@ namespace NScumm.Agos
             b = bb + ScummHelper.SwapBytes(header.animationTable);
 
             var header2 = new AnimationHeaderWw(b);
-            while (count--!=0) {
+            while (count-- != 0)
+            {
                 if (ScummHelper.SwapBytes(header2.id) == _vgaCurSpriteId)
                     break;
                 header2.Pointer += AnimationHeaderWw.Size;
@@ -959,6 +969,92 @@ namespace NScumm.Agos
                 tmp.WriteUInt16(0, (ushort) (val - 1));
                 _vcPtr = tmp + 2;
             }
+        }
+
+        protected virtual void vc22_setPalette()
+        {
+            ushort num;
+
+            ushort b = (ushort) VcReadNextWord();
+
+            // PC EGA version of Personal Nightmare uses standard EGA palette
+            if (GameType == SIMONGameType.GType_PN && (Features.HasFlag(GameFeatures.GF_EGA)))
+                return;
+
+            num = 16;
+
+            Ptr<Color> palptr = _displayPalette;
+            _bottomPalette = true;
+
+            if (GameType == SIMONGameType.GType_PN)
+            {
+                if (b > 128)
+                {
+                    b -= 128;
+                    palptr.Offset += 16;
+                }
+            }
+            else if (GameType == SIMONGameType.GType_ELVIRA1)
+            {
+                if (b >= 1000)
+                {
+                    b -= 1000;
+                    _bottomPalette = false;
+                }
+                else
+                {
+                    Color[] extraColors =
+                    {
+                        Color.FromRgb(40, 0, 0), Color.FromRgb(24, 24, 16), Color.FromRgb(48, 48, 40),
+                        Color.FromRgb(0, 0, 0), Color.FromRgb(16, 0, 0), Color.FromRgb(8, 8, 0),
+                        Color.FromRgb(48, 24, 0), Color.FromRgb(56, 40, 0), Color.FromRgb(0, 0, 24),
+                        Color.FromRgb(8, 16, 24), Color.FromRgb(24, 32, 40), Color.FromRgb(16, 24, 0),
+                        Color.FromRgb(24, 8, 0), Color.FromRgb(16, 16, 0), Color.FromRgb(40, 40, 32),
+                        Color.FromRgb(32, 32, 24), Color.FromRgb(40, 0, 0), Color.FromRgb(24, 24, 16),
+                        Color.FromRgb(48, 48, 40)
+                    };
+
+                    num = 13;
+
+                    for (int i = 0; i < 19; i++)
+                    {
+                        palptr[(13 + i) * 3 + 0] = extraColors[i * 3 + 0] * 4;
+                        palptr[(13 + i) * 3 + 1] = extraColors[i * 3 + 1] * 4;
+                        palptr[(13 + i) * 3 + 2] = extraColors[i * 3 + 2] * 4;
+                    }
+                }
+            }
+
+            if (GameType == SIMONGameType.GType_ELVIRA2 && GamePlatform == Platform.AtariST)
+            {
+                // Custom palette used for icon area
+                palptr.Offset += (13 * 16);
+                for (var c = 0; c < 16; c++)
+                {
+                    palptr[c] = Color.FromRgb(
+                        iconPalette[c * 3 + 0] * 2,
+                        iconPalette[c * 3 + 1] * 2,
+                        iconPalette[c * 3 + 2] * 2);
+                }
+                palptr = _displayPalette;
+            }
+
+            var offs = _curVgaFile1 + _curVgaFile1.ToUInt16BigEndian(6);
+            var src = offs + b * 32;
+
+            do
+            {
+                ushort color = src.ToUInt16BigEndian();
+                palptr.Value = Color.FromRgb(((color & 0xf00) >> 8) * 32,
+                    ((color & 0x0f0) >> 4) * 32,
+                    ((color & 0x00f) >> 0) * 32);
+
+                palptr.Offset++;
+                src += 2;
+            } while (--num != 0);
+
+            _paletteFlag = 2;
+            _vgaSpriteChanged++;
         }
 
         protected void vc23_setPriority()
@@ -1155,7 +1251,7 @@ namespace NScumm.Agos
             _videoLockOut = (ushort) (_videoLockOut & ~8);
         }
 
-        private void vc28_playSFX()
+        protected void vc28_playSFX()
         {
             ushort sound = (ushort) VcReadNextWord();
             ushort chans = (ushort) VcReadNextWord();
@@ -1190,11 +1286,11 @@ namespace NScumm.Agos
             VcWriteVar((int) VcReadNextWord(), (short) a);
         }
 
-        private void vc32_saveScreen()
+        protected void vc32_saveScreen()
         {
             if (GameType == SIMONGameType.GType_PN)
             {
-                LocksScreen(screen =>
+                LockScreen(screen =>
                 {
                     var dst = BackGround;
                     var src = screen.Pixels;
@@ -1279,7 +1375,7 @@ namespace NScumm.Agos
 
             if (GameType == SIMONGameType.GType_ELVIRA1 && num == 3)
             {
-                LocksScreen(screen =>
+                LockScreen(screen =>
                 {
                     var dst = screen.Pixels;
                     for (int i = 0; i < _screenHeight; i++)
@@ -1348,7 +1444,7 @@ namespace NScumm.Agos
             SetWindowImage(windowNum, vga_res);
         }
 
-        private void vc37_pokePalette()
+        protected void vc37_pokePalette()
         {
             ushort offs = (ushort) VcReadNextWord();
             ushort color = (ushort) VcReadNextWord();
@@ -1829,6 +1925,26 @@ namespace NScumm.Agos
             0, 0, 4, 4, 4, 4, 4, 0,
             4, 2, 2, 4, 6, 6, 0, 0,
             6, 4, 2, 6, 0
+        };
+
+        private static readonly byte[] iconPalette =
+        {
+            0x00, 0x00, 0x00,
+            0x77, 0x77, 0x55,
+            0x55, 0x00, 0x00,
+            0x77, 0x00, 0x00,
+            0x22, 0x00, 0x00,
+            0x00, 0x11, 0x00,
+            0x11, 0x22, 0x11,
+            0x22, 0x33, 0x22,
+            0x44, 0x55, 0x44,
+            0x33, 0x44, 0x00,
+            0x11, 0x33, 0x00,
+            0x00, 0x11, 0x44,
+            0x77, 0x44, 0x00,
+            0x66, 0x22, 0x00,
+            0x00, 0x22, 0x66,
+            0x77, 0x55, 0x00,
         };
     }
 }

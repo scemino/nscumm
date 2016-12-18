@@ -593,7 +593,7 @@ namespace NScumm.Agos
             MouseOn();
         }
 
-        private bool ConfirmOverWrite(WindowBlock window)
+        protected virtual bool ConfirmOverWrite(WindowBlock window)
         {
             string message1, message2, message3;
 
@@ -731,6 +731,7 @@ namespace NScumm.Agos
                 (GameType == SIMONGameType.GType_SIMON1 && (Features.HasFlag(GameFeatures.GF_DEMO))) ||
                 _mouseHideCount != 0 || _showPreposition)
             {
+                // TODO: MessageDialog
                 buf = "Quick load or save game isn't supported in this location";
 //                GUI::MessageDialog dialog(buf, "OK");
 //                dialog.runModal();
@@ -808,11 +809,13 @@ namespace NScumm.Agos
 
             if (!success)
             {
+                // TODO: MessageDialog
 //                GUI::MessageDialog dialog(buf, "OK");
 //                dialog.runModal();
             }
             else if (_saveLoadType == 1)
             {
+                // TODO: MessageDialog
                 buf = $"Successfully saved game in file:\n\n{filename}";
 //                GUI::TimedMessageDialog dialog(buf, 1500);
 //                dialog.runModal();

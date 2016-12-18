@@ -73,9 +73,20 @@ namespace NScumm.Agos
     {
         public ushort subroutine_id;
         public ushort roomExitStates;
-        public ushort[] roomExit = new ushort[1];
-        public ushort roomShort;
-        public ushort roomLong;
+        public ushort[] roomExit = new ushort[3];
+
+        public ushort roomShort
+        {
+            get { return roomExit[1]; }
+            set { roomExit[1] = value; }
+        }
+
+        public ushort roomLong
+        {
+            get { return roomExit[2]; }
+            set { roomExit[2] = value; }
+        }
+
         public ushort flags;
     }
 
@@ -89,19 +100,20 @@ namespace NScumm.Agos
     }
 
     [Flags]
-    enum SubObjectFlags {
-        kOFText           = 0x1,
-        kOFSize           = 0x2,
-        kOFWorn           = 0x4, // Elvira 1
-        kOFWeight         = 0x4, // Others
-        kOFVolume         = 0x8,
-        kOFIcon           = 0x10,
-        kOFKeyColor1      = 0x20,
-        kOFKeyColor2      = 0x40,
-        kOFMenu           = 0x80,
-        kOFNumber         = 0x100,
-        kOFSoft           = 0x200, // Waxworks
-        kOFVoice          = 0x200  // Others
+    enum SubObjectFlags
+    {
+        kOFText = 0x1,
+        kOFSize = 0x2,
+        kOFWorn = 0x4, // Elvira 1
+        kOFWeight = 0x4, // Others
+        kOFVolume = 0x8,
+        kOFIcon = 0x10,
+        kOFKeyColor1 = 0x20,
+        kOFKeyColor2 = 0x40,
+        kOFMenu = 0x80,
+        kOFNumber = 0x100,
+        kOFSoft = 0x200, // Waxworks
+        kOFVoice = 0x200 // Others
     }
 
     class SubObject : Child
@@ -119,18 +131,16 @@ namespace NScumm.Agos
         public ushort[] dest = new ushort[6];
     }
 
-    class SubContainer: Child
+    class SubContainer : Child
     {
         public ushort subroutine_id;
         public ushort volume;
         public ushort flags;
     }
 
-    class SubChain: Child
+    class SubChain : Child
     {
         public ushort subroutine_id;
         public ushort chChained;
     }
-
-
 }

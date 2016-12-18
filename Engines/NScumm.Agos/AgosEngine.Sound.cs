@@ -479,7 +479,7 @@ namespace NScumm.Agos
                 }
 
                 // Voice segment doesn't exist
-                if (offset == 0xFFFFFFFF && srcSize == 0xFFFFFFFF && dstSize == 0xFFFFFFFF)
+                if ((offset == -1) && (srcSize == -1) && (dstSize == -1))
                 {
                     Debug(0, "loadVoice: speechId {0} removed", speechId);
                     return;

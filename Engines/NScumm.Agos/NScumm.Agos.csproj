@@ -47,6 +47,7 @@
         <Compile Include="AgosEngine.Verb.cs"/>
         <Compile Include="AgosEngine.Window.cs"/>
         <Compile Include="AgosEngine.Zones.cs"/>
+        <Compile Include="AgosEngines.Room.cs"/>
         <Compile Include="AgosEngines.SaveLoad.cs"/>
         <Compile Include="AgosEngineElvira1.cs"/>
         <Compile Include="AgosEngineElvira2.cs"/>
@@ -69,6 +70,7 @@
         <Compile Include="IconBlock.cs"/>
         <Compile Include="IconEntry.cs"/>
         <Compile Include="ImageHeaderFeeble.cs"/>
+        <Compile Include="ImageHeaderWw.cs"/>
         <Compile Include="ImageHeader_Simon.cs"/>
         <Compile Include="Item.cs"/>
         <Compile Include="LoopingAudioStream.cs"/>

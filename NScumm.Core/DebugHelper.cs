@@ -131,7 +131,7 @@ namespace NScumm.Core
                 if (level > DebugLevel)
                     return;
 
-            ServiceLocator.Platform.LogMessage(LogMessageType.Debug, format, args);
+            ServiceLocator.Platform.LogMessage(LogMessageType.Debug, format + Environment.NewLine, args);
         }
 
         public static void DebugC(int level, int debugChannels, string format, params object[] args)
@@ -141,7 +141,7 @@ namespace NScumm.Core
                 if (level > DebugLevel || !DebugManager.Instance.IsDebugChannelEnabled(debugChannels))
                     return;
 
-            ServiceLocator.Platform.LogMessage(LogMessageType.Debug, format, args);
+            ServiceLocator.Platform.LogMessage(LogMessageType.Debug, format + Environment.NewLine, args);
         }
 
         public static void DebugC(int debugChannels, string format, params object[] args)
@@ -151,17 +151,17 @@ namespace NScumm.Core
                 if (!DebugManager.Instance.IsDebugChannelEnabled(debugChannels))
                     return;
 
-            ServiceLocator.Platform.LogMessage(LogMessageType.Debug, format, args);
+            ServiceLocator.Platform.LogMessage(LogMessageType.Debug, format + Environment.NewLine, args);
         }
 
         public static void Debug(string format, params object[] args)
         {
-            ServiceLocator.Platform.LogMessage(LogMessageType.Debug, format, args);
+            ServiceLocator.Platform.LogMessage(LogMessageType.Debug, format + Environment.NewLine, args);
         }
 
         public static void DebugN(string format, params object[] args)
         {
-            ServiceLocator.Platform.LogMessage(LogMessageType.Debug, format + Environment.NewLine, args);
+            ServiceLocator.Platform.LogMessage(LogMessageType.Debug, format, args);
         }
 
         public static void DebugN(int level, string format, params object[] args)
@@ -169,7 +169,7 @@ namespace NScumm.Core
             if (level > DebugLevel)
                 return;
 
-            ServiceLocator.Platform.LogMessage(LogMessageType.Debug, format + Environment.NewLine, args);
+            ServiceLocator.Platform.LogMessage(LogMessageType.Debug, format, args);
         }
 
         public static void Warning(string format, params object[] args)

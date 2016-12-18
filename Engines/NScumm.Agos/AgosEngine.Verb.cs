@@ -554,7 +554,7 @@ namespace NScumm.Agos
 
             _videoLockOut |= 0x8000;
 
-            LocksScreen(screen =>
+            LockScreen(screen =>
             {
                 var src = screen.GetBasePtr(ha.x, ha.y);
 

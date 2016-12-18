@@ -441,7 +441,7 @@ namespace NScumm.Agos
         {
             _videoLockOut |= 0x8000;
 
-            LocksScreen(screen =>
+            LockScreen(screen =>
             {
                 var dst = screen.Pixels;
 
@@ -478,7 +478,7 @@ namespace NScumm.Agos
             return h.Offset;
         }
 
-        protected override void AddArrows(WindowBlock window, uint num)
+        protected override void AddArrows(WindowBlock window, byte num)
         {
             var h = FindEmptyHitArea();
             _scrollUpHitArea = (ushort) h.Offset;

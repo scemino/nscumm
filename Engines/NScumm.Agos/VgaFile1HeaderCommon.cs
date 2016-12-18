@@ -24,7 +24,6 @@ using NScumm.Core;
 namespace NScumm.Agos
 {
     // Feeble Files
-
     internal class VgaFile1HeaderCommon
     {
         public ushort x_1 => Pointer.ToUInt16();
@@ -48,24 +47,6 @@ namespace NScumm.Agos
         public BytePtr Pointer;
 
         public VgaFile1HeaderCommon(BytePtr pointer)
-        {
-            Pointer = pointer;
-        }
-    }
-
-    // Elvira 1/2 and Waxworks
-    class ImageHeaderWw
-    {
-        public const int Size = 8;
-
-        public ushort id => Pointer.ToUInt16();
-        public ushort color => Pointer.ToUInt16(2);
-        public ushort x_2 => Pointer.ToUInt16(4);
-        public ushort scriptOffs => Pointer.ToUInt16(6);
-
-        public BytePtr Pointer;
-
-        public ImageHeaderWw(BytePtr pointer)
         {
             Pointer = pointer;
         }

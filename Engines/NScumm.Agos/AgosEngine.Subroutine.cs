@@ -234,7 +234,7 @@ namespace NScumm.Agos
         {
             if (!IS_ALIGNED(_tablesHeapPtr, 4))
             {
-                _tablesHeapCurPos += 2;
+                _tablesHeapPtr += 2;
                 _tablesHeapCurPos += 2;
             }
         }
@@ -602,7 +602,7 @@ namespace NScumm.Agos
             return result;
         }
 
-        private int StartSubroutineEx(Subroutine sub)
+        protected int StartSubroutineEx(Subroutine sub)
         {
             return StartSubroutine(sub);
         }

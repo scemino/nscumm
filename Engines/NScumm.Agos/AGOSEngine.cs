@@ -51,8 +51,8 @@ namespace NScumm.Agos
         protected ushort _saveLoadRowCurPos;
         protected bool _saveLoadEdit;
         protected bool _saveOrLoad;
-        private int _screenWidth;
-        private int _screenHeight;
+        protected int _screenWidth;
+        protected int _screenHeight;
         protected Surface _backGroundBuf;
         private Surface _backBuf;
         private Surface _scaleBuf;
@@ -143,8 +143,8 @@ namespace NScumm.Agos
         protected bool _showPreposition;
         private bool _showMessageFlag;
 
-        private byte _agosMenu;
-        private byte[] _textMenu = new byte[10];
+        protected byte _agosMenu;
+        protected byte[] _textMenu = new byte[10];
         protected ushort _currentRoom;
         protected ushort _superRoomNumber;
         private byte _wallOn;
@@ -212,9 +212,10 @@ namespace NScumm.Agos
         protected ushort[] _bitArrayThree = new ushort[16];
         private Item _findNextPtr;
 
-        private short _scriptVerb, _scriptNoun1;
+        private short _scriptVerb;
+        protected short _scriptNoun1;
         protected short _scriptNoun2;
-        private short _scriptAdj1;
+        protected short _scriptAdj1;
         protected short _scriptAdj2;
 
         protected Item _subjectItem;
@@ -226,7 +227,7 @@ namespace NScumm.Agos
 
         private readonly byte[] _fcsData1 = new byte[8];
         private readonly bool[] _fcsData2 = new bool[8];
-        private WindowBlock _textWindow;
+        protected WindowBlock _textWindow;
         private ushort _curWindow;
 
         private short _printCharCurPos, _printCharMaxPos, _printCharPixelCount;
@@ -494,12 +495,23 @@ namespace NScumm.Agos
             }
         }
 
-        protected void LocksScreen(Action<Surface> action)
+        protected void LockScreen(Action<Surface> action)
+        {
+            LockScreen(screen =>
+            {
+                action(screen);
+                return true;
+            });
+        }
+
+        protected void LockScreen(Func<Surface, bool> action)
         {
             var screen = OSystem.GraphicsManager.Capture();
-            action(screen);
-            OSystem.GraphicsManager.CopyRectToScreen(screen.Pixels, screen.Pitch, 0, 0, screen.Width,
-                screen.Height);
+            if (action(screen))
+            {
+                OSystem.GraphicsManager.CopyRectToScreen(screen.Pixels, screen.Pitch,
+                    0, 0, screen.Width, screen.Height);
+            }
         }
 
         protected void o_loadZone()
@@ -642,10 +654,10 @@ namespace NScumm.Agos
         protected void o_moveBox()
         {
             // 111: set hitarea xy
-            int hitarea_id = (int) GetVarOrWord();
+            int hitareaId = (int) GetVarOrWord();
             int x = (int) GetVarOrWord();
             int y = (int) GetVarOrWord();
-            MoveBox(hitarea_id, x, y);
+            MoveBox(hitareaId, x, y);
         }
 
         protected void o_process()
@@ -931,7 +943,7 @@ namespace NScumm.Agos
 
         protected uint GetTime()
         {
-            return (uint) ((DateTime.Now.Ticks / 10000) / 1000);
+            return (uint) (DateTime.Now.Ticks / 10000 / 1000);
         }
 
         private static bool IS_ALIGNED(BytePtr value, int alignment)
@@ -943,7 +955,7 @@ namespace NScumm.Agos
         protected bool LoadRoomItems(ushort room)
         {
             BytePtr p;
-            uint i, minNum, maxNum;
+            uint minNum, maxNum;
             Item item;
 
             if (_roomsList == null)
@@ -984,13 +996,16 @@ namespace NScumm.Agos
             var filename = new StringBuilder();
             while (p.Value != 0)
             {
+                int i;
+                filename.Clear();
                 for (i = 0; p.Value != 0; p.Offset++, i++)
                     filename.Append((char) p.Value);
+                filename.Append((char)0);
                 p.Offset++;
 
                 _roomsListPtr = p;
 
-                for (;;)
+                while(true)
                 {
                     minNum = p.ToUInt16BigEndian();
                     p += 2;
@@ -1000,9 +1015,10 @@ namespace NScumm.Agos
                     maxNum = p.ToUInt16BigEndian();
                     p += 2;
 
-                    if (room >= minNum && room <= maxNum)
+                    if (room < minNum || room > maxNum) continue;
+
+                    using (var @in = OpenFileRead(filename.ToString().GetBytes().GetRawText()))
                     {
-                        var @in = OpenFileRead(filename.ToString());
                         if (@in == null)
                         {
                             Error("loadRoomItems: Can't load rooms file '{0}'", filename);
@@ -1020,9 +1036,9 @@ namespace NScumm.Agos
                             item.parent = 0;
                             item.child = 0;
 
-                            for (ushort z = (ushort) _itemArrayInited; z != 0; z--)
+                            for (var z = (ushort) _itemArrayInited; z != 0; z--)
                             {
-                                Item itemTmp = DerefItem(z);
+                                var itemTmp = DerefItem(z);
 
                                 if (itemTmp?.parent != itemNum)
                                     continue;
@@ -1050,15 +1066,133 @@ namespace NScumm.Agos
                             var subRoom = (SubRoom) FindChildOfType(item, ChildType.kRoomType);
                             subRoom.roomExitStates = _roomStates[num].roomExitStates;
                         }
-                        @in.Dispose();
-
-                        return true;
                     }
+
+                    return true;
                 }
             }
 
             Debug(1, "loadRoomItems: didn't find {0}", room);
             return false;
+        }
+
+        protected virtual int CanPlace(Item x, Item y)
+        {
+            var z = DerefItem(x.parent);
+
+            var p = (SubPlayer) FindChildOfType(y, ChildType.kPlayerType);
+            var c = (SubContainer) FindChildOfType(y, ChildType.kContainerType);
+            int cap = 0;
+            int wt;
+
+            if ((c == null) && (p == null))
+                return 0; /* Fits Fine */
+
+            XPlace(x, null); /* Avoid disturbing figures */
+            if (c != null)
+                cap = SizeContents(y);
+
+            wt = WeightOf(y);
+            XPlace(x, z);
+            if (c != null)
+            {
+                cap = c.volume - cap;
+                cap -= SizeOfRec(x, 0); /* - size of item going in */
+                if (cap < 0)
+                    return -1; /* Too big to fit */
+            }
+            if (p != null)
+            {
+                if (wt + WeightOf(x) > p.strength * 10)
+                    return -2; /* Too heavy */
+            }
+
+            return 0;
+        }
+
+        protected virtual int WeightOf(Item x)
+        {
+            var o = (SubObject) FindChildOfType(x, ChildType.kObjectType);
+            var p = (SubPlayer) FindChildOfType(x, ChildType.kPlayerType);
+            if (o != null)
+                return o.objectWeight;
+            if (p != null)
+                return p.weight;
+
+            return 0;
+        }
+
+        protected virtual int SizeOfRec(Item i, int d)
+        {
+            var o = (SubObject) FindChildOfType(i, ChildType.kObjectType);
+            var p = (SubPlayer) FindChildOfType(i, ChildType.kPlayerType);
+            var c = (SubContainer) FindChildOfType(i, ChildType.kContainerType);
+
+            if ((c != null) && (c.flags & 1) != 0)
+            {
+                if (o != null)
+                    return (o.objectSize + SizeRec(i, d + 1));
+                if (p != null)
+                    return (p.size + SizeRec(i, d + 1));
+                return (SizeRec(i, d + 1));
+            }
+            if (o != null)
+                return o.objectWeight;
+            if (p != null)
+                return p.weight;
+
+            return 0;
+        }
+
+        protected int SizeContents(Item x)
+        {
+            return SizeRec(x, 0);
+        }
+
+        protected int SizeRec(Item x, int d)
+        {
+            int n = 0;
+
+            var o = DerefItem(x.child);
+
+            if (d > 32)
+                return (0);
+            while (o != null)
+            {
+                n += SizeOfRec(o, d);
+                o = DerefItem(o.child);
+            }
+
+            return n;
+        }
+
+        protected void XPlace(Item x, Item y)
+        {
+            if (DerefItem(x.parent) != null)
+                UnlinkItem(x);
+
+            LinkItem(x, y);
+        }
+
+        protected int WeighUp(Item x)
+        {
+            return WeightRec(x, 0);
+        }
+
+        protected int WeightRec(Item x, int d)
+        {
+            int n = WeightOf(x);
+
+            if (d > 32)
+                return 0;
+            var o = DerefItem(x.child);
+            while (o != null)
+            {
+                n += WeightRec(o, d + 1);
+                o = DerefItem(o.next);
+            }
+
+            return n;
         }
 
         private static readonly byte[] polish4CD_feebleFontSize =

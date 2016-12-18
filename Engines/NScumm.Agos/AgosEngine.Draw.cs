@@ -466,7 +466,7 @@ namespace NScumm.Agos
 
             for (int i = 0; i < 5; i++)
             {
-                LocksScreen(screen =>
+                LockScreen(screen =>
                 {
                     foreach(var ha in _hitAreas)
                     {
@@ -715,7 +715,7 @@ namespace NScumm.Agos
                 }
             }
 
-            LocksScreen(screen =>
+            LockScreen(screen =>
             {
                 if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PP ||
                     _gd.ADGameDescription.gameType == SIMONGameType.GType_FF)

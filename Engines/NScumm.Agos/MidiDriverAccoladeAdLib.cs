@@ -20,6 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using System.Linq;
 using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Core.Audio.OPL;
@@ -352,7 +353,7 @@ namespace NScumm.Agos
                 }
                 var instrumentPtr = new Ptr<InstrumentEntry>(_instrumentTable, percussionInstrumentNr);
                 _channels[FMvoiceChannel].currentInstrumentPtr = instrumentPtr;
-                _channels[FMvoiceChannel].volumeAdjust = _instrumentVolumeAdjust[percussionInstrumentNr];
+                // TODO: this crashes: _channels[FMvoiceChannel].volumeAdjust = _instrumentVolumeAdjust[percussionInstrumentNr];
             }
         }
 
@@ -748,7 +749,7 @@ namespace NScumm.Agos
 
             // Remember instrument
             _channels[FMvoiceChannel].currentInstrumentPtr = instrumentPtr;
-            _channels[FMvoiceChannel].volumeAdjust = _instrumentVolumeAdjust[MIDIinstrumentNr];
+            // TODO: this crashes: _channels[FMvoiceChannel].volumeAdjust = _instrumentVolumeAdjust[MIDIinstrumentNr];
         }
 
 // Called right at the start, we get an INSTR.DAT entry
@@ -853,7 +854,7 @@ namespace NScumm.Agos
             if (instrumentMappingSize != 0)
             {
                 // And these for instrument mapping
-                if (instrumentMappingSize > _channelMapping.Length)
+                if (instrumentMappingSize > _instrumentMapping.Length)
                     return false;
 
                 Array.Copy(driverData, instrumentMappingOffset, _instrumentMapping, 0, instrumentMappingSize);
@@ -869,8 +870,12 @@ namespace NScumm.Agos
                 if (instrumentVolumeAdjustSize != _instrumentVolumeAdjust.Length)
                     return false;
 
-                Array.Copy(driverData, instrumentVolumeAdjustOffset, _instrumentVolumeAdjust, 0,
-                    instrumentVolumeAdjustSize);
+                var tmp =
+                    driverData.Skip(instrumentVolumeAdjustOffset)
+                        .Select(o => (sbyte) o)
+                        .Take(instrumentVolumeAdjustSize)
+                        .ToArray();
+                Array.Copy(tmp, _instrumentVolumeAdjust, instrumentVolumeAdjustSize);
             }
 
             // Get key note mapping, if available
@@ -896,7 +901,7 @@ namespace NScumm.Agos
 
             for (ushort instrumentNr = 0; instrumentNr < _instrumentCount; instrumentNr++)
             {
-                instrumentWritePtr[instrumentNr]=new InstrumentEntry(instrDATReadPtr);
+                instrumentWritePtr[instrumentNr] = new InstrumentEntry(instrDATReadPtr);
                 instrDATReadPtr += instrumentEntrySize;
             }
 
@@ -912,8 +917,10 @@ namespace NScumm.Agos
                 instrumentWritePtr = _instrumentTable;
                 for (ushort instrumentNr = 0; instrumentNr < _instrumentCount; instrumentNr++)
                 {
-                    instrumentWritePtr[instrumentNr].reg80op1 =(byte) (instrumentWritePtr[instrumentNr].reg80op1| 0x03); // set release rate
-                    instrumentWritePtr[instrumentNr].reg80op2 =(byte) (instrumentWritePtr[instrumentNr].reg80op2 |0x03);
+                    instrumentWritePtr[instrumentNr].reg80op1 =
+                        (byte) (instrumentWritePtr[instrumentNr].reg80op1 | 0x03); // set release rate
+                    instrumentWritePtr[instrumentNr].reg80op2 =
+                        (byte) (instrumentWritePtr[instrumentNr].reg80op2 | 0x03);
                 }
             }
             return true;

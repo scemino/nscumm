@@ -824,11 +824,11 @@ namespace NScumm.Agos
 
         protected override void ClearVideoWindow(ushort num, ushort color)
         {
-            var vlut = new Ptr<ushort>(_videoWindows, num * 4);
+            var vlut = new Ptr<ushort>(VideoWindows, num * 4);
 
             ushort xoffs = (ushort) (vlut[0] * 16);
             ushort yoffs = vlut[1];
-            ushort dstWidth = (ushort) (_videoWindows[18] * 16);
+            ushort dstWidth = (ushort) (VideoWindows[18] * 16);
             // TODO: Is there any known connection between dstWidth and the pitch
             // of the _window4BackScn Surface? If so, we might be able to pass
             // yoffs as proper y parameter to getBasePtr.

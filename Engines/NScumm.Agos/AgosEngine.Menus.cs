@@ -118,7 +118,7 @@ namespace NScumm.Agos
         // Elvira 2 specific
         private uint menuFor_e2(Item item)
         {
-            if (item == null || item == _dummyItem2 || item == _dummyItem3)
+            if (item == null || item == DummyItem2 || item == DummyItem3)
                 return 0xFFFF;
 
             var subObject = (SubObject) FindChildOfType(item, ChildType.kObjectType);
@@ -134,10 +134,10 @@ namespace NScumm.Agos
         // Waxworks specific
         private uint menuFor_ww(Item item, uint id)
         {
-            if (id != 0xFFFF && id < 10 && _textMenu[id] != 0)
-                return _textMenu[id];
+            if (id != 0xFFFF && id < 10 && TextMenu[id] != 0)
+                return TextMenu[id];
 
-            if (item == null || item == _dummyItem2 || item == _dummyItem3)
+            if (item == null || item == DummyItem2 || item == DummyItem3)
                 return _agosMenu;
 
             var subObject = (SubObject) FindChildOfType(item, ChildType.kObjectType);

@@ -67,7 +67,7 @@ namespace NScumm.Agos
         {
             var window = _windowArray[4];
             int i = 0, numSaveGames;
-            Array.Clear(_saveBuf, 0, _saveBuf.Length);
+            Array.Clear(SaveBuf, 0, SaveBuf.Length);
 
             numSaveGames = CountSaveGames();
 
@@ -98,8 +98,8 @@ namespace NScumm.Agos
             foreach (var c in message1)
                 WindowPutChar(window, (byte) c);
 
-            Array.Clear(_saveBuf, 0, 10);
-            var name = _saveBuf;
+            Array.Clear(SaveBuf, 0, 10);
+            var name = SaveBuf;
             _saveGameNameLen = 0;
 
             while (!HasToQuit)
@@ -535,7 +535,7 @@ namespace NScumm.Agos
 
         protected virtual void PrintStats()
         {
-            WindowBlock window = _dummyWindow;
+            WindowBlock window = DummyWindow;
             int val;
 
             window.flags = 1;
@@ -690,7 +690,7 @@ namespace NScumm.Agos
             return ha.id;
         }
 
-        private short MatchSaveGame(string name, ushort max)
+        protected short MatchSaveGame(string name, ushort max)
         {
             byte[] dst = new byte[10];
 

@@ -30,6 +30,7 @@ Copy the original files of the game you want to play in a directory.
     Broken Sword: The Shadow of the Templars by Revolution Software
     Flight of the Amazon Queen by Interactive Binary Illusions
     Simon the Sorcerer 1, Simon the Sorcerer 2 by Adventuresoft
+    Elvira - Mistress of the Dark, Elvira II - The Jaws of Cerberus by Horrorsoft
 
 ## Hotkeys
 

@@ -170,7 +170,7 @@ namespace NScumm.Agos
             OSystem.GraphicsManager.ReplaceCursorPalette(mouseCursorPalette, 0, mouseCursorPalette.Length);
         }
 
-        private void MouseOn()
+        protected void MouseOn()
         {
             _videoLockOut |= 1;
 

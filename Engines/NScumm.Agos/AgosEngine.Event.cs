@@ -31,8 +31,10 @@ namespace NScumm.Agos
     partial class AgosEngine
     {
         private bool _fastMode;
-        private byte _opcode177Var1, _opcode177Var2;
-        private byte _opcode178Var1, _opcode178Var2;
+        protected byte _opcode177Var1;
+        protected byte _opcode177Var2;
+        protected byte _opcode178Var1;
+        protected byte _opcode178Var2;
 
         protected void AddTimeEvent(ushort timeout, ushort subroutineId)
         {

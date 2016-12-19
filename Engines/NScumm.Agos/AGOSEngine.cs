@@ -42,10 +42,10 @@ namespace NScumm.Agos
         protected GameSpecificSettings gss;
         protected int _currentBoxNum;
 
-        protected TextLocation _textLocation1 = new TextLocation();
-        protected TextLocation _textLocation2 = new TextLocation();
-        protected TextLocation _textLocation3 = new TextLocation();
-        protected TextLocation _textLocation4 = new TextLocation();
+        protected TextLocation TextLocation1 = new TextLocation();
+        protected TextLocation TextLocation2 = new TextLocation();
+        protected TextLocation TextLocation3 = new TextLocation();
+        protected TextLocation TextLocation4 = new TextLocation();
 
         protected ushort _numSaveGameRows;
         protected ushort _saveLoadRowCurPos;
@@ -91,7 +91,7 @@ namespace NScumm.Agos
         protected int _itemMemSize;
         protected int _tableMemSize;
         protected int _vgaMemSize;
-        protected ushort _vgaWaitFor, _lastVgaWaitFor;
+        protected ushort VgaWaitFor, _lastVgaWaitFor;
 
         protected BytePtr _tblList;
         protected BytePtr _tablesHeapPtr, _tablesHeapPtrOrg, _tablesheapPtrNew;
@@ -144,14 +144,14 @@ namespace NScumm.Agos
         private bool _showMessageFlag;
 
         protected byte _agosMenu;
-        protected byte[] _textMenu = new byte[10];
+        protected byte[] TextMenu = new byte[10];
         protected ushort _currentRoom;
         protected ushort _superRoomNumber;
         private byte _wallOn;
 
         private BytePtr _planarBuf;
-        private byte[] _videoBuf1 = new byte[32000];
-        protected ushort[] _videoWindows = new ushort[128];
+        private readonly byte[] _videoBuf1 = new byte[32000];
+        protected ushort[] VideoWindows = new ushort[128];
 
         private bool _copyProtection;
         protected Language _language;
@@ -165,9 +165,9 @@ namespace NScumm.Agos
         private int _stringTabSize;
         private int _stringTabNum;
         private Item _currentPlayer;
-        protected Item _dummyItem1 = new Item();
-        protected Item _dummyItem2 = new Item();
-        protected Item _dummyItem3 = new Item();
+        protected Item DummyItem1 = new Item();
+        protected Item DummyItem2 = new Item();
+        protected Item DummyItem3 = new Item();
         private byte[] _strippedTxtMem;
         protected int _numRoomStates;
         protected RoomState[] _roomStates;
@@ -182,7 +182,7 @@ namespace NScumm.Agos
         private uint _lastTime;
         protected uint _clockStopped;
         protected uint _gameStoppedClock;
-        private uint _timeStore;
+        protected uint _timeStore;
 
         protected TimeEvent _firstTimeStruct;
         private TimeEvent _pendingDeleteTimeEvent;
@@ -198,9 +198,11 @@ namespace NScumm.Agos
         protected byte[] _iconFilePtr;
         protected Subroutine _currentTable;
         private BytePtr _codePtr;
-        private SubroutineLine _currentLine;
-        private SubroutineLine _classLine;
-        private short _classMask, _classMode1, _classMode2;
+        protected SubroutineLine _currentLine;
+        protected SubroutineLine _classLine;
+        protected short _classMask;
+        protected short _classMode1;
+        protected short _classMode2;
         private byte _recursionDepth;
 
         private bool _runScriptReturn1;
@@ -209,8 +211,8 @@ namespace NScumm.Agos
 
         protected readonly ushort[] _bitArray = new ushort[128];
         protected readonly ushort[] _bitArrayTwo = new ushort[16];
-        protected ushort[] _bitArrayThree = new ushort[16];
-        private Item _findNextPtr;
+        protected ushort[] BitArrayThree = new ushort[16];
+        protected Item _findNextPtr;
 
         private short _scriptVerb;
         protected short _scriptNoun1;
@@ -222,7 +224,7 @@ namespace NScumm.Agos
         protected Item _objectItem;
         private bool _mortalFlag;
 
-        private WindowBlock _dummyWindow;
+        protected readonly WindowBlock DummyWindow = new WindowBlock();
         protected readonly WindowBlock[] _windowArray = new WindowBlock[80];
 
         private readonly byte[] _fcsData1 = new byte[8];
@@ -235,7 +237,7 @@ namespace NScumm.Agos
         private ushort _displayFlag;
         private readonly byte[] _lettersToPrintBuf = new byte[80];
 
-        protected byte[] _saveBuf = new byte[200];
+        protected byte[] SaveBuf = new byte[200];
         protected byte _saveGameNameLen;
         protected readonly byte[] _hebrewCharWidths = new byte[32];
         protected HitArea _lastHitArea;
@@ -294,7 +296,7 @@ namespace NScumm.Agos
         protected ushort _vgaCurZoneNum;
         protected ushort _windowNum;
         protected bool _backFlag;
-        protected ushort _scrollWidth, _scrollHeight;
+        protected ushort ScrollWidth, ScrollHeight;
         protected short _scrollCount, _scrollFlag;
         protected byte _paletteFlag;
         protected byte _window3Flag;
@@ -309,7 +311,7 @@ namespace NScumm.Agos
         private readonly AnimTable[] _screenAnim1 = ScummHelper.CreateArray<AnimTable>(90);
         protected volatile ushort _fastFadeInFlag;
         protected readonly Color[] _currentPalette = new Color[256];
-        protected Color[] _displayPalette = new Color[256];
+        protected Color[] DisplayPalette = new Color[256];
         private ushort _moveXMin, _moveYMin;
         private ushort _moveXMax, _moveYMax;
         protected ushort _fastFadeCount;
@@ -406,22 +408,22 @@ namespace NScumm.Agos
                 if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON1 ||
                     _gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
                 {
-                    _videoWindows[i] = initialVideoWindows_Simon[i];
+                    VideoWindows[i] = initialVideoWindows_Simon[i];
                 }
                 else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PN)
                 {
-                    _videoWindows[i] = initialVideoWindows_PN[i];
+                    VideoWindows[i] = initialVideoWindows_PN[i];
                 }
                 else
                 {
-                    _videoWindows[i] = initialVideoWindows_Common[i];
+                    VideoWindows[i] = initialVideoWindows_Common[i];
                 }
             }
 
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 &&
                 _gd.Platform == Platform.AtariST)
             {
-                _videoWindows[9] = 75;
+                VideoWindows[9] = 75;
             }
         }
 
@@ -517,7 +519,7 @@ namespace NScumm.Agos
         protected void o_loadZone()
         {
             // 97: load zone
-            uint vga_res = GetVarOrWord();
+            uint vgaRes = GetVarOrWord();
 
             _videoLockOut |= 0x80;
 
@@ -529,7 +531,7 @@ namespace NScumm.Agos
                 vc29_stopAllSounds();
             }
 
-            LoadZone((ushort) vga_res);
+            LoadZone((ushort) vgaRes);
 
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 ||
                 _gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 ||
@@ -931,7 +933,7 @@ namespace NScumm.Agos
             return _gd.ADGameDescription.extra;
         }
 
-        private void MouseOff()
+        protected void MouseOff()
         {
             _mouseHideCount++;
         }

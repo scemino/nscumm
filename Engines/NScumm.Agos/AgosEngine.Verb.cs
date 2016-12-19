@@ -74,21 +74,21 @@ namespace NScumm.Agos
                 return;
 
             _objectItem = _hitAreaObjectItem;
-            if (_objectItem == _dummyItem2)
+            if (_objectItem == DummyItem2)
             {
                 _objectItem = Me();
             }
-            if (_objectItem == _dummyItem3)
+            if (_objectItem == DummyItem3)
             {
                 _objectItem = DerefItem(Me().parent);
             }
 
             _subjectItem = _hitAreaSubjectItem;
-            if (_subjectItem == _dummyItem2)
+            if (_subjectItem == DummyItem2)
             {
                 _subjectItem = Me();
             }
-            if (_subjectItem == _dummyItem3)
+            if (_subjectItem == DummyItem3)
             {
                 _subjectItem = DerefItem(Me().parent);
             }

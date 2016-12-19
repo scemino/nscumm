@@ -122,7 +122,7 @@ namespace NScumm.Agos
 
         private int GetUserFlag1(Item item, int a)
         {
-            if (item == null || item == _dummyItem2 || item == _dummyItem3)
+            if (item == null || item == DummyItem2 || item == DummyItem3)
                 return -1;
 
             var subUserFlag = (SubUserFlag) FindChildOfType(item, ChildType.kUserFlagType);
@@ -177,7 +177,7 @@ namespace NScumm.Agos
         {
             if (_currentPlayer != null)
                 return _currentPlayer;
-            return _dummyItem1;
+            return DummyItem1;
         }
 
         private Item Actor()
@@ -185,7 +185,7 @@ namespace NScumm.Agos
             Error("actor: is this code ever used?");
             //if (_actorPlayer)
             //	return _actorPlayer;
-            return _dummyItem1; // for compilers that don't support NORETURN
+            return DummyItem1; // for compilers that don't support NORETURN
         }
 
         protected Item GetNextItemPtr()
@@ -218,11 +218,11 @@ namespace NScumm.Agos
                 case -3:
                     return _objectItem;
                 case -5:
-                    return _dummyItem2;
+                    return DummyItem2;
                 case -7:
                     return null;
                 case -9:
-                    return _dummyItem3;
+                    return DummyItem3;
                 default:
                     return DerefItem((uint) a);
             }

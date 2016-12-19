@@ -791,16 +791,16 @@ namespace NScumm.Agos
                 }
             }
 
-            _vgaWaitFor = (ushort) a;
+            VgaWaitFor = (ushort) a;
             _syncCount = 0;
             _exitCutscene = false;
             _rightButtonDown = false;
 
-            while (_vgaWaitFor != 0 && !HasToQuit)
+            while (VgaWaitFor != 0 && !HasToQuit)
             {
                 if (_rightButtonDown)
                 {
-                    if (_vgaWaitFor == 200 && (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
+                    if (VgaWaitFor == 200 && (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
                                                !GetBitFlag(14)))
                     {
                         SkipSpeech();
@@ -820,7 +820,7 @@ namespace NScumm.Agos
                     else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2 ||
                              _gd.ADGameDescription.gameType == SIMONGameType.GType_WW)
                     {
-                        if (_vgaWaitFor == 51)
+                        if (VgaWaitFor == 51)
                         {
                             SetBitFlag(244, true);
                             break;

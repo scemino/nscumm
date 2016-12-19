@@ -339,7 +339,7 @@ namespace NScumm.Agos
             int h = (int) GetVarOrWord();
             int number = (int) GetVarOrByte();
             if (number < _numTextBoxes)
-                DefineBox(id, x, y, w, h, (number << 8) + 129, 208, _dummyItem2);
+                DefineBox(id, x, y, w, h, (number << 8) + 129, 208, DummyItem2);
         }
 
         protected void oww_setShortText()
@@ -413,7 +413,7 @@ namespace NScumm.Agos
         {
             // 106: set text menu
             byte slot = (byte) GetVarOrByte();
-            _textMenu[slot] = (byte) GetVarOrByte();
+            TextMenu[slot] = (byte) GetVarOrByte();
         }
 
         private void oww_boxMessage()

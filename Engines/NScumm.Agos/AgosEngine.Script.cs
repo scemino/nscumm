@@ -1038,7 +1038,7 @@ namespace NScumm.Agos
             return _runScriptCondition[_recursionDepth];
         }
 
-        private byte GetByte()
+        protected byte GetByte()
         {
             var value = _codePtr.Value;
             _codePtr.Offset++;

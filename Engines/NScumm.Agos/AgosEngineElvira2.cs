@@ -20,9 +20,12 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using NScumm.Core;
 using NScumm.Core.Graphics;
+using NScumm.Core.Input;
 using NScumm.Core.IO;
 using static NScumm.Core.DebugHelper;
 
@@ -30,14 +33,200 @@ namespace NScumm.Agos
 {
     internal class AgosEngineElvira2 : AgosEngineElvira1
     {
+        private Dictionary<int, Action> _opcodes;
+
         public AgosEngineElvira2(ISystem system, GameSettings settings, AgosGameDescription gd)
             : base(system, settings, gd)
         {
         }
 
+        protected override void SetupGame()
+        {
+            gss = Simon1Settings;
+            _numVideoOpcodes = 60;
+            _vgaMemSize = 1000000;
+            _itemMemSize = 64000;
+            _tableMemSize = 100000;
+            _frameCount = 4;
+            _vgaBaseDelay = 1;
+            _vgaPeriod = 50;
+            _numBitArray1 = 16;
+            _numBitArray2 = 15;
+            _numItemStore = 50;
+            _numVars = 255;
+
+            _numMusic = 9;
+            _numZone = 99;
+
+            SetupGameCore();
+        }
+
+        protected override void SetupOpcodes()
+        {
+            _opcodes = new Dictionary<int, Action>
+            {
+                {1, o_at},
+                {2, o_notAt},
+                {5, o_carried},
+                {6, o_notCarried},
+                {7, o_isAt},
+                {8, oe1_isNotAt},
+                {9, oe1_sibling},
+                {10, oe1_notSibling},
+                {11, o_zero},
+                {12, o_notZero},
+                {13, o_eq},
+                {14, o_notEq},
+                {15, o_gt},
+                {16, o_lt},
+                {17, o_eqf},
+                {18, o_notEqf},
+                {19, o_ltf},
+                {20, o_gtf},
+                {21, oe1_isIn},
+                {22, oe1_isNotIn},
+                {23, o_chance},
+                {24, oe1_isPlayer},
+                {25, o_isRoom},
+                {26, o_isObject},
+                {27, o_state},
+                {28, o_oflag},
+                {29, oe1_canPut},
+                {31, o_destroy},
+                {33, o_place},
+                {34, oe1_copyof},
+                {35, oe1_copyfo},
+                {36, o_copyff},
+                {37, oe1_whatO},
+                {39, oe1_weigh},
+                {41, o_clear},
+                {42, o_let},
+                {43, o_add},
+                {44, o_sub},
+                {45, o_addf},
+                {46, o_subf},
+                {47, o_mul},
+                {48, o_div},
+                {49, o_mulf},
+                {50, o_divf},
+                {51, o_mod},
+                {52, o_modf},
+                {53, o_random},
+                {54, oe2_moveDirn},
+                {55, o_goto},
+                {56, o_oset},
+                {57, o_oclear},
+                {58, o_putBy},
+                {59, o_inc},
+                {60, o_dec},
+                {61, o_setState},
+                {62, o_print},
+                {63, o_message},
+                {64, o_msg},
+                {68, o_end},
+                {69, o_done},
+                {71, o_process},
+                {72, oe2_doClass},
+                {73, oe2_pObj},
+                {74, oe1_pName},
+                {75, oe1_pcName},
+                {76, o_when},
+                {77, o_if1},
+                {78, o_if2},
+                {79, o_isCalled},
+                {80, o_is},
+                {82, o_debug},
+                {83, oe1_rescan},
+                {87, o_comment},
+                {89, oe1_loadGame},
+                {90, o_getParent},
+                {91, o_getNext},
+                {92, o_getChildren},
+                {94, oe1_findMaster},
+                {95, oe1_nextMaster},
+                {96, o_picture},
+                {97, o_loadZone},
+                {98, oe1_animate},
+                {99, oe1_stopAnimate},
+                {100, o_killAnimate},
+                {101, o_defWindow},
+                {102, o_window},
+                {103, o_cls},
+                {104, o_closeWindow},
+                {105, oe2_menu},
+                {107, o_addBox},
+                {108, o_delBox},
+                {109, o_enableBox},
+                {110, o_disableBox},
+                {111, o_moveBox},
+                {113, oe2_drawItem},
+                {114, o_doIcons},
+                {115, o_isClass},
+                {116, o_setClass},
+                {117, o_unsetClass},
+                {119, o_waitSync},
+                {120, o_sync},
+                {121, o_defObj},
+                {123, oe1_setTime},
+                {124, oe1_ifTime},
+                {125, o_here},
+                {126, o_doClassIcons},
+                {127, o_playTune},
+                {130, o_setAdjNoun},
+                {132, o_saveUserGame},
+                {133, o_loadUserGame},
+                {135, oe2_pauseGame},
+                {136, o_copysf},
+                {137, o_restoreIcons},
+                {138, o_freezeZones},
+                {139, o_placeNoIcons},
+                {140, o_clearTimers},
+                {141, o_setDollar},
+                {142, o_isBox},
+                {143, oe2_doTable},
+                {144, oe2_setDoorOpen},
+                {145, oe2_setDoorClosed},
+                {146, oe2_setDoorLocked},
+                {147, oe2_setDoorClosed},
+                {148, oe2_ifDoorOpen},
+                {149, oe2_ifDoorClosed},
+                {150, oe2_ifDoorLocked},
+                {151, oe2_storeItem},
+                {152, oe2_getItem},
+                {153, oe2_bSet},
+                {154, oe2_bClear},
+                {155, oe2_bZero},
+                {156, oe2_bNotZero},
+                {157, oe2_getOValue},
+                {158, oe2_setOValue},
+                {160, oe2_ink},
+                {161, oe2_printStats},
+                {165, oe2_setSuperRoom},
+                {166, oe2_getSuperRoom},
+                {167, oe2_setExitOpen},
+                {168, oe2_setExitClosed},
+                {169, oe2_setExitLocked},
+                {170, oe2_setExitClosed},
+                {171, oe2_ifExitOpen},
+                {172, oe2_ifExitClosed},
+                {173, oe2_ifExitLocked},
+                {174, oe2_playEffect},
+                {175, oe2_getDollar2},
+                {176, oe2_setSRExit},
+                {177, oe2_printPlayerDamage},
+                {178, oe2_printMonsterDamage},
+                {179, oe2_isAdjNoun},
+                {180, oe2_b2Set},
+                {181, oe2_b2Clear},
+                {182, oe2_b2Zero},
+                {183, oe2_b2NotZero},
+            };
+            _numOpcodes = 184;
+        }
+
         protected override void SetupVideoOpcodes(Action[] op)
         {
-            Debug("AGOSEngine_Elvira2::setupVideoOpcodes");
+            Debug("setupVideoOpcodes");
             SetupVideoOpcodesCore(op);
 
             op[17] = vc17_waitEnd;
@@ -86,7 +275,7 @@ namespace NScumm.Agos
             var num = (ushort) VcReadNextWord();
             var color = (ushort) VcReadNextWord();
 
-            var vlut = new Ptr<ushort>(_videoWindows, num * 4);
+            var vlut = new Ptr<ushort>(VideoWindows, num * 4);
             var width = (byte) (vlut[2] * 8);
             var height = (byte) vlut[3];
 
@@ -153,7 +342,7 @@ namespace NScumm.Agos
 
         private void SetPaletteSlot(ushort srcOffs, byte dstOffs)
         {
-            var palptr = new Ptr<Color>(_displayPalette, dstOffs * 3 * 16);
+            var palptr = new Ptr<Color>(DisplayPalette, dstOffs * 3 * 16);
             var offs = _curVgaFile1 + _curVgaFile1.ToUInt16BigEndian(6);
             var src = offs + srcOffs * 32;
             ushort num = 16;
@@ -185,14 +374,14 @@ namespace NScumm.Agos
             // Only uses Video Window 4
             num = 4;
 
-            var dissolveX = (ushort) (_videoWindows[num * 4 + 2] * 8);
-            var dissolveY = (ushort) ((_videoWindows[num * 4 + 3] + 1) / 2);
+            var dissolveX = (ushort) (VideoWindows[num * 4 + 2] * 8);
+            var dissolveY = (ushort) ((VideoWindows[num * 4 + 3] + 1) / 2);
             var dissolveCheck = (ushort) (dissolveY * dissolveX * 4);
             var dissolveDelay = (ushort) (dissolveCheck * 2 / speed);
             var dissolveCount = (ushort) (dissolveCheck * 2 / speed);
 
-            var x = (short) (_videoWindows[num * 4 + 0] * 16);
-            var y = (short) _videoWindows[num * 4 + 1];
+            var x = (short) (VideoWindows[num * 4 + 0] * 16);
+            var y = (short) VideoWindows[num * 4 + 1];
 
             var count = (ushort) (dissolveCheck * 2);
             while (count-- != 0)
@@ -261,14 +450,14 @@ namespace NScumm.Agos
             BytePtr dst, dstOffs;
             short xoffs, yoffs;
 
-            ushort dissolveX = (ushort) (_videoWindows[num * 4 + 2] * 8);
-            ushort dissolveY = (ushort) ((_videoWindows[num * 4 + 3] + 1) / 2);
+            ushort dissolveX = (ushort) (VideoWindows[num * 4 + 2] * 8);
+            ushort dissolveY = (ushort) ((VideoWindows[num * 4 + 3] + 1) / 2);
             ushort dissolveCheck = (ushort) (dissolveY * dissolveX * 4);
             ushort dissolveDelay = (ushort) (dissolveCheck * 2 / speed);
             ushort dissolveCount = (ushort) (dissolveCheck * 2 / speed);
 
-            short x = (short) (_videoWindows[num * 4 + 0] * 16);
-            short y = (short) _videoWindows[num * 4 + 1];
+            short x = (short) (VideoWindows[num * 4 + 0] * 16);
+            short y = (short) VideoWindows[num * 4 + 1];
 
             ushort count = (ushort) (dissolveCheck * 2);
             while (count-- != 0)
@@ -339,6 +528,118 @@ namespace NScumm.Agos
             VcSkipNextInstruction();
         }
 
+        protected override void UserGame(bool load)
+        {
+            uint saveTime;
+            int i, numSaveGames;
+            bool b;
+            Array.Clear(SaveBuf, 0, SaveBuf.Length);
+
+            _saveOrLoad = load;
+
+            saveTime = GetTime();
+
+            if (GameType == SIMONGameType.GType_ELVIRA2)
+                HaltAnimation();
+
+            numSaveGames = CountSaveGames();
+            _numSaveGameRows = (ushort) numSaveGames;
+            _saveLoadRowCurPos = 1;
+            _saveLoadEdit = false;
+
+            byte num = (byte) ((GameType == SIMONGameType.GType_WW) ? 3 : 4);
+
+            ListSaveGames();
+
+            if (!load)
+            {
+                var window = _windowArray[num];
+                short slot = -1;
+
+                var name = new BytePtr(SaveBuf, 192);
+
+                while (!HasToQuit)
+                {
+                    WindowPutChar(window, 128);
+
+                    _saveLoadEdit = true;
+
+                    i = UserGameGetKey(out b, 128);
+                    if (b)
+                    {
+                        if (i <= 23)
+                        {
+                            if (!ConfirmOverWrite(window))
+                            {
+                                ListSaveGames();
+                                continue;
+                            }
+
+                            if (!SaveGame(_saveLoadRowCurPos + i, SaveBuf.GetRawText(i * 8)))
+                                FileError(_windowArray[num], true);
+                        }
+
+                        goto get_out;
+                    }
+
+                    UserGameBackSpace(_windowArray[num], 8);
+                    if (i == 10 || i == 13)
+                    {
+                        slot = MatchSaveGame(name.GetRawText(), (ushort) numSaveGames);
+                        if (slot >= 0)
+                        {
+                            if (!ConfirmOverWrite(window))
+                            {
+                                ListSaveGames();
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    if (i == 8)
+                    {
+                        // do_backspace
+                        if (_saveGameNameLen == 0) continue;
+
+                        _saveGameNameLen--;
+                        name[_saveGameNameLen] = 0;
+                        UserGameBackSpace(_windowArray[num], 8);
+                    }
+                    else if (i >= 32 && _saveGameNameLen != 8)
+                    {
+                        name[_saveGameNameLen++] = (byte) i;
+                        WindowPutChar(_windowArray[num], (byte) i);
+                    }
+                }
+
+                if (_saveGameNameLen != 0)
+                {
+                    if (slot < 0)
+                        slot = (short) numSaveGames;
+
+                    if (!SaveGame(slot, SaveBuf.GetRawText(192)))
+                        FileError(_windowArray[num], true);
+                }
+            }
+            else
+            {
+                i = UserGameGetKey(out b, 128);
+                if (i != 225)
+                {
+                    if (!LoadGame(GenSaveName(_saveLoadRowCurPos + i)))
+                        FileError(_windowArray[num], false);
+                }
+            }
+
+            get_out:
+            DisableFileBoxes();
+
+            _gameStoppedClock = GetTime() - saveTime + _gameStoppedClock;
+
+            if (GameType == SIMONGameType.GType_ELVIRA2)
+                RestartAnimation();
+        }
+
         protected override int WeightOf(Item x)
         {
             var o = (SubObject) FindChildOfType(x, ChildType.kObjectType);
@@ -346,7 +647,7 @@ namespace NScumm.Agos
             if ((o != null) && o.objectFlags.HasFlag(SubObjectFlags.kOFWeight))
             {
                 var ct = GetOffsetOfChild2Param(o, (int) SubObjectFlags.kOFWeight);
-                return (o.objectFlagValue[ct]);
+                return o.objectFlagValue[ct];
             }
 
             return 0;
@@ -374,7 +675,7 @@ namespace NScumm.Agos
                 else
                 {
                     src = _iconFilePtr;
-                    src += src.ToInt32BigEndian(icon * 2);
+                    src += src.ToUInt16(icon * 2);
                     DecompressIcon(dst, src, 24, 12, (byte) color, screen.Pitch);
                 }
             });
@@ -438,6 +739,111 @@ namespace NScumm.Agos
             return 0;
         }
 
+        private Item FindInByClass(Item i, short m)
+        {
+            i = DerefItem(i.child);
+            while (i != null)
+            {
+                if ((i.classFlags & m) != 0)
+                {
+                    _findNextPtr = DerefItem(i.next);
+                    return i;
+                }
+                if (m == 0)
+                {
+                    _findNextPtr = DerefItem(i.next);
+                    return i;
+                }
+                i = DerefItem(i.next);
+            }
+            return null;
+        }
+
+        private void SetExitState(Item i, ushort n, ushort d, ushort s)
+        {
+            var sr = (SubSuperRoom) FindChildOfType(i, ChildType.kSuperRoomType);
+            if (sr != null)
+                ChangeExitStates(sr, n, d, s);
+        }
+
+        // Elvira 2 specific
+        private int ChangeExitStates(SubSuperRoom sr, int n, int d, ushort s)
+        {
+            int b, bd;
+            ushort mask;
+
+            switch (d)
+            {
+                case 0:
+                    b = -(sr.roomX);
+                    bd = 2;
+                    if (((n % (sr.roomX * sr.roomY)) / sr.roomX) == 0)
+                        return 0;
+                    break;
+                case 1:
+                    b = 1;
+                    bd = 3;
+                    if (((n % (sr.roomX * sr.roomY)) % sr.roomX) == 0)
+                        return 0;
+                    break;
+                case 2:
+                    b = sr.roomX;
+                    bd = 0;
+                    if (((n % (sr.roomX * sr.roomY)) / sr.roomX) == (sr.roomY - 1))
+                        return 0;
+                    break;
+                case 3:
+                    b = -1;
+                    bd = 1;
+                    if (((n % (sr.roomX * sr.roomY)) % sr.roomX) == 1)
+                        return 0;
+                    break;
+                case 4:
+                    b = -(sr.roomX * sr.roomY);
+                    bd = 5;
+                    if (n < (sr.roomX * sr.roomY))
+                        return 0;
+                    break;
+                case 5:
+                    b = sr.roomX * sr.roomY;
+                    bd = 4;
+                    if (n > (sr.roomX * sr.roomY * (sr.roomZ - 1)))
+                        return 0;
+                    else
+                        break;
+                default:
+                    return 0;
+            }
+
+            n--;
+            d <<= 1;
+            mask = (ushort) (3 << d);
+            sr.roomExitStates[n] = (ushort) (sr.roomExitStates[n] & ~mask);
+            sr.roomExitStates[n] = (ushort) (sr.roomExitStates[n] | (s << d));
+
+            bd <<= 1;
+            mask = (ushort) (3 << bd);
+            sr.roomExitStates[n + b] = (ushort) (sr.roomExitStates[n + b] & ~mask);
+            sr.roomExitStates[n + b] = (ushort) (sr.roomExitStates[n + b] | (s << bd));
+            return 1;
+        }
+
+        private void SetSrExit(Item i, int n, int d, ushort s)
+        {
+            ushort mask = 3;
+
+            var sr = (SubSuperRoom) FindChildOfType(i, ChildType.kSuperRoomType);
+            if (sr != null)
+            {
+                n--;
+                d <<= 1;
+                mask <<= d;
+                s <<= d;
+                sr.roomExitStates[n] = (ushort) (sr.roomExitStates[n] & ~mask);
+                sr.roomExitStates[n] |= s;
+            }
+        }
+
         protected void oe2_moveDirn()
         {
             // 54: move direction
@@ -445,10 +851,131 @@ namespace NScumm.Agos
             MoveDirn(Me(), (uint) d);
         }
 
+        private void oe2_doClass()
+        {
+            // 72: do class
+            Item i = GetNextItemPtr();
+            byte cm = GetByte();
+            short num = (short) GetVarOrWord();
+
+            _classMask = (short) ((cm != 0xFF) ? 1 << cm : 0);
+            _classLine = new SubroutineLine(_currentTable.Pointer + _currentLine.next);
+            if (num == 1)
+            {
+                _subjectItem = FindInByClass(i, (short) (1 << cm));
+                _classMode1 = (short) (_subjectItem != null ? 1 : 0);
+            }
+            else
+            {
+                _objectItem = FindInByClass(i, (short) (1 << cm));
+                _classMode2 = (short) (_objectItem != null ? 1 : 0);
+            }
+        }
+
+        private void oe2_pObj()
+        {
+            // 73: print object
+            var subObject = (SubObject) FindChildOfType(GetNextItemPtr(), ChildType.kObjectType);
+
+            if (subObject != null && subObject.objectFlags.HasFlag(SubObjectFlags.kOFText))
+                ShowMessageFormat("{0}", GetStringPtrById((ushort) subObject.objectFlagValue[0]));
+        }
+
+        private void oe2_drawItem()
+        {
+            // 113: draw item
+            Item i = GetNextItemPtr();
+            int a = (int) GetVarOrByte();
+            int x = (int) GetVarOrWord();
+            int y = (int) GetVarOrWord();
+            MouseOff();
+            DrawIcon(_windowArray[a % 8], ItemGetIconNumber(i), x, y);
+            MouseOn();
+        }
+
         protected void oe2_ink()
         {
             // 160
             SetTextColor(GetVarOrByte());
+        }
+
+        private void oe2_printStats()
+        {
+            // 161: print stats
+            PrintStats();
+        }
+
+        private void oe2_setSuperRoom()
+        {
+            // 165: set super room
+            _superRoomNumber = (ushort) GetVarOrWord();
+        }
+
+        private void oe2_getSuperRoom()
+        {
+            // 166: get super room
+            WriteNextVarContents(_superRoomNumber);
+        }
+
+        private void oe2_setExitOpen()
+        {
+            // 167: set exit open
+            Item i = GetNextItemPtr();
+            ushort n = (ushort) GetVarOrWord();
+            ushort d = (ushort) GetVarOrByte();
+            SetExitState(i, n, d, 1);
+        }
+
+        private void oe2_setExitClosed()
+        {
+            // 168: set exit closed
+            Item i = GetNextItemPtr();
+            ushort n = (ushort) GetVarOrWord();
+            ushort d = (ushort) GetVarOrByte();
+            SetExitState(i, n, d, 2);
+        }
+
+        private void oe2_setExitLocked()
+        {
+            // 169: set exit locked
+            Item i = GetNextItemPtr();
+            ushort n = (ushort) GetVarOrWord();
+            ushort d = (ushort) GetVarOrByte();
+            SetExitState(i, n, d, 3);
+        }
+
+        private void oe2_ifExitOpen()
+        {
+            // 171: if exit open
+            Item i = GetNextItemPtr();
+            ushort n = (ushort) GetVarOrWord();
+            ushort d = (ushort) GetVarOrByte();
+            SetScriptCondition(GetExitState(i, n, d) == 1);
+        }
+
+        private void oe2_ifExitClosed()
+        {
+            // 172: if exit closed
+            Item i = GetNextItemPtr();
+            ushort n = (ushort) GetVarOrWord();
+            ushort d = (ushort) GetVarOrByte();
+            SetScriptCondition(GetExitState(i, n, d) == 2);
+        }
+
+        private void oe2_ifExitLocked()
+        {
+            // 173: if exit locked
+            Item i = GetNextItemPtr();
+            ushort n = (ushort) GetVarOrWord();
+            ushort d = (ushort) GetVarOrByte();
+            SetScriptCondition(GetExitState(i, n, d) == 3);
+        }
+
+        private void oe2_playEffect()
+        {
+            // 174: play sound
+            uint soundId = GetVarOrWord();
+            LoadSound((ushort) soundId, 0, 0);
         }
 
         protected void oe2_doTable()
@@ -579,10 +1106,10 @@ namespace NScumm.Agos
 
             _objectItem = _hitAreaObjectItem;
 
-            if (_objectItem == _dummyItem2)
+            if (_objectItem == DummyItem2)
                 _objectItem = Me();
 
-            if (_objectItem == _dummyItem3)
+            if (_objectItem == DummyItem3)
                 _objectItem = DerefItem(Me().parent);
 
             if (_objectItem != null)
@@ -599,6 +1126,40 @@ namespace NScumm.Agos
             _showPreposition = false;
         }
 
+        private void oe2_setSRExit()
+        {
+            // 176: set super room exit
+            Item i = GetNextItemPtr();
+            uint n = GetVarOrWord();
+            uint d = GetVarOrByte();
+            uint s = GetVarOrByte();
+            SetSrExit(i, (int) n, (int) d, (ushort) s);
+        }
+
+        private void oe2_printPlayerDamage()
+        {
+            // 177: set player damage event
+            uint a = GetVarOrByte();
+            if (_opcode177Var1 != 0 && _opcode177Var2 == 0 && a != 0 && a <= 10)
+            {
+                AddVgaEvent(_vgaBaseDelay, EventType.PLAYER_DAMAGE_EVENT, BytePtr.Null, 0, (ushort) a);
+                _opcode177Var2 = 0;
+                _opcode177Var1 = 0;
+            }
+        }
+
+        private void oe2_printMonsterDamage()
+        {
+            // 178: set monster damage event
+            uint a = GetVarOrByte();
+            if (_opcode178Var1 != 0 && _opcode178Var2 == 0 && a != 0 && a <= 10)
+            {
+                AddVgaEvent(_vgaBaseDelay, EventType.MONSTER_DAMAGE_EVENT, BytePtr.Null, 0, (ushort) a);
+                _opcode178Var2 = 0;
+                _opcode178Var1 = 0;
+            }
+        }
+
         protected void oe2_isAdjNoun()
         {
             // 179: item unk1 unk2 is
@@ -608,7 +1169,7 @@ namespace NScumm.Agos
 
             if (GameType == SIMONGameType.GType_ELVIRA2 && item == null)
             {
-                // WORKAROUND bug #1745996: A NULL item can occur when
+                // WORKAROUND bug #1745996: A null item can occur when
                 // interacting with items in the dinning room
                 SetScriptCondition(false);
                 return;
@@ -681,7 +1242,7 @@ namespace NScumm.Agos
 
             if (GameType == SIMONGameType.GType_WW)
             {
-                // WORKAROUND bug #2686883: A NULL item can occur when
+                // WORKAROUND bug #2686883: A null item can occur when
                 // walking through Jack the Ripper scene
                 if (i == null)
                 {
@@ -765,7 +1326,7 @@ namespace NScumm.Agos
                 if (_roomsListPtr != BytePtr.Null)
                 {
                     var p = _roomsListPtr;
-                    while(true)
+                    while (true)
                     {
                         var minNum = p.ToUInt16BigEndian();
                         p += 2;
@@ -898,7 +1459,7 @@ namespace NScumm.Agos
 
             // Write the bits in array 3
             for (i = 0; i != _numBitArray3; i++)
-                f.WriteUInt16BigEndian(_bitArrayThree[i]);
+                f.WriteUInt16BigEndian(BitArrayThree[i]);
 
             if (GameType == SIMONGameType.GType_ELVIRA2 || GameType == SIMONGameType.GType_WW)
             {
@@ -1145,7 +1706,7 @@ namespace NScumm.Agos
 
             // Read the bits in array 3
             for (i = 0; i != _numBitArray3; i++)
-                _bitArrayThree[i] = f.ReadUInt16BigEndian();
+                BitArrayThree[i] = f.ReadUInt16BigEndian();
 
             if (GameType == SIMONGameType.GType_ELVIRA2 || GameType == SIMONGameType.GType_WW)
             {
@@ -1265,6 +1826,7 @@ namespace NScumm.Agos
                 subSuperRoom.roomY = (ushort) y;
                 subSuperRoom.roomZ = (ushort) z;
 
+                subSuperRoom.roomExitStates = new ushort[j];
                 for (i = k = 0; i != j; i++)
                     subSuperRoom.roomExitStates[k++] = br.ReadUInt16BigEndian();
             }
@@ -1299,7 +1861,155 @@ namespace NScumm.Agos
 
         protected override void ExecuteOpcode(int opcode)
         {
-            throw new NotImplementedException();
+            _opcodes[opcode]();
+        }
+
+        private int UserGameGetKey(out bool b, uint maxChar)
+        {
+            b = true;
+
+            _keyPressed = new ScummInputState();
+
+            while (!HasToQuit)
+            {
+                _lastHitArea = null;
+                _lastHitArea3 = null;
+
+                do
+                {
+                    var c = ToChar(_keyPressed.GetKeys().FirstOrDefault());
+                    if (_saveLoadEdit && c != 0 && c < maxChar)
+                    {
+                        b = false;
+                        return c;
+                    }
+                    Delay(10);
+                } while (_lastHitArea3 == null && !HasToQuit);
+
+                var ha = _lastHitArea;
+                if (ha == null || ha.id < 200)
+                {
+                }
+                else if (ha.id == 225)
+                {
+                    return ha.id;
+                }
+                else if (ha.id == 224)
+                {
+                    _saveGameNameLen = 0;
+                    _saveLoadRowCurPos += 24;
+                    if (_saveLoadRowCurPos >= _numSaveGameRows)
+                        _saveLoadRowCurPos = 1;
+
+                    ListSaveGames();
+                }
+                else if (ha.id < 224)
+                {
+                    return ha.id - 200;
+                }
+            }
+
+            return 225;
+        }
+
+        private void ListSaveGames()
+        {
+            uint y, slot;
+            BytePtr dst = SaveBuf;
+
+            byte num = (byte) (GameType == SIMONGameType.GType_WW ? 3 : 4);
+
+            DisableFileBoxes();
+
+            WindowBlock window = _windowArray[num];
+            window.textRow = 0;
+            window.textColumn = 0;
+            window.textColumnOffset = 4;
+
+            WindowPutChar(window, 12);
+
+            Array.Clear(dst.Data, 0, 200);
+
+            slot = _saveLoadRowCurPos;
+            for (y = 0; y < 8; y++)
+            {
+                window.textColumn = 0;
+                window.textColumnOffset = (ushort) ((GameType == SIMONGameType.GType_ELVIRA2) ? 4 : 0);
+                window.textLength = 0;
+                Stream @in = OSystem.SaveFileManager.OpenForLoading(GenSaveName((int) slot++));
+                if (@in != null)
+                {
+                    @in.Read(dst.Data, dst.Offset, 8);
+                    @in.Dispose();
+
+                    var name = dst;
+                    foreach (var c in name)
+                    {
+                        if (c == 0) break;
+                        WindowPutChar(window, c);
+                    }
+
+                    EnableBox((int) (200 + y * 3 + 0));
+                }
+                dst.Offset += 8;
+
+                if (GameType == SIMONGameType.GType_WW)
+                {
+                    window.textColumn = 7;
+                    window.textColumnOffset = 4;
+                }
+                else if (GameType == SIMONGameType.GType_ELVIRA2)
+                {
+                    window.textColumn = 8;
+                    window.textColumnOffset = 0;
+                }
+                window.textLength = 0;
+                @in = OSystem.SaveFileManager.OpenForLoading(GenSaveName((int) slot++));
+                if (@in != null)
+                {
+                    @in.Read(dst.Data, dst.Offset, 8);
+                    @in.Dispose();
+
+                    var name = dst;
+                    foreach (var c in name)
+                    {
+                        if (c == 0) break;
+                        WindowPutChar(window, c);
+                    }
+
+                    EnableBox((int) (200 + y * 3 + 1));
+                }
+                dst.Offset += 8;
+
+                window.textColumn = 15;
+                window.textColumnOffset = (ushort) ((GameType == SIMONGameType.GType_ELVIRA2) ? 4 : 0);
+                window.textLength = 0;
+                @in = OSystem.SaveFileManager.OpenForLoading(GenSaveName((int) slot++));
+                if (@in != null)
+                {
+                    @in.Read(dst.Data, dst.Offset, 8);
+                    @in.Dispose();
+
+                    var name = dst;
+                    foreach (var c in name)
+                    {
+                        if (c == 0) break;
+                        WindowPutChar(window, c);
+                    }
+
+                    EnableBox((int) (200 + y * 3 + 2));
+                }
+                dst += 8;
+
+                WindowPutChar(window, 13);
+            }
+
+            window.textRow = 9;
+            window.textColumn = 0;
+            window.textColumnOffset = 4;
+            window.textLength = 0;
+
+            _saveGameNameLen = 0;
         }
 
         protected override void RemoveArrows(WindowBlock window, int num)
@@ -1363,6 +2073,65 @@ namespace NScumm.Agos
                         SetItemParent(i, d);
                 }
             }
+        }
+
+        protected override bool ConfirmOverWrite(WindowBlock window)
+        {
+            // Original verison never confirmed
+            return true;
+        }
+
+        protected override string GenSaveName(int slot)
+        {
+            if (GamePlatform == Platform.DOS)
+                return $"elvira2-pc.{slot:D3}";
+            return $"elvira2.{slot:D3}";
+        }
+
+        protected override void PrintStats()
+        {
+            var window = DummyWindow;
+            int val;
+            byte y = (byte) (GamePlatform == Platform.AtariST ? 132 : 134);
+
+            window.flags = 1;
+
+            MouseOff();
+
+            // Level
+            val = _variableArray[20];
+            if (val < -99)
+                val = -99;
+            if (val > 99)
+                val = 99;
+            WriteChar(window, 10, y, 0, val);
+
+            // PP
+            val = _variableArray[22];
+            if (val < -99)
+                val = -99;
+            if (val > 99)
+                val = 99;
+            WriteChar(window, 16, y, 6, val);
+
+            // HP
+            val = _variableArray[23];
+            if (val < -99)
+                val = -99;
+            if (val > 99)
+                val = 99;
+            WriteChar(window, 23, y, 4, val);
+
+            // Experience
+            val = _variableArray[21];
+            if (val < -99)
+                val = -99;
+            if (val > 9999)
+                val = 9999;
+            WriteChar(window, 30, y, 6, val / 100);
+            WriteChar(window, 32, y, 2, val % 100);
+
+            MouseOn();
         }
 
         private ushort GetExitState(Item i, ushort x, ushort d)

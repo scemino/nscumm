@@ -434,8 +434,8 @@ namespace NScumm.Agos
             }
             else
             {
-                int xoffs = (_videoWindows[vsp.Value.windowNum * 4 + 0] * 2 + x) * 8;
-                int yoffs = (_videoWindows[vsp.Value.windowNum * 4 + 1] + y);
+                int xoffs = (VideoWindows[vsp.Value.windowNum * 4 + 0] * 2 + x) * 8;
+                int yoffs = (VideoWindows[vsp.Value.windowNum * 4 + 1] + y);
                 animTable.Value.srcPtr = BackGround + yoffs * _backGroundBuf.Pitch + xoffs;
             }
 
@@ -561,11 +561,11 @@ namespace NScumm.Agos
                 int screenSize = 8 * _screenWidth;
                 if (_scrollFlag < 0)
                 {
-                    dst.Copy(dst + screenSize, _scrollWidth * _screenHeight - screenSize);
+                    dst.Copy(dst + screenSize, ScrollWidth * _screenHeight - screenSize);
                 }
                 else
                 {
-                    (dst + screenSize).Copy(dst, _scrollWidth * _screenHeight - screenSize);
+                    (dst + screenSize).Copy(dst, ScrollWidth * _screenHeight - screenSize);
                 }
 
                 var y = _scrollY - 8;
@@ -577,22 +577,22 @@ namespace NScumm.Agos
                 }
 
                 src = _scrollImage + y / 2;
-                DecodeRow(dst, src + (int) ReadUint32Wrapper(src), _scrollWidth, (ushort) _backGroundBuf.Pitch);
+                DecodeRow(dst, src + (int) ReadUint32Wrapper(src), ScrollWidth, (ushort) _backGroundBuf.Pitch);
 
                 _scrollY += _scrollFlag;
                 VcWriteVar(250, _scrollY);
 
-                FillBackFromBackGround((ushort) _screenHeight, _scrollWidth);
+                FillBackFromBackGround((ushort) _screenHeight, ScrollWidth);
             }
             else
             {
                 if (_scrollFlag < 0)
                 {
-                    dst.Copy(dst + 8, _screenWidth * _scrollHeight - 8);
+                    dst.Copy(dst + 8, _screenWidth * ScrollHeight - 8);
                 }
                 else
                 {
-                    (dst + 8).Copy(dst, _screenWidth * _scrollHeight - 8);
+                    (dst + 8).Copy(dst, _screenWidth * ScrollHeight - 8);
                 }
 
                 uint x = (uint) _scrollX;
@@ -608,7 +608,7 @@ namespace NScumm.Agos
                     src = _scrollImage + (int) (x / 2);
                 else
                     src = _scrollImage + (int) (x * 4);
-                DecodeColumn(dst, src + (int) ReadUint32Wrapper(src), _scrollHeight, (ushort) _backGroundBuf.Pitch);
+                DecodeColumn(dst, src + (int) ReadUint32Wrapper(src), ScrollHeight, (ushort) _backGroundBuf.Pitch);
 
                 _scrollX += _scrollFlag;
                 VcWriteVar(251, _scrollX);
@@ -617,7 +617,7 @@ namespace NScumm.Agos
                 {
                     src = BackGround;
                     dst = _window4BackScn.Pixels;
-                    for (int i = 0; i < _scrollHeight; i++)
+                    for (int i = 0; i < ScrollHeight; i++)
                     {
                         src.Copy(dst, _screenWidth);
                         src += _backGroundBuf.Pitch;
@@ -626,10 +626,10 @@ namespace NScumm.Agos
                 }
                 else
                 {
-                    FillBackFromBackGround(_scrollHeight, (ushort) _screenWidth);
+                    FillBackFromBackGround(ScrollHeight, (ushort) _screenWidth);
                 }
 
-                SetMoveRect(0, 0, 320, _scrollHeight);
+                SetMoveRect(0, 0, 320, ScrollHeight);
 
                 _window4Flag = 1;
             }
@@ -708,10 +708,10 @@ namespace NScumm.Agos
             if (_fastFadeInFlag == 0 && _paletteFlag == 1)
             {
                 _paletteFlag = 0;
-                if (!ScummHelper.ArrayEquals(_displayPalette, 0, _currentPalette, 0, _displayPalette.Length))
+                if (!ScummHelper.ArrayEquals(DisplayPalette, 0, _currentPalette, 0, DisplayPalette.Length))
                 {
-                    Array.Copy(_displayPalette, _currentPalette, _displayPalette.Length);
-                    OSystem.GraphicsManager.SetPalette(_displayPalette, 0, 256);
+                    Array.Copy(DisplayPalette, _currentPalette, DisplayPalette.Length);
+                    OSystem.GraphicsManager.SetPalette(DisplayPalette, 0, 256);
                 }
             }
 
@@ -746,13 +746,13 @@ namespace NScumm.Agos
                             src = BackGround;
                         }
 
-                        dst += (_moveYMin + _videoWindows[17]) * screen.Pitch;
-                        dst += (_videoWindows[16] * 16) + _moveXMin;
+                        dst += (_moveYMin + VideoWindows[17]) * screen.Pitch;
+                        dst += (VideoWindows[16] * 16) + _moveXMin;
 
-                        src += (_videoWindows[18] * 16 * _moveYMin);
+                        src += (VideoWindows[18] * 16 * _moveYMin);
                         src += _moveXMin;
 
-                        srcWidth = (ushort) (_videoWindows[18] * 16);
+                        srcWidth = (ushort) (VideoWindows[18] * 16);
 
                         width = (ushort) (_moveXMax - _moveXMin);
                         height = (ushort) (_moveYMax - _moveYMin);
@@ -806,8 +806,8 @@ namespace NScumm.Agos
             else
             {
                 _paletteFlag = 0;
-                Array.Copy(_displayPalette, _currentPalette, _displayPalette.Length);
-                OSystem.GraphicsManager.SetPalette(_displayPalette, 0, _fastFadeInFlag);
+                Array.Copy(DisplayPalette, _currentPalette, DisplayPalette.Length);
+                OSystem.GraphicsManager.SetPalette(DisplayPalette, 0, _fastFadeInFlag);
                 _fastFadeInFlag = 0;
             }
         }
@@ -821,7 +821,7 @@ namespace NScumm.Agos
 
             for (var c = 255; c >= 0; c -= 4)
             {
-                Ptr<Color> src = _displayPalette;
+                Ptr<Color> src = DisplayPalette;
 
                 for (var p = 0; p < _fastFadeInFlag; p++)
                 {

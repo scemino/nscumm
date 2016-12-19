@@ -128,6 +128,20 @@ namespace NScumm.Agos
             WriteNextVarContents((ushort) WeighUp(item));
         }
 
+        protected void oe1_pName()
+        {
+            // 114: print item name
+            Item i = GetNextItemPtr();
+            ShowMessageFormat("{0}", GetStringPtrById(i.itemName));
+        }
+
+        protected void oe1_pcName()
+        {
+            // 115: print item case (and change first letter to upper case)
+            Item i = GetNextItemPtr();
+            ShowMessageFormat("{0}", GetStringPtrById(i.itemName, true));
+        }
+
         protected void oe1_rescan()
         {
             // 164: restart subroutine
@@ -192,6 +206,53 @@ namespace NScumm.Agos
             _videoLockOut |= 0x40;
             Animate(windowNum, (ushort) (vgaSpriteId / 100), vgaSpriteId, x, y, palette);
             _videoLockOut = (ushort) (_videoLockOut & ~0x40);
+        }
+
+        protected void oe1_setTime()
+        {
+            // 259: set time
+            _timeStore = GetTime();
+        }
+
+        protected void oe1_ifTime()
+        {
+            // 260: if time
+            uint a = GetVarOrWord();
+            uint t = GetTime() - a;
+            SetScriptCondition(t >= _timeStore);
+        }
+
+        protected void oe2_pauseGame()
+        {
+            // 135: pause game
+            uint pauseTime = GetTime();
+            HaltAnimation();
+
+            while (!HasToQuit)
+            {
+                _lastHitArea = null;
+                _lastHitArea3 = null;
+
+                while (!HasToQuit)
+                {
+                    if (ProcessSpecialKeys() || _lastHitArea3 != null)
+                        break;
+                    Delay(1);
+                }
+
+                var ha = _lastHitArea;
+
+                if (ha == null)
+                {
+                }
+                else if (ha.id == 201)
+                {
+                    break;
+                }
+            }
+
+            RestartAnimation();
+            _gameStoppedClock = GetTime() - pauseTime + _gameStoppedClock;
         }
 
         private bool IsPlayer(Item item)

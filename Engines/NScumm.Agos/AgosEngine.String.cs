@@ -460,13 +460,13 @@ namespace NScumm.Agos
             switch (a)
             {
                 case 1:
-                    return _textLocation1;
+                    return TextLocation1;
                 case 2:
-                    return _textLocation2;
+                    return TextLocation2;
                 case 101:
-                    return _textLocation3;
+                    return TextLocation3;
                 case 102:
-                    return _textLocation4;
+                    return TextLocation4;
                 default:
                     Error("getTextLocation: Invalid text location {0}", a);
                     break;
@@ -717,7 +717,7 @@ namespace NScumm.Agos
 
         private bool PrintNameOf(Item item, uint x, uint y)
         {
-            if (item == null || item == _dummyItem2 || item == _dummyItem3)
+            if (item == null || item == DummyItem2 || item == DummyItem3)
                 return false;
 
             var subObject = (SubObject) FindChildOfType(item, ChildType.kObjectType);

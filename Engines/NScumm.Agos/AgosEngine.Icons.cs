@@ -94,19 +94,18 @@ namespace NScumm.Agos
         protected void DecompressIconPlanar(BytePtr dst, BytePtr src, uint width, uint height, byte @base, uint pitch,
             bool decompress = true)
         {
-            BytePtr i, icon_pln, o, srcPtr;
             byte x, y;
 
-            icon_pln = BytePtr.Null;
-            srcPtr = src;
+            var icon_pln = BytePtr.Null;
+            var srcPtr = src;
 
             if (decompress)
             {
                 icon_pln = new byte[width * height];
 
                 // Decode RLE planar icon data
-                i = src;
-                o = icon_pln;
+                var i = src;
+                var o = icon_pln;
                 while (o < icon_pln + (int) (width * height))
                 {
                     x = i.Value;
@@ -283,7 +282,7 @@ namespace NScumm.Agos
             Item itemPtrOrg = itemRef;
             uint width, height;
             uint k;
-            bool item_again, showArrows;
+            bool itemAgain, showArrows;
             int iconSize = (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2) ? 20 : 1;
 
             var window = _windowArray[num & 7];
@@ -339,14 +338,14 @@ namespace NScumm.Agos
             var xPos = 0;
             var yPos = 0;
             k = 0;
-            item_again = false;
+            itemAgain = false;
             showArrows = false;
 
             while (itemRef != null)
             {
                 if ((classMask == 0 || (itemRef.classFlags & classMask) != 0) && HasIcon(itemRef))
                 {
-                    if (item_again == false)
+                    if (itemAgain == false)
                     {
                         window.iconPtr.iconArray[k].item = itemRef;
                         if (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2)
@@ -382,7 +381,7 @@ namespace NScumm.Agos
                         xPos = 0;
                         yPos = (yPos + iconSize);
                         if (yPos >= height)
-                            item_again = true;
+                            itemAgain = true;
                     }
                 }
                 itemRef = DerefItem(itemRef.next);

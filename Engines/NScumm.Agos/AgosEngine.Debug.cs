@@ -510,6 +510,240 @@ namespace NScumm.Agos
             "|UNLOCK_ZONES",
         };
 
+        private static readonly string[] elvira2_opcodeNameTable =
+        {
+            /* 0 */
+            "|NOT",
+            "IJ|AT",
+            "IJ|NOT_AT",
+            null,
+            /* 4 */
+            null,
+            "IJ|CARRIED",
+            "IJ|NOT_CARRIED",
+            "IIJ|IS_AT",
+            /* 8 */
+            "IIJ|IS_NOT_AT",
+            "IIJ|IS_SIBLING",
+            "IIJ|IS_NOT_SIBLING",
+            "VJ|IS_ZERO",
+            /* 12 */
+            "VJ|ISNOT_ZERO",
+            "VWJ|IS_EQ",
+            "VWJ|IS_NEQ",
+            "VWJ|IS_LE",
+            /* 16 */
+            "VWJ|IS_GE",
+            "VVJ|IS_EQF",
+            "VVJ|IS_NEQF",
+            "VVJ|IS_LEF",
+            /* 20 */
+            "VVJ|IS_GEF",
+            "IIJ|IS_IN",
+            "IIJ|IS_NOT_IN",
+            "WJ|CHANCE",
+            /* 24 */
+            "IJ|IS_PLAYER",
+            "IJ|IS_ROOM",
+            "IJ|IS_OBJECT",
+            "IWJ|ITEM_STATE_IS",
+            /* 28 */
+            "IBJ|OBJECT_HAS_FLAG",
+            "IIJ|CAN_PUT",
+            null,
+            "I|SET_NO_PARENT",
+            /* 32 */
+            null,
+            "II|SET_PARENT",
+            "IBV|COPY_OF",
+            "VIB|COPY_FO",
+            /* 36 */
+            "VV|MOVE",
+            "W|WHAT_O",
+            null,
+            "IW|WEIGH",
+            /* 40 */
+            null,
+            "V|ZERO",
+            "VW|SET",
+            "VW|ADD",
+            /* 44 */
+            "VW|SUB",
+            "VV|ADDF",
+            "VV|SUBF",
+            "VW|MUL",
+            /* 48 */
+            "VW|DIV",
+            "VV|MULF",
+            "VV|DIVF",
+            "VW|MOD",
+            /* 52 */
+            "VV|MODF",
+            "VW|RANDOM",
+            "B|MOVE_DIRN",
+            "I|SET_A_PARENT",
+            /* 56 */
+            "IB|SET_CHILD2_BIT",
+            "IB|CLEAR_CHILD2_BIT",
+            "II|MAKE_SIBLING",
+            "I|INC_STATE",
+            /* 60 */
+            "I|DEC_STATE",
+            "IW|SET_STATE",
+            "V|SHOW_INT",
+            "T|SHOW_STRING_NL",
+            /* 64 */
+            "T|SHOW_STRING",
+            null,
+            null,
+            null,
+            /* 68 */
+            "x|END",
+            "x|DONE",
+            null,
+            "W|START_SUB",
+            /* 72 */
+            "IBW|DO_CLASS",
+            "I|PRINT_OBJ",
+            "I|PRINT_NAME",
+            "I|PRINT_CNAME",
+            /* 76 */
+            "WW|ADD_TIMEOUT",
+            "J|IS_SUBJECT_ITEM_EMPTY",
+            "J|IS_OBJECT_ITEM_EMPTY",
+            "ITJ|CHILD_FR2_IS",
+            /* 80 */
+            "IIJ|IS_ITEM_EQ",
+            null,
+            "B|DEBUG",
+            "|RESCAN",
+            /* 84 */
+            null,
+            "IBB|WHERE_TO",
+            null,
+            "W|COMMENT",
+            /* 88 */
+            "|STOP_ANIMATION",
+            "T|LOAD_GAME",
+            "IB|GET_PARENT",
+            "IB|GET_NEXT",
+            /* 92 */
+            "IB|GET_CHILDREN",
+            null,
+            "BB|FIND_MASTER",
+            "IBB|NEXT_MASTER",
+            /* 96 */
+            "WB|PICTURE",
+            "W|LOAD_ZONE",
+            "WBWWW|ANIMATE",
+            "W|STOP_ANIMATE",
+            /* 100 */
+            "|KILL_ANIMATE",
+            "BWWWWWW|DEFINE_WINDOW",
+            "B|CHANGE_WINDOW",
+            "|CLS",
+            /* 104 */
+            "B|CLOSE_WINDOW",
+            "B|SET_AGOS_MENU",
+            null,
+            "WWWWWIW|ADD_BOX",
+            /* 108 */
+            "W|DEL_BOX",
+            "W|ENABLE_BOX",
+            "W|DISABLE_BOX",
+            "WWW|MOVE_BOX",
+            /* 112 */
+            null,
+            "IBWW|DRAW_ITEM",
+            "IB|DO_ICONS",
+            "IBJ|IS_CLASS",
+            /* 116 */
+            "IB|SET_CLASS",
+            "IB|UNSET_CLASS",
+            null,
+            "W|WAIT_SYNC",
+            /* 120 */
+            "W|SYNC",
+            "BI|DEF_OBJ",
+            null,
+            "|SET_TIME",
+            /* 124 */
+            "WJ|IF_TIME",
+            "IJ|IS_SIBLING_WITH_A",
+            "IBB|DO_CLASS_ICONS",
+            "WW|PLAY_TUNE",
+            /* 128 */
+            null,
+            null,
+            "Bww|SET_ADJ_NOUN",
+            null,
+            /* 132 */
+            "|SAVE_USER_GAME",
+            "|LOAD_USER_GAME",
+            "|STOP_TUNE",
+            "|PAUSE",
+            /* 136 */
+            "IV|COPY_SF",
+            "B|RESTORE_ICONS",
+            "|FREEZE_ZONES",
+            "II|SET_PARENT_SPECIAL",
+            /* 140 */
+            "|CLEAR_TIMERS",
+            "BI|SET_M1_OR_M3",
+            "WJ|IS_BOX",
+            "I|START_ITEM_SUB",
+            /* 144 */
+            "IB|SET_DOOR_OPEN",
+            "IB|SET_DOOR_CLOSED",
+            "IB|SET_DOOR_LOCKED",
+            "IB|SET_DOOR_OPEN",
+            /* 148 */
+            "IBJ|IF_DOOR_OPEN",
+            "IBJ|IF_DOOR_CLOSED",
+            "IBJ|IF_DOOR_LOCKED",
+            "BI|STORE_ITEM",
+            /* 152 */
+            "BB|GET_ITEM",
+            "B|SET_BIT",
+            "B|CLEAR_BIT",
+            "BJ|IS_BIT_CLEAR",
+            /* 156 */
+            "BJ|IS_BIT_SET",
+            "IBB|GET_ITEM_PROP",
+            "IBW|SET_ITEM_PROP",
+            null,
+            /* 160 */
+            "B|SET_INK",
+            "|PRINT_STATS",
+            null,
+            null,
+            /* 164 */
+            null,
+            "W|SET_SUPER_ROOM",
+            "V|GET_SUPER_ROOM",
+            "IWB|SET_EXIT_OPEN",
+            /* 168 */
+            "IWB|SET_EXIT_CLOSED",
+            "IWB|SET_EXIT_LOCKED",
+            "IWB|SET_EXIT_CLOSED",
+            "IWBJ|IF_EXIT_OPEN",
+            /* 172 */
+            "IWBJ|IF_EXIT_CLOSED",
+            "IWBJ|IF_EXIT_LOCKED",
+            "W|PLAY_EFFECT",
+            "|getDollar2",
+            /* 176 */
+            "IWBB|SET_SUPER_ROOM_EXIT",
+            "B|UNK_177",
+            "B|UNK_178",
+            "IWWJ|IS_ADJ_NOUN",
+            /* 180 */
+            "B|SET_BIT2",
+            "B|CLEAR_BIT2",
+            "BJ|IS_BIT2_CLEAR",
+            "BJ|IS_BIT2_SET",
+        };
+
         private static readonly string[] Simon2DosOpcodeNameTable =
         {
             /* 0 */
@@ -1319,6 +1553,90 @@ namespace NScumm.Agos
             "|FASTFADEIN",
         };
 
+        private static readonly string[] elvira2_videoOpcodeNameTable =
+        {
+            /* 0 */
+            "x|RET",
+            "ddd|FADEOUT",
+            "d|CALL",
+            "ddddd|NEW_SPRITE",
+            /* 4 */
+            "ddd|FADEIN",
+            "vdj|IF_EQUAL",
+            "dj|IF_OBJECT_HERE",
+            "dj|IF_OBJECT_NOT_HERE",
+            /* 8 */
+            "ddj|IF_OBJECT_IS_AT",
+            "ddj|IF_OBJECT_STATE_IS",
+            "dddd|DRAW",
+            "d|ON_STOP",
+            /* 12 */
+            "w|DELAY",
+            "d|SET_SPRITE_OFFSET_X",
+            "d|SET_SPRITE_OFFSET_Y",
+            "d|SYNC",
+            /* 16 */
+            "d|WAIT_SYNC",
+            "d|WAIT_END",
+            "i|JUMP_REL",
+            "|CHAIN_TO",
+            /* 20 */
+            "dd|SET_REPEAT",
+            "i|END_REPEAT",
+            "d|SET_PALETTE",
+            "d|SET_PRIORITY",
+            /* 24 */
+            "diid|SET_SPRITE_XY",
+            "x|HALT_SPRITE",
+            "ddddd|SET_WINDOW",
+            "|RESET",
+            /* 28 */
+            "dddd|PLAY_SOUND",
+            "|STOP_ALL_SOUNDS",
+            "d|SET_FRAME_RATE",
+            "d|SET_WINDOW",
+            /* 32 */
+            "|SAVE_SCREEN",
+            "|MOUSE_ON",
+            "|MOUSE_OFF",
+            "dd|CLEAR_WINDOW",
+            /* 36 */
+            "dd|SET_WINDOW_IMAGE",
+            "dd|POKE_PALETTE",
+            "vj|IF_VAR_NOT_ZERO",
+            "vd|SET_VAR",
+            /* 40 */
+            "vd|ADD_VAR",
+            "vd|SUB_VAR",
+            "vd|DELAY_IF_NOT_EQ",
+            "dj|IF_BIT_SET",
+            /* 44 */
+            "dj|IF_BIT_CLEAR",
+            "dd|SET_WINDOW_PALETTE",
+            "d|SET_PALETTE_SLOT1",
+            "d|SET_PALETTE_SLOT2",
+            /* 48 */
+            "d|SET_PALETTE_SLOT3",
+            "d|SET_BIT",
+            "d|CLEAR_BIT",
+            "d|ENABLE_BOX",
+            /* 52 */
+            "d|PLAY_EFFECT",
+            "dd|DISSOLVE_IN",
+            "ddd|DISSOLVE_OUT",
+            "ddd|MOVE_BOX",
+            /* 56 */
+            "|FULL_SCREEN",
+            "|BLACK_PALETTE",
+            "|CHECK_CODE_WHEEL",
+            "j|IF_EGA",
+            /* 60 */
+            "d|STOP_ANIMATE",
+            "d|INTRO",
+            "|FASTFADEOUT",
+            "|FASTFADEIN",
+        };
+
         private static readonly string[] WwVideoOpcodeNameTable =
         {
             /* 0 */
@@ -1471,9 +1789,11 @@ namespace NScumm.Agos
                     {
                         s = WaxworksOpcodeNameTable[opcode];
                     }
-//                  else if (GameType == SIMONGameType.GType_ELVIRA2) {
-//                        s = elvira2_opcodeNameTable[opcode];
-//                    } else {
+                    else if (GameType == SIMONGameType.GType_ELVIRA2)
+                    {
+                        s = elvira2_opcodeNameTable[opcode];
+                    }
+//                  else {
 //                        s = elvira1_opcodeNameTable[opcode];
 //                    }
                     break;
@@ -1678,9 +1998,9 @@ namespace NScumm.Agos
                     case SIMONGameType.GType_WW:
                         str = WwVideoOpcodeNameTable[opcode];
                         break;
-//                    case SIMONGameType.GType_ELVIRA2:
-//                        str = elvira2_videoOpcodeNameTable[opcode];
-//                        break;
+                    case SIMONGameType.GType_ELVIRA2:
+                        str = elvira2_videoOpcodeNameTable[opcode];
+                        break;
 //                    case SIMONGameType.GType_ELVIRA1:
 //                        str = elvira1_videoOpcodeNameTable[opcode];
 //                        break;
@@ -1933,7 +2253,7 @@ namespace NScumm.Agos
             if (FileExists(buf))
                 return;
 
-            DumpBitmap(buf, offs, (ushort) w, (ushort) h, 0, _displayPalette, @base);
+            DumpBitmap(buf, offs, (ushort) w, (ushort) h, 0, DisplayPalette, @base);
         }
 
         private void DumpAllSubroutines()
@@ -2050,7 +2370,7 @@ namespace NScumm.Agos
 
             if (GameType == SIMONGameType.GType_PN && (Features.HasFlag(GameFeatures.GF_EGA)))
             {
-                Array.Copy(_displayPalette, pal, 16);
+                Array.Copy(DisplayPalette, pal, 16);
             }
             else if (GameType == SIMONGameType.GType_PN || GameType == SIMONGameType.GType_ELVIRA1 ||
                      GameType == SIMONGameType.GType_ELVIRA2 || GameType == SIMONGameType.GType_WW)

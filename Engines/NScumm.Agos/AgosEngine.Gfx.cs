@@ -100,7 +100,7 @@ namespace NScumm.Agos
 
         protected bool DrawImageClip(Vc10State state)
         {
-            var vlut = new Ptr<ushort>(_videoWindows, _windowNum * 4);
+            var vlut = new Ptr<ushort>(VideoWindows, _windowNum * 4);
 
             if (_gd.ADGameDescription.gameType != SIMONGameType.GType_FF &&
                 _gd.ADGameDescription.gameType != SIMONGameType.GType_PP)
@@ -295,7 +295,7 @@ namespace NScumm.Agos
 
         protected virtual void DrawImage(Vc10State state)
         {
-            Ptr<ushort> vlut = new Ptr<ushort>(_videoWindows, _windowNum * 4);
+            Ptr<ushort> vlut = new Ptr<ushort>(VideoWindows, _windowNum * 4);
 
             if (!DrawImageClip(state))
                 return;
@@ -308,10 +308,10 @@ namespace NScumm.Agos
                     if (_windowNum == 4 || (_windowNum >= 10 && _windowNum <= 27))
                     {
                         state.surf_addr = _window4BackScn.Pixels;
-                        state.surf_pitch = _videoWindows[18] * 16;
+                        state.surf_pitch = VideoWindows[18] * 16;
 
-                        xoffs = (ushort) (((vlut[0] - _videoWindows[16]) * 2 + state.x) * 8);
-                        yoffs = (ushort) (vlut[1] - _videoWindows[17] + state.y);
+                        xoffs = (ushort) (((vlut[0] - VideoWindows[16]) * 2 + state.x) * 8);
+                        yoffs = (ushort) (vlut[1] - VideoWindows[17] + state.y);
 
                         uint xmax = (uint) (xoffs + state.draw_width * 2);
                         uint ymax = (uint) (yoffs + state.draw_height);
@@ -333,10 +333,10 @@ namespace NScumm.Agos
                     if (_windowNum == 4 || _windowNum >= 10)
                     {
                         state.surf_addr = _window4BackScn.Pixels;
-                        state.surf_pitch = _videoWindows[18] * 16;
+                        state.surf_pitch = VideoWindows[18] * 16;
 
-                        xoffs = (ushort) (((vlut[0] - _videoWindows[16]) * 2 + state.x) * 8);
-                        yoffs = (ushort) (vlut[1] - _videoWindows[17] + state.y);
+                        xoffs = (ushort) (((vlut[0] - VideoWindows[16]) * 2 + state.x) * 8);
+                        yoffs = (ushort) (vlut[1] - VideoWindows[17] + state.y);
 
                         uint xmax = (uint) (xoffs + state.draw_width * 2);
                         uint ymax = (uint) (yoffs + state.draw_height);
@@ -374,10 +374,10 @@ namespace NScumm.Agos
                     else
                     {
                         state.surf_addr = _window4BackScn.Pixels;
-                        state.surf_pitch = _videoWindows[18] * 16;
+                        state.surf_pitch = VideoWindows[18] * 16;
 
-                        xoffs = (ushort) (((vlut[0] - _videoWindows[16]) * 2 + state.x) * 8);
-                        yoffs = (ushort) (vlut[1] - _videoWindows[17] + state.y);
+                        xoffs = (ushort) (((vlut[0] - VideoWindows[16]) * 2 + state.x) * 8);
+                        yoffs = (ushort) (vlut[1] - VideoWindows[17] + state.y);
 
                         uint xmax = (uint) (xoffs + state.draw_width * 2);
                         uint ymax = (uint) (yoffs + state.draw_height);
@@ -427,7 +427,7 @@ namespace NScumm.Agos
                 _scrollXMax = (short) (state.width * 2 - 40);
             _scrollYMax = 0;
             _scrollImage = state.srcPtr;
-            _scrollHeight = state.height;
+            ScrollHeight = state.height;
             if (_variableArrayPtr[34] < 0)
                 state.x = _variableArrayPtr[251];
 
@@ -459,7 +459,7 @@ namespace NScumm.Agos
                 src += 4;
             }
 
-            SetMoveRect(0, 0, 320, _scrollHeight);
+            SetMoveRect(0, 0, 320, ScrollHeight);
 
             _window4Flag = 1;
         }
@@ -523,7 +523,7 @@ namespace NScumm.Agos
             _scrollXMax = 0;
             _scrollYMax = (short) (state.height - 480);
             _scrollImage = state.srcPtr;
-            _scrollWidth = state.width;
+            ScrollWidth = state.width;
             if (_variableArrayPtr[34] < 0)
                 state.y = _variableArrayPtr[250];
 
@@ -1052,7 +1052,7 @@ namespace NScumm.Agos
                 _scrollYMax = 0;
                 _scrollCount = 0;
                 _scrollFlag = 0;
-                _scrollHeight = 134;
+                ScrollHeight = 134;
                 _variableArrayPtr = _variableArray;
                 if (_variableArray[34] >= 0)
                 {
@@ -1082,10 +1082,10 @@ namespace NScumm.Agos
                     return;
                 }
 
-                int xoffs = _videoWindows[updateWindow * 4 + 0] * 16;
-                int yoffs = _videoWindows[updateWindow * 4 + 1];
-                uint width = (uint) (_videoWindows[updateWindow * 4 + 2] * 16);
-                uint height = _videoWindows[updateWindow * 4 + 3];
+                int xoffs = VideoWindows[updateWindow * 4 + 0] * 16;
+                int yoffs = VideoWindows[updateWindow * 4 + 1];
+                uint width = (uint) (VideoWindows[updateWindow * 4 + 2] * 16);
+                uint height = VideoWindows[updateWindow * 4 + 3];
 
                 var screen = OSystem.GraphicsManager.Capture();
                 var dst = _backGroundBuf.GetBasePtr(xoffs, yoffs);
@@ -1104,7 +1104,7 @@ namespace NScumm.Agos
                     if (updateWindow == 4 || updateWindow >= 10)
                     {
                         src = _window4BackScn.Pixels;
-                        srcWidth = _videoWindows[18] * 16;
+                        srcWidth = VideoWindows[18] * 16;
                     }
                     else if (updateWindow == 3 || updateWindow == 9)
                     {
@@ -1123,12 +1123,12 @@ namespace NScumm.Agos
                     if (updateWindow == 4)
                     {
                         src = _window4BackScn.Pixels;
-                        srcWidth = _videoWindows[18] * 16;
+                        srcWidth = VideoWindows[18] * 16;
                     }
                     else if (updateWindow >= 10)
                     {
                         src = _window4BackScn.GetBasePtr(xoffs, yoffs);
-                        srcWidth = _videoWindows[18] * 16;
+                        srcWidth = VideoWindows[18] * 16;
                     }
                     else if (updateWindow == 0)
                     {
@@ -1147,7 +1147,7 @@ namespace NScumm.Agos
                     if (updateWindow == 4 || updateWindow >= 10)
                     {
                         src = _window4BackScn.Pixels;
-                        srcWidth = _videoWindows[18] * 16;
+                        srcWidth = VideoWindows[18] * 16;
                     }
                     else if (updateWindow == 3 || updateWindow == 9)
                     {
@@ -1166,7 +1166,7 @@ namespace NScumm.Agos
                     if (updateWindow == 4 || updateWindow >= 10)
                     {
                         src = _window4BackScn.Pixels;
-                        srcWidth = _videoWindows[18] * 16;
+                        srcWidth = VideoWindows[18] * 16;
                     }
                     else if (updateWindow == 3)
                     {
@@ -1196,7 +1196,7 @@ namespace NScumm.Agos
                     else
                     {
                         src = _window4BackScn.Pixels;
-                        srcWidth = _videoWindows[18] * 16;
+                        srcWidth = VideoWindows[18] * 16;
                     }
                 }
                 else

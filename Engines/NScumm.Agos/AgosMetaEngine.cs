@@ -95,6 +95,201 @@ namespace NScumm.Agos
     {
         private static readonly ADGameDescription[] gameDescriptions =
         {
+            // Elvira 2 - English Amiga Floppy
+            new AgosGameDescription(new ADGameDescription("elvira2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gameamiga", (ushort)GameFileTypes.GAME_BASEFILE,"4aa163967f5d2bd319f8350d6af03186",134799),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"a88b1c02e13ab04dd790ec30502c323d",69860),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"a2fdc88a77c8bdffec6b36cbeda4d955",108),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"a9f876c6c66dfd011b971da3dc7b4ada",27752),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"41c975a9c1106cb5298a0bc3df0a266e",72),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"177f5f2640e80ef92d1421d32de06a5e",272),
+                    }, Language.EN_ANY, Platform.Amiga, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH|GuiOptions.NOMIDI),
+                SIMONGameType.GType_ELVIRA2, GameIds.GID_ELVIRA2, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_CRUNCHED|GameFeatures.GF_PLANAR),
+
+            // Elvira 2 - French Amiga Floppy
+            new AgosGameDescription(new ADGameDescription("elvira2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gameamiga", (ushort)GameFileTypes.GAME_BASEFILE,"7bb91fd61a135243b18b74b51ebca6bf",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"a88b1c02e13ab04dd790ec30502c323d",-1),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"a2fdc88a77c8bdffec6b36cbeda4d955",-1),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"a9f876c6c66dfd011b971da3dc7b4ada",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"41c975a9c1106cb5298a0bc3df0a266e",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"177f5f2640e80ef92d1421d32de06a5e",-1),
+                    }, Language.FR_FRA, Platform.Amiga, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH|GuiOptions.NOMIDI),
+                SIMONGameType.GType_ELVIRA2, GameIds.GID_ELVIRA2, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_CRUNCHED|GameFeatures.GF_PLANAR),
+
+            // Elvira 2 - German Amiga Floppy
+            new AgosGameDescription(new ADGameDescription("elvira2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"a2fdc88a77c8bdffec6b36cbeda4d955",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"41c975a9c1106cb5298a0bc3df0a266e",-1),
+                        new ADGameFileDescription("gameamiga", (ushort)GameFileTypes.GAME_BASEFILE,"7af80eb9759bcafcd8df21e61c5af200",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"a88b1c02e13ab04dd790ec30502c323d",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"177f5f2640e80ef92d1421d32de06a5e",-1),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"a9f876c6c66dfd011b971da3dc7b4ada",-1),
+                    }, Language.DE_DEU, Platform.Amiga, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH|GuiOptions.NOMIDI),
+                SIMONGameType.GType_ELVIRA2, GameIds.GID_ELVIRA2, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_CRUNCHED|GameFeatures.GF_PLANAR),
+
+            // Elvira 2 - Italian Amiga Floppy
+            new AgosGameDescription(new ADGameDescription("elvira2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gameamiga", (ushort)GameFileTypes.GAME_BASEFILE,"3d4e0c8da4ebd222e50de2dffed92955",139505),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"a88b1c02e13ab04dd790ec30502c323d",69860),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"a2fdc88a77c8bdffec6b36cbeda4d955",108),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"a9f876c6c66dfd011b971da3dc7b4ada",27752),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"41c975a9c1106cb5298a0bc3df0a266e",72),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"177f5f2640e80ef92d1421d32de06a5e",272),
+                    }, Language.IT_ITA, Platform.Amiga, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH|GuiOptions.NOMIDI),
+                SIMONGameType.GType_ELVIRA2, GameIds.GID_ELVIRA2, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_CRUNCHED|GameFeatures.GF_PLANAR),
+
+            // Elvira 2 - Spanish Amiga Floppy
+            new AgosGameDescription(new ADGameDescription("elvira2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gameamiga", (ushort)GameFileTypes.GAME_BASEFILE,"fddfac048a759c84ecf96e3d0cb368cc",139126),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"a88b1c02e13ab04dd790ec30502c323d",69860),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"a2fdc88a77c8bdffec6b36cbeda4d955",108),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"a9f876c6c66dfd011b971da3dc7b4ada",27752),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"41c975a9c1106cb5298a0bc3df0a266e",72),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"177f5f2640e80ef92d1421d32de06a5e",272),
+                    }, Language.ES_ESP, Platform.Amiga, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH|GuiOptions.NOMIDI),
+                SIMONGameType.GType_ELVIRA2, GameIds.GID_ELVIRA2, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_CRUNCHED|GameFeatures.GF_PLANAR),
+
+            // Elvira 2 - English Atari ST Floppy
+            new AgosGameDescription(new ADGameDescription("elvira2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gamest", (ushort)GameFileTypes.GAME_BASEFILE,"1b1acd637d32bee79859b7cc9de070e7",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"9a4eaf4df0cdf5cc85a5134150f96589",-1),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"a2fdc88a77c8bdffec6b36cbeda4d955",-1),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"8cddf461f418ea12f711fda3d3dd62fe",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"41c975a9c1106cb5298a0bc3df0a266e",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"177f5f2640e80ef92d1421d32de06a5e",-1),
+                    }, Language.EN_ANY, Platform.AtariST, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH|GuiOptions.NOMIDI),
+                SIMONGameType.GType_ELVIRA2, GameIds.GID_ELVIRA2, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_CRUNCHED|GameFeatures.GF_PLANAR),
+
+            // Elvira 2 - French Atari ST Floppy
+            new AgosGameDescription(new ADGameDescription("elvira2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gamest", (ushort)GameFileTypes.GAME_BASEFILE,"7bb91fd61a135243b18b74b51ebca6bf",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"9a4eaf4df0cdf5cc85a5134150f96589",-1),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"a2fdc88a77c8bdffec6b36cbeda4d955",-1),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"8cddf461f418ea12f711fda3d3dd62fe",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"41c975a9c1106cb5298a0bc3df0a266e",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"177f5f2640e80ef92d1421d32de06a5e",-1),
+                    }, Language.FR_FRA, Platform.AtariST, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH|GuiOptions.NOMIDI),
+                SIMONGameType.GType_ELVIRA2, GameIds.GID_ELVIRA2, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_CRUNCHED|GameFeatures.GF_PLANAR),
+
+            // Elvira 2 - English DOS Floppy
+            new AgosGameDescription(new ADGameDescription("elvira2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gamepc", (ushort)GameFileTypes.GAME_BASEFILE,"3313254722031b22d833a2cf45a91fd7",125702),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"83a7278bff55c82fbb3aef92981866c9",54471),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"a2fdc88a77c8bdffec6b36cbeda4d955",108),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"4d380a35ba941d03ee5084c71d20055b",27876),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"c2533277b7ff11f5495967d55355ea17",81),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"8252660df0edbdbc3e6377e155bbd0c5",284),
+                    }, Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH),
+                SIMONGameType.GType_ELVIRA2, GameIds.GID_ELVIRA2, GameFeatures.GF_OLD_BUNDLE),
+
+            // Elvira 2 - English DOS Floppy, Alternate 1
+            new AgosGameDescription(new ADGameDescription("elvira2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gamepc", (ushort)GameFileTypes.GAME_BASEFILE,"1282fd5c520861ae2b73bf653afef547",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"83a7278bff55c82fbb3aef92981866c9",-1),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"a2fdc88a77c8bdffec6b36cbeda4d955",-1),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"4d380a35ba941d03ee5084c71d20055b",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"c2533277b7ff11f5495967d55355ea17",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"8252660df0edbdbc3e6377e155bbd0c5",-1),
+                    }, Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH),
+                SIMONGameType.GType_ELVIRA2, GameIds.GID_ELVIRA2, GameFeatures.GF_OLD_BUNDLE),
+
+            // Elvira 2 - English DOS Floppy, Alternate 2
+            new AgosGameDescription(new ADGameDescription("elvira2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gamepc", (ushort)GameFileTypes.GAME_BASEFILE,"75d814739585b6fa89a025045885e3b9",125665),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"83a7278bff55c82fbb3aef92981866c9",54471),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"a2fdc88a77c8bdffec6b36cbeda4d955",108),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"016107aced82d0cc5d758a9fba716270",27852),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"c3a8f644551a27c8a2fec0f8070b46b7",81),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"8252660df0edbdbc3e6377e155bbd0c5",284),
+                    }, Language.EN_ANY, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH),
+                SIMONGameType.GType_ELVIRA2, GameIds.GID_ELVIRA2, GameFeatures.GF_OLD_BUNDLE),
+
+            // Elvira 2 - French DOS Floppy
+            new AgosGameDescription(new ADGameDescription("elvira2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gamepc", (ushort)GameFileTypes.GAME_BASEFILE,"4bf28ab00f5324fd938e632595742382",130980),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"83a7278bff55c82fbb3aef92981866c9",54471),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"a2fdc88a77c8bdffec6b36cbeda4d955",108),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"016107aced82d0cc5d758a9fba716270",27852),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"c3a8f644551a27c8a2fec0f8070b46b7",81),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"8252660df0edbdbc3e6377e155bbd0c5",284),
+                    }, Language.FR_FRA, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH),
+                SIMONGameType.GType_ELVIRA2, GameIds.GID_ELVIRA2, GameFeatures.GF_OLD_BUNDLE),
+
+            // Elvira 2 - German DOS Floppy
+            new AgosGameDescription(new ADGameDescription("elvira2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gamepc", (ushort)GameFileTypes.GAME_BASEFILE,"d1979d2fbc5fb5276563578ca55cbcec",-1),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"83a7278bff55c82fbb3aef92981866c9",-1),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"a2fdc88a77c8bdffec6b36cbeda4d955",-1),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"016107aced82d0cc5d758a9fba716270",-1),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"c3a8f644551a27c8a2fec0f8070b46b7",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"8252660df0edbdbc3e6377e155bbd0c5",-1),
+                    }, Language.DE_DEU, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH),
+                SIMONGameType.GType_ELVIRA2, GameIds.GID_ELVIRA2, GameFeatures.GF_OLD_BUNDLE),
+
+            // Elvira 2 - Italian DOS Floppy
+            new AgosGameDescription(new ADGameDescription("elvira2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gamepc", (ushort)GameFileTypes.GAME_BASEFILE,"09a3f1087f2977ff462ad2417bde0a5c",129833),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"83a7278bff55c82fbb3aef92981866c9",54471),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"a2fdc88a77c8bdffec6b36cbeda4d955",108),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"016107aced82d0cc5d758a9fba716270",27852),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"c3a8f644551a27c8a2fec0f8070b46b7",81),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"8252660df0edbdbc3e6377e155bbd0c5",284),
+                    }, Language.IT_ITA, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH),
+                SIMONGameType.GType_ELVIRA2, GameIds.GID_ELVIRA2, GameFeatures.GF_OLD_BUNDLE),
+
+            // Elvira 2 - Spanish DOS Floppy
+            new AgosGameDescription(new ADGameDescription("elvira2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gamepc", (ushort)GameFileTypes.GAME_BASEFILE,"bfcd74d704ad481d75eb6ba5b828333a",129577),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"83a7278bff55c82fbb3aef92981866c9",54471),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"a2fdc88a77c8bdffec6b36cbeda4d955",108),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"016107aced82d0cc5d758a9fba716270",27852),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"c3a8f644551a27c8a2fec0f8070b46b7",81),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"8252660df0edbdbc3e6377e155bbd0c5",284),
+                    }, Language.ES_ESP, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH),
+                SIMONGameType.GType_ELVIRA2, GameIds.GID_ELVIRA2, GameFeatures.GF_OLD_BUNDLE),
+
+            // Elvira 2 - Spanish DOS Floppy, Alternate
+            new AgosGameDescription(new ADGameDescription("elvira2","Floppy",
+                    new[]
+                    {
+                        new ADGameFileDescription("gamepc", (ushort)GameFileTypes.GAME_BASEFILE,"e84e1ac84f63d9a39270e517196c5ff9",129577),
+                        new ADGameFileDescription("icon.dat", (ushort)GameFileTypes.GAME_ICONFILE,"83a7278bff55c82fbb3aef92981866c9",54471),
+                        new ADGameFileDescription("menus.dat", (ushort)GameFileTypes.GAME_MENUFILE,"a2fdc88a77c8bdffec6b36cbeda4d955",108),
+                        new ADGameFileDescription("start", (ushort)GameFileTypes.GAME_RESTFILE,"016107aced82d0cc5d758a9fba716270",27852),
+                        new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"c3a8f644551a27c8a2fec0f8070b46b7",81),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"8252660df0edbdbc3e6377e155bbd0c5",284),
+                    }, Language.ES_ESP, Platform.DOS, ADGameFlags.NO_FLAGS, GuiOptions.NOSPEECH),
+                SIMONGameType.GType_ELVIRA2, GameIds.GID_ELVIRA2, GameFeatures.GF_OLD_BUNDLE),
+
             // Waxworks - English Amiga Floppy
             new AgosGameDescription(new ADGameDescription("waxworks","Floppy",
                     new[]

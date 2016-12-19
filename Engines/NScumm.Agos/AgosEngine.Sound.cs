@@ -104,7 +104,7 @@ namespace NScumm.Agos
             _midi.StartTrack(0);
         }
 
-        private void LoadSound(ushort sound, ushort freq, SoundTypeFlags flags)
+        protected void LoadSound(ushort sound, ushort freq, SoundTypeFlags flags)
         {
             int offs, size = 0;
             int rate = 8000;

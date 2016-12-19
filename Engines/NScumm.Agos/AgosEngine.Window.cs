@@ -133,11 +133,11 @@ namespace NScumm.Agos
             {
                 if (window.fillColor == 1)
                 {
-                    _displayPalette[33] = Color.FromRgb(48 * 4, 40 * 4, 32 * 4);
+                    DisplayPalette[33] = Color.FromRgb(48 * 4, 40 * 4, 32 * 4);
                 }
                 else
                 {
-                    _displayPalette[33] = Color.FromRgb(56 * 4, 56 * 4, 40 * 4);
+                    DisplayPalette[33] = Color.FromRgb(56 * 4, 56 * 4, 40 * 4);
                 }
 
                 y--;
@@ -336,7 +336,7 @@ namespace NScumm.Agos
             UndefineBox(0x7FFF);
         }
 
-        private void WriteChar(WindowBlock window, int x, int y, int offs, int val)
+        protected void WriteChar(WindowBlock window, int x, int y, int offs, int val)
         {
             int chr;
 

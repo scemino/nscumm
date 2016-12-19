@@ -20,10 +20,12 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace NScumm.Core
 {
-    public struct BytePtr
+    public struct BytePtr:IEnumerable<byte>
     {
         public int Offset;
         public byte[] Data;
@@ -123,6 +125,14 @@ namespace NScumm.Core
             return !(p1 == p2);
         }
 
+        public IEnumerator<byte> GetEnumerator()
+        {
+            for (var i = Offset; i < Data.Length-Offset; i++)
+            {
+                yield return Data[i];
+            }
+        }
+
         public override bool Equals(object obj)
         {
             if (!(obj is BytePtr)) return false;
@@ -132,6 +142,11 @@ namespace NScumm.Core
         public override int GetHashCode()
         {
             return Data?.GetHashCode() ^ Offset ?? 0;
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
 
         public void Realloc(int newSize)

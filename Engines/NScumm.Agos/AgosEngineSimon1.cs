@@ -53,7 +53,7 @@ namespace NScumm.Agos
 
         protected override void UserGame(bool load)
         {
-            Array.Clear(_saveBuf, 0, _saveBuf.Length);
+            Array.Clear(SaveBuf, 0, SaveBuf.Length);
             var maxChar = (_language == Language.HE_ISR) ? 155 : 128;
 
             _saveOrLoad = load;
@@ -107,7 +107,7 @@ namespace NScumm.Agos
                 }
                 window.textLength = 3;
 
-                var name = new BytePtr(_saveBuf, i * 18);
+                var name = new BytePtr(SaveBuf, i * 18);
 
                 // now process entire savegame name to get correct x offset for cursor
                 _saveGameNameLen = 0;
@@ -208,7 +208,7 @@ namespace NScumm.Agos
                     }
                 }
 
-                if (!SaveGame(_saveLoadRowCurPos + result, _saveBuf.GetRawText(result * 18)))
+                if (!SaveGame(_saveLoadRowCurPos + result, SaveBuf.GetRawText(result * 18)))
                     FileError(_windowArray[5], true);
             }
             else
@@ -719,7 +719,7 @@ namespace NScumm.Agos
 
         protected override void DrawImage(Vc10State state)
         {
-            var vlut = new Ptr<ushort>(_videoWindows, _windowNum * 4);
+            var vlut = new Ptr<ushort>(VideoWindows, _windowNum * 4);
 
             if (!DrawImageClip(state))
                 return;
@@ -738,8 +738,8 @@ namespace NScumm.Agos
                     state.surf_addr = _window4BackScn.Pixels;
                     state.surf_pitch = _window4BackScn.Pitch;
 
-                    xoffs = (ushort) (((vlut[0] - _videoWindows[16]) * 2 + state.x) * 8);
-                    yoffs = (ushort) (vlut[1] - _videoWindows[17] + state.y);
+                    xoffs = (ushort) (((vlut[0] - VideoWindows[16]) * 2 + state.x) * 8);
+                    yoffs = (ushort) (vlut[1] - VideoWindows[17] + state.y);
 
                     var xmax = xoffs + state.draw_width * 2;
                     var ymax = yoffs + state.draw_height;
@@ -757,10 +757,10 @@ namespace NScumm.Agos
                         state.surf2_pitch = _backGroundBuf.Pitch;
 
                         state.surf_addr = _window4BackScn.Pixels;
-                        state.surf_pitch = _videoWindows[18] * 16;
+                        state.surf_pitch = VideoWindows[18] * 16;
 
-                        xoffs = (ushort) (((vlut[0] - _videoWindows[16]) * 2 + state.x) * 8);
-                        yoffs = (ushort) (vlut[1] - _videoWindows[17] + state.y);
+                        xoffs = (ushort) (((vlut[0] - VideoWindows[16]) * 2 + state.x) * 8);
+                        yoffs = (ushort) (vlut[1] - VideoWindows[17] + state.y);
 
                         var xmax = xoffs + state.draw_width * 2;
                         var ymax = yoffs + state.draw_height;
@@ -798,8 +798,8 @@ namespace NScumm.Agos
                             state.surf_pitch = _window4BackScn.Pitch;
                         }
 
-                        xoffs = (ushort) (((vlut[0] - _videoWindows[16]) * 2 + state.x) * 8);
-                        yoffs = (ushort) (vlut[1] - _videoWindows[17] + state.y);
+                        xoffs = (ushort) (((vlut[0] - VideoWindows[16]) * 2 + state.x) * 8);
+                        yoffs = (ushort) (vlut[1] - VideoWindows[17] + state.y);
 
                         var xmax = xoffs + state.draw_width * 2;
                         var ymax = yoffs + state.draw_height;
@@ -932,7 +932,7 @@ namespace NScumm.Agos
         {
             Stream @in;
             ushort i, slot;
-            BytePtr dst = _saveBuf;
+            BytePtr dst = SaveBuf;
 
             DisableFileBoxes();
 
@@ -1092,7 +1092,7 @@ namespace NScumm.Agos
         {
             if (GameType == SIMONGameType.GType_SIMON1 && (_windowNum == 3 || _windowNum == 4 || _windowNum >= 10))
             {
-                state.surf2_addr += _videoWindows[17] * 320;
+                state.surf2_addr += VideoWindows[17] * 320;
             }
 
             if (Features.HasFlag(GameFeatures.GF_32COLOR))
@@ -1621,7 +1621,7 @@ namespace NScumm.Agos
                 Delay(5);
             }
 
-            Array.Copy(_currentPalette, _displayPalette, _currentPalette.Length);
+            Array.Copy(_currentPalette, DisplayPalette, _currentPalette.Length);
         }
 
         protected void ScriptMouseOff()
@@ -1644,13 +1644,13 @@ namespace NScumm.Agos
             {
                 num = 256;
                 palSize = 768;
-                palptr = _displayPalette;
+                palptr = DisplayPalette;
             }
             else
             {
                 num = (ushort) (a == 0 ? 32 : 16);
                 palSize = 96;
-                palptr = new Ptr<Color>(_displayPalette, a * 16);
+                palptr = new Ptr<Color>(DisplayPalette, a * 16);
             }
 
             var offs = _curVgaFile1 + 6;
@@ -1666,7 +1666,7 @@ namespace NScumm.Agos
             if (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_32COLOR))
             {
                 // Custom palette used for verb area
-                palptr = new Ptr<Color>(_displayPalette, 13 * 16);
+                palptr = new Ptr<Color>(DisplayPalette, 13 * 16);
                 for (var c = 0; c < 32; c++)
                 {
                     palptr[0] = Color.FromRgb(CustomPalette[c * 3 + 0], CustomPalette[c * 3 + 1],

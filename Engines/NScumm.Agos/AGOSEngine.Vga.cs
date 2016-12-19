@@ -844,8 +844,8 @@ namespace NScumm.Agos
 
             _lastVgaWaitFor = id;
             // Clear a wait event
-            if (id == _vgaWaitFor)
-                _vgaWaitFor = 0;
+            if (id == VgaWaitFor)
+                VgaWaitFor = 0;
         }
 
         private void vc16_waitSync()
@@ -983,7 +983,7 @@ namespace NScumm.Agos
 
             num = 16;
 
-            Ptr<Color> palptr = _displayPalette;
+            Ptr<Color> palptr = DisplayPalette;
             _bottomPalette = true;
 
             if (GameType == SIMONGameType.GType_PN)
@@ -1036,7 +1036,7 @@ namespace NScumm.Agos
                         iconPalette[c * 3 + 1] * 2,
                         iconPalette[c * 3 + 2] * 2);
                 }
-                palptr = _displayPalette;
+                palptr = DisplayPalette;
             }
 
             var offs = _curVgaFile1 + _curVgaFile1.ToUInt16BigEndian(6);
@@ -1154,7 +1154,7 @@ namespace NScumm.Agos
 
         private void vc26_setSubWindow()
         {
-            var @as = new Ptr<ushort>(_videoWindows, (int) (VcReadNextWord() * 4)); // number
+            var @as = new Ptr<ushort>(VideoWindows, (int) (VcReadNextWord() * 4)); // number
             @as[0] = (ushort) VcReadNextWord(); // x
             @as[1] = (ushort) VcReadNextWord(); // y
             @as[2] = (ushort) VcReadNextWord(); // width
@@ -1304,14 +1304,14 @@ namespace NScumm.Agos
             }
             else
             {
-                ushort xoffs = (ushort) (_videoWindows[4 * 4 + 0] * 16);
-                ushort yoffs = _videoWindows[4 * 4 + 1];
-                ushort width = (ushort) (_videoWindows[4 * 4 + 2] * 16);
-                ushort height = _videoWindows[4 * 4 + 3];
+                ushort xoffs = (ushort) (VideoWindows[4 * 4 + 0] * 16);
+                ushort yoffs = VideoWindows[4 * 4 + 1];
+                ushort width = (ushort) (VideoWindows[4 * 4 + 2] * 16);
+                ushort height = VideoWindows[4 * 4 + 3];
 
                 var dst = _backGroundBuf.GetBasePtr(xoffs, yoffs);
                 var src = _window4BackScn.Pixels;
-                ushort srcWidth = (ushort) (_videoWindows[4 * 4 + 2] * 16);
+                ushort srcWidth = (ushort) (VideoWindows[4 * 4 + 2] * 16);
                 for (; height > 0; height--)
                 {
                     Array.Copy(src.Data, src.Offset, dst.Data, dst.Offset, width);
@@ -1329,7 +1329,7 @@ namespace NScumm.Agos
             if (GameType == SIMONGameType.GType_ELVIRA2 || GameType == SIMONGameType.GType_WW)
             {
                 // Set mouse palette
-                _displayPalette[65] = Color.FromRgb(48 * 4, 48 * 4, 48 * 4);
+                DisplayPalette[65] = Color.FromRgb(48 * 4, 48 * 4, 48 * 4);
                 _paletteFlag = 1;
             }
             MouseOn();
@@ -1344,7 +1344,7 @@ namespace NScumm.Agos
 
         private void ClearVideoBackGround(ushort num, ushort color)
         {
-            var vlut = new Ptr<ushort>(_videoWindows, num * 4);
+            var vlut = new Ptr<ushort>(VideoWindows, num * 4);
             var dst = _backGroundBuf.GetBasePtr(vlut[0] * 16, vlut[1]);
 
             for (int h = 0; h < vlut[3]; h++)
@@ -1387,10 +1387,10 @@ namespace NScumm.Agos
             }
             else
             {
-                var vlut = new Ptr<ushort>(_videoWindows, num * 4);
-                ushort xoffs = (ushort) ((vlut[0] - _videoWindows[16]) * 16);
-                ushort yoffs = (ushort) (vlut[1] - _videoWindows[17]);
-                ushort dstWidth = (ushort) (_videoWindows[18] * 16);
+                var vlut = new Ptr<ushort>(VideoWindows, num * 4);
+                ushort xoffs = (ushort) ((vlut[0] - VideoWindows[16]) * 16);
+                ushort yoffs = (ushort) (vlut[1] - VideoWindows[17]);
+                ushort dstWidth = (ushort) (VideoWindows[18] * 16);
 // TODO: Is there any known connection between dstWidth and the pitch
 // of the _window4BackScn Surface? If so, we might be able to pass
 // yoffs as proper y parameter to getBasePtr.
@@ -1453,7 +1453,7 @@ namespace NScumm.Agos
             if (GameType == SIMONGameType.GType_PN && Features.HasFlag(GameFeatures.GF_EGA))
                 return;
 
-            var palptr = new Ptr<Color>(_displayPalette, offs);
+            var palptr = new Ptr<Color>(DisplayPalette, offs);
             palptr[0] = Color.FromRgb(
                 ((color & 0xf00) >> 8) * 32,
                 ((color & 0x0f0) >> 4) * 32,

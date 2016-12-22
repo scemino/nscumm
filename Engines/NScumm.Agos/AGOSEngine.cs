@@ -116,7 +116,7 @@ namespace NScumm.Agos
         protected byte _leftButtonCount;
         protected byte _leftButtonOld;
         private byte _oneClick;
-        private bool _clickOnly;
+        protected bool _clickOnly;
         private bool _leftClick, _rightClick;
         private bool _noRightClick;
         protected short[] _variableArray;
@@ -241,18 +241,18 @@ namespace NScumm.Agos
         protected byte _saveGameNameLen;
         protected readonly byte[] _hebrewCharWidths = new byte[32];
         protected HitArea _lastHitArea;
-        private Item _hitAreaSubjectItem;
+        protected Item _hitAreaSubjectItem;
         protected Item _hitAreaObjectItem;
         protected bool _nameLocked;
         protected ushort _needHitAreaRecalc;
         protected HitArea _lastHitArea3;
-        private bool _dragAccept;
+        protected bool _dragAccept;
         protected ScummInputState _keyPressed;
-        private bool _dragMode;
+        protected bool _dragMode;
         protected HitArea _lastClickRem;
-        private bool _dragFlag;
+        protected bool _dragFlag;
         private bool _dragEnd;
-        private byte _dragCount;
+        protected byte _dragCount;
         protected Point _mouse;
         protected Point _mouseOld;
         protected HitArea _currentBox;
@@ -329,7 +329,7 @@ namespace NScumm.Agos
         protected bool _bottomPalette;
         private bool _syncFlag2;
         protected readonly VgaTimerEntry[] _vgaTimerList = ScummHelper.CreateArray<VgaTimerEntry>(205);
-        private ushort _verbHitArea;
+        protected ushort _verbHitArea;
         private int _textSize;
         private byte[] _textMem;
         private BytePtr _twoByteTokens;
@@ -492,7 +492,7 @@ namespace NScumm.Agos
             while (!HasToQuit)
             {
                 WaitForInput();
-                HandleVerbClicked(_verbHitArea);
+                HandleVerbClicked();
                 Delay(100);
             }
         }
@@ -889,7 +889,7 @@ namespace NScumm.Agos
             }
         }
 
-        private int GetItem1ID()
+        protected int GetItem1ID()
         {
             return 1;
         }
@@ -1002,12 +1002,12 @@ namespace NScumm.Agos
                 filename.Clear();
                 for (i = 0; p.Value != 0; p.Offset++, i++)
                     filename.Append((char) p.Value);
-                filename.Append((char)0);
+                filename.Append((char) 0);
                 p.Offset++;
 
                 _roomsListPtr = p;
 
-                while(true)
+                while (true)
                 {
                     minNum = p.ToUInt16BigEndian();
                     p += 2;
@@ -1195,6 +1195,137 @@ namespace NScumm.Agos
             }
 
             return n;
+        }
+
+        protected Item FindInByClass(Item i, short m)
+        {
+            i = DerefItem(i.child);
+            while (i != null)
+            {
+                if ((i.classFlags & m) != 0)
+                {
+                    _findNextPtr = DerefItem(i.next);
+                    return i;
+                }
+                if (m == 0)
+                {
+                    _findNextPtr = DerefItem(i.next);
+                    return i;
+                }
+                i = DerefItem(i.next);
+            }
+            return null;
+        }
+
+        protected void SetUserItem(Item item, int n, int m)
+        {
+            var subUserFlag = (SubUserFlag) FindChildOfType(item, ChildType.kUserFlagType);
+            if (subUserFlag == null)
+            {
+                subUserFlag = AllocateChildBlock<SubUserFlag>(item, ChildType.kUserFlagType);
+            }
+
+            if (n == 0)
+                subUserFlag.userItems[n] = (ushort) m;
+        }
+
+        protected int GetUserItem(Item item, int n)
+        {
+            var subUserFlag = (SubUserFlag) FindChildOfType(item, ChildType.kUserFlagType);
+            if (subUserFlag == null)
+                return 0;
+
+            if (n < 0 || n > 0)
+                return 0;
+
+            return subUserFlag.userItems[n];
+        }
+
+        // Elvira 1 specific
+        protected void DrawMenuStrip(uint windowNum, uint menuNum)
+        {
+            WindowBlock window = _windowArray[windowNum % 8];
+
+            MouseOff();
+
+            BytePtr srcPtr = _menuBase;
+            int menu = (int) ((menuNum != 0) ? menuNum * 4 + 1 : 0);
+
+            while (menu-- != 0)
+            {
+                if (srcPtr.ToUInt16() != 0xFFFF)
+                {
+                    srcPtr += 2;
+                    while (srcPtr.Value != 0)
+                        srcPtr.Offset++;
+                    srcPtr.Offset++;
+                }
+                else
+                {
+                    srcPtr += 2;
+                }
+            }
+
+            ClearWindow(window);
+
+            int newline = 0;
+            while (srcPtr.ToUInt16() != 0xFFFF)
+            {
+                BytePtr tmp = srcPtr;
+                srcPtr += 2;
+
+                if (newline != 0)
+                {
+                    WindowPutChar(window, 10);
+                }
+
+                uint len = 0;
+                while (srcPtr.Value != 0 && srcPtr.Value != 1)
+                {
+                    len++;
+                    srcPtr.Offset++;
+                }
+                if (srcPtr.Value == 1)
+                    srcPtr.Offset++;
+
+                uint maxLen = window.textMaxLength - len;
+
+                if ((window.flags & 1) != 0)
+                    window.textColumnOffset += 4;
+
+                maxLen /= 2;
+                while (maxLen-- != 0)
+                    WindowPutChar(window, 32);
+
+                srcPtr = tmp;
+                uint verb = srcPtr.ToUInt16BigEndian();
+                srcPtr += 2;
+
+                while (srcPtr.Value != 0)
+                {
+                    WindowPutChar(window, srcPtr.Value);
+                    srcPtr.Offset++;
+                }
+                srcPtr.Offset++;
+
+                if (verb != 0xFFFE)
+                {
+                    HitArea ha = FindEmptyHitArea().Value;
+                    ha.x = (ushort) (window.x * 8 + 3);
+                    ha.y = (ushort) (window.textRow * 8 + window.y);
+                    ha.data = (ushort) menuNum;
+                    ha.width = (ushort) (window.width * 8 - 6);
+                    ha.height = 7;
+                    ha.flags = BoxFlags.kBFBoxInUse | BoxFlags.kBFInvertTouch;
+                    ha.id = 30000;
+                    ha.priority = 1;
+                    ha.verb = (ushort) verb;
+                }
+
+                newline = 0xFFFF;
+            }
+
+            MouseOn();
         }
 
         private static readonly byte[] polish4CD_feebleFontSize =

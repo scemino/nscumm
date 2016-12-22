@@ -671,7 +671,7 @@ namespace NScumm.Agos
             foreach(var chr in @string)
             {
                 s++;
-                byte len = _language == Language.PL_POL ? polish_charWidth[chr] : charWidth[chr];
+                byte len = _language == Language.PL_POL ? PolishCharWidth[chr] : CharWidth[chr];
                 if (pixels + len > maxWidth)
                     break;
                 pixels += len;
@@ -868,7 +868,7 @@ namespace NScumm.Agos
             _runScriptCondition[_recursionDepth] = cond;
         }
 
-        private static readonly byte[] polish_charWidth =
+        private static readonly byte[] PolishCharWidth =
         {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -896,7 +896,7 @@ namespace NScumm.Agos
         };
 
 
-        private static readonly byte[] charWidth =
+        private static readonly byte[] CharWidth =
         {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

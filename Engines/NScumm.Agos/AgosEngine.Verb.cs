@@ -66,7 +66,7 @@ namespace NScumm.Agos
                 WindowPutChar(window, (byte) c);
         }
 
-        private void HandleVerbClicked(uint verb)
+        private void HandleVerbClicked()
         {
             int result;
 
@@ -327,7 +327,7 @@ namespace NScumm.Agos
             ha.Value.itemPtr = itemPtr;
 
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF &&
-                ((ha.Value.flags & BoxFlags.kBFHyperBox) != 0))
+               ha.Value.flags.HasFlag(BoxFlags.kBFHyperBox))
             {
                 ha.Value.data = _hyperLink;
                 ha.Value.priority = 50;
@@ -636,9 +636,9 @@ namespace NScumm.Agos
             _videoLockOut = (ushort) (_videoLockOut & ~0x8000);
         }
 
-        protected void LeaveHitAreaById(int hitarea_id)
+        protected void LeaveHitAreaById(int hitareaId)
         {
-            var ha = FindBox(hitarea_id);
+            var ha = FindBox(hitareaId);
             if (ha != null)
                 HitareaLeave(ha);
         }

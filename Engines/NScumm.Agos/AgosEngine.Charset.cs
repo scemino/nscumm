@@ -25,7 +25,7 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Agos
 {
-    partial class AgosEngine
+    internal partial class AgosEngine
     {
         private void DoOutput(BytePtr src, int len)
         {
@@ -123,7 +123,7 @@ namespace NScumm.Agos
                 _numLettersToPrint = 0;
                 _printCharCurPos = 0;
                 _printCharPixelCount = 0;
-                DoOutput(new byte[] {chr}, 1);
+                DoOutput(new[] {chr}, 1);
                 ClsCheck(_textWindow);
             }
             else if (chr == 0 || chr == ' ' || chr == 10)
@@ -151,7 +151,7 @@ namespace NScumm.Agos
                     else
                     {
                         if (chr != 0)
-                            DoOutput(new byte[] {chr}, 1);
+                            DoOutput(new[] {chr}, 1);
                         if (chr == 10)
                             _printCharCurPos = 0;
                         else if (chr != 0)
@@ -163,13 +163,13 @@ namespace NScumm.Agos
                 }
                 else
                 {
-                    byte newline_character = 10;
+                    const byte newlineCharacter = 10;
                     _printCharCurPos = _printCharPixelCount;
-                    DoOutput(new[] {newline_character}, 1);
+                    DoOutput(new[] {newlineCharacter}, 1);
                     DoOutput(_lettersToPrintBuf, _numLettersToPrint);
                     if (chr == ' ')
                     {
-                        DoOutput(new byte[] {chr}, 1);
+                        DoOutput(new[] {chr}, 1);
                         _printCharCurPos += (short) ((_gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
                                                       _gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
                             ? GetFeebleFontSize(chr)
@@ -177,7 +177,7 @@ namespace NScumm.Agos
                     }
                     else
                     {
-                        DoOutput(new byte[] {chr}, 1);
+                        DoOutput(new[] {chr}, 1);
                         _printCharCurPos = 0;
                     }
                 }
@@ -629,7 +629,7 @@ namespace NScumm.Agos
             0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0,
         };
 
-        static readonly byte[] english_simonFont =
+        private static readonly byte[] english_simonFont =
         {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x20, 0x70, 0x70, 0x20, 0x20, 0x00, 0x20, 0x00,
@@ -731,7 +731,7 @@ namespace NScumm.Agos
             0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0,
         };
 
-        static readonly byte[] french_simonFont =
+        private static readonly byte[] french_simonFont =
         {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x20, 0x70, 0x70, 0x20, 0x20, 0x00, 0x20, 0x00,
@@ -833,7 +833,7 @@ namespace NScumm.Agos
             0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0,
         };
 
-        static readonly byte[] german_simonFont =
+        private static readonly byte[] german_simonFont =
         {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x20, 0x70, 0x70, 0x20, 0x20, 0x00, 0x20, 0x00,
@@ -935,7 +935,7 @@ namespace NScumm.Agos
             0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0,
         };
 
-        static readonly byte[] hebrew_simonFont =
+        private static readonly byte[] hebrew_simonFont =
         {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x20, 0x70, 0x70, 0x20, 0x20, 0x00, 0x20, 0x00,
@@ -1037,7 +1037,7 @@ namespace NScumm.Agos
             0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0,
         };
 
-        static readonly byte[] italian_simonFont =
+        private static readonly byte[] italian_simonFont =
         {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x20, 0x70, 0x70, 0x20, 0x20, 0x00, 0x20, 0x00,
@@ -1139,7 +1139,7 @@ namespace NScumm.Agos
             0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0,
         };
 
-        static readonly byte[] polish_simonFont =
+        private static readonly byte[] polish_simonFont =
         {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x20, 0x70, 0x70, 0x20, 0x20, 0x00, 0x20, 0x00,
@@ -1241,7 +1241,7 @@ namespace NScumm.Agos
             0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0,
         };
 
-        static readonly byte[] russian_simonFont =
+        private static readonly byte[] russian_simonFont =
         {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x20, 0x70, 0x70, 0x20, 0x20, 0x00, 0x20, 0x00,
@@ -1343,7 +1343,7 @@ namespace NScumm.Agos
             0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0,
         };
 
-        static readonly byte[] spanish_simonFont =
+        private static readonly byte[] spanish_simonFont =
         {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x20, 0x70, 0x70, 0x20, 0x20, 0x00, 0x20, 0x00,
@@ -1445,7 +1445,7 @@ namespace NScumm.Agos
             0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0,
         };
 
-        static readonly byte[] english_waxworksFont =
+        private static readonly byte[] english_waxworksFont =
         {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x00, 0x20,
@@ -1547,7 +1547,7 @@ namespace NScumm.Agos
             0x00, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0x00,
         };
 
-        static readonly byte[] french_waxworksFont =
+        private static readonly byte[] french_waxworksFont =
         {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x00, 0x20,
@@ -1649,7 +1649,7 @@ namespace NScumm.Agos
             0x00, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0x00,
         };
 
-        static readonly byte[] german_waxworksFont =
+        private static readonly byte[] german_waxworksFont =
         {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x00, 0x20,
@@ -1751,7 +1751,7 @@ namespace NScumm.Agos
             0x00, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0x00,
         };
 
-        static readonly byte[] italian_waxworksFont =
+        private static readonly byte[] italian_waxworksFont =
         {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x00, 0x20,
@@ -1853,7 +1853,7 @@ namespace NScumm.Agos
             0x00, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0x00,
         };
 
-        static readonly byte[] spanish_waxworksFont =
+        private static readonly byte[] spanish_waxworksFont =
         {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x00, 0x20,
@@ -1955,7 +1955,7 @@ namespace NScumm.Agos
             0x00, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0x00,
         };
 
-        static readonly byte[] english_elvira1Font =
+        private static readonly byte[] english_elvira1Font =
         {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x00, 0x20,
@@ -2057,7 +2057,7 @@ namespace NScumm.Agos
             0x00, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0x00,
         };
 
-        static readonly byte[] english_pnFont =
+        private static readonly byte[] english_pnFont =
         {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x10, 0x10, 0x10, 0x10, 0x00, 0x10, 0x00,

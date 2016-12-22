@@ -252,7 +252,7 @@ namespace NScumm.Agos
         {
             // 43: add
             uint var = GetVarWrapper();
-            WriteVariable((ushort) var, (ushort) (ReadVariable((ushort)var) + GetVarOrWord()));
+            WriteVariable((ushort) var, (ushort) (ReadVariable((ushort) var) + GetVarOrWord()));
 
             // WORKAROUND: The conversation of the male in Vid-Phone Booth at Dave's Space Bar
             // is based on variable 116, but stops due to a missing option (37).
@@ -1074,6 +1074,66 @@ namespace NScumm.Agos
             return (uint) _variableArray[variable];
         }
 
+        protected virtual void MoveDirn(Item i, uint x)
+        {
+            var p = DerefItem(i.parent);
+            if (p == null)
+                return;
 
+
+            Item d = GetExitOf_e1(p, (ushort) x);
+            if (d != null)
+            {
+                if (CanPlace(i, d) != 0)
+                    return;
+
+                SetItemParent(i, d);
+                return;
+            }
+
+            d = GetDoorOf(p, (ushort) x);
+            if (d != null)
+            {
+                var name = GetStringPtrById(d.itemName, true);
+                if (d.state == 1)
+                    ShowMessageFormat("%s is closed.\n", name);
+                else
+                    ShowMessageFormat("%s is locked.\n", name);
+                return;
+            }
+
+            ShowMessageFormat("You can't go that way.\n");
+        }
+
+        protected Item GetExitOf_e1(Item item, ushort d)
+        {
+            var g = (SubGenExit) FindChildOfType(item, ChildType.kGenExitType);
+            if (g == null)
+                return null;
+
+            var x = DerefItem(g.dest[d]);
+            if (x == null)
+                return null;
+            if (IsRoom(x))
+                return x;
+            if (x.state != 0)
+                return null;
+            return DerefItem(x.parent);
+        }
+
+        // Elvira 1 specific
+        protected Item GetDoorOf(Item i, ushort d)
+        {
+            var g = (SubGenExit) FindChildOfType(i, ChildType.kGenExitType);
+            if (g == null)
+                return null;
+
+            var x = DerefItem(g.dest[d]);
+            if (x == null)
+                return null;
+            if (IsRoom(x))
+                return null;
+            return x;
+        }
     }
 }

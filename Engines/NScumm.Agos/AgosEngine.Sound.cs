@@ -145,7 +145,7 @@ namespace NScumm.Agos
             }
             else
             {
-                while (dst.ToUInt16(6) != sound)
+                while (dst.ToUInt16BigEndian(6) != sound)
                 {
                     size += 12;
                     dst += 12;
@@ -154,7 +154,7 @@ namespace NScumm.Agos
                         Error("loadSound: Reading beyond EOF ({0}, {1})", size, _curSfxFileSize);
                 }
 
-                size = dst.ToUInt16(2);
+                size = dst.ToUInt16BigEndian(2);
                 offs = dst.ToInt32BigEndian(8);
             }
 

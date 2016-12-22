@@ -295,7 +295,7 @@ namespace NScumm.Agos
 
         protected virtual void DrawImage(Vc10State state)
         {
-            Ptr<ushort> vlut = new Ptr<ushort>(VideoWindows, _windowNum * 4);
+            var vlut = new Ptr<ushort>(VideoWindows, _windowNum * 4);
 
             if (!DrawImageClip(state))
                 return;

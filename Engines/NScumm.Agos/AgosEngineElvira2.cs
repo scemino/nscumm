@@ -342,7 +342,7 @@ namespace NScumm.Agos
 
         private void SetPaletteSlot(ushort srcOffs, byte dstOffs)
         {
-            var palptr = new Ptr<Color>(DisplayPalette, dstOffs * 3 * 16);
+            var palptr = new Ptr<Color>(DisplayPalette, dstOffs * 16);
             var offs = _curVgaFile1 + _curVgaFile1.ToUInt16BigEndian(6);
             var src = offs + srcOffs * 32;
             ushort num = 16;
@@ -665,18 +665,18 @@ namespace NScumm.Agos
                 dst += (x + window.x) * 8;
                 dst += (y * 8 + window.y) * screen.Pitch;
 
-                uint color = (uint) (dst[0] & 0xF0);
+                byte color = (byte) (dst[0] & 0xF0);
                 if (Features.HasFlag(GameFeatures.GF_PLANAR))
                 {
                     src = _iconFilePtr;
                     src += src.ToInt32BigEndian(icon * 4);
-                    DecompressIconPlanar(dst, src, 24, 12, (byte) color, (uint) screen.Pitch);
+                    DecompressIconPlanar(dst, src, 24, 12, color, screen.Pitch);
                 }
                 else
                 {
                     src = _iconFilePtr;
                     src += src.ToUInt16(icon * 2);
-                    DecompressIcon(dst, src, 24, 12, (byte) color, screen.Pitch);
+                    DecompressIcon(dst, src, 24, 12, color, screen.Pitch);
                 }
             });
 
@@ -721,7 +721,7 @@ namespace NScumm.Agos
             var o = (SubObject) FindChildOfType(i, ChildType.kObjectType);
 
             int ct;
-            if ((o != null) && o.objectFlags.HasFlag(SubObjectFlags.kOFSoft))
+            if (o != null && o.objectFlags.HasFlag(SubObjectFlags.kOFSoft))
             {
                 if (o.objectFlags.HasFlag(SubObjectFlags.kOFSize))
                 {
@@ -730,33 +730,13 @@ namespace NScumm.Agos
                 }
                 return SizeRec(i, d + 1);
             }
-            if ((o != null) && o.objectFlags.HasFlag(SubObjectFlags.kOFSize))
+            if (o != null && o.objectFlags.HasFlag(SubObjectFlags.kOFSize))
             {
                 ct = GetOffsetOfChild2Param(o, (int) SubObjectFlags.kOFSize);
                 return o.objectFlagValue[ct];
             }
 
             return 0;
-        }
-
-        private Item FindInByClass(Item i, short m)
-        {
-            i = DerefItem(i.child);
-            while (i != null)
-            {
-                if ((i.classFlags & m) != 0)
-                {
-                    _findNextPtr = DerefItem(i.next);
-                    return i;
-                }
-                if (m == 0)
-                {
-                    _findNextPtr = DerefItem(i.next);
-                    return i;
-                }
-                i = DerefItem(i.next);
-            }
-            return null;
         }
 
         private void SetExitState(Item i, ushort n, ushort d, ushort s)
@@ -1740,18 +1720,28 @@ namespace NScumm.Agos
 
         protected override int SetupIconHitArea(WindowBlock window, uint num, int x, int y, Item itemPtr)
         {
-            var ha = FindEmptyHitArea();
-            ha.Value.x = (ushort) ((x + window.x) * 8);
-            ha.Value.y = (ushort) (y * 25 + window.y);
-            ha.Value.itemPtr = itemPtr;
-            ha.Value.width = 24;
-            ha.Value.height = 24;
-            ha.Value.flags = BoxFlags.kBFDragBox | BoxFlags.kBFBoxInUse | BoxFlags.kBFBoxItem;
-            ha.Value.id = 0x7FFD;
-            ha.Value.priority = 100;
-            ha.Value.verb = 208;
+            var h = FindEmptyHitArea();
+            var ha = h.Value;
+            ha.x = (ushort) ((x + window.x) * 8);
+            ha.y = (ushort) (y * 8 + window.y);
+            ha.itemPtr = itemPtr;
+            ha.width = 24;
+            ha.height = 24;
+            ha.id = 0x7FFD;
+            ha.priority = 100;
 
-            return Array.IndexOf(_hitAreas, ha.Value);
+            if (window.iconPtr.classMask == 2)
+            {
+                ha.flags = BoxFlags.kBFDragBox | BoxFlags.kBFBoxInUse;
+                ha.verb = 248 + 0x4000;
+            }
+            else
+            {
+                ha.flags = BoxFlags.kBFDragBox | BoxFlags.kBFBoxInUse | BoxFlags.kBFBoxItem;
+                ha.verb = 208;
+            }
+
+            return h.Offset;
         }
 
         protected override int ItemGetIconNumber(Item item)
@@ -2018,7 +2008,7 @@ namespace NScumm.Agos
             SetWindowImageEx(6, 106);
         }
 
-        protected virtual void MoveDirn(Item i, uint x)
+        protected override void MoveDirn(Item i, uint x)
         {
             ushort n;
 

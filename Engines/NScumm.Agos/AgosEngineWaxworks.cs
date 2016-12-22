@@ -503,7 +503,7 @@ namespace NScumm.Agos
                 {
                     BytePtr src = _iconFilePtr;
                     src.Offset += src.ToInt32BigEndian(icon * 4);
-                    DecompressIconPlanar(dst, src, 24, 10, color, (uint) screen.Pitch);
+                    DecompressIconPlanar(dst, src, 24, 10, color, screen.Pitch);
                 }
                 else
                 {

@@ -249,13 +249,13 @@ namespace NScumm.Agos
             _variableArrayPtr[var] = value;
         }
 
-        private void vc1_fadeOut()
+        protected void vc1_fadeOut()
         {
             /* dummy opcode */
             _vcPtr += 6;
         }
 
-        private void vc2_call()
+        protected void vc2_call()
         {
             ushort num;
 
@@ -277,7 +277,7 @@ namespace NScumm.Agos
             _curVgaFile2 = oldFile2;
         }
 
-        private void vc3_loadSprite()
+        protected void vc3_loadSprite()
         {
             ushort zoneNum, vgaSpriteId;
 
@@ -309,13 +309,13 @@ namespace NScumm.Agos
             _curVgaFile1 = oldFile1;
         }
 
-        private void vc4_fadeIn()
+        protected void vc4_fadeIn()
         {
             /* dummy opcode */
             _vcPtr += 6;
         }
 
-        private void vc5_ifEqual()
+        protected void vc5_ifEqual()
         {
             ushort var;
 
@@ -379,7 +379,7 @@ namespace NScumm.Agos
             return Me().parent == item.parent;
         }
 
-        private void vc6_ifObjectHere()
+        protected void vc6_ifObjectHere()
         {
             if (!IfObjectHere((ushort) VcReadNextWord()))
             {
@@ -387,13 +387,13 @@ namespace NScumm.Agos
             }
         }
 
-        private void vc7_ifObjectNotHere()
+        protected void vc7_ifObjectNotHere()
         {
             if (IfObjectHere((ushort) VcReadNextWord()))
                 VcSkipNextInstruction();
         }
 
-        private void vc8_ifObjectIsAt()
+        protected void vc8_ifObjectIsAt()
         {
             ushort a = (ushort) VcReadNextWord();
             ushort b = (ushort) VcReadNextWord();
@@ -415,7 +415,7 @@ namespace NScumm.Agos
             return DerefItem(item_a.parent) == item_b;
         }
 
-        private void vc9_ifObjectStateIs()
+        protected void vc9_ifObjectStateIs()
         {
             ushort a = (ushort) VcReadNextWord();
             ushort b = (ushort) VcReadNextWord();
@@ -433,7 +433,7 @@ namespace NScumm.Agos
             return item.state == b;
         }
 
-        private BytePtr vc10_uncompressFlip(BytePtr src, ushort w, ushort h)
+        protected BytePtr vc10_uncompressFlip(BytePtr src, ushort w, ushort h)
         {
             w *= 8;
 
@@ -563,7 +563,7 @@ namespace NScumm.Agos
             return _videoBuf1;
         }
 
-        private void vc10_draw()
+        protected void vc10_draw()
         {
             var image = (short) VcReadNextWord();
 
@@ -608,7 +608,7 @@ namespace NScumm.Agos
             if (image == 0)
                 return;
 
-            Debug("drawImage_init({0},{1},{2},{3},{4})",image,palette,x,y,flags);
+            Debug("drawImage_init({0},{1},{2},{3},{4})", image, palette, x, y, flags);
 
             int width, height;
             Vc10State state = new Vc10State();
@@ -769,7 +769,7 @@ namespace NScumm.Agos
             vfs.Value.zoneNum = _vgaCurZoneNum;
         }
 
-        private void vc12_delay()
+        protected void vc12_delay()
         {
             ushort num;
 
@@ -793,7 +793,7 @@ namespace NScumm.Agos
             _vcPtr = _vcGetOutOfCode;
         }
 
-        private void vc13_addToSpriteX()
+        protected void vc13_addToSpriteX()
         {
             var vsp = FindCurSprite();
             vsp.Value.x += (short) VcReadNextWord();
@@ -803,7 +803,7 @@ namespace NScumm.Agos
             _vgaSpriteChanged++;
         }
 
-        private void vc14_addToSpriteY()
+        protected void vc14_addToSpriteY()
         {
             var vsp = FindCurSprite();
             vsp.Value.y += (short) VcReadNextWord();
@@ -848,7 +848,7 @@ namespace NScumm.Agos
                 VgaWaitFor = 0;
         }
 
-        private void vc16_waitSync()
+        protected void vc16_waitSync()
         {
             var vfs = _waitSyncTable.FirstOrDefault(o => o.ident == 0);
             vfs.ident = (ushort) VcReadNextWord();
@@ -915,7 +915,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void vc18_jump()
+        protected void vc18_jump()
         {
             var offs = (short) VcReadNextWord();
             _vcPtr += offs;
@@ -943,7 +943,7 @@ namespace NScumm.Agos
             _vcPtr = _curVgaFile1 + ScummHelper.SwapBytes(header2.scriptOffs);
         }
 
-        private void vc20_setRepeat()
+        protected void vc20_setRepeat()
         {
             // Sets counter used by the endRepeat opcode below.
             ushort a = (ushort) VcReadNextWord();
@@ -951,7 +951,7 @@ namespace NScumm.Agos
             _vcPtr += 2;
         }
 
-        private void vc21_endRepeat()
+        protected void vc21_endRepeat()
         {
             short a = (short) VcReadNextWord();
             var tmp = _vcPtr + a;
@@ -1018,9 +1018,8 @@ namespace NScumm.Agos
 
                     for (int i = 0; i < 19; i++)
                     {
-                        palptr[(13 + i) * 3 + 0] = extraColors[i * 3 + 0] * 4;
-                        palptr[(13 + i) * 3 + 1] = extraColors[i * 3 + 1] * 4;
-                        palptr[(13 + i) * 3 + 2] = extraColors[i * 3 + 2] * 4;
+                        var c = extraColors[i];
+                        palptr[13 + i] = Color.FromRgb(c.R * 4, c.G * 4, c.B * 4);
                     }
                 }
             }
@@ -1104,7 +1103,7 @@ namespace NScumm.Agos
             _vgaSpriteChanged++;
         }
 
-        private void vc24_setSpriteXY()
+        protected void vc24_setSpriteXY()
         {
             var vsp = FindCurSprite();
 
@@ -1152,7 +1151,7 @@ namespace NScumm.Agos
             _vgaSpriteChanged++;
         }
 
-        private void vc26_setSubWindow()
+        protected void vc26_setSubWindow()
         {
             var @as = new Ptr<ushort>(VideoWindows, (int) (VcReadNextWord() * 4)); // number
             @as[0] = (ushort) VcReadNextWord(); // x
@@ -1161,7 +1160,7 @@ namespace NScumm.Agos
             @as[3] = (ushort) VcReadNextWord(); // height
         }
 
-        private void vc27_resetSprite()
+        protected void vc27_resetSprite()
         {
             _videoLockOut |= 8;
 
@@ -1262,7 +1261,7 @@ namespace NScumm.Agos
             LoadSound(sound, freq, (SoundTypeFlags) flags);
         }
 
-        private void vc29_stopAllSounds()
+        protected void vc29_stopAllSounds()
         {
             if (GameType != SIMONGameType.GType_PP)
                 _sound.StopVoice();
@@ -1270,12 +1269,12 @@ namespace NScumm.Agos
             _sound.StopAllSfx();
         }
 
-        private void vc30_setFrameRate()
+        protected void vc30_setFrameRate()
         {
             _frameCount = (ushort) VcReadNextWord();
         }
 
-        private void vc31_setWindow()
+        protected void vc31_setWindow()
         {
             _windowNum = (ushort) VcReadNextWord();
         }
@@ -1321,7 +1320,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void vc33_setMouseOn()
+        protected void vc33_setMouseOn()
         {
             if (_mouseHideCount == 0) return;
 
@@ -1408,7 +1407,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void vc35_clearWindow()
+        protected void vc35_clearWindow()
         {
             ushort num = (ushort) VcReadNextWord();
             ushort color = (ushort) VcReadNextWord();
@@ -1436,7 +1435,7 @@ namespace NScumm.Agos
             _vgaSpriteChanged++;
         }
 
-        private void vc36_setWindowImage()
+        protected void vc36_setWindowImage()
         {
             _displayFlag = 0;
             ushort vga_res = (ushort) VcReadNextWord();
@@ -1476,7 +1475,7 @@ namespace NScumm.Agos
             _vgaSpriteChanged++;
         }
 
-        private void vc38_ifVarNotZero()
+        protected void vc38_ifVarNotZero()
         {
             ushort var;
             if (GameType == SIMONGameType.GType_PP)
@@ -1488,7 +1487,7 @@ namespace NScumm.Agos
                 VcSkipNextInstruction();
         }
 
-        private void vc39_setVar()
+        protected void vc39_setVar()
         {
             ushort var;
             if (GameType == SIMONGameType.GType_PP)
@@ -1500,7 +1499,7 @@ namespace NScumm.Agos
             VcWriteVar(var, value);
         }
 
-        private void vc40_scrollRight()
+        protected void vc40_scrollRight()
         {
             ushort var = (ushort) VcReadNextWord();
             short value = (short) (VcReadVar(var) + VcReadNextWord());
@@ -1521,7 +1520,7 @@ namespace NScumm.Agos
             VcWriteVar(var, value);
         }
 
-        private void vc41_scrollLeft()
+        protected void vc41_scrollLeft()
         {
             ushort var = (ushort) VcReadNextWord();
             short value = (short) (VcReadVar(var) - VcReadNextWord());
@@ -1542,7 +1541,7 @@ namespace NScumm.Agos
             VcWriteVar(var, value);
         }
 
-        private void vc42_delayIfNotEQ()
+        protected void vc42_delayIfNotEQ()
         {
             ushort val = (ushort) VcReadVar((int) VcReadNextWord());
             if (val != VcReadNextWord())

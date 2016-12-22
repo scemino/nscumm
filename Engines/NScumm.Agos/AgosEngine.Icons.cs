@@ -32,12 +32,11 @@ namespace NScumm.Agos
         private void LoadIconFile()
         {
             var @in = OpenFileRead(GetFileName(GameFileTypes.GAME_ICONFILE));
-            int srcSize;
 
             if (@in == null)
                 Error("Can't open icons file '{0}'", GetFileName(GameFileTypes.GAME_ICONFILE));
 
-            srcSize = (int) @in.Length;
+            var srcSize = (int) @in.Length;
 
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_WW &&
                 _gd.Platform == Platform.Amiga)
@@ -47,9 +46,6 @@ namespace NScumm.Agos
 
                 int dstSize = srcBuf.ToInt32BigEndian(srcSize - 4);
                 _iconFilePtr = new byte[dstSize];
-                if (_iconFilePtr == null)
-                    Error("Out of icon memory");
-
                 DecrunchFile(srcBuf, _iconFilePtr, srcSize);
             }
             else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PN &&
@@ -57,18 +53,12 @@ namespace NScumm.Agos
             {
 // The icon data is hard coded in the program file.
                 _iconFilePtr = new byte[15038];
-                if (_iconFilePtr == null)
-                    Error("Out of icon memory");
-
                 @in.Seek(48414, SeekOrigin.Begin);
                 @in.Read(_iconFilePtr, 0, 15038);
             }
             else
             {
                 _iconFilePtr = new byte[srcSize];
-                if (_iconFilePtr == null)
-                    Error("Out of icon memory");
-
                 @in.Read(_iconFilePtr, 0, srcSize);
             }
             @in.Dispose();
@@ -82,31 +72,27 @@ namespace NScumm.Agos
             var src = new BytePtr(vpe.vgaFile2, vpe.vgaFile2.ToInt32(8));
 
             _iconFilePtr = new byte[43 * 336];
-            if (_iconFilePtr == null)
-                Error("Out of icon memory");
-
             Array.Copy(src.Data, src.Offset, _iconFilePtr, 0, 43 * 336);
             UnfreezeBottom();
         }
 
         // Thanks to Stuart Caie for providing the original
         // C conversion upon which this function is based.
-        protected void DecompressIconPlanar(BytePtr dst, BytePtr src, uint width, uint height, byte @base, uint pitch,
+        protected void DecompressIconPlanar(BytePtr dst, BytePtr src, uint width, uint height, byte @base, int pitch,
             bool decompress = true)
         {
             byte x, y;
 
-            var icon_pln = BytePtr.Null;
             var srcPtr = src;
 
             if (decompress)
             {
-                icon_pln = new byte[width * height];
+                BytePtr iconPln = new byte[width * height];
 
                 // Decode RLE planar icon data
                 var i = src;
-                var o = icon_pln;
-                while (o < icon_pln + (int) (width * height))
+                var o = iconPln;
+                while (o < iconPln + (int) (width * height))
                 {
                     x = i.Value;
                     i.Offset++;
@@ -140,7 +126,7 @@ namespace NScumm.Agos
                         i += 3;
                     }
                 }
-                srcPtr = icon_pln;
+                srcPtr = iconPln;
             }
 
             // Translate planar data to chunky (very slow method)
@@ -157,7 +143,7 @@ namespace NScumm.Agos
                     if (pixel != 0)
                         dst[x] = (byte) (pixel | @base);
                 }
-                dst += (int) pitch;
+                dst += pitch;
             }
         }
 
@@ -283,7 +269,7 @@ namespace NScumm.Agos
             uint width, height;
             uint k;
             bool itemAgain, showArrows;
-            int iconSize = (_gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2) ? 20 : 1;
+            int iconSize = _gd.ADGameDescription.gameType == SIMONGameType.GType_SIMON2 ? 20 : 1;
 
             var window = _windowArray[num & 7];
 
@@ -463,11 +449,14 @@ namespace NScumm.Agos
 
         protected virtual void RemoveArrows(WindowBlock window, int num)
         {
-            if (num != 2) {
+            if (num != 2)
+            {
                 uint y = (uint) (window.y + window.height * 4 - 19);
                 uint x = (uint) ((window.x + window.width) * 8);
                 RestoreBlock((ushort) x, (ushort) y, (ushort) (x + 16), (ushort) (y + 38));
-            } else {
+            }
+            else
+            {
                 ColorBlock(window, 240, 151, 16, 38);
             }
         }
@@ -495,11 +484,8 @@ namespace NScumm.Agos
 
         private void RemoveIconArray(int num)
         {
-            ushort curWindow;
-            ushort i;
-
             var window = _windowArray[num & 7];
-            curWindow = _curWindow;
+            var curWindow = _curWindow;
 
             if (window?.iconPtr == null)
                 return;
@@ -512,7 +498,7 @@ namespace NScumm.Agos
                 ChangeWindow(curWindow);
             }
 
-            for (i = 0; window.iconPtr.iconArray[i].item != null; i++)
+            for (var i = 0; window.iconPtr.iconArray[i].item != null; i++)
             {
                 FreeBox(window.iconPtr.iconArray[i].boxCode);
             }

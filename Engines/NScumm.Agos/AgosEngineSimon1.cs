@@ -630,7 +630,7 @@ namespace NScumm.Agos
                     src = _iconFilePtr;
                     src += src.ToInt32BigEndian(icon * 4);
                     var color = (byte) (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_32COLOR) ? 224 : 240);
-                    DecompressIconPlanar(dst, src, 24, 12, color, (uint) screen.Pitch);
+                    DecompressIconPlanar(dst, src, 24, 12, color, screen.Pitch);
                 }
                 else
                 {

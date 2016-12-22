@@ -744,6 +744,365 @@ namespace NScumm.Agos
             "BJ|IS_BIT2_SET",
         };
 
+        private static readonly string[] elvira1_opcodeNameTable =
+        {
+            /* 0 */
+            "IJ|AT",
+            "IJ|NOT_AT",
+            "IJ|PRESENT",
+            "IJ|NOT_PRESENT",
+            /* 4 */
+            "IJ|WORN",
+            "IJ|NOT_WORN",
+            "IJ|CARRIED",
+            "IJ|NOT_CARRIED",
+            /* 8 */
+            "IIJ|IS_AT",
+            "IIJ|IS_NOT_AT",
+            "IIJ|IS_SIBLING",
+            "IIJ|IS_NOT_SIBLING",
+            /* 12 */
+            "WJ|IS_ZERO",
+            "WJ|ISNOT_ZERO",
+            "WWJ|IS_EQ",
+            "WWJ|IS_NEQ",
+            /* 16 */
+            "WWJ|IS_LE",
+            "WWJ|IS_GE",
+            "WWJ|IS_EQF",
+            "WWJ|IS_NEQF",
+            /* 20 */
+            "WWJ|IS_LEF",
+            "WWJ|IS_GEF",
+            "IIJ|IS_IN",
+            "IIJ|IS_NOT_IN",
+            /* 24 */
+            null,
+            null,
+            null,
+            null,
+            /* 28 */
+            "WJ|PREP",
+            "WJ|CHANCE",
+            "IJ|IS_PLAYER",
+            null,
+            /* 32 */
+            "IJ|IS_ROOM",
+            "IJ|IS_OBJECT",
+            "IWJ|ITEM_STATE_IS",
+            null,
+            /* 36 */
+            "IWJ|OBJECT_HAS_FLAG",
+            "IIJ|CAN_PUT",
+            null,
+            null,
+            /* 40 */
+            null,
+            null,
+            null,
+            "IW|GET",
+            /* 44 */
+            "I|DROP",
+            null,
+            null,
+            "I|CREATE",
+            /* 48 */
+            "I|SET_NO_PARENT",
+            null,
+            null,
+            "II|SET_PARENT",
+            /* 52 */
+            null,
+            null,
+            "IWW|COPY_OF",
+            "WIW|COPY_FO",
+            /* 56 */
+            "WW|MOVE",
+            "W|WHAT_O",
+            null,
+            "IW|WEIGH",
+            /* 60 */
+            "W|SET_FF",
+            "W|ZERO",
+            null,
+            null,
+            /* 64 */
+            "WW|SET",
+            "WW|ADD",
+            "WW|SUB",
+            "WW|ADDF",
+            /* 68 */
+            "WW|SUBF",
+            "WW|MUL",
+            "WW|DIV",
+            "WW|MULF",
+            /* 72 */
+            "WW|DIVF",
+            "WW|MOD",
+            "WW|MODF",
+            "WW|RANDOM",
+            /* 76 */
+            "W|MOVE_DIRN",
+            "I|SET_A_PARENT",
+            null,
+            null,
+            /* 80 */
+            "IW|SET_CHILD2_BIT",
+            "IW|CLEAR_CHILD2_BIT",
+            null,
+            null,
+            /* 84 */
+            "II|MAKE_SIBLING",
+            "I|INC_STATE",
+            "I|DEC_STATE",
+            "IW|SET_STATE",
+            /* 88 */
+            null,
+            "W|SHOW_INT",
+            "|SHOW_SCORE",
+            "T|SHOW_STRING_NL",
+            /* 92 */
+            "T|SHOW_STRING",
+            "I|LISTOBJ",
+            null,
+            "|INVEN",
+            /* 96 */
+            "|LOOK",
+            "x|END",
+            "x|DONE",
+            null,
+            /* 100 */
+            "x|OK",
+            null,
+            null,
+            null,
+            /* 104 */
+            null,
+            "W|START_SUB",
+            "IWW|DO_CLASS",
+            null,
+            /* 108 */
+            null,
+            null,
+            null,
+            null,
+            /* 112 */
+            "IW|PRINT_OBJ",
+            null,
+            "I|PRINT_NAME",
+            "I|PRINT_CNAME",
+            /* 116 */
+            null,
+            null,
+            null,
+            "WW|ADD_TIMEOUT",
+            /* 120 */
+            null,
+            null,
+            null,
+            null,
+            /* 124 */
+            null,
+            null,
+            null,
+            null,
+            /* 128 */
+            "J|IS_SUBJECT_ITEM_EMPTY",
+            "J|IS_OBJECT_ITEM_EMPTY",
+            null,
+            null,
+            /* 132 */
+            null,
+            null,
+            null,
+            "ITJ|CHILD_FR2_IS",
+            /* 136 */
+            "IIJ|IS_ITEM_EQ",
+            null,
+            null,
+            null,
+            /* 140 */
+            "I|EXITS",
+            null,
+            null,
+            null,
+            /* 144 */
+            null,
+            null,
+            null,
+            null,
+            /* 148 */
+            null,
+            null,
+            null,
+            null,
+            /* 152 */
+            "W|DEBUG",
+            null,
+            null,
+            null,
+            /* 156 */
+            null,
+            null,
+            null,
+            null,
+            /* 160 */
+            null,
+            null,
+            "IWJ|IS_CFLAG",
+            null,
+            /* 164 */
+            "|RESCAN",
+            "wwwW|MEANS",
+            null,
+            null,
+            /* 168 */
+            null,
+            null,
+            null,
+            null,
+            /* 172 */
+            null,
+            null,
+            null,
+            null,
+            /* 176 */
+            "IWI|SET_USER_ITEM",
+            "IWW|GET_USER_ITEM",
+            "IW|CLEAR_USER_ITEM",
+            null,
+            /* 180 */
+            "IWW|WHERE_TO",
+            "IIW|DOOR_EXIT",
+            null,
+            null,
+            /* 184 */
+            null,
+            null,
+            null,
+            null,
+            /* 188 */
+            null,
+            null,
+            null,
+            null,
+            /* 192 */
+            null,
+            null,
+            null,
+            null,
+            /* 196 */
+            null,
+            null,
+            "W|COMMENT",
+            null,
+            /* 200 */
+            null,
+            "T|SAVE_GAME",
+            "T|LOAD_GAME",
+            "|NOT",
+            /* 204 */
+            null,
+            null,
+            "IW|GET_PARENT",
+            "IW|GET_NEXT",
+            /* 208 */
+            "IW|GET_CHILDREN",
+            null,
+            null,
+            null,
+            /* 212 */
+            null,
+            null,
+            null,
+            null,
+            /* 216 */
+            null,
+            null,
+            null,
+            "WW|FIND_MASTER",
+            /* 220 */
+            "IWW|NEXT_MASTER",
+            null,
+            null,
+            null,
+            /* 224 */
+            "WW|PICTURE",
+            "W|LOAD_ZONE",
+            "WWWWW|ANIMATE",
+            "W|STOP_ANIMATE",
+            /* 228 */
+            "|KILL_ANIMATE",
+            "WWWWWWW|DEFINE_WINDOW",
+            "W|CHANGE_WINDOW",
+            "|CLS",
+            /* 232 */
+            "W|CLOSE_WINDOW",
+            "WW|AGOS_MENU",
+            null,
+            "WWWWWIW|ADD_BOX",
+            /* 236 */
+            "W|DEL_BOX",
+            "W|ENABLE_BOX",
+            "W|DISABLE_BOX",
+            "WWW|MOVE_BOX",
+            /* 240 */
+            null,
+            null,
+            "IW|DO_ICONS",
+            "IWJ|IS_CLASS",
+            /* 244 */
+            null,
+            null,
+            null,
+            null,
+            /* 248 */
+            null,
+            "IW|SET_CLASS",
+            "IW|UNSET_CLASS",
+            "WW|CLEAR_BIT",
+            /* 252 */
+            "WW|SET_BIT",
+            "WWJ|BIT_TEST",
+            null,
+            "W|WAIT_SYNC",
+            /* 256 */
+            "W|SYNC",
+            "WI|DEF_OBJ",
+            "|ENABLE_INPUT",
+            "|SET_TIME",
+            /* 260 */
+            "WJ|IF_TIME",
+            "IJ|IS_SIBLING_WITH_A",
+            "IWW|DO_CLASS_ICONS",
+            "WW|PLAY_TUNE",
+            /* 264 */
+            null,
+            "W|IF_END_TUNE",
+            "Www|SET_ADJ_NOUN",
+            "WW|ZONE_DISK",
+            /* 268 */
+            "|SAVE_USER_GAME",
+            "|LOAD_USER_GAME",
+            "|PRINT_STATS",
+            "|STOP_TUNE",
+            /* 272 */
+            "|PRINT_PLAYER_DAMAGE",
+            "|PRINT_MONSTER_DAMAGE",
+            "|PAUSE",
+            "IW|COPY_SF",
+            /* 276 */
+            "W|RESTORE_ICONS",
+            "|PRINT_PLAYER_HIT",
+            "|PRINT_MONSTER_HIT",
+            "|FREEZE_ZONES",
+            /* 280 */
+            "II|SET_PARENT_SPECIAL",
+            "|CLEAR_TIMERS",
+            "IW|SET_STORE",
+            "WJ|IS_BOX",
+        };
+
         private static readonly string[] Simon2DosOpcodeNameTable =
         {
             /* 0 */
@@ -1553,6 +1912,81 @@ namespace NScumm.Agos
             "|FASTFADEIN",
         };
 
+        private static readonly string[] elvira1_videoOpcodeNameTable =
+        {
+            /* 0 */
+            "x|RET",
+            "ddd|FADEOUT",
+            "d|CALL",
+            "ddddd|NEW_SPRITE",
+            /* 4 */
+            "ddd|FADEIN",
+            "vdj|IF_EQUAL",
+            "dj|IF_OBJECT_HERE",
+            "dj|IF_OBJECT_NOT_HERE",
+            /* 8 */
+            "ddj|IF_OBJECT_IS_AT",
+            "ddj|IF_OBJECT_STATE_IS",
+            "dddd|DRAW",
+            "d|ON_STOP",
+            /* 12 */
+            "|TEST_STOP",
+            "d|DELAY",
+            "d|SET_SPRITE_OFFSET_X",
+            "d|SET_SPRITE_OFFSET_Y",
+            /* 16 */
+            "d|SYNC",
+            "d|WAIT_SYNC",
+            "d|WAIT_END",
+            "i|JUMP_REL",
+            /* 20 */
+            "|CHAIN_TO",
+            "dd|SET_REPEAT",
+            "i|END_REPEAT",
+            "d|SET_PALETTE",
+            /* 24 */
+            "d|SET_PRIORITY",
+            "diid|SET_SPRITE_XY",
+            "x|HALT_SPRITE",
+            "ddddd|SET_WINDOW",
+            /* 28 */
+            "|RESET",
+            "dddd|PLAY_SOUND",
+            "|STOP_ALL_SOUNDS",
+            "d|SET_FRAME_RATE",
+            /* 32 */
+            "d|SET_WINDOW",
+            "|SAVE_SCREEN",
+            "|MOUSE_ON",
+            "|MOUSE_OFF",
+            /* 36 */
+            "|VC_36",
+            "d|VC_37",
+            "dd|CLEAR_WINDOW",
+            "d|VC_39",
+            /* 40 */
+            "dd|SET_WINDOW_IMAGE",
+            "dd|POKE_PALETTE",
+            "|VC_42",
+            "|VC_43",
+            /* 44 */
+            "d|VC_44",
+            "d|VC_45",
+            "d|VC_46",
+            "dd|VC_47",
+            /* 48 */
+            "dd|VC_48",
+            "|VC_49",
+            "ddddddddd|VC_50",
+            "v|IF_VAR_NOT_ZERO",
+            /* 52 */
+            "vd|SET_VAR",
+            "vd|ADD_VAR",
+            "vd|SUB_VAR",
+            "|VC_55",
+            "dd|DELAY_IF_NOT_EQ",
+        };
+
         private static readonly string[] elvira2_videoOpcodeNameTable =
         {
             /* 0 */
@@ -1793,9 +2227,10 @@ namespace NScumm.Agos
                     {
                         s = elvira2_opcodeNameTable[opcode];
                     }
-//                  else {
-//                        s = elvira1_opcodeNameTable[opcode];
-//                    }
+                    else
+                    {
+                        s = elvira1_opcodeNameTable[opcode];
+                    }
                     break;
             }
 
@@ -2001,9 +2436,9 @@ namespace NScumm.Agos
                     case SIMONGameType.GType_ELVIRA2:
                         str = elvira2_videoOpcodeNameTable[opcode];
                         break;
-//                    case SIMONGameType.GType_ELVIRA1:
-//                        str = elvira1_videoOpcodeNameTable[opcode];
-//                        break;
+                    case SIMONGameType.GType_ELVIRA1:
+                        str = elvira1_videoOpcodeNameTable[opcode];
+                        break;
 //                    default:
 //                        str = pn_videoOpcodeNameTable[opcode];
 //                        break;

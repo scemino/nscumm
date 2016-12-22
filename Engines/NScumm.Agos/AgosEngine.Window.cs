@@ -243,8 +243,8 @@ namespace NScumm.Agos
                 src += y * _backGroundBuf.Pitch;
 
                 byte paletteMod = 0;
-                if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 &&
-                    !_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_DEMO) && y >= 133)
+                if (GameType == SIMONGameType.GType_ELVIRA1 &&
+                    !Features.HasFlag(GameFeatures.GF_DEMO) && y >= 133)
                     paletteMod = 16;
 
                 while (y < h)

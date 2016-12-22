@@ -208,7 +208,7 @@ namespace NScumm.Agos
             }
         }
 
-        private Item GetNextItemPtrStrange()
+        protected Item GetNextItemPtrStrange()
         {
             int a = GetNextWord();
             switch (a)

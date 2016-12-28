@@ -27,7 +27,7 @@ namespace NScumm.Agos
 {
     internal partial class AgosEngine
     {
-        private void DoOutput(BytePtr src, int len)
+        protected virtual void DoOutput(BytePtr src, int len)
         {
             if (_textWindow == null)
                 return;
@@ -324,7 +324,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void WindowNewLine(WindowBlock window)
+        protected virtual void WindowNewLine(WindowBlock window)
         {
             window.textColumn = 0;
             window.textColumnOffset = (ushort) (GameType == SIMONGameType.GType_ELVIRA2 ? 4 : 0);
@@ -384,7 +384,7 @@ namespace NScumm.Agos
             _videoLockOut = (ushort) (_videoLockOut & ~0x8000);
         }
 
-        private int GetFeebleFontSize(byte chr)
+        protected int GetFeebleFontSize(byte chr)
         {
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_FF &&
                 _gd.ADGameDescription.features.HasFlag(GameFeatures.GF_DEMO) &&
@@ -401,7 +401,7 @@ namespace NScumm.Agos
             return feebleFontSize[chr - 32];
         }
 
-        private void WindowDrawChar(WindowBlock window, int x, int y, byte chr)
+        protected virtual void WindowDrawChar(WindowBlock window, int x, int y, byte chr)
         {
             BytePtr src = BytePtr.Null;
             byte color;

@@ -274,7 +274,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void MoveBox(int hitarea, int x, int y)
+        protected void MoveBox(int hitarea, int x, int y)
         {
             var ha = FindBox(hitarea);
             if (ha != null)
@@ -292,7 +292,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void UndefineBox(int hitarea)
+        protected void UndefineBox(int hitarea)
         {
             HitArea ha = FindBox(hitarea);
             if (ha != null)
@@ -336,7 +336,7 @@ namespace NScumm.Agos
             _needHitAreaRecalc++;
         }
 
-        protected void ResetVerbs()
+        protected virtual void ResetVerbs()
         {
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 ||
                 _gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA2)
@@ -373,7 +373,7 @@ namespace NScumm.Agos
             }
         }
 
-        protected void SetVerb(HitArea ha)
+        protected virtual void SetVerb(HitArea ha)
         {
             HitArea tmp = _currentVerbBox;
 
@@ -643,7 +643,7 @@ namespace NScumm.Agos
                 HitareaLeave(ha);
         }
 
-        protected void HitareaLeave(HitArea ha, bool state = false)
+        protected virtual void HitareaLeave(HitArea ha, bool state = false)
         {
             if (GameType == SIMONGameType.GType_SIMON2)
             {

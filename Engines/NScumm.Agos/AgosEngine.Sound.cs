@@ -187,7 +187,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void LoadSound(ushort sound, short pan, short vol, SoundTypeFlags type)
+        protected void LoadSound(ushort sound, short pan, short vol, SoundTypeFlags type)
         {
             BytePtr dstPtr;
             if (GameId == GameIds.GID_DIMP)

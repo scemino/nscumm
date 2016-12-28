@@ -66,6 +66,7 @@ namespace NScumm.Agos
 
         // Personal Nightmare specfic
         private BytePtr _soundQueuePtr;
+
         private ushort _soundQueueNum;
         private uint _soundQueueSize;
         private ushort _soundQueueFreq;
@@ -455,6 +456,30 @@ namespace NScumm.Agos
         {
             _effectsPaused = b;
             _sfx5Paused = b;
+        }
+
+        public void SwitchVoiceFile(GameSpecificSettings gss, ushort disc)
+        {
+            if (_lastVoiceFile == disc)
+                return;
+
+            _mixer.StopHandle(_voiceHandle);
+            _voice = null;
+
+            _hasVoiceFile = false;
+            _lastVoiceFile = disc;
+
+            string filename = $"{gss.speech_filename}{disc}";
+            _voice = MakeSound(_mixer, filename);
+            _hasVoiceFile = _voice != null;
+
+            if (!_hasVoiceFile)
+                Error("switchVoiceFile: Can't load voice file {0}", filename);
+        }
+
+        public void StopSfx5()
+        {
+            _mixer.StopHandle(_sfx5Handle);
         }
     }
 }

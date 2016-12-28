@@ -51,11 +51,11 @@ namespace NScumm.Agos
         protected ushort _saveLoadRowCurPos;
         protected bool _saveLoadEdit;
         protected bool _saveOrLoad;
-        protected int _screenWidth;
-        protected int _screenHeight;
+        public int _screenWidth;
+        public int _screenHeight;
         protected Surface _backGroundBuf;
-        private Surface _backBuf;
-        private Surface _scaleBuf;
+        protected Surface _backBuf;
+        protected Surface _scaleBuf;
         protected Surface _window4BackScn;
         private Surface _window6BackScn;
         private bool _musicPaused;
@@ -101,14 +101,18 @@ namespace NScumm.Agos
         private readonly Array<object> _itemHeap = new Array<object>(() => null);
 
         protected BytePtr _mouseData;
-        private bool _animatePointer;
-        private byte _maxCursorWidth, _maxCursorHeight;
-        private byte _mouseAnim, _mouseAnimMax;
+        protected bool _animatePointer;
+        protected byte _maxCursorWidth;
+        protected byte _maxCursorHeight;
+        protected byte _mouseAnim;
+        protected byte _mouseAnimMax;
         protected byte _mouseCursor;
-        private byte _currentMouseAnim, _currentMouseCursor;
-        private byte _oldMouseAnimMax, _oldMouseCursor;
+        protected byte _currentMouseAnim;
+        protected byte _currentMouseCursor;
+        protected byte _oldMouseAnimMax;
+        protected byte _oldMouseCursor;
         protected ushort _mouseHideCount;
-        private bool _mouseToggle;
+        protected bool _mouseToggle;
 
         protected bool _leftButtonDown;
         protected bool _rightButtonDown;
@@ -118,10 +122,10 @@ namespace NScumm.Agos
         private byte _oneClick;
         protected bool _clickOnly;
         private bool _leftClick, _rightClick;
-        private bool _noRightClick;
-        protected short[] _variableArray;
-        private Ptr<short> _variableArrayPtr;
-        private short[] _variableArray2;
+        protected bool _noRightClick;
+        public short[] _variableArray;
+        protected Ptr<short> _variableArrayPtr;
+        protected short[] _variableArray2;
 
         protected readonly Action[] _vga_opcode_table = new Action[100];
         private BytePtr _block, _blockEnd;
@@ -188,11 +192,11 @@ namespace NScumm.Agos
         private TimeEvent _pendingDeleteTimeEvent;
         protected Stream _gameFile;
         protected readonly VgaPointersEntry[] _vgaBufferPointers = ScummHelper.CreateArray<VgaPointersEntry>(450);
-        private readonly VgaSprite[] _vgaSprites = ScummHelper.CreateArray<VgaSprite>(200);
+        protected readonly VgaSprite[] _vgaSprites = ScummHelper.CreateArray<VgaSprite>(200);
         protected short _scrollX;
         protected short _scrollXMax;
         protected short _scrollY;
-        private short _scrollYMax;
+        protected short _scrollYMax;
         private bool _newDirtyClip;
 
         protected byte[] _iconFilePtr;
@@ -230,11 +234,11 @@ namespace NScumm.Agos
         private readonly byte[] _fcsData1 = new byte[8];
         private readonly bool[] _fcsData2 = new bool[8];
         protected WindowBlock _textWindow;
-        private ushort _curWindow;
+        protected ushort _curWindow;
 
         private short _printCharCurPos, _printCharMaxPos, _printCharPixelCount;
         private ushort _numLettersToPrint;
-        private ushort _displayFlag;
+        protected ushort _displayFlag;
         private readonly byte[] _lettersToPrintBuf = new byte[80];
 
         protected byte[] SaveBuf = new byte[200];
@@ -272,9 +276,11 @@ namespace NScumm.Agos
         private readonly byte[] _textBuffer = new byte[180];
         private BytePtr[] _localStringtable;
         private readonly WindowBlock[] _windowList = ScummHelper.CreateArray<WindowBlock>(16);
-        private ushort _hyperLink, _newLines;
-        private ushort _oracleMaxScrollY, _noOracleScroll;
-        private ushort _interactY;
+        protected ushort _hyperLink;
+        protected ushort _newLines;
+        protected ushort _oracleMaxScrollY;
+        protected ushort _noOracleScroll;
+        protected ushort _interactY;
         protected bool _noParentNotify;
         protected ushort _scrollUpHitArea;
         protected ushort _scrollDownHitArea;
@@ -283,7 +289,7 @@ namespace NScumm.Agos
         protected bool _litBoxFlag;
         private bool _inCallBack;
         private DateTime _lastVgaTick;
-        private ushort _syncCount;
+        protected ushort _syncCount;
         private bool _cepeFlag;
         protected RandomSource _rnd;
         private int _vgaTickCounter;
@@ -303,7 +309,7 @@ namespace NScumm.Agos
         protected byte _window4Flag;
         private byte _window6Flag;
         protected BytePtr _curVgaFile2;
-        private BytePtr _curSfxFile;
+        protected BytePtr _curSfxFile;
         private int _curSfxFileSize;
         private readonly VgaSleepStruct[] _onStopTable = ScummHelper.CreateArray<VgaSleepStruct>(60);
         private readonly VgaSleepStruct[] _waitEndTable = ScummHelper.CreateArray<VgaSleepStruct>(60);
@@ -315,7 +321,7 @@ namespace NScumm.Agos
         private ushort _moveXMin, _moveYMin;
         private ushort _moveXMax, _moveYMax;
         protected ushort _fastFadeCount;
-        protected bool _fastFadeOutFlag;
+        public bool _fastFadeOutFlag;
         protected Sound _sound;
         protected MidiPlayer _midi;
         private bool _midiEnabled;
@@ -327,7 +333,7 @@ namespace NScumm.Agos
         protected bool _wiped;
         protected ushort _copyScnFlag, _vgaSpriteChanged;
         protected bool _bottomPalette;
-        private bool _syncFlag2;
+        protected bool _syncFlag2;
         protected readonly VgaTimerEntry[] _vgaTimerList = ScummHelper.CreateArray<VgaTimerEntry>(205);
         protected ushort _verbHitArea;
         private int _textSize;
@@ -497,7 +503,7 @@ namespace NScumm.Agos
             }
         }
 
-        protected void LockScreen(Action<Surface> action)
+        public void LockScreen(Action<Surface> action)
         {
             LockScreen(screen =>
             {
@@ -928,7 +934,7 @@ namespace NScumm.Agos
             }
         }
 
-        private string GetExtra()
+        protected string GetExtra()
         {
             return _gd.ADGameDescription.extra;
         }

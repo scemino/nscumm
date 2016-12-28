@@ -263,7 +263,7 @@ namespace NScumm.Agos
             _videoLockOut = (ushort) (_videoLockOut & ~0x8000);
         }
 
-        private void DrawIconArray(int num, Item itemRef, int line, int classMask)
+        protected virtual void DrawIconArray(int num, Item itemRef, int line, int classMask)
         {
             Item itemPtrOrg = itemRef;
             uint width, height;
@@ -482,7 +482,7 @@ namespace NScumm.Agos
             });
         }
 
-        private void RemoveIconArray(int num)
+        protected void RemoveIconArray(int num)
         {
             var window = _windowArray[num & 7];
             var curWindow = _curWindow;

@@ -203,7 +203,7 @@ namespace NScumm.Agos
             return _localStringtable[stringId - _stringIdLocalMin];
         }
 
-        private void RenderString(int vgaSpriteId, uint color, ushort width, ushort height, byte[] txt)
+        protected void RenderString(int vgaSpriteId, uint color, ushort width, ushort height, byte[] txt)
         {
             var vpe = new Ptr<VgaPointersEntry>(_vgaBufferPointers, 2);
             int textHeight = _gd.ADGameDescription.gameType == SIMONGameType.GType_FF ||
@@ -663,7 +663,7 @@ namespace NScumm.Agos
             Error("loadTextIntoMem: didn't find {0}", stringId);
         }
 
-        private string GetPixelLength(string @string, ushort maxWidth, out ushort pixels)
+        protected string GetPixelLength(string @string, ushort maxWidth, out ushort pixels)
         {
             var s = 0;
             pixels = 0;
@@ -741,7 +741,7 @@ namespace NScumm.Agos
             return true;
         }
 
-        protected void PrintScreenText(uint vgaSpriteId, uint color, string str, short x, short y, short width)
+        protected virtual void PrintScreenText(uint vgaSpriteId, uint color, string str, short x, short y, short width)
         {
             var @string = new BytePtr(str.GetBytes());
             byte[] convertedString = new byte[320];
@@ -868,7 +868,7 @@ namespace NScumm.Agos
             _runScriptCondition[_recursionDepth] = cond;
         }
 
-        private static readonly byte[] PolishCharWidth =
+        protected static readonly byte[] PolishCharWidth =
         {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -896,7 +896,7 @@ namespace NScumm.Agos
         };
 
 
-        private static readonly byte[] CharWidth =
+        protected static readonly byte[] CharWidth =
         {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

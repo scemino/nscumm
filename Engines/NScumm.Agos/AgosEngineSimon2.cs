@@ -875,7 +875,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void os2_waitMark()
+        protected void os2_waitMark()
         {
             // 190
             int i = (int) GetVarOrByte();
@@ -883,13 +883,13 @@ namespace NScumm.Agos
                 WaitForMark(i);
         }
 
-        private void os2_clearMarks()
+        protected void os2_clearMarks()
         {
             // 189: clear_op189_flag
             _marks = 0;
         }
 
-        private void os2_isShortText()
+        protected void os2_isShortText()
         {
             // 188: string2 is
             uint i = GetVarOrByte();
@@ -1017,7 +1017,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void os2_stopAnimate()
+        protected void os2_stopAnimate()
         {
             // 99: kill sprite
             ushort a = (ushort) GetVarOrWord();
@@ -1025,7 +1025,7 @@ namespace NScumm.Agos
             StopAnimateSimon2(a, b);
         }
 
-        private void os2_animate()
+        protected void os2_animate()
         {
             // 98: start vga
             ushort zoneNum = (ushort) GetVarOrWord();
@@ -1040,7 +1040,7 @@ namespace NScumm.Agos
             _videoLockOut = (ushort) (_videoLockOut & ~0x40);
         }
 
-        private void os2_rescan()
+        protected void os2_rescan()
         {
             // 83: restart subroutine
             if (_exitCutscene)

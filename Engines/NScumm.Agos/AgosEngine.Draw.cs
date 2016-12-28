@@ -29,11 +29,13 @@ namespace NScumm.Agos
 {
     partial class AgosEngine
     {
-        private BytePtr BackBuf => _backBuf.Pixels;
+        public BytePtr BackBuf => _backBuf.Pixels;
 
         protected BytePtr BackGround => _backGroundBuf.Pixels;
 
-        private void AnimateSprites()
+        protected BytePtr ScaleBuf => _scaleBuf.Pixels;
+
+        protected virtual void AnimateSprites()
         {
             if (_copyScnFlag != 0)
             {
@@ -654,7 +656,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void ClearSurfaces()
+        public void ClearSurfaces()
         {
             OSystem.GraphicsManager.FillScreen(0);
 
@@ -676,7 +678,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void FillBackGroundFromBack()
+        public void FillBackGroundFromBack()
         {
             var src = BackBuf;
             var dst = BackGround;
@@ -703,7 +705,7 @@ namespace NScumm.Agos
                 _moveYMax = height;
         }
 
-        private void DisplayScreen()
+        protected void DisplayScreen()
         {
             if (_fastFadeInFlag == 0 && _paletteFlag == 1)
             {

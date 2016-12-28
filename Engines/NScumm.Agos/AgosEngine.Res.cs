@@ -196,17 +196,17 @@ namespace NScumm.Agos
             }
         }
 
-        protected ushort To16Wrapper(uint value)
+        protected virtual ushort To16Wrapper(uint value)
         {
             return ScummHelper.SwapBytes((ushort) value);
         }
 
-        protected ushort ReadUint16Wrapper(BytePtr src)
+        protected virtual ushort ReadUint16Wrapper(BytePtr src)
         {
             return src.ToUInt16BigEndian();
         }
 
-        private uint ReadUint32Wrapper(BytePtr src)
+        protected virtual uint ReadUint32Wrapper(BytePtr src)
         {
             return src.ToUInt32BigEndian();
         }

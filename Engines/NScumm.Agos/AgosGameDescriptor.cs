@@ -40,7 +40,7 @@ namespace NScumm.Agos
 
         public string Description => "";
 
-        public int Height => 200;
+        public int Height => ADGameDescription.gameType==SIMONGameType.GType_FF? 480:200;
 
         public string Id
         {
@@ -67,6 +67,6 @@ namespace NScumm.Agos
             get; private set;
         }
 
-        public int Width => 320;
+        public int Width => ADGameDescription.gameType == SIMONGameType.GType_FF ? 640 : 320;
     }
 }

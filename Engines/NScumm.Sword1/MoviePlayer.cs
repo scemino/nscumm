@@ -90,7 +90,7 @@ namespace NScumm.Sword1
             {
 
                 filename = $"{SequenceList[id]}.smk";
-                _decoder = new SmackerDecoder(_vm.Mixer);
+                _decoder = new SmackerDecoder();
             }
 
             path = ScummHelper.LocatePath(directory, filename);

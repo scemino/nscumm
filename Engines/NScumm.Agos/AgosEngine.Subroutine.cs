@@ -456,7 +456,7 @@ namespace NScumm.Agos
             return sl;
         }
 
-        private void RunSubroutine101()
+        protected virtual void RunSubroutine101()
         {
             var sub = GetSubroutineByID(101);
             if (sub != null)

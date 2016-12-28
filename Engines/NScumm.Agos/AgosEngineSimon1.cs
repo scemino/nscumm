@@ -458,6 +458,11 @@ namespace NScumm.Agos
 
         protected override void InitMouse()
         {
+            InitMouseSimon1();
+        }
+
+        protected void InitMouseSimon1()
+        {
             InitMouseCore();
 
             var src = new Ptr<ushort>(_common_mouseInfo);
@@ -1082,7 +1087,7 @@ namespace NScumm.Agos
                     for (var i = 0; i != state.draw_width; i++)
                         if (state.flags.HasFlag(DrawFlags.kDFNonTrans) || src[i] != 0)
                             dst[i] = (byte) (src[i] + state.paletteMod);
-                    dst.Offset += (int)state.surf_pitch;
+                    dst.Offset += (int) state.surf_pitch;
                     src += state.width * 16;
                 } while (--h != 0);
             }
@@ -1446,7 +1451,8 @@ namespace NScumm.Agos
                     if (_language == Language.HE_ISR)
                     {
                         int j =
-                            subObject.objectFlagValue[GetOffsetOfChild2Param(subObject, (int) SubObjectFlags.kOFNumber)];
+                            subObject.objectFlagValue[
+                                GetOffsetOfChild2Param(subObject, (int) SubObjectFlags.kOFNumber)];
                         var k = j % 10 * 10;
                         k += j / 10;
                         if (j % 10 == 0)
@@ -1457,7 +1463,8 @@ namespace NScumm.Agos
                     else
                     {
                         buf = string.Format("{0}{1}",
-                            subObject.objectFlagValue[GetOffsetOfChild2Param(subObject, (int) SubObjectFlags.kOFNumber)],
+                            subObject.objectFlagValue[
+                                GetOffsetOfChild2Param(subObject, (int) SubObjectFlags.kOFNumber)],
                             stringPtr);
                     }
                     stringPtr = buf;

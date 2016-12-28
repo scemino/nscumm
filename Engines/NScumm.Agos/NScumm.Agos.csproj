@@ -1,111 +1,115 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <PropertyGroup>
-        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-        <ProjectGuid>{024F3C9E-36B9-4A61-A210-54E265597D6E}</ProjectGuid>
-        <ProjectTypeGuids>{786C830F-07A1-408B-BD7F-6EE04809D6DB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{024F3C9E-36B9-4A61-A210-54E265597D6E}</ProjectGuid>
+    <ProjectTypeGuids>{786C830F-07A1-408B-BD7F-6EE04809D6DB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}
         </ProjectTypeGuids>
-        <OutputType>Library</OutputType>
-        <RootNamespace>NScumm.Agos</RootNamespace>
-        <AssemblyName>NScumm.Agos</AssemblyName>
-        <TargetFrameworkProfile>Profile344</TargetFrameworkProfile>
-        <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-        <DebugSymbols>true</DebugSymbols>
-        <DebugType>full</DebugType>
-        <Optimize>false</Optimize>
-        <OutputPath>..\..\NScumm.Desktop\bin\Debug\plugins</OutputPath>
-        <DefineConstants>DEBUG;ENABLE_AGOS2</DefineConstants>
-        <ErrorReport>prompt</ErrorReport>
-        <WarningLevel>4</WarningLevel>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-        <Optimize>true</Optimize>
-        <OutputPath>bin\Release</OutputPath>
-        <ErrorReport>prompt</ErrorReport>
-        <WarningLevel>4</WarningLevel>
-    </PropertyGroup>
-    <ItemGroup>
-        <Compile Include="AgosEngine.Charset.cs"/>
-        <Compile Include="AgosEngine.cs"/>
-        <Compile Include="AgosEngine.Cursor.cs"/>
-        <Compile Include="AgosEngine.Debug.cs"/>
-        <Compile Include="AgosEngine.Draw.cs"/>
-        <Compile Include="AgosEngine.Event.cs"/>
-        <Compile Include="AgosEngine.Gfx.cs"/>
-        <Compile Include="AgosEngine.Icons.cs"/>
-        <Compile Include="AgosEngine.Input.cs"/>
-        <Compile Include="AgosEngine.Items.cs"/>
-        <Compile Include="AgosEngine.Menus.cs"/>
-        <Compile Include="AgosEngine.Res.cs"/>
-        <Compile Include="AgosEngine.Script.cs"/>
-        <Compile Include="AgosEngine.Sound.cs"/>
-        <Compile Include="AgosEngine.String.cs"/>
-        <Compile Include="AgosEngine.Subroutine.cs"/>
-        <Compile Include="AgosEngine.Verb.cs"/>
-        <Compile Include="AgosEngine.Window.cs"/>
-        <Compile Include="AgosEngine.Zones.cs"/>
-        <Compile Include="AgosEngines.Room.cs"/>
-        <Compile Include="AgosEngines.SaveLoad.cs"/>
-        <Compile Include="AgosEngineElvira1.cs"/>
-        <Compile Include="AgosEngineElvira2.cs"/>
-        <Compile Include="AgosEngineSimon2.cs"/>
-        <Compile Include="AgosEngineWaxworks.cs"/>
-        <Compile Include="AgosGameDescription.cs"/>
-        <Compile Include="AgosGameDescriptor.cs"/>
-        <Compile Include="AgosMetaEngine.cs"/>
-        <Compile Include="AnimationHeaderFeeble.cs"/>
-        <Compile Include="AnimationHeaderWw.cs"/>
-        <Compile Include="AnimationHeaderSimon.cs"/>
-        <Compile Include="AnimTable.cs"/>
-        <Compile Include="BaseSound.cs"/>
-        <Compile Include="CharsetFontData.cs"/>
-        <Compile Include="Child.cs"/>
-        <Compile Include="DebugLevels.cs"/>
-        <Compile Include="EventType.cs"/>
-        <Compile Include="GameSpecificSettings.cs"/>
-        <Compile Include="HitArea.cs"/>
-        <Compile Include="IconBlock.cs"/>
-        <Compile Include="IconEntry.cs"/>
-        <Compile Include="ImageHeaderFeeble.cs"/>
-        <Compile Include="ImageHeaderWw.cs"/>
-        <Compile Include="ImageHeader_Simon.cs"/>
-        <Compile Include="Item.cs"/>
-        <Compile Include="LoopingAudioStream.cs"/>
-        <Compile Include="MidiDriverAccoladeAdLib.cs"/>
-        <Compile Include="MidiDriverAccoladeMt32.cs"/>
-        <Compile Include="MidiDriverSimon1AdLib.cs"/>
-        <Compile Include="MidiParserS1D.cs"/>
-        <Compile Include="MidiPlayer.cs"/>
-        <Compile Include="MusicInfo.cs"/>
-        <Compile Include="Properties\AssemblyInfo.cs"/>
-        <Compile Include="AgosEngineSimon1.cs"/>
-        <Compile Include="RawSound.cs"/>
-        <Compile Include="RoomState.cs"/>
-        <Compile Include="Sound.cs"/>
-        <Compile Include="Subroutine.cs"/>
-        <Compile Include="SubroutineLine.cs"/>
-        <Compile Include="TextLocation.cs"/>
-        <Compile Include="TimeEvent.cs"/>
-        <Compile Include="Vc10State.cs"/>
-        <Compile Include="AgosEngine.Vga.cs"/>
-        <Compile Include="VgaFile1HeaderCommon.cs"/>
-        <Compile Include="VgaFile1HeaderFeeble.cs"/>
-        <Compile Include="VgaPointersEntry.cs"/>
-        <Compile Include="VgaSleepStruct.cs"/>
-        <Compile Include="VgaSprite.cs"/>
-        <Compile Include="VgaTimerEntry.cs"/>
-        <Compile Include="VocSound.cs"/>
-        <Compile Include="WavSound.cs"/>
-        <Compile Include="WindowBlock.cs"/>
-    </ItemGroup>
-    <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets"/>
-    <ItemGroup>
-        <ProjectReference Include="..\..\NScumm.Core\NScumm.Core.csproj">
-            <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
-            <Name>NScumm.Core</Name>
-        </ProjectReference>
-    </ItemGroup>
+    <OutputType>Library</OutputType>
+    <RootNamespace>NScumm.Agos</RootNamespace>
+    <AssemblyName>NScumm.Agos</AssemblyName>
+    <TargetFrameworkProfile>Profile344</TargetFrameworkProfile>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\NScumm.Desktop\bin\Debug\plugins</OutputPath>
+    <DefineConstants>DEBUG;ENABLE_AGOS2</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="AgosEngine.Charset.cs"/>
+    <Compile Include="AgosEngine.cs"/>
+    <Compile Include="AgosEngine.Cursor.cs"/>
+    <Compile Include="AgosEngine.Debug.cs"/>
+    <Compile Include="AgosEngine.Draw.cs"/>
+    <Compile Include="AgosEngine.Event.cs"/>
+    <Compile Include="AgosEngine.Gfx.cs"/>
+    <Compile Include="AgosEngine.Icons.cs"/>
+    <Compile Include="AgosEngine.Input.cs"/>
+    <Compile Include="AgosEngine.Items.cs"/>
+    <Compile Include="AgosEngine.Menus.cs"/>
+    <Compile Include="AgosEngine.Res.cs"/>
+    <Compile Include="AgosEngine.Script.cs"/>
+    <Compile Include="AgosEngine.Sound.cs"/>
+    <Compile Include="AgosEngine.String.cs"/>
+    <Compile Include="AgosEngine.Subroutine.cs"/>
+    <Compile Include="AgosEngine.Verb.cs"/>
+    <Compile Include="AgosEngine.Window.cs"/>
+    <Compile Include="AgosEngine.Zones.cs"/>
+    <Compile Include="AgosEngineFeeble.cs"/>
+    <Compile Include="AgosEngineFeebleDemo.cs"/>
+    <Compile Include="AgosEngines.Room.cs"/>
+    <Compile Include="AgosEngines.SaveLoad.cs"/>
+    <Compile Include="AgosEngineElvira1.cs"/>
+    <Compile Include="AgosEngineElvira2.cs"/>
+    <Compile Include="AgosEngineSimon2.cs"/>
+    <Compile Include="AgosEngineWaxworks.cs"/>
+    <Compile Include="AgosGameDescription.cs"/>
+    <Compile Include="AgosGameDescriptor.cs"/>
+    <Compile Include="AgosMetaEngine.cs"/>
+    <Compile Include="AnimationHeaderFeeble.cs"/>
+    <Compile Include="AnimationHeaderWw.cs"/>
+    <Compile Include="AnimationHeaderSimon.cs"/>
+    <Compile Include="AnimTable.cs"/>
+    <Compile Include="BaseSound.cs"/>
+    <Compile Include="CharsetFontData.cs"/>
+    <Compile Include="Child.cs"/>
+    <Compile Include="DebugLevels.cs"/>
+    <Compile Include="EventType.cs"/>
+    <Compile Include="GameSpecificSettings.cs"/>
+    <Compile Include="HitArea.cs"/>
+    <Compile Include="IconBlock.cs"/>
+    <Compile Include="IconEntry.cs"/>
+    <Compile Include="ImageHeaderFeeble.cs"/>
+    <Compile Include="ImageHeaderWw.cs"/>
+    <Compile Include="ImageHeader_Simon.cs"/>
+    <Compile Include="Item.cs"/>
+    <Compile Include="LoopingAudioStream.cs"/>
+    <Compile Include="MidiDriverAccoladeAdLib.cs"/>
+    <Compile Include="MidiDriverAccoladeMt32.cs"/>
+    <Compile Include="MidiDriverSimon1AdLib.cs"/>
+    <Compile Include="MidiParserS1D.cs"/>
+    <Compile Include="MidiPlayer.cs"/>
+    <Compile Include="MoviePlayer.cs"/>
+    <Compile Include="MoviePlayerSMK.cs"/>
+    <Compile Include="MusicInfo.cs"/>
+    <Compile Include="Properties\AssemblyInfo.cs"/>
+    <Compile Include="AgosEngineSimon1.cs"/>
+    <Compile Include="RawSound.cs"/>
+    <Compile Include="RoomState.cs"/>
+    <Compile Include="Sound.cs"/>
+    <Compile Include="Subroutine.cs"/>
+    <Compile Include="SubroutineLine.cs"/>
+    <Compile Include="TextLocation.cs"/>
+    <Compile Include="TimeEvent.cs"/>
+    <Compile Include="Vc10State.cs"/>
+    <Compile Include="AgosEngine.Vga.cs"/>
+    <Compile Include="VgaFile1HeaderCommon.cs"/>
+    <Compile Include="VgaFile1HeaderFeeble.cs"/>
+    <Compile Include="VgaPointersEntry.cs"/>
+    <Compile Include="VgaSleepStruct.cs"/>
+    <Compile Include="VgaSprite.cs"/>
+    <Compile Include="VgaTimerEntry.cs"/>
+    <Compile Include="VocSound.cs"/>
+    <Compile Include="WavSound.cs"/>
+    <Compile Include="WindowBlock.cs"/>
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets"/>
+  <ItemGroup>
+    <ProjectReference Include="..\..\NScumm.Core\NScumm.Core.csproj">
+      <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
+      <Name>NScumm.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
 </Project>

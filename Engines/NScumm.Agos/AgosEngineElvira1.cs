@@ -319,7 +319,147 @@ namespace NScumm.Agos
 
         private void oe1_pauseGame()
         {
-            throw new NotImplementedException();
+            // 274: pause game
+            WindowBlock window = _windowArray[4];
+
+            uint pauseTime = GetTime();
+            HaltAnimation();
+
+            restart:
+            PrintScroll();
+            window.textColumn = 0;
+            window.textRow = 0;
+            window.textColumnOffset = 0;
+            window.textLength = 0; // Difference
+
+            string message1, message2;
+            switch (_language)
+            {
+                case Language.FR_FRA:
+                    message1 = "    Jeu interrompu.\r\r\r";
+                    message2 = " Reprendre    Quitter";
+                    break;
+                case Language.DE_DEU:
+                    message1 = "         Pause.\r\r\r";
+                    message2 = "   Weiter      Ende";
+                    break;
+                case Language.ES_ESP:
+                    message1 = "   Juego en Pausa\r\r\r";
+                    message2 = "Continuar      Salir";
+                    break;
+                default:
+                    message1 = "     Game Paused\r\r\r";
+                    message2 = " Continue      Quit";
+                    break;
+            }
+
+            foreach (var c in message1)
+                WindowPutChar(window, (byte) c);
+            foreach (var c in message2)
+                WindowPutChar(window, (byte) c);
+
+            if (ContinueOrQuit() == 0x7FFE)
+            {
+                PrintScroll();
+                window.textColumn = 0;
+                window.textRow = 0;
+                window.textColumnOffset = 0;
+                window.textLength = 0; // Difference
+
+                switch (_language)
+                {
+                    case Language.FR_FRA:
+                        message1 = "    Etes-vous s<r ?\r\r\r";
+                        message2 = "     Oui      Non";
+                        break;
+                    case Language.DE_DEU:
+                        message1 = "    Bist Du sicher ?\r\r\r";
+                        message2 = "     Ja        Nein";
+                        break;
+                    case Language.ES_ESP:
+                        message1 = "    Estas seguro ?\r\r\r";
+                        message2 = "    Si          No";
+                        break;
+                    default:
+                        message1 = "    Are you sure ?\r\r\r";
+                        message2 = "     Yes       No";
+                        break;
+                }
+
+                foreach (var c in message1)
+                    WindowPutChar(window, (byte) c);
+                foreach (var c in message2)
+                    WindowPutChar(window, (byte) c);
+
+                if (ConfirmYesOrNo(120, 62) == 0x7FFF)
+                {
+                    QuitGame();
+                    // Make sure the quit event is processed immediately.
+                    Delay(0);
+                }
+                else
+                {
+                    goto restart;
+                }
+            }
+
+            RestartAnimation();
+            _gameStoppedClock = GetTime() - pauseTime + _gameStoppedClock;
+        }
+
+        private uint ContinueOrQuit()
+        {
+            var ha = FindEmptyHitArea().Value;
+            ha.x = 96;
+            ha.y = 62;
+            ha.width = 60;
+            ha.height = 12;
+            ha.flags = BoxFlags.kBFBoxInUse;
+            ha.id = 0x7FFF;
+            ha.priority = 999;
+            ha.window = null;
+
+            ha = FindEmptyHitArea().Value;
+            ha.x = 180;
+            ha.y = 62;
+            ha.width = 36;
+            ha.height = 12;
+            ha.flags = BoxFlags.kBFBoxInUse;
+            ha.id = 0x7FFE;
+            ha.priority = 999;
+            ha.window = null;
+
+            while (!HasToQuit)
+            {
+                _lastHitArea = null;
+                _lastHitArea3 = null;
+
+                while (!HasToQuit)
+                {
+                    if (_lastHitArea3 != null)
+                        break;
+                    Delay(1);
+                }
+
+                ha = _lastHitArea;
+
+                if (ha == null)
+                {
+                }
+                else if (ha.id == 0x7FFE)
+                {
+                    break;
+                }
+                else if (ha.id == 0x7FFF)
+                {
+                    break;
+                }
+            }
+
+            UndefineBox(0x7FFF);
+            UndefineBox(0x7FFE);
+
+            return ha.id;
         }
 
         private void oe1_printMonsterDamage()

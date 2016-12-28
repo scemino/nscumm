@@ -25,12 +25,18 @@ Copy the original files of the game you want to play in a directory.
     Zak McKracken and the Alien Mindbenders
     Maniac Mansion
 
+### Adventuresoft/Horrorsoft (AGOS) Games:
+    Elvira - Mistress of the Dark
+    Elvira II - The Jaws of Cerberus
+    Simon the Sorcerer 1
+    Simon the Sorcerer 2
+    The Feeble Files
+    Waxworks
+
 ### Others
     Beneath a Steel Sky by Revolution Software
     Broken Sword: The Shadow of the Templars by Revolution Software
     Flight of the Amazon Queen by Interactive Binary Illusions
-    Simon the Sorcerer 1, Simon the Sorcerer 2 by Adventuresoft
-    Elvira - Mistress of the Dark, Elvira II - The Jaws of Cerberus by Horrorsoft
 
 ## Hotkeys
 
@@ -72,6 +78,15 @@ Copy the original files of the game you want to play in a directory.
     v                      - Switch between subtitles only and
                              combined speech and subtitles
                             [Simon the Sorcerer 2 CD only]
+
+### The Feeble Files
+    Ctrl-f                 - Toggle fast mode
+    F7                     - Switch characters
+    F9                     - Hitbox names on/off
+    s                      - Sound effects on/off
+    Pause                  - Pauses
+    t                      - Switch between speech only and combined speech and subtitles
+    v                      - Switch between subtitles only and combined speech and subtitles
 
 ## Contact
 

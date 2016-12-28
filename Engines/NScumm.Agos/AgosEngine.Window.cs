@@ -42,7 +42,7 @@ namespace NScumm.Agos
             return 0; // for compilers that don't support NORETURN
         }
 
-        private WindowBlock OpenWindow(uint x, uint y, uint w, uint h, uint flags, uint fillColor, uint textColor)
+        protected WindowBlock OpenWindow(uint x, uint y, uint w, uint h, uint flags, uint fillColor, uint textColor)
         {
             var window = _windowList.FirstOrDefault(o => o.mode == 0);
 
@@ -124,7 +124,7 @@ namespace NScumm.Agos
             window.scrollY = 0;
         }
 
-        private void ColorWindow(WindowBlock window)
+        protected virtual void ColorWindow(WindowBlock window)
         {
             ushort y = (ushort) window.y;
             ushort h = (ushort) (window.height * 8);
@@ -273,7 +273,7 @@ namespace NScumm.Agos
             window.textColor = (byte) color;
         }
 
-        private void SendWindow(uint a)
+        protected void SendWindow(uint a)
         {
             if (_gd.ADGameDescription.gameType == SIMONGameType.GType_PN ||
                 _textWindow != _windowArray[0])

@@ -602,7 +602,7 @@ namespace NScumm.Agos
         };
 
         // Feeble Files specific
-        static readonly byte[] _mouseOffs =
+        protected static readonly byte[] _mouseOffs =
         {
             6, 0, 15, 21, 16, 21, 14, 21, 15, 21, 16, 21, 16, 21, 16, 21, 15, 21, 15, 21, 15, 21, 14, 21, 12, 21, 12, 21,
             12, 21, 12, 21,

@@ -41,6 +41,7 @@ namespace NScumm.Agos
         public SIMONGameType GameType => _gd.ADGameDescription.gameType;
         public GameIds GameId => _gd.ADGameDescription.gameId;
         public Platform GamePlatform => _gd.Platform;
+        public Language Language => _gd.Language;
         public GameFeatures Features => _gd.ADGameDescription.features;
 
         protected virtual void SetupVideoOpcodes(Action[] op)
@@ -199,13 +200,13 @@ namespace NScumm.Agos
             return false;
         }
 
-        protected bool GetBitFlag(int bit)
+        public bool GetBitFlag(int bit)
         {
             ushort bits = _bitArray[bit / 16];
             return (bits & (1 << (bit & 15))) != 0;
         }
 
-        protected void SetBitFlag(int bit, bool value)
+        public void SetBitFlag(int bit, bool value)
         {
             ushort bits = _bitArray[bit / 16];
             _bitArray[bit / 16] = (ushort) ((bits & ~(1 << (bit & 15))) | ((value ? 1 : 0) << (bit & 15)));
@@ -243,7 +244,7 @@ namespace NScumm.Agos
             return (ushort) _variableArrayPtr[var];
         }
 
-        private void VcWriteVar(int var, short value)
+        protected void VcWriteVar(int var, short value)
         {
             System.Diagnostics.Debug.Assert(var < _numVars);
             _variableArrayPtr[var] = value;
@@ -1435,7 +1436,7 @@ namespace NScumm.Agos
             _vgaSpriteChanged++;
         }
 
-        protected void vc36_setWindowImage()
+        protected virtual void vc36_setWindowImage()
         {
             _displayFlag = 0;
             ushort vga_res = (ushort) VcReadNextWord();
@@ -1594,7 +1595,7 @@ namespace NScumm.Agos
             VcWriteVar(var, (short) (VcReadVar(var) + VcReadVar((int) VcReadNextWord())));
         }
 
-        protected void vc48_setPathFinder()
+        protected virtual void vc48_setPathFinder()
         {
             ushort a = (ushort) _variableArrayPtr[12];
             var p = _pathFindArray[a - 1];

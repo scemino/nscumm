@@ -635,7 +635,7 @@ namespace NScumm.Agos
             return false;
         }
 
-        private uint ConfirmYesOrNo(ushort x, ushort y)
+        protected uint ConfirmYesOrNo(ushort x, ushort y)
         {
             var ha = FindEmptyHitArea().Value;
             ha.x = x;
@@ -718,7 +718,7 @@ namespace NScumm.Agos
         // which aren't supported, and will not restore correctly:
         // Various locations in Elvira 1/2 and Waxworks where saving
         // was disabled
-        private void QuickLoadOrSave()
+        protected virtual void QuickLoadOrSave()
         {
             bool success;
             string buf;

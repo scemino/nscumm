@@ -81,11 +81,27 @@ namespace NScumm.Core.Video
             }
         }
 
+        public bool EndOfVideoTracks
+        {
+            get
+            {
+                foreach (var it in _tracks.OfType<VideoTrack>())
+                    if (!it.EndOfTrack)
+                        return false;
+
+                return true;
+            }
+        }
+
         public bool NeedsUpdate => HasFramesLeft() && GetTimeToNextFrame() == 0;
 
         public byte[] Palette { get; private set; }
 
-        public Point Pos { get { return _pos; } set { _pos = value; } }
+        public Point Pos
+        {
+            get { return _pos; }
+            set { _pos = value; }
+        }
 
         public bool IsRewindable
         {
@@ -140,7 +156,7 @@ namespace NScumm.Core.Video
             if (_pauseLevel == 1 && pause)
             {
                 _pauseStartTime = (uint) ServiceLocator.Platform.GetMilliseconds();
-                    // Store the starting time from pausing to keep it for later
+                // Store the starting time from pausing to keep it for later
                 foreach (var track in _tracks)
                 {
                     track.Pause(true);

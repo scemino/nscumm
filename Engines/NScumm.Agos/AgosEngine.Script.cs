@@ -571,7 +571,7 @@ namespace NScumm.Agos
             SetWindowImageEx((ushort) mode, (ushort) vgaRes);
         }
 
-        protected void o_killAnimate()
+        public void o_killAnimate()
         {
             // 100: kill animations
             _videoLockOut |= 0x8000;
@@ -836,7 +836,7 @@ namespace NScumm.Agos
             _videoLockOut = (ushort) (_videoLockOut & ~0x8000);
         }
 
-        private void PrintScroll()
+        protected void PrintScroll()
         {
             var vpe = new Ptr<VgaPointersEntry>(_vgaBufferPointers, 1);
             var curVgaFile2Orig = _curVgaFile2;

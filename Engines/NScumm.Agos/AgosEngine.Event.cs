@@ -224,7 +224,7 @@ namespace NScumm.Agos
             _videoLockOut = (ushort) (_videoLockOut & ~1);
         }
 
-        private void ProcessVgaEvents()
+        protected void ProcessVgaEvents()
         {
             var vte = new Ptr<VgaTimerEntry>(_vgaTimerList);
 
@@ -298,7 +298,7 @@ namespace NScumm.Agos
             RunVgaScript();
         }
 
-        private void ScrollEvent()
+        protected void ScrollEvent()
         {
             if (_scrollCount == 0)
                 return;
@@ -614,7 +614,7 @@ namespace NScumm.Agos
             }
         }
 
-        private void TimerProc()
+        protected virtual void TimerProc()
         {
             if ((_videoLockOut & 0x80E9) != 0 || (_videoLockOut & 2) != 0)
                 return;

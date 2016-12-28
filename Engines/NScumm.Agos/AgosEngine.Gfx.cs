@@ -801,7 +801,7 @@ namespace NScumm.Agos
                 _gd.ADGameDescription.gameType == SIMONGameType.GType_PP)
             {
                 b = bb + bb.ToUInt16(2);
-                var header = new VgaFile1HeaderCommon(b);
+                var header = new VgaFile1HeaderFeeble(b);
                 var count = header.imageCount;
                 b = bb + header.imageTable;
 

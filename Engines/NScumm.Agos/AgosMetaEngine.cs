@@ -1195,7 +1195,187 @@ namespace NScumm.Agos
                         new ADGameFileDescription("stripped.txt", (ushort)GameFileTypes.GAME_STRFILE,"e229f84d46fa83f99b4a7115679f3fb6",-1),
                         new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"2082f8d02075e590300478853a91ffd9",-1),
                     }, Language.PL_POL, Platform.Windows, ADGameFlags.CD, GuiOptions.NONE),
-                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, GameFeatures.GF_TALKIE)
+                SIMONGameType.GType_SIMON2, GameIds.GID_SIMON2, GameFeatures.GF_TALKIE),
+
+            // The Feeble Files - English DOS Demo
+            new AgosGameDescription(new ADGameDescription("feeble","Demo",
+                    new[]
+                    {
+                        new ADGameFileDescription("MAINMENU.SMK", (ushort)GameFileTypes.GAME_VGAFILE,"b62df52fc36f514eb0464120853f22b6",968808),
+                    }, Language.EN_ANY, Platform.DOS, ADGameFlags.DEMO, GuiOptions.NOSUBTITLES|GuiOptions.NOMUSIC|GuiOptions.NOASPECT),
+                SIMONGameType.GType_FF, GameIds.GID_FEEBLEFILES, GameFeatures.GF_DEMO),
+
+            // The Feeble Files - German DOS Demo
+            new AgosGameDescription(new ADGameDescription("feeble","Demo",
+                    new[]
+                    {
+                        new ADGameFileDescription("MAINMENU.SMK", (ushort)GameFileTypes.GAME_VGAFILE,"e18d365044eabea7352934917bbfd2e4",976436),
+                    }, Language.DE_DEU, Platform.DOS, ADGameFlags.DEMO, GuiOptions.NOSUBTITLES|GuiOptions.NOMUSIC|GuiOptions.NOASPECT),
+                SIMONGameType.GType_FF, GameIds.GID_FEEBLEFILES, GameFeatures.GF_DEMO),
+
+            // The Feeble Files - English Amiga CD
+            new AgosGameDescription(new ADGameDescription("feeble","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("game22", (ushort)GameFileTypes.GAME_BASEFILE,"629762ea9ca9ee9ff85f4774d219f5c7",259576),
+                        new ADGameFileDescription("gfxindex.dat", (ushort)GameFileTypes.GAME_GFXIDXFILE,"f550f7915c5ce3a68c9f870f507449c2",48000),
+                        new ADGameFileDescription("setup", (ushort)GameFileTypes.GAME_RESTFILE,"71512fc98501a8071a26b683a31dde78",3360),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"0bbfee8e69739111eb36b0d138da8ddf",668),
+                    }, Language.EN_ANY, Platform.Amiga, ADGameFlags.NO_FLAGS, GuiOptions.NOSUBTITLES|GuiOptions.NOMUSIC|GuiOptions.NOASPECT),
+                SIMONGameType.GType_FF, GameIds.GID_FEEBLEFILES, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_ZLIBCOMP|GameFeatures.GF_TALKIE),
+
+            // The Feeble Files - German Amiga CD
+            new AgosGameDescription(new ADGameDescription("feeble","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("game22", (ushort)GameFileTypes.GAME_BASEFILE,"bcd76ac080003eee3649df18db25b60e",262517),
+                        new ADGameFileDescription("gfxindex.dat", (ushort)GameFileTypes.GAME_GFXIDXFILE,"f550f7915c5ce3a68c9f870f507449c2",48000),
+                        new ADGameFileDescription("setup", (ushort)GameFileTypes.GAME_RESTFILE,"71512fc98501a8071a26b683a31dde78",3360),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"0bbfee8e69739111eb36b0d138da8ddf",668),
+                    }, Language.DE_DEU, Platform.Amiga, ADGameFlags.NO_FLAGS, GuiOptions.NOSUBTITLES|GuiOptions.NOMUSIC|GuiOptions.NOASPECT),
+                SIMONGameType.GType_FF, GameIds.GID_FEEBLEFILES, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_ZLIBCOMP|GameFeatures.GF_TALKIE),
+
+            // The Feeble Files - English Macintosh CD
+            new AgosGameDescription(new ADGameDescription("feeble","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("game22", (ushort)GameFileTypes.GAME_BASEFILE,"629762ea9ca9ee9ff85f4774d219f5c7",259576),
+                        new ADGameFileDescription("graphics.vga", (ushort)GameFileTypes.GAME_GFXIDXFILE,"11a4853cb35956846976e9473ee0e41e",67456693),
+                        new ADGameFileDescription("setup", (ushort)GameFileTypes.GAME_RESTFILE,"71512fc98501a8071a26b683a31dde78",3360),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"0bbfee8e69739111eb36b0d138da8ddf",668),
+                    }, Language.EN_ANY, Platform.Macintosh, ADGameFlags.NO_FLAGS, GuiOptions.NOSUBTITLES|GuiOptions.NOMUSIC|GuiOptions.NOASPECT),
+                SIMONGameType.GType_FF, GameIds.GID_FEEBLEFILES, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_ZLIBCOMP|GameFeatures.GF_TALKIE),
+
+            // The Feeble Files - French Macintosh CD
+            new AgosGameDescription(new ADGameDescription("feeble","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("game22", (ushort)GameFileTypes.GAME_BASEFILE,"ba90b40a47726039671d9e91630dd7ed",259668),
+                        new ADGameFileDescription("graphics.vga", (ushort)GameFileTypes.GAME_GFXIDXFILE,"11a4853cb35956846976e9473ee0e41e",67456693),
+                        new ADGameFileDescription("setup", (ushort)GameFileTypes.GAME_RESTFILE,"71512fc98501a8071a26b683a31dde78",3360),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"0bbfee8e69739111eb36b0d138da8ddf",668),
+                    }, Language.FR_FRA, Platform.Macintosh, ADGameFlags.NO_FLAGS, GuiOptions.NOSUBTITLES|GuiOptions.NOMUSIC|GuiOptions.NOASPECT),
+                SIMONGameType.GType_FF, GameIds.GID_FEEBLEFILES, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_ZLIBCOMP|GameFeatures.GF_TALKIE),
+
+            // The Feeble Files - German Macintosh CD
+            new AgosGameDescription(new ADGameDescription("feeble","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("game22", (ushort)GameFileTypes.GAME_BASEFILE,"bcd76ac080003eee3649df18db25b60e",262517),
+                        new ADGameFileDescription("graphics.vga", (ushort)GameFileTypes.GAME_GFXIDXFILE,"11a4853cb35956846976e9473ee0e41e",67456693),
+                        new ADGameFileDescription("setup", (ushort)GameFileTypes.GAME_RESTFILE,"71512fc98501a8071a26b683a31dde78",3360),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"0bbfee8e69739111eb36b0d138da8ddf",668),
+                    }, Language.DE_DEU, Platform.Macintosh, ADGameFlags.NO_FLAGS, GuiOptions.NOSUBTITLES|GuiOptions.NOMUSIC|GuiOptions.NOASPECT),
+                SIMONGameType.GType_FF, GameIds.GID_FEEBLEFILES, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_ZLIBCOMP|GameFeatures.GF_TALKIE),
+
+            // The Feeble Files - Spanish Macintosh CD
+            new AgosGameDescription(new ADGameDescription("feeble","CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("game22", (ushort)GameFileTypes.GAME_BASEFILE,"71d7d2d5e479b053c5a9757f1702c9c3",265629),
+                        new ADGameFileDescription("graphics.vga", (ushort)GameFileTypes.GAME_GFXIDXFILE,"11a4853cb35956846976e9473ee0e41e",67456693),
+                        new ADGameFileDescription("setup", (ushort)GameFileTypes.GAME_RESTFILE,"71512fc98501a8071a26b683a31dde78",3360),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"0bbfee8e69739111eb36b0d138da8ddf",668),
+                    }, Language.ES_ESP, Platform.Macintosh, ADGameFlags.NO_FLAGS, GuiOptions.NOSUBTITLES|GuiOptions.NOMUSIC|GuiOptions.NOASPECT),
+                SIMONGameType.GType_FF, GameIds.GID_FEEBLEFILES, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_ZLIBCOMP|GameFeatures.GF_TALKIE),
+
+            // The Feeble Files - English Windows 2CD (with InstallShield cab)
+            new AgosGameDescription(new ADGameDescription("feeble","2CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("data1.cab", (ushort)0,"600db08891e7a21badc8215e604cd88f",28845430),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"0bbfee8e69739111eb36b0d138da8ddf",668),
+                    }, Language.EN_ANY, Platform.Windows, ADGameFlags.NO_FLAGS, GuiOptions.NOSUBTITLES|GuiOptions.NOMUSIC|GuiOptions.NOASPECT),
+                SIMONGameType.GType_FF, GameIds.GID_FEEBLEFILES, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_TALKIE|GameFeatures.GF_PACKED),
+
+            // The Feeble Files - English Windows 2CD
+            new AgosGameDescription(new ADGameDescription("feeble","2CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("game22", (ushort)GameFileTypes.GAME_BASEFILE,"629762ea9ca9ee9ff85f4774d219f5c7",259576),
+                        new ADGameFileDescription("save.999", (ushort)GameFileTypes.GAME_RESTFILE,"71512fc98501a8071a26b683a31dde78",3360),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"0bbfee8e69739111eb36b0d138da8ddf",668),
+                    }, Language.EN_ANY, Platform.Windows, ADGameFlags.NO_FLAGS, GuiOptions.NOSUBTITLES|GuiOptions.NOMUSIC|GuiOptions.NOASPECT),
+                SIMONGameType.GType_FF, GameIds.GID_FEEBLEFILES, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_TALKIE),
+
+            // The Feeble Files - Polish Windows 2CD
+            new AgosGameDescription(new ADGameDescription("feeble","2CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("game33", (ushort)GameFileTypes.GAME_BASEFILE,"cda37c422c04dde8b8ab3405178b3ef9",266565),
+                        new ADGameFileDescription("save.999", (ushort)GameFileTypes.GAME_RESTFILE,"71512fc98501a8071a26b683a31dde78",3360),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"0bbfee8e69739111eb36b0d138da8ddf",668),
+                    }, Language.PL_POL, Platform.Windows, ADGameFlags.NO_FLAGS, GuiOptions.NOSUBTITLES|GuiOptions.NOMUSIC|GuiOptions.NOASPECT),
+                SIMONGameType.GType_FF, GameIds.GID_FEEBLEFILES, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_TALKIE),
+
+            // The Feeble Files - English Windows 4CD (with InstallShield cab)
+            new AgosGameDescription(new ADGameDescription("feeble","4CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("data1.cab", (ushort)0,"65804cbc9036ac4b1275d97e0de3be2f",28943062),
+                    }, Language.EN_ANY, Platform.Windows, ADGameFlags.NO_FLAGS, GuiOptions.NOSUBTITLES|GuiOptions.NOMUSIC|GuiOptions.NOASPECT),
+                SIMONGameType.GType_FF, GameIds.GID_FEEBLEFILES, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_TALKIE|
+                                                                 GameFeatures.GF_PACKED| GameFeatures.GF_BROKEN_FF_RATING),
+
+            // The Feeble Files - English Windows 4CD
+            new AgosGameDescription(new ADGameDescription("feeble","4CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("game22", (ushort)GameFileTypes.GAME_BASEFILE,"a8746407a5b20a7da0da0a14c380af1c",251647),
+                        new ADGameFileDescription("save.999", (ushort)GameFileTypes.GAME_RESTFILE,"71512fc98501a8071a26b683a31dde78",3360),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"0bbfee8e69739111eb36b0d138da8ddf",668),
+                    }, Language.EN_ANY, Platform.Windows, ADGameFlags.NO_FLAGS, GuiOptions.NOSUBTITLES|GuiOptions.NOMUSIC|GuiOptions.NOASPECT),
+                SIMONGameType.GType_FF, GameIds.GID_FEEBLEFILES, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_TALKIE|GameFeatures.GF_BROKEN_FF_RATING),
+
+            // The Feeble Files - English Windows 4CD
+            new AgosGameDescription(new ADGameDescription("feeble","4CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("game22", (ushort)GameFileTypes.GAME_BASEFILE,"ba90b40a47726039671d9e91630dd7ed",-1),
+                        new ADGameFileDescription("save.999", (ushort)GameFileTypes.GAME_RESTFILE,"71512fc98501a8071a26b683a31dde78",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"0bbfee8e69739111eb36b0d138da8ddf",-1),
+                    }, Language.FR_FRA, Platform.Windows, ADGameFlags.NO_FLAGS, GuiOptions.NOSUBTITLES|GuiOptions.NOMUSIC|GuiOptions.NOASPECT),
+                SIMONGameType.GType_FF, GameIds.GID_FEEBLEFILES, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_TALKIE),
+
+            // The Feeble Files - German Windows 4CD
+            new AgosGameDescription(new ADGameDescription("feeble","4CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("game22", (ushort)GameFileTypes.GAME_BASEFILE,"bcd76ac080003eee3649df18db25b60e",-1),
+                        new ADGameFileDescription("save.999", (ushort)GameFileTypes.GAME_RESTFILE,"71512fc98501a8071a26b683a31dde78",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"0bbfee8e69739111eb36b0d138da8ddf",-1),
+                    }, Language.DE_DEU, Platform.Windows, ADGameFlags.NO_FLAGS, GuiOptions.NOSUBTITLES|GuiOptions.NOMUSIC|GuiOptions.NOASPECT),
+                SIMONGameType.GType_FF, GameIds.GID_FEEBLEFILES, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_TALKIE),
+
+            // The Feeble Files - Italian Windows 4CD
+            new AgosGameDescription(new ADGameDescription("feeble","4CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("game22", (ushort)GameFileTypes.GAME_BASEFILE,"80576f2e1ed4c912b63921fe77af313e",-1),
+                        new ADGameFileDescription("save.999", (ushort)GameFileTypes.GAME_RESTFILE,"71512fc98501a8071a26b683a31dde78",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"0bbfee8e69739111eb36b0d138da8ddf",-1),
+                    }, Language.IT_ITA, Platform.Windows, ADGameFlags.NO_FLAGS, GuiOptions.NOSUBTITLES|GuiOptions.NOMUSIC|GuiOptions.NOASPECT),
+                SIMONGameType.GType_FF, GameIds.GID_FEEBLEFILES, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_TALKIE),
+
+            // The Feeble Files - Polish Windows 4CD
+            new AgosGameDescription(new ADGameDescription("feeble","4CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("game22", (ushort)GameFileTypes.GAME_BASEFILE,"c498f892a5dbcbc968e0dbb8697884fc",258660),
+                        new ADGameFileDescription("save.999", (ushort)GameFileTypes.GAME_RESTFILE,"71512fc98501a8071a26b683a31dde78",3360),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"0bbfee8e69739111eb36b0d138da8ddf",668),
+                    }, Language.PL_POL, Platform.Windows, ADGameFlags.NO_FLAGS, GuiOptions.NOSUBTITLES|GuiOptions.NOMUSIC|GuiOptions.NOASPECT),
+                SIMONGameType.GType_FF, GameIds.GID_FEEBLEFILES, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_TALKIE),
+
+            // The Feeble Files - Spanish Windows 4CD
+            new AgosGameDescription(new ADGameDescription("feeble","4CD",
+                    new[]
+                    {
+                        new ADGameFileDescription("game22", (ushort)GameFileTypes.GAME_BASEFILE,"71d7d2d5e479b053c5a9757f1702c9c3",-1),
+                        new ADGameFileDescription("save.999", (ushort)GameFileTypes.GAME_RESTFILE,"71512fc98501a8071a26b683a31dde78",-1),
+                        new ADGameFileDescription("tbllist", (ushort)GameFileTypes.GAME_TBLFILE,"0bbfee8e69739111eb36b0d138da8ddf",-1),
+                    }, Language.ES_ESP, Platform.Windows, ADGameFlags.NO_FLAGS, GuiOptions.NOSUBTITLES|GuiOptions.NOMUSIC|GuiOptions.NOASPECT),
+                SIMONGameType.GType_FF, GameIds.GID_FEEBLEFILES, GameFeatures.GF_OLD_BUNDLE|GameFeatures.GF_TALKIE),
         };
 
         public AgosMetaEngine()
@@ -1224,12 +1404,12 @@ namespace NScumm.Agos
                 case SIMONGameType.GType_SIMON2:
                     return new AgosEngineSimon2(system, settings, gd);
 # if ENABLE_AGOS2
-//                case SIMONGameType.GType_FF:
-//                    if (gd->features & GF_DEMO)
-//                        *engine = new AGOS::AGOSEngine_FeebleDemo(syst, gd);
-//                    else
-//                        *engine = new AGOS::AGOSEngine_Feeble(syst, gd);
-//                    break;
+                case SIMONGameType.GType_FF:
+                    if (gd.features.HasFlag(GameFeatures.GF_DEMO))
+                        return new AgosEngineFeebleDemo(system, settings, gd);
+                    else
+                        return new AgosEngineFeeble(system, settings, gd);
+                    break;
 //                case SIMONGameType.GType_PP:
 //                    if (gd->gameId == GID_DIMP)
 //                        *engine = new AGOS::AGOSEngine_DIMP(syst, gd);

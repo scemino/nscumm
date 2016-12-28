@@ -71,9 +71,9 @@ namespace NScumm.Core.Video
         private uint _firstFrameStart;
         private IMixer _mixer;
 
-        public SmackerDecoder(IMixer mixer, SoundType soundType = SoundType.SFX)
+        public SmackerDecoder(SoundType soundType = SoundType.SFX)
         {
-            _mixer = mixer;
+            _mixer = Engine.Instance.Mixer;
             _soundType = soundType;
         }
 

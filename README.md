@@ -1,6 +1,6 @@
 # NSCUMM
 
-Quick and dirty .NET rewrite of the SCUMM and Virtual Theatre engines of the project scummvm.
+Quick and dirty .NET rewrite of the project scummvm.
 
 ## Quick start
 
@@ -103,7 +103,7 @@ Screenshots
 
 ## License
 
-Copyright (C) 2012-2015  Valéry Sablonnière
+Copyright (C) 2012-2016  Valéry Sablonnière
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

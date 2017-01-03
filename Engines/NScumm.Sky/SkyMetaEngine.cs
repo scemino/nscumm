@@ -121,6 +121,12 @@ namespace NScumm.Sky
 
         public override GameDetected DetectGame(string path)
         {
+			if (ServiceLocator.FileStorage.DirectoryExists(path))
+			{
+				var skyFile = ServiceLocator.FileStorage.Combine(path, "sky.dnr");
+				if (ServiceLocator.FileStorage.FileExists(skyFile))
+					path = skyFile;
+			}
             var fileName = ServiceLocator.FileStorage.GetFileName(path);
             if (string.Equals(fileName, "sky.dnr", StringComparison.OrdinalIgnoreCase))
             {

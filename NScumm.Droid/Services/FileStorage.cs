@@ -132,11 +132,11 @@ namespace NScumm.Mobile.Services
         public Stream OpenContent(string path)
         {
 #if __IOS__
-            var resourcePrefix = "NScumm.Mobile.iOS.Resources.";
+            var resourcePrefix = "NScumm.iOS.Resources.";
 #elif __ANDROID__
-            var resourcePrefix = "NScumm.Mobile.Droid.Resources.";
+            var resourcePrefix = "NScumm.Droid.Resources.";
 #elif WINDOWS_PHONE
-            var resourcePrefix = "NScumm.Mobile.WinPhone.Resources.";
+            var resourcePrefix = "NScumm.WinPhone.Resources.";
 #endif
 
             var assembly = typeof(FileStorage).Assembly;

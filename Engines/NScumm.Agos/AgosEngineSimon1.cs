@@ -42,7 +42,6 @@ namespace NScumm.Agos
 
         protected override void ExecuteOpcode(int opcode)
         {
-            Debug($"ExecuteOpcode({opcode} {_opcodes[opcode].Method.Name})");
             if (_opcodes.ContainsKey(opcode))
             {
                 _opcodes[opcode]();

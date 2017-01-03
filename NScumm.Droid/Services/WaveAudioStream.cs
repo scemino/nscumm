@@ -22,7 +22,7 @@ using System.IO;
 using System;
 using NScumm.Core;
 
-namespace NScumm.Droid.Services
+namespace NScumm.Mobile.Services
 {
     class WaveAudioStream : IRewindableAudioStream
     {
@@ -74,8 +74,8 @@ namespace NScumm.Droid.Services
                 {
                     buffer[offs++] = _buffer.ToInt16(i);
                 }
-                numSamples -= (read / 2);
-                numRead += (read / 2);
+                numSamples -= read / 2;
+                numRead += read / 2;
             } while (read != 0 && numSamples != 0);
             return numRead;
         }

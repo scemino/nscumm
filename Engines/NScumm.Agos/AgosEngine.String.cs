@@ -547,7 +547,6 @@ namespace NScumm.Agos
             {
                 _stringTabPtr[i] = mem;
                 var tmp = mem.GetRawText();
-                Debug($"{i} {tmp}");
                 while (mem.Value != 0)
                 {
                     mem.Offset++;

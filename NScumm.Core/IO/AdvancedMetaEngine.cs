@@ -214,8 +214,12 @@ namespace NScumm.Core.IO
 
         public override GameDetected DetectGame(string path)
         {
-            var dir = ServiceLocator.FileStorage.GetDirectoryName(path);
-            D.Debug(3, $"Starting detection in dir '{path}'");
+			var dir = path;
+			if (ServiceLocator.FileStorage.FileExists(path))
+			{
+				dir = ServiceLocator.FileStorage.GetDirectoryName(path);
+			}
+            D.Debug(3, $"Starting detection in dir '{dir}'");
 
             var files = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var allFiles = ServiceLocator.FileStorage.EnumerateFiles(dir, option: SearchOption.AllDirectories);

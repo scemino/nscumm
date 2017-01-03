@@ -46,6 +46,8 @@ namespace NScumm.Core
 
         string ChangeExtension(string path, string newExtension);
 
+        bool DirectoryExists(string path);
+
         bool FileExists(string path);
 
         Stream OpenFileRead(string path);

@@ -370,18 +370,17 @@ namespace NScumm.Agos
 
                 _windowNum = (ushort) (animTable.Value.windowNum & ~0x8000);
 
-                var state = new Vc10State();
-                state.srcPtr = animTable.Value.srcPtr;
-                state.height = state.draw_height = animTable.Value.height;
-                state.width = state.draw_width = animTable.Value.width;
-                state.y = animTable.Value.y;
-                state.x = animTable.Value.x;
-                state.palette = 0;
-                state.paletteMod = 0;
-                state.flags = DrawFlags.kDFNonTrans;
+                _state.srcPtr = animTable.Value.srcPtr;
+                _state.height = _state.draw_height = animTable.Value.height;
+                _state.width = _state.draw_width = animTable.Value.width;
+                _state.y = animTable.Value.y;
+                _state.x = animTable.Value.x;
+                _state.palette = 0;
+                _state.paletteMod = 0;
+                _state.flags = DrawFlags.kDFNonTrans;
 
                 _backFlag = true;
-                DrawImage(state);
+                DrawImage(_state);
 
                 if (_gd.ADGameDescription.gameType != SIMONGameType.GType_SIMON1 &&
                     _gd.ADGameDescription.gameType != SIMONGameType.GType_SIMON2)

@@ -1,11 +1,13 @@
 ﻿using System.Reflection;
 using System.Runtime.CompilerServices;
+#if __ANDROID__
 using Android.App;
+#endif
 
 // Information about this assembly is defined by the following attributes. 
 // Change them to the values specific to your project.
 
-[assembly: AssemblyTitle("nSCUMM")]
+[assembly: AssemblyTitle("NScumm.Droid")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
@@ -25,4 +27,3 @@ using Android.App;
 
 //[assembly: AssemblyDelaySign(false)]
 //[assembly: AssemblyKeyFile("")]
-

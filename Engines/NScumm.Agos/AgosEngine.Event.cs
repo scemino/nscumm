@@ -193,7 +193,6 @@ namespace NScumm.Agos
 
         protected void AddVgaEvent(ushort num, EventType type, BytePtr codePtr, ushort curSprite, ushort curZoneNum)
         {
-            Debug("AddVgaEvent({0})",num);
             _videoLockOut |= 1;
 
             var vte = _vgaTimerList.First(o => o.delay == 0);

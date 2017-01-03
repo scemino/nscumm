@@ -220,7 +220,6 @@ namespace NScumm.Agos
             {
                 for (cur = _subroutineList; cur != null; cur = cur.next)
                 {
-                    System.Diagnostics.Debug.WriteLine($"cur.id: {cur.id}");
                     if (cur.id == subroutineId)
                         return cur;
                 }
@@ -408,7 +407,6 @@ namespace NScumm.Agos
 
         private Subroutine CreateSubroutine(ushort id)
         {
-            System.Diagnostics.Debug.WriteLine($"CreateSubroutine {id}");
             AlignTableMem();
 
             var sub = new Subroutine(AllocateTable(Subroutine.Size));

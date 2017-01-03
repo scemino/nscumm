@@ -1,139 +1,189 @@
-﻿//
-//  GameLibraryActivity.cs
-//
-//  Author:
-//       scemino <scemino74@gmail.com>
-//
-//  Copyright (c) 2016 scemino
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
-using System;
-using System.Collections.Generic;
-using System.IO;
-using Android.App;
+﻿using Android.App;
+using Android.Content;
 using Android.OS;
-using Android.Views;
 using Android.Widget;
+using NScumm.Agos;
 using NScumm.Core;
 using NScumm.Core.IO;
-using NScumm.Droid;
-using NScumm.Droid.Services;
-using NScumm.Queen;
-using NScumm.Sky;
+using NScumm.Mobile.Services;
+using Android.Views;
+using System.Linq;
+using Android.Support.V4.Content;
+using Android.Content.PM;
+using System.Collections.Generic;
+using System;
 
-namespace NScumm.Mobile.Droid
+namespace NScumm.Droid
 {
-    [Activity(Label = "nScumm - Game Library", MainLauncher = true)]
-    public class GameLibraryActivity : ListActivity
-    {
-        GameDetector _gameDetector;
+	[Activity(Label = "nScumm", MainLauncher = true,
+			  Icon = "@drawable/Plus_48")]
+	public class GameLibraryActivity : Activity
+	{
+		GameDetector _gd;
+		ListView _listView1;
+		List<string> _pathes;
 
-        protected override void OnCreate(Bundle savedInstanceState)
-        {
-            base.OnCreate(savedInstanceState);
+		protected override void OnCreate(Bundle bundle)
+		{
+			base.OnCreate(bundle);
 
-            ServiceLocator.FileStorage = new DroidFileStorage();
+			SetContentView(Resource.Layout.libraryView);
 
-            var directory = Android.OS.Environment.ExternalStorageDirectory.AbsolutePath;
+			var toolbar = FindViewById<Toolbar>(Resource.Id.toolbar);
+			SetActionBar(toolbar);
 
-            _gameDetector = new GameDetector();
-            _gameDetector.Add(new SkyMetaEngine());
-            //gd.Add(new ScummMetaEngine());
-            //gd.Add(new Sword1MetaEngine());
-            //_gameDetector.Add(new QueenMetaEngine());
+			Initialize();
 
-            var games = GetGames(directory);
-            ListAdapter = new GameDescriptorAdapter(this, games);
-        }
+			_gd = new GameDetector();
+			_gd.Add(new AgosMetaEngine());
 
-        protected override void OnListItemClick(ListView l, View v, int position, long id)
-        {
-            var intent = new Android.Content.Intent(this, typeof(MainActivity));
-            var game = ((GameDescriptorAdapter)ListAdapter)[position];
-            intent.PutExtra("Game", game.Path);
-            StartActivity(intent);
-        }
+			_listView1 = FindViewById<ListView>(Resource.Id.listView1);
+			_listView1.Adapter = new GameListAdapter(this);
+			_listView1.ItemClick += OnListItemClick;
+		}
 
-        private IList<IGameDescriptor> GetGames(string directory)
-        {
-            var files = new List<IGameDescriptor>();
-            ScanDirectory(directory, files);
-            return files;
-        }
+		protected override void OnPause()
+		{
+			base.OnPause();
 
-        private void ScanDirectory(string directory, List<IGameDescriptor> files)
-        {
-            try
-            {
-                Android.Util.Log.Info(MainActivity.LogTag, $"Scan Directory {directory}");
-                var entries = Directory.EnumerateFileSystemEntries(directory, "*", System.IO.SearchOption.AllDirectories);
-                foreach (var entry in entries)
-                {
-                    if (!Directory.Exists(entry))
-                    {
-                        Android.Util.Log.Info("nSCUMM", $"Scan {entry}");
-                        var game = _gameDetector.DetectGame(entry);
-                        if (game != null)
-                        {
-                            files.Add(game.Game);
-                        }
-                    }
-                }
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // ignore exception
-            }
-        }
-    }
+			var preferences = GetPreferences(FileCreationMode.Private);
+			var editor = preferences.Edit();
+			editor.PutStringSet("Pathes", ((GameListAdapter)_listView1.Adapter).Select(o => o.Path).ToList());
+			editor.Commit();
+		}
 
-    public class GameDescriptorAdapter : BaseAdapter<IGameDescriptor>
-    {
-        IList<IGameDescriptor> _items;
-        Activity _context;
+		protected override void OnResume()
+		{
+			var preferences = GetPreferences(FileCreationMode.Private);
+			var pathes = preferences.GetStringSet("Pathes", null);
+			if (pathes == null)
+			{
+				base.OnResume();
+				return;
+			}
 
-        public GameDescriptorAdapter(Activity context, IList<IGameDescriptor> items)
-        {
-            this._context = context;
-            this._items = items;
-        }
+			_pathes = pathes.ToList();
+			TryGetReadLibrary();
 
-        public override long GetItemId(int position)
-        {
-            return position;
-        }
+			base.OnResume();
+		}
 
-        public override IGameDescriptor this[int position]
-        {
-            get { return _items[position]; }
-        }
+		private void TryGetReadLibrary()
+		{
+			if ((int)Build.VERSION.SdkInt < 23)
+			{
+				GetReadLibrary();
+				return;
+			}
 
-        public override int Count
-        {
-            get { return _items.Count; }
-        }
+			GetReadLibraryPermission();
+		}
 
-        public override View GetView(int position, View convertView, ViewGroup parent)
-        {
-            View view = convertView; // re-use an existing view, if one is available
-            if (view == null) // otherwise create a new one
-                view = _context.LayoutInflater.Inflate(Android.Resource.Layout.SimpleListItem1, null);
-            view.FindViewById<TextView>(Android.Resource.Id.Text1).Text = _items[position].Description;
-            return view;
-        }
-    }
+		private void GetReadLibrary()
+		{
+			((GameListAdapter)_listView1.Adapter).AddAll(_pathes.Select(o => GetGame(o).Game).ToList());
+		}
+
+		private void GetReadLibraryPermission()
+		{
+			if (CheckSelfPermission(Android.Manifest.Permission.ReadExternalStorage) == (int)Permission.Granted)
+			{
+				GetReadLibrary();
+				return;
+			}
+
+			// Need to request permission
+			if (ShouldShowRequestPermissionRationale(Android.Manifest.Permission.ReadExternalStorage))
+			{
+				//Explain to the user why we need to read the contacts
+				new AlertDialog.Builder(this)
+						.SetMessage("Read access is required to show game library.")
+							   .SetPositiveButton("OK", (o, e) => RequestPermissions(new string[] { Android.Manifest.Permission.ReadExternalStorage }, 1))
+						.Show();
+				return;
+			}
+
+			RequestPermissions(new string[] { Android.Manifest.Permission.ReadExternalStorage }, 1);
+		}
+
+		public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Permission[] grantResults)
+		{
+			if (requestCode == 1 && grantResults[0] == Permission.Granted)
+			{
+				// Permission granted
+				GetReadLibrary();
+				return;
+			}
+			OnRequestPermissionsResult(requestCode, permissions, grantResults);
+		}
+
+		public override bool OnCreateOptionsMenu(IMenu menu)
+		{
+			MenuInflater.Inflate(Resource.Menu.top_menus, menu);
+			return base.OnCreateOptionsMenu(menu);
+		}
+
+		public override bool OnOptionsItemSelected(IMenuItem item)
+		{
+			if (item.ItemId == Resource.Id.menu_edit)
+			{
+				AddGame();
+			}
+			return base.OnOptionsItemSelected(item);
+		}
+
+		private void AddGame()
+		{
+			var intent = new Intent(this, typeof(DirectoryPickerActivity));
+			StartActivityForResult(intent, 1);
+		}
+
+		protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
+		{
+			// Check which request we're responding to
+			if (requestCode != 1) return;
+
+			// Make sure the request was successful
+			if (resultCode != Result.Ok) return;
+
+			// Try to detect game
+			var path = data.GetStringExtra("Path");
+			var game = GetGame(path);
+			if (game == null)
+			{
+				// No game, show message
+				new AlertDialog.Builder(this).SetMessage("No Game detected").Create().Show();
+				return;
+			}
+
+			// Add game in the library
+			((GameListAdapter)_listView1.Adapter).Add(game.Game);
+		}
+
+		private GameDetected GetGame(string path)
+		{
+			var game = _gd.DetectGame(path);
+			return game;
+		}
+
+		private void OnListItemClick(object sender, AdapterView.ItemClickEventArgs e)
+		{
+			var game = ((GameListAdapter)_listView1.Adapter).GetItem(e.Position);
+			if (game != null)
+			{
+				var intent = new Intent(this, typeof(ScummGameActivity));
+				intent.PutExtra("Game", game.Path);
+				StartActivity(intent);
+			}
+		}
+
+		private void Initialize()
+		{
+			ServiceLocator.Platform = new Mobile.Services.Platform();
+			ServiceLocator.FileStorage = new FileStorage();
+			ServiceLocator.SaveFileManager = new SaveFileManager();
+			ServiceLocator.AudioManager = new Mobile.Services.AudioManager();
+			ServiceLocator.TraceFatory = new TraceFactory();
+		}
+	}
 }
-

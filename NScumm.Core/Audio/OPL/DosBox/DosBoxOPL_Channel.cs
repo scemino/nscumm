@@ -23,7 +23,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
 {
     partial class DosBoxOPL
     {
-        class Channel
+        private class Channel
         {
             //Shifts for the values contained in chandata variable
             public const int ShiftKslBase = 16;
@@ -186,7 +186,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
                 WriteC0(chip, val);
             }
 
-            public Channel SynthHandler(Chip chip, uint samples, int[] output, int pos)
+            public Channel SynthHandler(Chip chip, int samples, int[] output, int pos)
             {
                 return BlockTemplate(SynthMode, chip, samples, output, pos);
             }
@@ -218,7 +218,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
             /// <param name="samples">Samples.</param>
             /// <param name="output">Output.</param>
             /// <param name="pos">Position.</param>
-            Channel BlockTemplate(SynthMode mode, Chip chip, uint samples, int[] output, int pos)
+            private Channel BlockTemplate(SynthMode mode, Chip chip, int samples, int[] output, int pos)
             {
                 switch (mode)
                 {
@@ -420,7 +420,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
                 return null;
             }
 
-            Operator Op(uint index)
+            private Operator Op(uint index)
             {
                 return Chip.Channels[ChannelNum + (index >> 1)].Ops[index & 1];
             }
@@ -430,7 +430,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
             /// </summary>
             /// <param name="chip">Chip.</param>
             /// <param name="data">Data.</param>
-            void SetChanData(Chip chip, int data)
+            private void SetChanData(Chip chip, int data)
             {
                 int change = chanData ^ data;
                 chanData = data;
@@ -456,7 +456,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
             /// </summary>
             /// <param name="chip">Chip.</param>
             /// <param name="fourOp">Four op.</param>
-            void UpdateFrequency(Chip chip, byte fourOp)
+            private void UpdateFrequency(Chip chip, byte fourOp)
             {
                 //Extrace the frequency bits
                 int data = chanData & 0xffff;
@@ -480,7 +480,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
             }
 
             // call this for the first channel
-            void GeneratePercussion(bool opl3Mode, Chip chip, int[] output, int pos)
+            private void GeneratePercussion(bool opl3Mode, Chip chip, int[] output, int pos)
             {
                 Channel chan = this;
 
@@ -546,37 +546,37 @@ namespace NScumm.Core.Audio.OPL.DosBox
             /// <summary>
             /// Frequency/octave and derived values.
             /// </summary>
-            int chanData;
+            private int chanData;
 
             /// <summary>
             /// Old data for feedback.
             /// </summary>
-            readonly int[] old;
+            private readonly int[] old;
 
             /// <summary>
             /// Feedback shift.
             /// </summary>
-            byte feedback;
+            private byte feedback;
 
             /// <summary>
             /// Register values to check for changes.
             /// </summary>
-            byte regB0;
+            private byte regB0;
 
             /// <summary>
             /// This should correspond with reg104, bit 6 indicates a Percussion channel, bit 7 indicates a silent channel
             /// </summary>
-            byte regC0;
+            private byte regC0;
 
             /// <summary>
             /// Sign extended values for both channel's panning.
             /// </summary>
-            sbyte maskLeft;
+            private sbyte maskLeft;
 
             /// <summary>
             /// Sign extended values for both channel's panning
             /// </summary>
-            sbyte maskRight;
+            private sbyte maskRight;
         }
     }
 }

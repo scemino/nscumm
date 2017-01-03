@@ -1087,7 +1087,7 @@ namespace NScumm.Agos
                 uint width = (uint) (VideoWindows[updateWindow * 4 + 2] * 16);
                 uint height = VideoWindows[updateWindow * 4 + 3];
 
-                var screen = OSystem.GraphicsManager.Capture();
+                OSystem.GraphicsManager.Capture(ref _screen);
                 var dst = _backGroundBuf.GetBasePtr(xoffs, yoffs);
                 BytePtr src;
                 int srcWidth;
@@ -1108,12 +1108,12 @@ namespace NScumm.Agos
                     }
                     else if (updateWindow == 3 || updateWindow == 9)
                     {
-                        src = screen.GetBasePtr(xoffs, yoffs);
-                        srcWidth = screen.Pitch;
+                        src = _screen.GetBasePtr(xoffs, yoffs);
+                        srcWidth = _screen.Pitch;
                     }
                     else
                     {
-                        UnlockScreen(screen);
+                        UnlockScreen(_screen);
                         _videoLockOut = (ushort) (_videoLockOut & ~0x20);
                         return;
                     }
@@ -1132,12 +1132,12 @@ namespace NScumm.Agos
                     }
                     else if (updateWindow == 0)
                     {
-                        src = screen.GetBasePtr(xoffs, yoffs);
-                        srcWidth = screen.Pitch;
+                        src = _screen.GetBasePtr(xoffs, yoffs);
+                        srcWidth = _screen.Pitch;
                     }
                     else
                     {
-                        UnlockScreen(screen);
+                        UnlockScreen(_screen);
                         _videoLockOut = (ushort) (_videoLockOut & ~0x20);
                         return;
                     }
@@ -1151,12 +1151,12 @@ namespace NScumm.Agos
                     }
                     else if (updateWindow == 3 || updateWindow == 9)
                     {
-                        src = screen.GetBasePtr(xoffs, yoffs);
-                        srcWidth = screen.Pitch;
+                        src = _screen.GetBasePtr(xoffs, yoffs);
+                        srcWidth = _screen.Pitch;
                     }
                     else
                     {
-                        UnlockScreen(screen);
+                        UnlockScreen(_screen);
                         _videoLockOut = (ushort) (_videoLockOut & ~0x20);
                         return;
                     }
@@ -1170,12 +1170,12 @@ namespace NScumm.Agos
                     }
                     else if (updateWindow == 3)
                     {
-                        src = screen.GetBasePtr(xoffs, yoffs);
-                        srcWidth = screen.Pitch;
+                        src = _screen.GetBasePtr(xoffs, yoffs);
+                        srcWidth = _screen.Pitch;
                     }
                     else
                     {
-                        UnlockScreen(screen);
+                        UnlockScreen(_screen);
                         _videoLockOut = (ushort) (_videoLockOut & ~0x20);
                         return;
                     }
@@ -1190,8 +1190,8 @@ namespace NScumm.Agos
                     }
                     else if (updateWindow == 2 || updateWindow == 3)
                     {
-                        src = screen.GetBasePtr(xoffs, yoffs);
-                        srcWidth = screen.Pitch;
+                        src = _screen.GetBasePtr(xoffs, yoffs);
+                        srcWidth = _screen.Pitch;
                     }
                     else
                     {
@@ -1201,8 +1201,8 @@ namespace NScumm.Agos
                 }
                 else
                 {
-                    src = screen.GetBasePtr(xoffs, yoffs);
-                    srcWidth = screen.Pitch;
+                    src = _screen.GetBasePtr(xoffs, yoffs);
+                    srcWidth = _screen.Pitch;
                 }
 
                 _boxStarHeight = (byte) height;
@@ -1218,26 +1218,26 @@ namespace NScumm.Agos
                     !_wiped && !specialCase)
                 {
                     byte color = (byte) ((_gd.Platform == Platform.DOS) ? 7 : 15);
-                    dst = screen.GetBasePtr(48, 0);
+                    dst = _screen.GetBasePtr(48, 0);
                     dst.Data.Set(dst.Offset, color, 224);
 
-                    dst = screen.GetBasePtr(48, 132);
+                    dst = _screen.GetBasePtr(48, 132);
                     dst.Data.Set(dst.Offset, color, 224);
                 }
                 else if (_gd.ADGameDescription.gameType == SIMONGameType.GType_ELVIRA1 &&
                          updateWindow == 3 && _bottomPalette)
                 {
-                    dst = screen.GetBasePtr(0, 133);
+                    dst = _screen.GetBasePtr(0, 133);
 
                     for (int h = 0; h < 67; h++)
                     {
                         for (int w = 0; w < _screenWidth; w++)
                             dst[w] += 0x10;
-                        dst += screen.Pitch;
+                        dst += _screen.Pitch;
                     }
                 }
 
-                UnlockScreen(screen);
+                UnlockScreen(_screen);
             }
 
             _videoLockOut = (ushort) (_videoLockOut & ~0x20);

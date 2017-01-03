@@ -91,18 +91,25 @@ namespace NScumm.Core
         public static string NormalizePath(string path)
         {
             var dir = ServiceLocator.FileStorage.GetDirectoryName(path);
-            return (from file in ServiceLocator.FileStorage.EnumerateFiles(dir)
-                where string.Equals(file, path, StringComparison.OrdinalIgnoreCase)
-                select file).FirstOrDefault();
+            foreach (var file in ServiceLocator.FileStorage.EnumerateFiles(dir))
+			{
+				var fn = ServiceLocator.FileStorage.GetFileName(file);
+				if (string.Equals(file, path, StringComparison.OrdinalIgnoreCase))
+					return file;
+			}
+			return null;
         }
 
         public static string LocatePath(string directory, string filename)
         {
-            return (from file in ServiceLocator.FileStorage.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
-                let fn = ServiceLocator.FileStorage.GetFileName(file)
-                where string.Equals(fn, filename, StringComparison.OrdinalIgnoreCase)
-                select file).FirstOrDefault();
-        }
+			foreach (var file in ServiceLocator.FileStorage.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
+			{
+				var fn = ServiceLocator.FileStorage.GetFileName(file);
+				if (string.Equals(fn, filename, StringComparison.OrdinalIgnoreCase))
+					return file;
+			}
+			return null;
+		}
 
         public static byte[] ToByteArray(this BitArray bits)
         {
@@ -655,13 +662,16 @@ namespace NScumm.Core
 
         public static string GetRawText(this byte[] value, int startIndex = 0, int count = -1)
         {
-            var data = new List<char>();
-            count = count < 0 ? value.Length : count;
-            for (var i = startIndex; i < startIndex + count && value[i] != 0; i++)
-            {
-                data.Add((char) value[i]);
-            }
-            return new string(data.ToArray());
+			var length = GetTextLength(value, startIndex);
+			if (count == -1)
+			{
+				count = length;
+			}
+			else
+			{
+				count = Math.Min(length, count);
+			}
+			return System.Text.Encoding.UTF8.GetString(value, startIndex, count);
         }
 
         public static byte[] GetBytes(this string value)

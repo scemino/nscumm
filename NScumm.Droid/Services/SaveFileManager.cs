@@ -22,9 +22,9 @@ using System.IO;
 using System.Linq;
 using NScumm.Core;
 
-namespace NScumm.Droid.Services
+namespace NScumm.Mobile.Services
 {
-    internal class SaveFileManager : ISaveFileManager
+    public class SaveFileManager: ISaveFileManager
     {
         public Stream OpenForLoading(string fileName)
         {
@@ -37,7 +37,7 @@ namespace NScumm.Droid.Services
         {
             var path = GetSavePath();
             EnsureSavePathExists(path);
-            return File.Create(Path.Combine(path, fileName));
+            return File.Create(Path.Combine(path,fileName));
         }
 
         public string[] ListSavefiles(string pattern)

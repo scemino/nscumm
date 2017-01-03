@@ -121,6 +121,7 @@ namespace NScumm.Sci.Graphics
 
         private Rect _picRect;
         private int _transitionStartTime;
+        private Surface _surface;
 
         public GfxTransitions(GfxScreen screen, GfxPalette palette)
         {
@@ -640,18 +641,18 @@ namespace NScumm.Sci.Graphics
                 _screen.CopyRectToScreen(rect);
             }
             else {
-                Surface surface = SciEngine.Instance.System.GraphicsManager.Capture();
+                SciEngine.Instance.System.GraphicsManager.Capture(ref _surface);
                 if (_screen.UpscaledHires == 0)
                 {
-                    surface.FillRect(rect, 0);
+                    _surface.FillRect(rect, 0);
                 }
                 else {
                     Rect upscaledRect = rect;
                     _screen.AdjustToUpscaledCoordinates(ref upscaledRect.Top, ref upscaledRect.Left);
                     _screen.AdjustToUpscaledCoordinates(ref upscaledRect.Bottom, ref upscaledRect.Right);
-                    surface.FillRect(upscaledRect, 0);
+                    _surface.FillRect(upscaledRect, 0);
                 }
-                SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(surface.Pixels, surface.Pitch, 0, 0, surface.Width, surface.Height);
+                SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(_surface.Pixels, _surface.Pitch, 0, 0, _surface.Width, _surface.Height);
             }
         }
 

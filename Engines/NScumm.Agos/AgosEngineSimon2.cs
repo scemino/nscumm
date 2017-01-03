@@ -1,4 +1,4 @@
-﻿//
+﻿﻿//
 //  AgosEngineSimon2.cs
 //
 //  Author:

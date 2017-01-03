@@ -20,10 +20,13 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+using System;
+
 namespace NScumm.Core.Audio.SampleProviders
 {
     public abstract class AudioSampleProvider16 : IAudioSampleProvider
-    {        private short[] _buffer;
+    {
+        private short[] _buffer;
 
         public abstract AudioFormat AudioFormat
         {
@@ -39,10 +42,11 @@ namespace NScumm.Core.Audio.SampleProviders
 
         public int Read(byte[] samples, int count)
         {
-            if (_buffer.Length < count)
+            if (_buffer.Length < count/2)
             {
                 _buffer = new short[count / 2];
             }
+            Array.Clear(_buffer, 0, _buffer.Length);
             var numRead = Read(_buffer, count / 2);
             var offs = 0;
             for (int i = 0; i < numRead; i++)

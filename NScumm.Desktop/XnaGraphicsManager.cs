@@ -94,12 +94,14 @@ namespace NScumm.Desktop
             _colorGraphicsManager.CopyRectToScreen(buffer, sourceStride, x, y, dstX, dstY, width, height);
         }
 
-        public Core.Graphics.Surface Capture()
+        public void Capture(ref Core.Graphics.Surface surface)
         {
-            var surface = new Core.Graphics.Surface((ushort) _width, (ushort) _height,
-                Core.Graphics.PixelFormat.Indexed8, false);
+            if (surface == null)
+            {
+                surface = new Core.Graphics.Surface((ushort) _width, (ushort) _height,
+                    Core.Graphics.PixelFormat.Indexed8, false);
+            }
             Array.Copy(_pixels, 0, surface.Pixels.Data, surface.Pixels.Offset, _pixels.Length);
-            return surface;
         }
 
         #region Palette Methods

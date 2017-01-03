@@ -219,6 +219,8 @@ namespace NScumm.Sci.Graphics
             }
         };
 
+        private Surface _surface;
+
         public GfxScreenUpscaledMode UpscaledHires { get { return _upscaledHires; } }
 
         public ushort ScriptWidth { get { return _scriptWidth; } }
@@ -452,8 +454,8 @@ namespace NScumm.Sci.Graphics
         public void CopyFromScreen(byte[] buffer)
         {
             // TODO this ignores the pitch
-            Surface screen = SciEngine.Instance.System.GraphicsManager.Capture();
-            Array.Copy(screen.Pixels.Data, screen.Pixels.Offset, buffer, 0, (int)_displayPixels);
+            SciEngine.Instance.System.GraphicsManager.Capture(ref _surface);
+            Array.Copy(_surface.Pixels.Data, _surface.Pixels.Offset, buffer, 0, (int)_displayPixels);
         }
 
         private void BitsRestoreScreen(Rect rect, ByteAccess memPtr, byte[] screen, ushort screenWidth)

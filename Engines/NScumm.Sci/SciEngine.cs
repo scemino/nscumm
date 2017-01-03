@@ -225,6 +225,34 @@ namespace NScumm.Sci
             DebugManager.Instance.AddDebugChannel(DebugLevels.OnStartup, "OnStartup", "Enter debugger at start of game");
             DebugManager.Instance.AddDebugChannel(DebugLevels.DebugMode, "DebugMode",
                 "Enable game debug mode at start of game");
+
+            var path = ConfigManager.Instance.Get<string>("path");
+
+            SearchManager.Instance.AddDirectory(path, "actors");	// KQ6 hi-res portraits
+            SearchManager.Instance.AddDirectory(path, "aud");	// resource.aud and audio files
+            SearchManager.Instance.AddDirectory(path, "audio");// resource.aud and audio files
+            SearchManager.Instance.AddDirectory(path, "audiosfx");// resource.aud and audio files
+            SearchManager.Instance.AddDirectory(path, "wav");	// speech files in WAV format
+            SearchManager.Instance.AddDirectory(path, "sfx");	// music/sound files in WAV format
+            SearchManager.Instance.AddDirectory(path, "avi");	// AVI movie files for Windows versions
+            SearchManager.Instance.AddDirectory(path, "seq");	// SEQ movie files for DOS versions
+            SearchManager.Instance.AddDirectory(path, "robot");	// robot movie files
+            SearchManager.Instance.AddDirectory(path, "robots");	// robot movie files
+            SearchManager.Instance.AddDirectory(path, "movie");	// VMD movie files
+            SearchManager.Instance.AddDirectory(path, "movies");	// VMD movie files
+            SearchManager.Instance.AddDirectory(path, "vmd");	// VMD movie files
+            SearchManager.Instance.AddDirectory(path, "duk");	// Duck movie files in Phantasmagoria 2
+            SearchManager.Instance.AddDirectory(path, "Robot Folder"); // Mac robot files
+            SearchManager.Instance.AddDirectory(path, "Sound Folder"); // Mac audio files
+            // TODO: SearchManager.Instance.AddDirectory(path, "Voices Folder", 0, 2, true); // Mac audio36 files (recursive for Torin)
+            SearchManager.Instance.AddDirectory(path, "Voices Folder");
+            SearchManager.Instance.AddDirectory(path, "Voices"); // Mac audio36 files
+            SearchManager.Instance.AddDirectory(path, "VMD Folder"); // Mac VMD files
+
+            // Add the patches directory, except for KQ6CD; The patches folder in some versions of KQ6CD
+            // is for the demo of Phantasmagoria, included in the disk
+            if (GameId != SciGameId.KQ6)
+                SearchManager.Instance.AddDirectory(path, "patches");	// resource patches
         }
 
         public string GetSavegameName(int nr)

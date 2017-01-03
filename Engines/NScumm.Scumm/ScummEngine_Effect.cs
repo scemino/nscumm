@@ -323,12 +323,10 @@ namespace NScumm.Scumm
             if ((dx == 0 && dy == 0) || height <= 0)
                 return;
 
-            var screen = _gfxManager.Capture();
-            if (screen == null)
-                return;
+            _gfxManager.Capture(ref _screen);
 
-            screen.Move(dx, dy, height);
-            _gfxManager.CopyRectToScreen(screen.Pixels, screen.Pitch, 0, 0, screen.Width, screen.Height);
+            _screen.Move(dx, dy, height);
+            _gfxManager.CopyRectToScreen(_screen.Pixels, _screen.Pitch, 0, 0, _screen.Width, _screen.Height);
         }
 
         /// <summary>
@@ -703,6 +701,7 @@ namespace NScumm.Scumm
 
             };
 
+        private Surface _screen;
     }
 }
 

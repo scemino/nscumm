@@ -189,7 +189,14 @@ namespace NScumm
 
                 _keyboardState = keyboard;
 
-                _keysPressed = new HashSet<KeyCode>(_keyboardState.GetPressedKeys().Where(KeyToKeyCode.ContainsKey).Select(key => KeyToKeyCode[key]));
+                _keysPressed.Clear();
+                foreach (var key in _keyboardState.GetPressedKeys())
+                {
+                    if (KeyToKeyCode.ContainsKey(key))
+                    {
+                        _keysPressed.Add(KeyToKeyCode[key]);
+                    }
+                }
                 if (_virtualKeysDown.Count > 0)
                 {
                     _virtualKeysDown.ForEach(k =>

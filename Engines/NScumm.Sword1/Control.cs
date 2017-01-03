@@ -871,16 +871,16 @@ namespace NScumm.Sword1
 
         Surface GrabScreen565()
         {
-            Surface screen = _system.GraphicsManager.Capture();
+            _system.GraphicsManager.Capture(ref _screen);
 
-            var bpp = Surface.GetBytesPerPixel(screen.PixelFormat);
+            var bpp = Surface.GetBytesPerPixel(_screen.PixelFormat);
             System.Diagnostics.Debug.Assert(bpp == 1 || bpp == 2);
-            System.Diagnostics.Debug.Assert(screen.Pixels != BytePtr.Null);
+            System.Diagnostics.Debug.Assert(_screen.Pixels != BytePtr.Null);
 
             PixelFormat screenFormat = _system.GraphicsManager.PixelFormat;
             var screenBpp = Surface.GetBytesPerPixel(screenFormat);
 
-            var surf = new Surface(screen.Width, screen.Height, PixelFormat.Rgb16, false);
+            var surf = new Surface(_screen.Width, _screen.Height, PixelFormat.Rgb16, false);
 
             Color[] palette = null;
             if (screenBpp == 1)
@@ -888,26 +888,26 @@ namespace NScumm.Sword1
                 palette = _system.GraphicsManager.GetPalette();
             }
 
-            for (int y = 0; y < screen.Height; ++y)
+            for (int y = 0; y < _screen.Height; ++y)
             {
-                for (int x = 0; x < screen.Width; ++x)
+                for (int x = 0; x < _screen.Width; ++x)
                 {
                     Color c = new Color();
                     if (screenBpp == 1)
                     {
-                        var pixel = screen.Pixels[x + y * screen.Width];
+                        var pixel = _screen.Pixels[x + y * _screen.Width];
                         c = palette[pixel];
                     }
                     else if (screenBpp == 2)
                     {
-                        ushort col = screen.Pixels.ToUInt16(x * 2 + y * 2 * screen.Width);
+                        ushort col = _screen.Pixels.ToUInt16(x * 2 + y * 2 * _screen.Width);
                         byte r, g, b;
                         ColorHelper.ColorToRGB(col, out r, out g, out b);
                         c = Color.FromRgb(r, g, b);
                     }
 
                     var colDst = ColorHelper.RGBToColor((byte)c.R, (byte)c.G, (byte)c.B);
-                    surf.Pixels.WriteUInt16(x * 2 + y * 2 * screen.Width, colDst);
+                    surf.Pixels.WriteUInt16(x * 2 + y * 2 * _screen.Width, colDst);
                 }
             }
 
@@ -1743,6 +1743,7 @@ namespace NScumm.Sword1
 
         private byte[] _font;
         private byte[] _redFont;
+        private Surface _screen;
 
         public void DoRestore()
         {

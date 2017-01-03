@@ -26,6 +26,7 @@ using D = NScumm.Core.DebugHelper;
 using System.IO;
 using NScumm.Core.IO;
 using System.Collections.Generic;
+using NScumm.Core.Common;
 
 namespace NScumm.Core
 {
@@ -37,10 +38,7 @@ namespace NScumm.Core
 
         public static Stream OpenFileRead(string filename)
         {
-            var dir = ServiceLocator.FileStorage.GetDirectoryName(Instance.Settings.Game.Path);
-            var path = ScummHelper.LocatePath(dir, filename);
-            if (path == null) return null;
-            return ServiceLocator.FileStorage.OpenFileRead(path);
+            return SearchManager.Instance.CreateReadStreamForMember(filename);
         }
 
         public static Stream OpenFileWrite(string filename)

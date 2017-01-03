@@ -1,9 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Common.props"
+            Condition="Exists('$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Common.props')"/>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{DA165A96-F4D1-4DA6-ACFB-0853F2FB45E4}</ProjectGuid>
+      <ProjectGuid>{A9C9C7B9-0209-412C-B612-F2354D39D969}</ProjectGuid>
     <ProjectTypeGuids>{EFBA0AD7-5A72-4C68-AF49-83D382785DCF};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <OutputType>Library</OutputType>
     <RootNamespace>NScumm.Droid</RootNamespace>
@@ -12,10 +14,13 @@
     <AndroidApplication>True</AndroidApplication>
     <AndroidResgenFile>Resources\Resource.designer.cs</AndroidResgenFile>
     <AndroidResgenClass>Resource</AndroidResgenClass>
-    <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
-    <AndroidUseLatestPlatformSdk>true</AndroidUseLatestPlatformSdk>
+      <AndroidUseLatestPlatformSdk>false</AndroidUseLatestPlatformSdk>
+      <MonoGamePlatform>Android</MonoGamePlatform>
+      <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
+      <AndroidTlsProvider>
+      </AndroidTlsProvider>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -26,7 +31,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AndroidLinkMode>None</AndroidLinkMode>
-    <AndroidSupportedAbis>arm64-v8a;armeabi;armeabi-v7a;x86</AndroidSupportedAbis>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -44,84 +48,96 @@
     <Reference Include="System.Core" />
     <Reference Include="Mono.Android" />
     <Reference Include="OpenTK-1.0" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="FlacBox.Portable">
-      <HintPath>..\packages\FlacBox.Portable.1.0.1\lib\portable-net4+sl5+wp8+win8\FlacBox.Portable.dll</HintPath>
+      <Reference Include="MonoGame.Framework">
+          <HintPath>$(MonoGameInstallDirectory)\MonoGame\v3.0\Assemblies\Android\MonoGame.Framework.dll</HintPath>
     </Reference>
+      <Reference Include="System.Xml.Linq"/>
     <Reference Include="Xamarin.Android.Support.v4">
-      <HintPath>..\packages\Xamarin.Android.Support.v4.23.4.0\lib\MonoAndroid403\Xamarin.Android.Support.v4.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.v13">
-      <HintPath>..\packages\Xamarin.Android.Support.v13.23.4.0\lib\MonoAndroid403\Xamarin.Android.Support.v13.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.Vector.Drawable">
-      <HintPath>..\packages\Xamarin.Android.Support.Vector.Drawable.23.4.0\lib\MonoAndroid403\Xamarin.Android.Support.Vector.Drawable.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.Animated.Vector.Drawable">
-      <HintPath>..\packages\Xamarin.Android.Support.Animated.Vector.Drawable.23.4.0\lib\MonoAndroid403\Xamarin.Android.Support.Animated.Vector.Drawable.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.v7.AppCompat">
-      <HintPath>..\packages\Xamarin.Android.Support.v7.AppCompat.23.4.0\lib\MonoAndroid403\Xamarin.Android.Support.v7.AppCompat.dll</HintPath>
+        <HintPath>..\packages\Xamarin.Android.Support.v4.19.0.2\lib\MonoAndroid10\Xamarin.Android.Support.v4.dll
+        </HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MainActivity.cs" />
-    <Compile Include="EditableSurfaceView.cs" />
+      <Compile Include="ScummGameActivity.cs"/>
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="MyInputConnection.cs" />
     <Compile Include="GameLibraryActivity.cs" />
+      <Compile Include="DynamicSoundEffectInstance.cs"/>
+      <Compile Include="InputState.cs"/>
+      <Compile Include="ScummGame.cs"/>
+      <Compile Include="XnaAudioDriver.cs"/>
+      <Compile Include="XnaGraphicsManager.cs"/>
+      <Compile Include="XnaInputManager.cs"/>
     <Compile Include="Services\AudioManager.cs" />
-    <Compile Include="Services\DroidInputManager.cs" />
-    <Compile Include="Services\DynamicSoundEffectInstance.cs" />
-    <Compile Include="Services\DroidFileStorage.cs" />
-    <Compile Include="Services\GfxManager.cs" />
-    <Compile Include="Services\DroidPlatform.cs" />
+      <Compile Include="Services\FileStorage.cs"/>
+      <Compile Include="Services\GameService.cs"/>
+      <Compile Include="Services\IGameService.cs"/>
+      <Compile Include="Services\IMenuService.cs"/>
+      <Compile Include="Services\MenuService.cs"/>
+      <Compile Include="Services\Platform.cs"/>
     <Compile Include="Services\SaveFileManager.cs" />
+      <Compile Include="Services\TraceFactory.cs"/>
     <Compile Include="Services\WaveAudioStream.cs" />
-    <Compile Include="Services\XnaAudioDriver.cs" />
+      <Compile Include="DirectoryPickerActivity.cs"/>
+      <Compile Include="GameListAdapter.cs"/>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
     <None Include="Properties\AndroidManifest.xml" />
     <None Include="packages.config" />
-    <None Include="OpenTK-1.0.dll.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
   <ItemGroup>
-    <AndroidResource Include="Resources\layout\Main.axml" />
-    <AndroidResource Include="Resources\values\Strings.xml" />
-    <AndroidResource Include="Resources\mipmap-hdpi\Icon.png" />
-    <AndroidResource Include="Resources\mipmap-mdpi\Icon.png" />
-    <AndroidResource Include="Resources\mipmap-xhdpi\Icon.png" />
-    <AndroidResource Include="Resources\mipmap-xxhdpi\Icon.png" />
-    <AndroidResource Include="Resources\mipmap-xxxhdpi\Icon.png" />
+      <AndroidResource Include="Resources\layout\libraryView.axml"/>
+      <AndroidResource Include="Resources\values\styles.xml"/>
+      <AndroidResource Include="Resources\layout\toolbar.xml"/>
+      <AndroidResource Include="Resources\menu\top_menus.xml"/>
+      <AndroidResource Include="Resources\layout\directoryPicker.axml"/>
+      <AndroidResource Include="Resources\menu\directoryPickerMenu.xml"/>
+      <AndroidResource Include="Resources\drawable\Checkmark_48.png"/>
+      <AndroidResource Include="Resources\drawable\Plus_48.png"/>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Resources\drawable\" />
-    <Folder Include="Res\" />
-    <Folder Include="Services\" />
+      <MonoGameContentReference Include="Content\Content.mgcb"/>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Shaders\Shader.fsh" />
-    <EmbeddedResource Include="Shaders\Shader.vsh" />
-    <EmbeddedResource Include="Res\Nscumm.xml" />
-    <EmbeddedResource Include="Res\sky.cpt" />
+      <AndroidAsset Include="Assets\AboutAssets.txt"/>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NScumm.Core\NScumm.Core.csproj">
-      <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
-      <Name>NScumm.Core</Name>
-    </ProjectReference>
+      <Folder Include="Assets\Content\"/>
+      <Folder Include="Services\"/>
+      <Folder Include="Resources\values\"/>
+      <Folder Include="Resources\menu\"/>
+  </ItemGroup>
+    <ItemGroup>
     <ProjectReference Include="..\Engines\NScumm.Queen\NScumm.Queen.csproj">
       <Project>{E10DD77E-F6F2-4F3B-AD40-A7A27FC96C7B}</Project>
       <Name>NScumm.Queen</Name>
     </ProjectReference>
+        <ProjectReference Include="..\Engines\NScumm.Sci\NScumm.Sci.csproj">
+            <Project>{FEF9CB20-5EBA-4FEC-9998-75FFCE0EAEE4}</Project>
+            <Name>NScumm.Sci</Name>
+        </ProjectReference>
     <ProjectReference Include="..\Engines\NScumm.Sky\NScumm.Sky.csproj">
       <Project>{8740A0CD-2613-4354-9506-35035A735962}</Project>
       <Name>NScumm.Sky</Name>
     </ProjectReference>
-  </ItemGroup>
+        <ProjectReference Include="..\Engines\NScumm.Sword1\NScumm.Sword1.csproj">
+            <Project>{EF539A3F-0672-412C-B9D0-38DCD3622D99}</Project>
+            <Name>NScumm.Sword1</Name>
+        </ProjectReference>
+        <ProjectReference Include="..\NScumm.Core\NScumm.Core.csproj">
+            <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
+            <Name>NScumm.Core</Name>
+        </ProjectReference>
+        <ProjectReference Include="..\Engines\NScumm.Agos\NScumm.Agos.csproj">
+            <Project>{024F3C9E-36B9-4A61-A210-54E265597D6E}</Project>
+            <Name>NScumm.Agos</Name>
+        </ProjectReference>
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\Nscumm.xml"/>
+        <EmbeddedResource Include="Resources\sky.cpt"/>
+    </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
+    <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Content.Builder.targets"/>
 </Project>

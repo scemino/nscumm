@@ -22,9 +22,9 @@ using NScumm.Core.Audio;
 using System.IO;
 using System.Linq;
 using System;
-using FlacBox;
+//using FlacBox;
 
-namespace NScumm.Droid.Services
+namespace NScumm.Mobile.Services
 {
     public class AudioManager : IAudioManager
     {
@@ -46,7 +46,8 @@ namespace NScumm.Droid.Services
 
         public IAudioStream MakeFlacStream(Stream stream)
         {
-			return new Services.WaveAudioStream(new WaveOverFlacStream(stream, WaveOverFlacStreamMode.Decode));
+            //return new WaveAudioStream(new WaveOverFlacStream(stream, WaveOverFlacStreamMode.Decode));
+            return null;
         }
 
         public IAudioStream MakeVorbisStream(Stream stream)

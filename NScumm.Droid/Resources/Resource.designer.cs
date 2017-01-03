@@ -41,11 +41,48 @@ namespace NScumm.Droid
 			}
 		}
 		
+		public partial class Drawable
+		{
+			
+			// aapt resource value: 0x7f020000
+			public const int Checkmark_48 = 2130837504;
+			
+			// aapt resource value: 0x7f020001
+			public const int Plus_48 = 2130837505;
+			
+			static Drawable()
+			{
+				global::Android.Runtime.ResourceIdManager.UpdateIdValues();
+			}
+			
+			private Drawable()
+			{
+			}
+		}
+		
 		public partial class Id
 		{
 			
-			// aapt resource value: 0x7f050000
-			public const int TextNotSupported = 2131034112;
+			// aapt resource value: 0x7f060004
+			public const int listView1 = 2131099652;
+			
+			// aapt resource value: 0x7f060006
+			public const int menu_edit = 2131099654;
+			
+			// aapt resource value: 0x7f060005
+			public const int menu_ok = 2131099653;
+			
+			// aapt resource value: 0x7f060003
+			public const int separator = 2131099651;
+			
+			// aapt resource value: 0x7f060001
+			public const int textView1 = 2131099649;
+			
+			// aapt resource value: 0x7f060000
+			public const int toolbar = 2131099648;
+			
+			// aapt resource value: 0x7f060002
+			public const int txtDirectory = 2131099650;
 			
 			static Id()
 			{
@@ -61,7 +98,13 @@ namespace NScumm.Droid
 		{
 			
 			// aapt resource value: 0x7f030000
-			public const int Main = 2130903040;
+			public const int directoryPicker = 2130903040;
+			
+			// aapt resource value: 0x7f030001
+			public const int libraryView = 2130903041;
+			
+			// aapt resource value: 0x7f030002
+			public const int toolbar = 2130903042;
 			
 			static Layout()
 			{
@@ -73,34 +116,37 @@ namespace NScumm.Droid
 			}
 		}
 		
-		public partial class Mipmap
+		public partial class Menu
 		{
 			
-			// aapt resource value: 0x7f020000
-			public const int Icon = 2130837504;
+			// aapt resource value: 0x7f050000
+			public const int directoryPickerMenu = 2131034112;
 			
-			static Mipmap()
+			// aapt resource value: 0x7f050001
+			public const int top_menus = 2131034113;
+			
+			static Menu()
 			{
 				global::Android.Runtime.ResourceIdManager.UpdateIdValues();
 			}
 			
-			private Mipmap()
+			private Menu()
 			{
 			}
 		}
 		
-		public partial class String
+		public partial class Style
 		{
 			
 			// aapt resource value: 0x7f040000
-			public const int app_name = 2130968576;
+			public const int MyTheme = 2130968576;
 			
-			static String()
+			static Style()
 			{
 				global::Android.Runtime.ResourceIdManager.UpdateIdValues();
 			}
 			
-			private String()
+			private Style()
 			{
 			}
 		}

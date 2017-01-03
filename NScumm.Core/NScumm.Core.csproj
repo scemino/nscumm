@@ -51,6 +51,7 @@
     <Compile Include="Common\Disposable.cs" />
     <Compile Include="Common\Huffman.cs" />
     <Compile Include="Common\RandomSource.cs" />
+      <Compile Include="Common\SearchManager.cs"/>
     <Compile Include="Common\Str.cs" />
     <Compile Include="DebugHelper.cs" />
     <Compile Include="Graphics\Graphics.cs" />

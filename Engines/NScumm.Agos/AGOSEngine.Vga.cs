@@ -1,4 +1,4 @@
-﻿//
+﻿﻿//
 //  AGOSEngine.Vga.cs
 //
 //  Author:
@@ -37,6 +37,8 @@ namespace NScumm.Agos
         protected readonly ushort[] _shortText = new ushort[40];
         protected readonly ushort[] _longText = new ushort[40];
         protected readonly ushort[] _longSound = new ushort[40];
+
+		private Vc10State _state = new Vc10State();
 
         public SIMONGameType GameType => _gd.ADGameDescription.gameType;
         public GameIds GameId => _gd.ADGameDescription.gameId;
@@ -157,7 +159,6 @@ namespace NScumm.Agos
                 if (opcode >= _numVideoOpcodes || _vga_opcode_table[opcode] == null)
                     Error("runVgaScript: Invalid VGA opcode '{0}' encountered", opcode);
 
-                Debug($"runVgaScript {opcode} {_vga_opcode_table[opcode].Method.Name}");
                 _vga_opcode_table[opcode]();
             }
         }
@@ -609,25 +610,22 @@ namespace NScumm.Agos
             if (image == 0)
                 return;
 
-            Debug("drawImage_init({0},{1},{2},{3},{4})", image, palette, x, y, flags);
-
             int width, height;
-            Vc10State state = new Vc10State();
 
-            state.image = image;
-            if (state.image < 0)
-                state.image = (short) VcReadVar(-state.image);
+            _state.image = image;
+            if (_state.image < 0)
+                _state.image = (short) VcReadVar(-_state.image);
 
-            state.palette = (byte) (GameType == SIMONGameType.GType_PN ? 0 : palette * 16);
-            state.paletteMod = 0;
+            _state.palette = (byte) (GameType == SIMONGameType.GType_PN ? 0 : palette * 16);
+            _state.paletteMod = 0;
 
-            state.x = (short) (x - _scrollX);
-            state.y = (short) (y - _scrollY);
+            _state.x = (short) (x - _scrollX);
+            _state.y = (short) (y - _scrollY);
 
-            state.flags = flags;
+            _state.flags = flags;
 
-            var src = _curVgaFile2 + state.image * 8;
-            state.srcPtr = _curVgaFile2 + (int) ReadUint32Wrapper(src);
+            var src = _curVgaFile2 + _state.image * 8;
+            _state.srcPtr = _curVgaFile2 + (int) ReadUint32Wrapper(src);
             if (GameType == SIMONGameType.GType_FF ||
                 GameType == SIMONGameType.GType_PP)
             {
@@ -646,34 +644,34 @@ namespace NScumm.Agos
                 return;
 
             if (DebugManager.Instance.IsDebugChannelEnabled(DebugLevels.kDebugImageDump))
-                DumpSingleBitmap(_vgaCurZoneNum, state.image, state.srcPtr, width, height, state.palette);
-            state.width = state.draw_width = (ushort) width; /* cl */
-            state.height = state.draw_height = (ushort) height; /* ch */
+                DumpSingleBitmap(_vgaCurZoneNum, _state.image, _state.srcPtr, width, height, _state.palette);
+            _state.width = _state.draw_width = (ushort) width; /* cl */
+            _state.height = _state.draw_height = (ushort) height; /* ch */
 
-            state.depack_cont = -0x80;
+            _state.depack_cont = -0x80;
 
-            state.x_skip = 0; /* colums to skip = bh */
-            state.y_skip = 0; /* rows to skip   = bl */
+            _state.x_skip = 0; /* colums to skip = bh */
+            _state.y_skip = 0; /* rows to skip   = bl */
 
             if (_gd.ADGameDescription.features.HasFlag(GameFeatures.GF_PLANAR))
             {
                 if (GameType == SIMONGameType.GType_PN)
                 {
-                    state.srcPtr = ConvertImage(state,
-                        state.flags.HasFlag(DrawFlags.kDFCompressed | DrawFlags.kDFCompressedFlip));
+                    _state.srcPtr = ConvertImage(_state,
+                        _state.flags.HasFlag(DrawFlags.kDFCompressed | DrawFlags.kDFCompressedFlip));
                 }
                 else
-                    state.srcPtr = ConvertImage(state, flags.HasFlag(DrawFlags.kDFShaded));
+                    _state.srcPtr = ConvertImage(_state, flags.HasFlag(DrawFlags.kDFShaded));
 
                 // converted planar clip is already uncompressed
-                if (state.flags.HasFlag(DrawFlags.kDFCompressedFlip))
+                if (_state.flags.HasFlag(DrawFlags.kDFCompressedFlip))
                 {
-                    state.flags &= ~DrawFlags.kDFCompressedFlip;
-                    state.flags |= DrawFlags.kDFFlip;
+                    _state.flags &= ~DrawFlags.kDFCompressedFlip;
+                    _state.flags |= DrawFlags.kDFFlip;
                 }
-                if (state.flags.HasFlag(DrawFlags.kDFCompressed))
+                if (_state.flags.HasFlag(DrawFlags.kDFCompressed))
                 {
-                    state.flags &= ~DrawFlags.kDFCompressed;
+                    _state.flags &= ~DrawFlags.kDFCompressed;
                 }
             }
             else if (GameType == SIMONGameType.GType_FF ||
@@ -681,21 +679,21 @@ namespace NScumm.Agos
             {
                 if (flags.HasFlag(DrawFlags.kDFShaded))
                 {
-                    state.flags |= DrawFlags.kDFCompressed;
+                    _state.flags |= DrawFlags.kDFCompressed;
                 }
             }
             else
             {
-                if (flags.HasFlag(DrawFlags.kDFShaded) && !state.flags.HasFlag(DrawFlags.kDFCompressedFlip))
+                if (flags.HasFlag(DrawFlags.kDFShaded) && !_state.flags.HasFlag(DrawFlags.kDFCompressedFlip))
                 {
-                    if (state.flags.HasFlag(DrawFlags.kDFFlip))
+                    if (_state.flags.HasFlag(DrawFlags.kDFFlip))
                     {
-                        state.flags &= ~DrawFlags.kDFFlip;
-                        state.flags |= DrawFlags.kDFCompressedFlip;
+                        _state.flags &= ~DrawFlags.kDFFlip;
+                        _state.flags |= DrawFlags.kDFCompressedFlip;
                     }
                     else
                     {
-                        state.flags |= DrawFlags.kDFCompressed;
+                        _state.flags |= DrawFlags.kDFCompressed;
                     }
                 }
             }
@@ -707,29 +705,29 @@ namespace NScumm.Agos
             if ((GameType == SIMONGameType.GType_SIMON2 ||
                  GameType == SIMONGameType.GType_FF) && width > maxWidth)
             {
-                HorizontalScroll(state);
+                HorizontalScroll(_state);
                 return;
             }
             if (GameType == SIMONGameType.GType_FF && height > 480)
             {
-                VerticalScroll(state);
+                VerticalScroll(_state);
                 return;
             }
 
             if (GameType != SIMONGameType.GType_FF &&
                 GameType != SIMONGameType.GType_PP)
             {
-                if (state.flags.HasFlag(DrawFlags.kDFCompressedFlip))
+                if (_state.flags.HasFlag(DrawFlags.kDFCompressedFlip))
                 {
-                    state.srcPtr = vc10_uncompressFlip(state.srcPtr, (ushort) width, (ushort) height);
+                    _state.srcPtr = vc10_uncompressFlip(_state.srcPtr, (ushort) width, (ushort) height);
                 }
-                else if (state.flags.HasFlag(DrawFlags.kDFFlip))
+                else if (_state.flags.HasFlag(DrawFlags.kDFFlip))
                 {
-                    state.srcPtr = vc10_flip(state.srcPtr, (ushort) width, (ushort) height);
+                    _state.srcPtr = vc10_flip(_state.srcPtr, (ushort) width, (ushort) height);
                 }
             }
 
-            DrawImage(state);
+            DrawImage(_state);
         }
 
         private void CheckOnStopTable()

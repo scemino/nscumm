@@ -25,48 +25,70 @@ using NScumm.Core.IO;
 
 namespace NScumm.Agos
 {
-    class AgosGameDescriptor : IGameDescriptor
-    {
-        public AgosGameDescriptor(string path, AgosGameDescription desc)
-        {
-            ADGameDescription = desc;
-            Path = path;
-            Id = desc.gameid;
-            Language = desc.language;
-            Platform = desc.platform;
-        }
+	class AgosGameDescriptor : IGameDescriptor
+	{
+		public AgosGameDescriptor(string path, AgosGameDescription desc)
+		{
+			ADGameDescription = desc;
+			Path = path;
+			Id = desc.gameid;
+			Language = desc.language;
+			Platform = desc.platform;
 
-        public AgosGameDescription ADGameDescription { get; }
+			switch (Id)
+			{
+				case "feeble":
+					Description = "The Feeble Files";
+					break;
+				case "elvira1":
+					Description = "Elvira - Mistress of the Dark";
+					break;
+				case "elvira2":
+					Description = "Elvira II - The Jaws of Cerberus";
+					break;
+				case "waxworks":
+					Description = "Waxworks";
+					break;
+				case "simon1":
+					Description = "Simon the Sorcerer 1";
+					break;
+				case "simon2":
+					Description = "Simon the Sorcerer 2";
+					break;
+			}
+		}
 
-        public string Description => "";
+		public AgosGameDescription ADGameDescription { get; }
 
-        public int Height => ADGameDescription.gameType==SIMONGameType.GType_FF? 480:200;
+		public string Description { get; private set; }
 
-        public string Id
-        {
-            get; private set;
-        }
+		public int Height => ADGameDescription.gameType == SIMONGameType.GType_FF ? 480 : 200;
 
-        public Language Language
-        {
-            get; private set;
-        }
+		public string Id
+		{
+			get; private set;
+		}
 
-        public string Path
-        {
-            get; private set;
-        }
+		public Language Language
+		{
+			get; private set;
+		}
 
-        public PixelFormat PixelFormat
-        {
-            get; private set;
-        }
+		public string Path
+		{
+			get; private set;
+		}
 
-        public Platform Platform
-        {
-            get; private set;
-        }
+		public PixelFormat PixelFormat
+		{
+			get; private set;
+		}
 
-        public int Width => ADGameDescription.gameType == SIMONGameType.GType_FF ? 640 : 320;
-    }
+		public Platform Platform
+		{
+			get; private set;
+		}
+
+		public int Width => ADGameDescription.gameType == SIMONGameType.GType_FF ? 640 : 320;
+	}
 }

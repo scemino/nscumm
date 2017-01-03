@@ -1,4 +1,4 @@
-﻿//
+﻿﻿//
 //  AGOSEngine.cs
 //
 //  Author:
@@ -361,6 +361,23 @@ namespace NScumm.Agos
 #if Undefined
             DebugManager.Instance.AddDebugChannel(DebugLevels.kDebugImageDump, "image_dump", "Enable dumping of images to files");
 #endif
+
+            var path = ConfigManager.Instance.Get<string>("path");
+            // Add default file directories for Acorn version of
+            // Simon the Sorcerer 1
+            SearchManager.Instance.AddDirectory(path, "execute");
+
+            // Add default file directories for Amiga/Macintosh
+            // versions of Simon the Sorcerer 2
+            SearchManager.Instance.AddDirectory("voices");
+
+            // Add default file directories for Amiga & Macintosh
+            // versions of The Feeble Files
+            SearchManager.Instance.AddDirectory(path,"gfx");
+            SearchManager.Instance.AddDirectory(path, "movies");
+            SearchManager.Instance.AddDirectory(path, "sfx");
+            SearchManager.Instance.AddDirectory(path, "speech");
+
             _opcode177Var1 = 1;
             _opcode178Var1 = 1;
         }
@@ -512,13 +529,13 @@ namespace NScumm.Agos
             });
         }
 
-        protected void LockScreen(Func<Surface, bool> action)
+        private void LockScreen(Func<Surface, bool> action)
         {
-            var screen = OSystem.GraphicsManager.Capture();
-            if (action(screen))
+            OSystem.GraphicsManager.Capture(ref _screen);
+            if (action(_screen))
             {
-                OSystem.GraphicsManager.CopyRectToScreen(screen.Pixels, screen.Pitch,
-                    0, 0, screen.Width, screen.Height);
+                OSystem.GraphicsManager.CopyRectToScreen(_screen.Pixels, _screen.Pitch,
+                    0, 0, _screen.Width, _screen.Height);
             }
         }
 
@@ -1428,5 +1445,7 @@ namespace NScumm.Agos
             74, 86, 78, 77, 84, 47, 88, 67, 64, 69, 68, 44, 81, 72, 70,
             123, 124, 125, 126, 127,
         };
+
+        private Surface _screen;
     }
 }

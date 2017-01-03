@@ -29,7 +29,7 @@ namespace NScumm.Core.Graphics
         Rect Bounds { get; }
         byte[] Pixels { get; }
 
-        Surface Capture();
+        void Capture(ref Surface surface);
         void CopyRectToScreen(BytePtr buffer, int sourceStride, int x, int y, int width, int height);
         void CopyRectToScreen(BytePtr buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height);
         void UpdateScreen();

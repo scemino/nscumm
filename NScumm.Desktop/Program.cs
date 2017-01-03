@@ -24,9 +24,10 @@ using System;
 using System.IO;
 using System.Linq;
 using NScumm.Core;
+using NScumm.Core.Common;
 using NScumm.Core.IO;
 using NScumm.Queen;
-using NScumm.Sci;
+//using NScumm.Sci;
 using NScumm.Services;
 
 namespace NScumm.Desktop
@@ -45,12 +46,11 @@ namespace NScumm.Desktop
             var options = new ScummOptionSet();
             var extras = options.Parse(args);
 
-            if (extras.Count != 1)
-            {
-                return 1;
-            }
+			if (extras.Count != 1)
+			{
+				return 1;
+			}
 
-            RegisterDefaults();
             Initialize(options);
             var path = ScummHelper.NormalizePath(extras[0]);
             if (!File.Exists(path))
@@ -60,8 +60,8 @@ namespace NScumm.Desktop
                 Console.ResetColor();
                 return 1;
             }
+            RegisterDefaults(Path.GetDirectoryName(path));
 
-            //var pluginsdDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "plugins");
             var gd = new GameDetector();
             //gd.Add(new SciMetaEngine());
             //gd.Add(new QueenMetaEngine());
@@ -88,6 +88,8 @@ namespace NScumm.Desktop
                 Switches = options.Switches ?? string.Empty
             };
 
+            SearchManager.Instance.AddDirectory(Path.GetDirectoryName(info.Game.Path));
+
             // Set default values for all of the custom engine options
             // Appareantly some engines query them in their constructor, thus we
             // need to set this up before instance creation.
@@ -113,7 +115,7 @@ namespace NScumm.Desktop
             ServiceLocator.TraceFatory = new TraceFactory(switches);
         }
 
-        private static void RegisterDefaults()
+        private static void RegisterDefaults(string path)
         {
             // Graphics
             ConfigManager.Instance.RegisterDefault("fullscreen", false);
@@ -146,7 +148,7 @@ namespace NScumm.Desktop
             ConfigManager.Instance.RegisterDefault("enable_unsupported_game_warning", true);
 
             // Game specific
-            ConfigManager.Instance.RegisterDefault("path", "");
+            ConfigManager.Instance.RegisterDefault("path", path);
             ConfigManager.Instance.RegisterDefault("platform", Core.IO.Platform.DOS);
             ConfigManager.Instance.RegisterDefault("language", "en");
             ConfigManager.Instance.RegisterDefault("subtitles", false);

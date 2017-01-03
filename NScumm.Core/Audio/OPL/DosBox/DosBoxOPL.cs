@@ -29,7 +29,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
     public partial class DosBoxOPL: EmulatedOPL
     {
         [StructLayout(LayoutKind.Explicit)]
-        struct Reg
+        private struct Reg
         {
             [FieldOffset(0)]
             public byte Dual1;
@@ -40,6 +40,10 @@ namespace NScumm.Core.Audio.OPL.DosBox
             [FieldOffset(0)]
             public ushort Normal;
         }
+
+        const int bufferLength = 512;
+
+        private int[] _tempBuffer = new int[bufferLength * 2];
 
         public DosBoxOPL(OplType type)
         {
@@ -76,7 +80,6 @@ namespace NScumm.Core.Audio.OPL.DosBox
 
         public override void WriteReg(int r, int v)
         {
-            int tempReg;
             switch (_type)
             {
                 case OplType.Opl2:
@@ -85,7 +88,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
                     // We can't use _handler->writeReg here directly, since it would miss timer changes.
 
                     // Backup old setup register
-                    tempReg = _reg.Normal;
+                    int tempReg = _reg.Normal;
 
                     // We directly allow writing to secondary OPL3 registers by using
                     // register values >= 0x100.
@@ -125,37 +128,34 @@ namespace NScumm.Core.Audio.OPL.DosBox
             if (_type != OplType.Opl2)
                 length >>= 1;
 
-            const uint bufferLength = 512;
-            var tempBuffer = new int[bufferLength * 2];
-
             if (_emulator.Opl3Active != 0)
             {
                 while (length > 0)
                 {
-                    uint readSamples = (uint)Math.Min(length, bufferLength);
+                    int readSamples = Math.Min(length, bufferLength);
 
-                    _emulator.GenerateBlock3(readSamples, tempBuffer);
+                    _emulator.GenerateBlock3(readSamples, _tempBuffer);
 
                     for (uint i = 0; i < (readSamples << 1); ++i)
-                        buffer[pos + i] = (short)tempBuffer[i];
+                        buffer[pos + i] = (short)_tempBuffer[i];
 
-                    pos += (int)(readSamples << 1);
-                    length -= (int)readSamples;
+                    pos += readSamples << 1;
+                    length -= readSamples;
                 }
             }
             else
             {
                 while (length > 0)
                 {
-                    uint readSamples = (uint)Math.Min(length, bufferLength << 1);
+                    int readSamples = Math.Min(length, bufferLength << 1);
 
-                    _emulator.GenerateBlock2(readSamples, tempBuffer);
+                    _emulator.GenerateBlock2(readSamples, _tempBuffer);
 
                     for (var i = 0; i < readSamples; ++i)
-                        buffer[pos + i] = (short)tempBuffer[i];
+                        buffer[pos + i] = (short)_tempBuffer[i];
 
-                    pos += (int)readSamples;
-                    length -= (int)readSamples;
+                    pos += readSamples;
+                    length -= readSamples;
                 }
             }
         }
@@ -291,13 +291,13 @@ namespace NScumm.Core.Audio.OPL.DosBox
             _emulator = null;
         }
 
-        static bool doneTables;
+        private static bool _doneTables;
 
-        static void InitTables()
+        private static void InitTables()
         {
-            if (doneTables)
+            if (_doneTables)
                 return;
-            doneTables = true;
+            _doneTables = true;
             #if ( DBOPL_WAVE_EQUALS_WAVE_HANDLER ) || ( DBOPL_WAVE_EQUALS_WAVE_TABLELOG )
             //Exponential volume table, same as the real adlib
             for (int i = 0; i < 256; i++)
@@ -415,7 +415,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
                 //Add back the bits for highest ones
                 if (i >= 16)
                     index += 9;
-                chanOffsetTable[i] = new Func<Chip,Channel>(c => c.Channels[index]);
+                chanOffsetTable[i] = c => c.Channels[index];
             }
             //Same for operators
             for (var i = 0; i < 64; i++)
@@ -434,16 +434,15 @@ namespace NScumm.Core.Audio.OPL.DosBox
                 if (chNum >= 18)
                     continue;
 
-                opOffsetTable[i] = new Func<Chip,Operator>(c => chanOffsetTable[chNum](c).Ops[opNum]);
+                opOffsetTable[i] = c => chanOffsetTable[chNum](c).Ops[opNum];
             }
         }
 
-        int _rate;
-        OplType _type;
+        private readonly OplType _type;
 
-        Chip _emulator;
-        OplChip[] _chip = new OplChip[2];
-        Reg _reg;
+        private Chip _emulator;
+        private readonly OplChip[] _chip = new OplChip[2];
+        private Reg _reg;
     }
 }
 

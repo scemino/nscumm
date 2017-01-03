@@ -1,4 +1,4 @@
-﻿//
+﻿﻿//
 //  AgosEngine.Res.cs
 //
 //  Author:

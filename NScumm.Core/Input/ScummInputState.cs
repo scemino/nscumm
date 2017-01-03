@@ -26,9 +26,9 @@ namespace NScumm.Core.Input
 {
     public struct ScummInputState: IEquatable<ScummInputState>
     {
-        public bool IsLeftButtonDown { get; private set; }
+        public bool IsLeftButtonDown { get; internal set; }
 
-        public bool IsRightButtonDown { get; private set; }
+        public bool IsRightButtonDown { get; internal set; }
 
         public bool IsKeyDown(KeyCode code)
         {
@@ -51,6 +51,15 @@ namespace NScumm.Core.Input
             _keys = new HashSet<KeyCode>(keys);   
             IsLeftButtonDown = isMouseLeftDown;
             IsRightButtonDown = isMouseRightDown;
+        }
+
+        public void SetKeys(IList<KeyCode> keys)
+        {
+            _keys.Clear();
+            foreach (var key in keys)
+            {
+                _keys.Add(key);
+            }
         }
 
         public override int GetHashCode()

@@ -19,7 +19,7 @@ namespace NScumm.Droid
 			  Icon = "@drawable/Plus_48")]
 	public class GameLibraryActivity : Activity
 	{
-		GameDetector _gd;
+		GameDetectorService _gd;
 		ListView _listView1;
 		List<string> _pathes;
 
@@ -34,8 +34,7 @@ namespace NScumm.Droid
 
 			Initialize();
 
-			_gd = new GameDetector();
-			_gd.Add(new AgosMetaEngine());
+			_gd = new GameDetectorService();
 
 			_listView1 = FindViewById<ListView>(Resource.Id.listView1);
 			_listView1.Adapter = new GameListAdapter(this);

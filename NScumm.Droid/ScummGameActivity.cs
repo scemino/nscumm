@@ -42,14 +42,7 @@ namespace NScumm.Droid
 				return;
 			}
 
-			var gd = new GameDetector();
-			gd.Add(new AgosMetaEngine());
-		    gd.Add(new QueenMetaEngine());
-		    gd.Add(new SciMetaEngine());
-		    //gd.Add(new ScummMetaEngine());
-		    gd.Add(new SkyMetaEngine());
-			gd.Add(new Sword1MetaEngine());
-
+			var gd = new GameDetectorService();
 			var info = gd.DetectGame(path);
 			if (info == null)
 			{

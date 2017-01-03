@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Common.props"
-            Condition="Exists('$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Common.props')"/>
+  <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Common.props"
+          Condition="Exists('$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Common.props')"/>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-      <ProjectGuid>{A9C9C7B9-0209-412C-B612-F2354D39D969}</ProjectGuid>
+    <ProjectGuid>{A9C9C7B9-0209-412C-B612-F2354D39D969}</ProjectGuid>
     <ProjectTypeGuids>{EFBA0AD7-5A72-4C68-AF49-83D382785DCF};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <OutputType>Library</OutputType>
     <RootNamespace>NScumm.Droid</RootNamespace>
@@ -16,11 +16,11 @@
     <AndroidResgenClass>Resource</AndroidResgenClass>
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
-      <AndroidUseLatestPlatformSdk>false</AndroidUseLatestPlatformSdk>
-      <MonoGamePlatform>Android</MonoGamePlatform>
-      <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
-      <AndroidTlsProvider>
-      </AndroidTlsProvider>
+    <AndroidUseLatestPlatformSdk>false</AndroidUseLatestPlatformSdk>
+    <MonoGamePlatform>Android</MonoGamePlatform>
+    <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
+    <AndroidTlsProvider>
+    </AndroidTlsProvider>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -48,38 +48,37 @@
     <Reference Include="System.Core" />
     <Reference Include="Mono.Android" />
     <Reference Include="OpenTK-1.0" />
-      <Reference Include="MonoGame.Framework">
-          <HintPath>$(MonoGameInstallDirectory)\MonoGame\v3.0\Assemblies\Android\MonoGame.Framework.dll</HintPath>
+    <Reference Include="MonoGame.Framework">
+      <HintPath>$(MonoGameInstallDirectory)\MonoGame\v3.0\Assemblies\Android\MonoGame.Framework.dll</HintPath>
     </Reference>
-      <Reference Include="System.Xml.Linq"/>
+    <Reference Include="System.Xml.Linq"/>
     <Reference Include="Xamarin.Android.Support.v4">
-        <HintPath>..\packages\Xamarin.Android.Support.v4.19.0.2\lib\MonoAndroid10\Xamarin.Android.Support.v4.dll
-        </HintPath>
+      <HintPath>..\packages\Xamarin.Android.Support.v4.19.0.2\lib\MonoAndroid10\Xamarin.Android.Support.v4.dll
+      </HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-      <Compile Include="ScummGameActivity.cs"/>
+    <Compile Include="ScummGameActivity.cs"/>
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="GameLibraryActivity.cs" />
-      <Compile Include="DynamicSoundEffectInstance.cs"/>
-      <Compile Include="InputState.cs"/>
-      <Compile Include="ScummGame.cs"/>
-      <Compile Include="XnaAudioDriver.cs"/>
-      <Compile Include="XnaGraphicsManager.cs"/>
-      <Compile Include="XnaInputManager.cs"/>
+    <Compile Include="DynamicSoundEffectInstance.cs"/>
+    <Compile Include="InputState.cs"/>
+    <Compile Include="ScummGame.cs"/>
+    <Compile Include="XnaAudioDriver.cs"/>
+    <Compile Include="XnaGraphicsManager.cs"/>
+    <Compile Include="XnaInputManager.cs"/>
     <Compile Include="Services\AudioManager.cs" />
-      <Compile Include="Services\FileStorage.cs"/>
-      <Compile Include="Services\GameService.cs"/>
-      <Compile Include="Services\IGameService.cs"/>
-      <Compile Include="Services\IMenuService.cs"/>
-      <Compile Include="Services\MenuService.cs"/>
-      <Compile Include="Services\Platform.cs"/>
+    <Compile Include="Services\FileStorage.cs"/>
+    <Compile Include="Services\IMenuService.cs"/>
+    <Compile Include="Services\MenuService.cs"/>
+    <Compile Include="Services\Platform.cs"/>
     <Compile Include="Services\SaveFileManager.cs" />
-      <Compile Include="Services\TraceFactory.cs"/>
+    <Compile Include="Services\TraceFactory.cs"/>
     <Compile Include="Services\WaveAudioStream.cs" />
-      <Compile Include="DirectoryPickerActivity.cs"/>
-      <Compile Include="GameListAdapter.cs"/>
+    <Compile Include="DirectoryPickerActivity.cs"/>
+    <Compile Include="GameListAdapter.cs"/>
+    <Compile Include="Services\GameDetectorService.cs"/>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -87,57 +86,57 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-      <AndroidResource Include="Resources\layout\libraryView.axml"/>
-      <AndroidResource Include="Resources\values\styles.xml"/>
-      <AndroidResource Include="Resources\layout\toolbar.xml"/>
-      <AndroidResource Include="Resources\menu\top_menus.xml"/>
-      <AndroidResource Include="Resources\layout\directoryPicker.axml"/>
-      <AndroidResource Include="Resources\menu\directoryPickerMenu.xml"/>
-      <AndroidResource Include="Resources\drawable\Checkmark_48.png"/>
-      <AndroidResource Include="Resources\drawable\Plus_48.png"/>
+    <AndroidResource Include="Resources\layout\libraryView.axml"/>
+    <AndroidResource Include="Resources\values\styles.xml"/>
+    <AndroidResource Include="Resources\layout\toolbar.xml"/>
+    <AndroidResource Include="Resources\menu\top_menus.xml"/>
+    <AndroidResource Include="Resources\layout\directoryPicker.axml"/>
+    <AndroidResource Include="Resources\menu\directoryPickerMenu.xml"/>
+    <AndroidResource Include="Resources\drawable\Checkmark_48.png"/>
+    <AndroidResource Include="Resources\drawable\Plus_48.png"/>
   </ItemGroup>
   <ItemGroup>
-      <MonoGameContentReference Include="Content\Content.mgcb"/>
+    <MonoGameContentReference Include="Content\Content.mgcb"/>
   </ItemGroup>
   <ItemGroup>
-      <AndroidAsset Include="Assets\AboutAssets.txt"/>
+    <AndroidAsset Include="Assets\AboutAssets.txt"/>
   </ItemGroup>
   <ItemGroup>
-      <Folder Include="Assets\Content\"/>
-      <Folder Include="Services\"/>
-      <Folder Include="Resources\values\"/>
-      <Folder Include="Resources\menu\"/>
+    <Folder Include="Assets\Content\"/>
+    <Folder Include="Services\"/>
+    <Folder Include="Resources\values\"/>
+    <Folder Include="Resources\menu\"/>
   </ItemGroup>
-    <ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Engines\NScumm.Queen\NScumm.Queen.csproj">
       <Project>{E10DD77E-F6F2-4F3B-AD40-A7A27FC96C7B}</Project>
       <Name>NScumm.Queen</Name>
     </ProjectReference>
-        <ProjectReference Include="..\Engines\NScumm.Sci\NScumm.Sci.csproj">
-            <Project>{FEF9CB20-5EBA-4FEC-9998-75FFCE0EAEE4}</Project>
-            <Name>NScumm.Sci</Name>
-        </ProjectReference>
+    <ProjectReference Include="..\Engines\NScumm.Sci\NScumm.Sci.csproj">
+      <Project>{FEF9CB20-5EBA-4FEC-9998-75FFCE0EAEE4}</Project>
+      <Name>NScumm.Sci</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Engines\NScumm.Sky\NScumm.Sky.csproj">
       <Project>{8740A0CD-2613-4354-9506-35035A735962}</Project>
       <Name>NScumm.Sky</Name>
     </ProjectReference>
-        <ProjectReference Include="..\Engines\NScumm.Sword1\NScumm.Sword1.csproj">
-            <Project>{EF539A3F-0672-412C-B9D0-38DCD3622D99}</Project>
-            <Name>NScumm.Sword1</Name>
-        </ProjectReference>
-        <ProjectReference Include="..\NScumm.Core\NScumm.Core.csproj">
-            <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
-            <Name>NScumm.Core</Name>
-        </ProjectReference>
-        <ProjectReference Include="..\Engines\NScumm.Agos\NScumm.Agos.csproj">
-            <Project>{024F3C9E-36B9-4A61-A210-54E265597D6E}</Project>
-            <Name>NScumm.Agos</Name>
-        </ProjectReference>
-    </ItemGroup>
-    <ItemGroup>
-        <EmbeddedResource Include="Resources\Nscumm.xml"/>
-        <EmbeddedResource Include="Resources\sky.cpt"/>
-    </ItemGroup>
+    <ProjectReference Include="..\Engines\NScumm.Sword1\NScumm.Sword1.csproj">
+      <Project>{EF539A3F-0672-412C-B9D0-38DCD3622D99}</Project>
+      <Name>NScumm.Sword1</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NScumm.Core\NScumm.Core.csproj">
+      <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
+      <Name>NScumm.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Engines\NScumm.Agos\NScumm.Agos.csproj">
+      <Project>{024F3C9E-36B9-4A61-A210-54E265597D6E}</Project>
+      <Name>NScumm.Agos</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Nscumm.xml"/>
+    <EmbeddedResource Include="Resources\sky.cpt"/>
+  </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
-    <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Content.Builder.targets"/>
+  <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Content.Builder.targets"/>
 </Project>

@@ -235,7 +235,7 @@ namespace NScumm.Queen
 
         public override void Run()
         {
-            Resource = new Resource(Settings.Game.Path);
+            Resource = new Resource();
             Bam = new BamScene(this);
             BankMan = new BankManager(Resource);
             Command = new Command(this);

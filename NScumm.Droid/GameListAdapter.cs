@@ -16,7 +16,7 @@ namespace NScumm.Droid
 		Context _context;
 
 		public GameListAdapter(Context context)
-			:base(context,Android.Resource.Layout.SimpleListItem2)
+			: base(context, Android.Resource.Layout.SimpleListItem2)
 		{
 			_context = context;
 		}

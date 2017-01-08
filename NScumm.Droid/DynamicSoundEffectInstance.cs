@@ -20,17 +20,14 @@ namespace Microsoft.Xna.Framework.Audio
         private AudioChannels channels;
         private int sampleRate;
         private ALFormat format;
-        private bool looped = false;
         private float volume = 1.0f;
-        private float pan = 0;
-        private float pitch = 0f;
         private int sourceId;
         private int[] bufferIds;
         private int[] bufferIdsToFill;
         private int currentBufferToFill;
-        private bool isDisposed = false;
-        private bool hasSourceId = false;
-        private Thread bufferFillerThread = null;
+        private bool isDisposed;
+        private bool hasSourceId;
+        private Thread bufferFillerThread;
         private bool _done;
 
         // Events
@@ -56,54 +53,10 @@ namespace Microsoft.Xna.Framework.Audio
                 case AudioChannels.Stereo:
                     this.format = ALFormat.Stereo16;
                     break;
-                default:
-                    break;
             }
         }
 
-        public bool IsDisposed
-        {
-            get
-            {
-                return isDisposed;
-            }
-        }
-
-        public float Pan
-        {
-            get
-            {
-                return pan;
-            }
-
-            set
-            {
-                pan = value;
-                if (hasSourceId)
-                {
-                    // Listener
-                    // Pan
-                    AL.Source(sourceId, ALSource3f.Position, pan, 0.0f, 0.1f);
-                }
-            }
-        }
-
-        public float Pitch
-        {
-            get
-            {
-                return pitch;
-            }
-            set
-            {
-                pitch = value;
-                if (hasSourceId)
-                {
-                    // Pitch
-                    AL.Source(sourceId, ALSourcef.Pitch, XnaPitchToAlPitch(pitch));
-                }
-            }
-        }
+		public bool IsDisposed => isDisposed;
 
         public float Volume
         {
@@ -124,20 +77,7 @@ namespace Microsoft.Xna.Framework.Audio
             }
         }
 
-        public SoundState State
-        {
-            get
-            {
-                return soundState;
-            }
-        }
-
-        private float XnaPitchToAlPitch(float pitch)
-        {
-            // pitch is different in XNA and OpenAL. XNA has a pitch between -1 and 1 for one octave down/up.
-            // openAL uses 0.5 to 2 for one octave down/up, while 1 is the default. The default value of 0 would make it completely silent.
-            return (float)Math.Exp(0.69314718 * pitch);
-        }
+        public SoundState State => soundState;
 
         public void Play()
         {
@@ -161,11 +101,6 @@ namespace Microsoft.Xna.Framework.Audio
             AL.SourcePlay(sourceId);
         }
 
-        public void Apply3D(AudioListener listener, AudioEmitter emitter)
-        {
-            Apply3D(new AudioListener[] { listener }, emitter);
-        }
-
         public void Pause()
         {
             if (hasSourceId)
@@ -175,39 +110,11 @@ namespace Microsoft.Xna.Framework.Audio
             }
         }
 
-
-        public void Apply3D(AudioListener[] listeners, AudioEmitter emitter)
-        {
-            // get AL's listener position
-            float x, y, z;
-            AL.GetListener(ALListener3f.Position, out x, out y, out z);
-
-            for (int i = 0; i < listeners.Length; i++)
-            {
-                AudioListener listener = listeners[i];
-
-                // get the emitter offset from origin
-                Vector3 posOffset = emitter.Position - listener.Position;
-                // set up orientation matrix
-                Matrix orientation = Matrix.CreateWorld(Vector3.Zero, listener.Forward, listener.Up);
-                // set up our final position and velocity according to orientation of listener
-                Vector3 finalPos = new Vector3(x + posOffset.X, y + posOffset.Y, z + posOffset.Z);
-                finalPos = Vector3.Transform(finalPos, orientation);
-                Vector3 finalVel = emitter.Velocity;
-                finalVel = Vector3.Transform(finalVel, orientation);
-
-                // set the position based on relative positon
-                AL.Source(sourceId, ALSource3f.Position, finalPos.X, finalPos.Y, finalPos.Z);
-                AL.Source(sourceId, ALSource3f.Velocity, finalVel.X, finalVel.Y, finalVel.Z);
-            }
-        }
-
-
         public void Dispose()
         {
             if (!isDisposed)
             {
-                Stop(true);
+                Stop();
                 AL.DeleteBuffers(bufferIds);
                 AL.DeleteSource(sourceId);
                 bufferIdsToFill = null;
@@ -227,16 +134,6 @@ namespace Microsoft.Xna.Framework.Audio
                     AL.SourceUnqueueBuffers(sourceId, PendingBufferCount);
             }
             soundState = SoundState.Stopped;
-        }
-
-        public void Stop(bool immediate)
-        {
-            Stop();
-        }
-
-        public TimeSpan GetSampleDuration(int sizeInBytes)
-        {
-            throw new NotImplementedException();
         }
 
         public int GetSampleSizeInBytes(TimeSpan duration)
@@ -287,19 +184,6 @@ namespace Microsoft.Xna.Framework.Audio
                 bufferIdsToFill = AL.SourceUnqueueBuffers(sourceId, buffersProcessed);
                 currentBufferToFill = 0;
                 OnBufferNeeded(EventArgs.Empty);
-            }
-        }
-
-        public bool IsLooped
-        {
-            get
-            {
-                return looped;
-            }
-
-            set
-            {
-                looped = value;
             }
         }
 

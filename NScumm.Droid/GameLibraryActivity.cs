@@ -2,13 +2,11 @@
 using Android.Content;
 using Android.OS;
 using Android.Widget;
-using NScumm.Agos;
 using NScumm.Core;
 using NScumm.Core.IO;
 using NScumm.Mobile.Services;
 using Android.Views;
 using System.Linq;
-using Android.Support.V4.Content;
 using Android.Content.PM;
 using System.Collections.Generic;
 using System;
@@ -151,12 +149,15 @@ namespace NScumm.Droid
 			if (game == null)
 			{
 				// No game, show message
-				new AlertDialog.Builder(this).SetMessage("No Game detected").Create().Show();
+				Toast.MakeText(this, "No Game detected", ToastLength.Short).Show();
 				return;
 			}
 
 			// Add game in the library
-			((GameListAdapter)_listView1.Adapter).Add(game.Game);
+			if (((GameListAdapter)_listView1.Adapter).Contains(game.Game, GameEqualityComparer.Instance))
+			{
+				((GameListAdapter)_listView1.Adapter).Add(game.Game);
+			}
 		}
 
 		private GameDetected GetGame(string path)
@@ -181,8 +182,23 @@ namespace NScumm.Droid
 			ServiceLocator.Platform = new Mobile.Services.Platform();
 			ServiceLocator.FileStorage = new FileStorage();
 			ServiceLocator.SaveFileManager = new SaveFileManager();
-			ServiceLocator.AudioManager = new Mobile.Services.AudioManager();
+			ServiceLocator.AudioManager = new AudioManager();
 			ServiceLocator.TraceFatory = new TraceFactory();
+		}
+	}
+
+	class GameEqualityComparer : EqualityComparer<IGameDescriptor>
+	{
+		public readonly static GameEqualityComparer Instance = new GameEqualityComparer();
+
+		public override bool Equals(IGameDescriptor x, IGameDescriptor y)
+		{
+			return string.Equals(x.Path, y.Path, StringComparison.OrdinalIgnoreCase);
+		}
+
+		public override int GetHashCode(IGameDescriptor obj)
+		{
+			return obj.Path.GetHashCode();
 		}
 	}
 }

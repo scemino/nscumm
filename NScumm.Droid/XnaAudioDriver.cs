@@ -22,61 +22,60 @@ using NScumm.Core.Audio.SampleProviders;
 
 namespace NScumm
 {
-    class XnaAudioDriver : IAudioOutput
-    {
-        readonly DynamicSoundEffectInstance _dsei;
-        readonly byte[] _buffer;
-        IAudioSampleProvider _audioSampleProvider;
-        AudioFormat _audioFormat;
+	class XnaAudioDriver : IAudioOutput
+	{
+		readonly DynamicSoundEffectInstance _dsei;
+		readonly byte[] _buffer;
+		IAudioSampleProvider _audioSampleProvider;
+		AudioFormat _audioFormat;
 
-        public XnaAudioDriver()
-        {
-            _audioFormat = new AudioFormat(44100);
+		public XnaAudioDriver()
+		{
+			_audioFormat = new AudioFormat(44100);
 
-            _buffer = new byte[13230 * 2];
-            _dsei = new DynamicSoundEffectInstance(_audioFormat.SampleRate, _audioFormat.Channels == 2 ? AudioChannels.Stereo : AudioChannels.Mono);
-            _dsei.BufferNeeded += OnBufferNeeded;
-        }
+			_buffer = new byte[13230 * 2];
+			_dsei = new DynamicSoundEffectInstance(_audioFormat.SampleRate, _audioFormat.Channels == 2 ? AudioChannels.Stereo : AudioChannels.Mono);
+			_dsei.BufferNeeded += OnBufferNeeded;
+		}
 
-        public void SetSampleProvider(IAudioSampleProvider audioSampleProvider)
-        {
-            _audioSampleProvider = audioSampleProvider;
-            if (_audioSampleProvider.AudioFormat.SampleRate != _audioFormat.SampleRate)
-            {
-                _audioSampleProvider = new ResampleAudioSampleProvider(audioSampleProvider, _audioFormat.SampleRate);
-            }
-            if (_audioSampleProvider.AudioFormat.Channels == 1 && _audioFormat.Channels == 2)
-            {
-                _audioSampleProvider = new MonoToStereoAudioSampleProvider16(_audioSampleProvider);
-            }
-        }
+		public void SetSampleProvider(IAudioSampleProvider audioSampleProvider)
+		{
+			_audioSampleProvider = audioSampleProvider;
+			if (_audioSampleProvider.AudioFormat.SampleRate != _audioFormat.SampleRate)
+			{
+				_audioSampleProvider = new ResampleAudioSampleProvider(audioSampleProvider, _audioFormat.SampleRate);
+			}
+			if (_audioSampleProvider.AudioFormat.Channels == 1 && _audioFormat.Channels == 2)
+			{
+				_audioSampleProvider = new MonoToStereoAudioSampleProvider16(_audioSampleProvider);
+			}
+		}
 
-        public void Dispose()
-        {
-            _dsei.Dispose();
-        }
+		public void Dispose()
+		{
+			_dsei.Dispose();
+		}
 
-        public void Play()
-        {
-            _dsei.Play();
-        }
+		public void Play()
+		{
+			_dsei.Play();
+		}
 
-        public void Pause()
-        {
-            _dsei.Pause();
-        }
+		public void Pause()
+		{
+			_dsei.Pause();
+		}
 
-        public void Stop()
-        {
-            _dsei.Stop();
-        }
+		public void Stop()
+		{
+			_dsei.Stop();
+		}
 
-        private void OnBufferNeeded(object sender, EventArgs e)
-        {
-            Array.Clear(_buffer, 0, _buffer.Length);
-			if (_audioSampleProvider != null)
-				_audioSampleProvider.Read (_buffer, _buffer.Length);
+		private void OnBufferNeeded(object sender, EventArgs e)
+		{
+			Array.Clear(_buffer, 0, _buffer.Length);
+			_audioSampleProvider?.Read(_buffer, _buffer.Length);
 			_dsei.SubmitBuffer(_buffer, _buffer.Length);
-        }
-    }
+		}
+	}
 }

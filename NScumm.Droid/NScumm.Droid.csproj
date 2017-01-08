@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Common.props"
-          Condition="Exists('$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Common.props')"/>
+    <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Common.props"
+            Condition="Exists('$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Common.props')"/>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -51,34 +51,34 @@
     <Reference Include="MonoGame.Framework">
       <HintPath>$(MonoGameInstallDirectory)\MonoGame\v3.0\Assemblies\Android\MonoGame.Framework.dll</HintPath>
     </Reference>
-    <Reference Include="System.Xml.Linq"/>
+      <Reference Include="System.Xml.Linq"/>
     <Reference Include="Xamarin.Android.Support.v4">
       <HintPath>..\packages\Xamarin.Android.Support.v4.19.0.2\lib\MonoAndroid10\Xamarin.Android.Support.v4.dll
       </HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ScummGameActivity.cs"/>
+      <Compile Include="ScummGameActivity.cs"/>
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="GameLibraryActivity.cs" />
-    <Compile Include="DynamicSoundEffectInstance.cs"/>
-    <Compile Include="InputState.cs"/>
-    <Compile Include="ScummGame.cs"/>
-    <Compile Include="XnaAudioDriver.cs"/>
-    <Compile Include="XnaGraphicsManager.cs"/>
-    <Compile Include="XnaInputManager.cs"/>
+      <Compile Include="DynamicSoundEffectInstance.cs"/>
+      <Compile Include="InputState.cs"/>
+      <Compile Include="ScummGame.cs"/>
+      <Compile Include="XnaAudioDriver.cs"/>
+      <Compile Include="XnaGraphicsManager.cs"/>
+      <Compile Include="XnaInputManager.cs"/>
     <Compile Include="Services\AudioManager.cs" />
-    <Compile Include="Services\FileStorage.cs"/>
-    <Compile Include="Services\IMenuService.cs"/>
-    <Compile Include="Services\MenuService.cs"/>
-    <Compile Include="Services\Platform.cs"/>
+      <Compile Include="Services\FileStorage.cs"/>
+      <Compile Include="Services\IMenuService.cs"/>
+      <Compile Include="Services\MenuService.cs"/>
+      <Compile Include="Services\Platform.cs"/>
     <Compile Include="Services\SaveFileManager.cs" />
-    <Compile Include="Services\TraceFactory.cs"/>
+      <Compile Include="Services\TraceFactory.cs"/>
     <Compile Include="Services\WaveAudioStream.cs" />
-    <Compile Include="DirectoryPickerActivity.cs"/>
-    <Compile Include="GameListAdapter.cs"/>
-    <Compile Include="Services\GameDetectorService.cs"/>
+      <Compile Include="DirectoryPickerActivity.cs"/>
+      <Compile Include="GameListAdapter.cs"/>
+      <Compile Include="Services\GameDetectorService.cs"/>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -86,26 +86,26 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <AndroidResource Include="Resources\layout\libraryView.axml"/>
-    <AndroidResource Include="Resources\values\styles.xml"/>
-    <AndroidResource Include="Resources\layout\toolbar.xml"/>
-    <AndroidResource Include="Resources\menu\top_menus.xml"/>
-    <AndroidResource Include="Resources\layout\directoryPicker.axml"/>
-    <AndroidResource Include="Resources\menu\directoryPickerMenu.xml"/>
-    <AndroidResource Include="Resources\drawable\Checkmark_48.png"/>
-    <AndroidResource Include="Resources\drawable\Plus_48.png"/>
+      <AndroidResource Include="Resources\layout\libraryView.axml"/>
+      <AndroidResource Include="Resources\values\styles.xml"/>
+      <AndroidResource Include="Resources\layout\toolbar.xml"/>
+      <AndroidResource Include="Resources\menu\top_menus.xml"/>
+      <AndroidResource Include="Resources\layout\directoryPicker.axml"/>
+      <AndroidResource Include="Resources\menu\directoryPickerMenu.xml"/>
+      <AndroidResource Include="Resources\drawable\Checkmark_48.png"/>
+      <AndroidResource Include="Resources\drawable\Plus_48.png"/>
   </ItemGroup>
   <ItemGroup>
-    <MonoGameContentReference Include="Content\Content.mgcb"/>
+      <MonoGameContentReference Include="Content\Content.mgcb"/>
   </ItemGroup>
   <ItemGroup>
-    <AndroidAsset Include="Assets\AboutAssets.txt"/>
+      <AndroidAsset Include="Assets\AboutAssets.txt"/>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Assets\Content\"/>
-    <Folder Include="Services\"/>
-    <Folder Include="Resources\values\"/>
-    <Folder Include="Resources\menu\"/>
+      <Folder Include="Assets\Content\"/>
+      <Folder Include="Services\"/>
+      <Folder Include="Resources\values\"/>
+      <Folder Include="Resources\menu\"/>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Engines\NScumm.Queen\NScumm.Queen.csproj">
@@ -134,9 +134,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\Nscumm.xml"/>
-    <EmbeddedResource Include="Resources\sky.cpt"/>
+      <EmbeddedResource Include="Resources\Nscumm.xml"/>
+      <EmbeddedResource Include="Resources\sky.cpt"/>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
-  <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Content.Builder.targets"/>
+    <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Content.Builder.targets"/>
 </Project>

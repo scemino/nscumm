@@ -54,6 +54,6 @@ namespace NScumm.Sword1
         public static Language Language;
         public static bool IsDemo;
         public static Platform Platform;
-        public static CultureInfo RealLanguage;
+        public static Core.Language RealLanguage;
     }
 }

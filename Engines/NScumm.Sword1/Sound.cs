@@ -758,11 +758,10 @@ namespace NScumm.Sword1
 
         private BinaryReader TryToOpen(string filename)
         {
-            var directory = ServiceLocator.FileStorage.GetDirectoryName(_settings.Game.Path);
-            var path = ScummHelper.LocatePath(directory, filename);
-            if (path != null)
+            var stream = Core.Engine.OpenFileRead(filename);
+            if (stream != null)
             {
-                return new BinaryReader(ServiceLocator.FileStorage.OpenFileRead(path));
+                return new BinaryReader(stream);
             }
             return null;
         }

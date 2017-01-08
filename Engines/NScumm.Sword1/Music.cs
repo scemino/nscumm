@@ -34,12 +34,10 @@ namespace NScumm.Sword1
         private int _fading;
         private int _fadeSamples;
         private IAudioStream _audioSource;
-        private short[] _data;
-        private string _directory;
+        private readonly short[] _data;
 
-        public MusicHandle(string directory)
+        public MusicHandle()
         {
-            _directory = directory;
             _data = new short[4096];
         }
 
@@ -54,7 +52,7 @@ namespace NScumm.Sword1
             if (_audioSource == null)
                 return 0;
             int expectedSamples = numSamples;
-            while ((expectedSamples > 0) && _audioSource != null)
+            while (expectedSamples > 0 && _audioSource != null)
             {
                 // _audioSource becomes NULL if we reach EOF and aren't looping
                 var len = Math.Min(_data.Length, expectedSamples);
@@ -120,22 +118,22 @@ namespace NScumm.Sword1
         {
             Stop();
 
-            string path;
+            Stream stream;
             if (_file == null)
             {
-                path = ScummHelper.LocatePath(_directory, "tunes.dat");
-                if (path == null)
+                stream = Engine.OpenFileRead("tunes.dat");
+                if (stream == null)
                     return false;
-                _file = ServiceLocator.FileStorage.OpenFileRead(path);
+                _file = stream;
             }
 
-            path = ScummHelper.LocatePath(_directory, "tunes.tab");
-            if (path == null)
+            stream = Engine.OpenFileRead("tunes.tab");
+            if (stream == null)
                 return false;
 
             uint offset;
             int size;
-            using (var tableFile = ServiceLocator.FileStorage.OpenFileRead(path))
+            using (var tableFile = stream)
             {
                 var br = new BinaryReader(tableFile);
                 tableFile.Seek((id - 1) * 8, SeekOrigin.Begin);
@@ -201,69 +199,39 @@ namespace NScumm.Sword1
             }
         }
 
-        public bool IsStreaming
-        {
-            get { return (_audioSource != null) ? (!_audioSource.IsEndOfStream) : false; }
-        }
+        public bool IsStreaming => _audioSource != null && !_audioSource.IsEndOfStream;
 
-        public int Fading
-        {
-            get { return _fading; }
-        }
+        public int Fading => _fading;
 
-        public bool IsEndOfData
-        {
-            get { return !IsStreaming; }
-        }
+        public bool IsEndOfData => !IsStreaming;
 
-        public bool IsEndOfStream
-        {
-            get { return false; }
-        }
+        public bool IsEndOfStream => false;
 
-        public bool IsStereo
-        {
-            get { return (_audioSource != null) ? _audioSource.IsStereo : false; }
-        }
+        public bool IsStereo => _audioSource?.IsStereo ?? false;
 
-        public int Rate
-        {
-            get { return (_audioSource != null) ? _audioSource.Rate : 11025; }
-        }
+        public int Rate => _audioSource?.Rate ?? 11025;
     }
 
     internal class Music : IAudioStream
     {
-        private IMixer _mixer;
+        private readonly IMixer _mixer;
         private ushort _volumeL;
         private ushort _volumeR;
-        private int _sampleRate;
-        private object _gate = new object();
-        private MusicHandle[] _handles;
-        private IRateConverter[] _converter = new IRateConverter[2];
-        private SoundHandle _soundHandle;
+        private readonly int _sampleRate;
+        private readonly object _gate = new object();
+        private readonly MusicHandle[] _handles;
+        private readonly IRateConverter[] _converter = new IRateConverter[2];
+        private readonly SoundHandle _soundHandle;
 
-        public bool IsStereo
-        {
-            get { return true; }
-        }
+        public bool IsStereo => true;
 
-        public bool IsEndOfData
-        {
-            get { return false; }
-        }
+        public bool IsEndOfData => false;
 
-        public bool IsEndOfStream
-        {
-            get { return false; }
-        }
+        public bool IsEndOfStream => false;
 
-        public int Rate
-        {
-            get { return _sampleRate; }
-        }
+        public int Rate => _sampleRate;
 
-        public Music(IMixer mixer, string directory)
+        public Music(IMixer mixer)
         {
             _mixer = mixer;
             _sampleRate = mixer.OutputRate;
@@ -272,7 +240,7 @@ namespace NScumm.Sword1
             _handles = new MusicHandle[2];
             for (int i = 0; i < _handles.Length; i++)
             {
-                _handles[i] = new MusicHandle(directory);
+                _handles[i] = new MusicHandle();
             }
         }
 

@@ -49,7 +49,6 @@ namespace NScumm.Sword1
         private readonly SwordEngine _vm;
         private VideoDecoder _decoder;
         private List<MovieText> _movieTexts = new List<MovieText>();
-        private string _directory;
         private Text _textMan;
         private ResMan _resMan;
         private uint _black;
@@ -66,14 +65,11 @@ namespace NScumm.Sword1
             _vm = vm;
             _textMan = textMan;
             _resMan = resMan;
-            _directory = ServiceLocator.FileStorage.GetDirectoryName(_vm.Settings.Game.Path);
         }
 
         public void Load(int id)
         {
-            string filename, path;
-
-            var directory = ServiceLocator.FileStorage.GetDirectoryName(_vm.Settings.Game.Path);
+            string filename;
 
             LoadSubtitles(id);
 
@@ -93,8 +89,7 @@ namespace NScumm.Sword1
                 _decoder = new SmackerDecoder();
             }
 
-            path = ScummHelper.LocatePath(directory, filename);
-            var stream = ServiceLocator.FileStorage.OpenFileRead(path);
+            var stream = Engine.OpenFileRead(filename);
             _decoder.LoadStream(stream);
             _decoder.Start();
         }
@@ -155,124 +150,120 @@ namespace NScumm.Sword1
 
         private void LoadSubtitles(int id)
         {
-            if (SystemVars.ShowText != 0)
+            if (SystemVars.ShowText == 0) return;
+
+            var filename = $"{SequenceList[id]}.txt";
+            var stream = Engine.OpenFileRead(filename);
+            if (stream == null) return;
+
+            using (var f = new StreamReader(stream))
             {
-                var filename = $"{SequenceList[id]}.txt";
-                var path = ScummHelper.LocatePath(_directory, filename);
-                if (path != null)
+                string line;
+                while ((line = f.ReadLine()) != null)
                 {
-                    using (var f = new StreamReader(ServiceLocator.FileStorage.OpenFileRead(path)))
-                    {
-                        string line;
-                        while ((line = f.ReadLine()) != null)
-                        {
-                            var m = _regex.Match(line);
-                            if (m.Success)
-                            {
-                                var start = ushort.Parse(m.Groups[1].Value);
-                                var end = ushort.Parse(m.Groups[2].Value);
-                                var color = ushort.Parse(m.Groups[3].Value);
-                                var text = m.Groups[4].Value;
-                                _movieTexts.Add(new MovieText(start, end, text, color));
-                            }
-                        }
-                    }
+                    var m = _regex.Match(line);
+                    if (!m.Success) continue;
+
+                    var start = ushort.Parse(m.Groups[1].Value);
+                    var end = ushort.Parse(m.Groups[2].Value);
+                    var color = ushort.Parse(m.Groups[3].Value);
+                    var text = m.Groups[4].Value;
+                    _movieTexts.Add(new MovieText(start, end, text, color));
                 }
             }
         }
 
         private void UpdateColors()
         {
-            if (_movieTexts.Count > 0)
+            if (_movieTexts.Count <= 0) return;
+
+// Look for the best color indexes to use to display the subtitles
+            uint minWeight = 0xFFFFFFFF;
+            float c1Weight = 1e+30f;
+            float c2Weight = 1e+30f;
+            float c3Weight = 1e+30f;
+            float c4Weight = 1e+30f;
+
+            var palette = _decoder.Palette;
+            var p = 0;
+
+            // Color comparaison for the subtitles colors is done in HSL
+            // C1 color is used for George and is almost white (R = 248, G = 252, B = 248)
+            const float h1 = 0.333333f, s1 = 0.02f, v1 = 0.99f;
+
+            // C2 color is used for George as a narrator and is grey (R = 184, G = 188, B = 184)
+            const float h2 = 0.333333f, s2 = 0.02f, v2 = 0.74f;
+
+            // C3 color is used for Nicole and is rose (R = 200, G = 120, B = 184)
+            const float h3 = 0.866667f, s3 = 0.4f, v3 = 0.78f;
+
+            // C4 color is used for Maguire and is blue (R = 80, G = 152, B = 184)
+            const float h4 = 0.55f, s4 = 0.57f, v4 = 0.72f;
+
+            for (uint i = 0; i < 256; i++)
             {
-                // Look for the best color indexes to use to display the subtitles
-                uint minWeight = 0xFFFFFFFF;
-                uint weight;
-                float c1Weight = 1e+30f;
-                float c2Weight = 1e+30f;
-                float c3Weight = 1e+30f;
-                float c4Weight = 1e+30f;
-                byte r, g, b;
-                float h, s, v, hd, hsvWeight;
+                var r = palette[p++];
+                var g = palette[p++];
+                var b = palette[p++];
 
-                var palette = _decoder.Palette;
-                var p = 0;
+                var weight = (uint)(3 * r * r + 6 * g * g + 2 * b * b);
 
-                // Color comparaison for the subtitles colors is done in HSL
-                // C1 color is used for George and is almost white (R = 248, G = 252, B = 248)
-                const float h1 = 0.333333f, s1 = 0.02f, v1 = 0.99f;
-
-                // C2 color is used for George as a narrator and is grey (R = 184, G = 188, B = 184)
-                const float h2 = 0.333333f, s2 = 0.02f, v2 = 0.74f;
-
-                // C3 color is used for Nicole and is rose (R = 200, G = 120, B = 184)
-                const float h3 = 0.866667f, s3 = 0.4f, v3 = 0.78f;
-
-                // C4 color is used for Maguire and is blue (R = 80, G = 152, B = 184)
-                const float h4 = 0.55f, s4 = 0.57f, v4 = 0.72f;
-
-                for (uint i = 0; i < 256; i++)
+                if (weight <= minWeight)
                 {
-                    r = palette[p++];
-                    g = palette[p++];
-                    b = palette[p++];
+                    minWeight = weight;
+                    _black = i;
+                }
 
-                    weight = (uint)(3 * r * r + 6 * g * g + 2 * b * b);
+                float h;
+                float s;
+                float v;
+                ConvertColor(r, g, b, out h, out s, out v);
 
-                    if (weight <= minWeight)
-                    {
-                        minWeight = weight;
-                        _black = i;
-                    }
+                // C1 color
+                // It is almost achromatic (very low saturation) so the hue as litle impact on the color.
+                // Therefore use a low weight on hue and high weight on saturation.
+                var hd = h - h1;
+                hd += hd < -0.5f ? 1.0f : hd > 0.5f ? -1.0f : 0.0f;
+                var hsvWeight = 1.0f * hd * hd + 4.0f * (s - s1) * (s - s1) + 3.0f * (v - v1) * (v - v1);
+                if (hsvWeight <= c1Weight)
+                {
+                    c1Weight = hsvWeight;
+                    _c1Color = i;
+                }
 
-                    ConvertColor(r, g, b, out h, out s, out v);
+                // C2 color
+                // Also an almost achromatic color so use the same weights as for C1 color.
+                hd = h - h2;
+                hd += hd < -0.5f ? 1.0f : hd > 0.5f ? -1.0f : 0.0f;
+                hsvWeight = 1.0f * hd * hd + 4.0f * (s - s2) * (s - s2) + 3.0f * (v - v2) * (v - v2);
+                if (hsvWeight <= c2Weight)
+                {
+                    c2Weight = hsvWeight;
+                    _c2Color = i;
+                }
 
-                    // C1 color
-                    // It is almost achromatic (very low saturation) so the hue as litle impact on the color.
-                    // Therefore use a low weight on hue and high weight on saturation.
-                    hd = h - h1;
-                    hd += hd < -0.5f ? 1.0f : hd > 0.5f ? -1.0f : 0.0f;
-                    hsvWeight = 1.0f * hd * hd + 4.0f * (s - s1) * (s - s1) + 3.0f * (v - v1) * (v - v1);
-                    if (hsvWeight <= c1Weight)
-                    {
-                        c1Weight = hsvWeight;
-                        _c1Color = i;
-                    }
+                // C3 color
+                // A light rose. Use a high weight on the hue to get a rose.
+                // The color is a bit gray and the saturation has not much impact so use a low weight.
+                hd = h - h3;
+                hd += hd < -0.5f ? 1.0f : hd > 0.5f ? -1.0f : 0.0f;
+                hsvWeight = 4.0f * hd * hd + 1.0f * (s - s3) * (s - s3) + 2.0f * (v - v3) * (v - v3);
+                if (hsvWeight <= c3Weight)
+                {
+                    c3Weight = hsvWeight;
+                    _c3Color = i;
+                }
 
-                    // C2 color
-                    // Also an almost achromatic color so use the same weights as for C1 color.
-                    hd = h - h2;
-                    hd += hd < -0.5f ? 1.0f : hd > 0.5f ? -1.0f : 0.0f;
-                    hsvWeight = 1.0f * hd * hd + 4.0f * (s - s2) * (s - s2) + 3.0f * (v - v2) * (v - v2);
-                    if (hsvWeight <= c2Weight)
-                    {
-                        c2Weight = hsvWeight;
-                        _c2Color = i;
-                    }
-
-                    // C3 color
-                    // A light rose. Use a high weight on the hue to get a rose.
-                    // The color is a bit gray and the saturation has not much impact so use a low weight.
-                    hd = h - h3;
-                    hd += hd < -0.5f ? 1.0f : hd > 0.5f ? -1.0f : 0.0f;
-                    hsvWeight = 4.0f * hd * hd + 1.0f * (s - s3) * (s - s3) + 2.0f * (v - v3) * (v - v3);
-                    if (hsvWeight <= c3Weight)
-                    {
-                        c3Weight = hsvWeight;
-                        _c3Color = i;
-                    }
-
-                    // C4 color
-                    // Blue. Use a hight weight on the hue to get a blue.
-                    // The color is darker and more saturated than C3 and the saturation has more impact.
-                    hd = h - h4;
-                    hd += hd < -0.5f ? 1.0f : hd > 0.5f ? -1.0f : 0.0f;
-                    hsvWeight = 5.0f * hd * hd + 3.0f * (s - s4) * (s - s4) + 2.0f * (v - v4) * (v - v4);
-                    if (hsvWeight <= c4Weight)
-                    {
-                        c4Weight = hsvWeight;
-                        _c4Color = i;
-                    }
+                // C4 color
+                // Blue. Use a hight weight on the hue to get a blue.
+                // The color is darker and more saturated than C3 and the saturation has more impact.
+                hd = h - h4;
+                hd += hd < -0.5f ? 1.0f : hd > 0.5f ? -1.0f : 0.0f;
+                hsvWeight = 5.0f * hd * hd + 3.0f * (s - s4) * (s - s4) + 2.0f * (v - v4) * (v - v4);
+                if (hsvWeight <= c4Weight)
+                {
+                    c4Weight = hsvWeight;
+                    _c4Color = i;
                 }
             }
         }

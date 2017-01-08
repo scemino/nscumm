@@ -17,7 +17,6 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using NScumm.Core;
 using static NScumm.Core.DebugHelper;
@@ -108,11 +107,9 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
         private int _openClus;
         private Clu _openCluStart;
         private Clu _openCluEnd;
-        private string _directory;
 
-        public ResMan(string directory, string fileName, bool isMacFile)
+        public ResMan(string fileName, bool isMacFile)
         {
-            _directory = directory;
             _isBigEndian = isMacFile;
             _memMan = new MemMan();
             LoadCluDescript(fileName);
@@ -237,7 +234,7 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
         private void LoadCluDescript(string fileName)
         {
             // The cluster description file is always little endian (even on the mac version, whose cluster files are big endian)
-            using (var stream = ServiceLocator.FileStorage.OpenFileRead(fileName))
+            using (var stream = Engine.OpenFileRead(fileName))
             using (var file = new BinaryReader(stream))
             {
                 _prj = new Prj();
@@ -440,8 +437,7 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
                     fileName = $"{_prj.clu[(id >> 24) - 1].label.Trim('\0')}.CLM";
                 else
                     fileName = $"{_prj.clu[(id >> 24) - 1].label.Trim('\0')}.CLU";
-                var path = ScummHelper.LocatePath(_directory, fileName);
-                cluster.file = ServiceLocator.FileStorage.OpenFileRead(path);
+                cluster.file = Engine.OpenFileRead(fileName);
 
                 while (_openClus > MAX_OPEN_CLUS)
                 {

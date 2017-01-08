@@ -17,8 +17,8 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Globalization;
 using NScumm.Core;
+using NScumm.Core.Common;
 using NScumm.Core.Graphics;
 using NScumm.Core.Input;
 using NScumm.Core.IO;
@@ -62,6 +62,16 @@ namespace NScumm.Sword1
                 ? 1U
                 : 0;
 
+            var path = ConfigManager.Instance.Get<string>("path");
+            SearchManager.Instance.AddDirectory(path, "clusters");
+            SearchManager.Instance.AddDirectory(path, "music");
+            SearchManager.Instance.AddDirectory(path, "speech");
+            SearchManager.Instance.AddDirectory(path, "video");
+            SearchManager.Instance.AddDirectory(path, "smackshi");
+            SearchManager.Instance.AddDirectory(path, "streams"); // PSX videos
+            SearchManager.Instance.AddDirectory(path, "english"); // PSX Demo
+            SearchManager.Instance.AddDirectory(path, "italian"); // PSX Demo
+
             // TODO: debug
             // _console = new SwordConsole(this);
 
@@ -71,15 +81,13 @@ namespace NScumm.Sword1
             // CheckCdFiles();
 
             Debug(5, "Starting resource manager");
-            var directory = ServiceLocator.FileStorage.GetDirectoryName(settings.Game.Path);
-            var path = ServiceLocator.FileStorage.Combine(directory, "swordres.rif");
-            _resMan = new ResMan(directory, path, SystemVars.Platform == Platform.Macintosh);
+            _resMan = new ResMan("swordres.rif", SystemVars.Platform == Platform.Macintosh);
 
             Debug(5, "Starting object manager");
             _objectMan = new ObjectMan(_resMan);
             _mouse = new Mouse(System, _resMan, _objectMan);
-            _screen = new Screen(directory, System, _resMan, _objectMan);
-            _music = new Music(Mixer, directory);
+            _screen = new Screen(System, _resMan, _objectMan);
+            _music = new Music(Mixer);
             _sound = new Sound(settings, Mixer, _resMan);
             _menu = new Menu(_screen, _mouse);
             _logic = new Logic(this, _objectMan, _resMan, _screen, _mouse, _sound, _music, _menu, Mixer);
@@ -92,33 +100,32 @@ namespace NScumm.Sword1
             SystemVars.ControlPanelMode = ControlPanelMode.CP_NEWGAME;
             SystemVars.ForceRestart = false;
             SystemVars.WantFade = true;
-            //_systemVars.realLanguage = Common::parseLanguage(ConfMan.get("language"));
-            SystemVars.RealLanguage = new CultureInfo("en-GB");
+            SystemVars.RealLanguage = LanguageHelper.ParseLanguage(ConfigManager.Instance.Get<string>("language"));
 
-            //switch (SystemVars.RealLanguage.TwoLetterISOLanguageName)
-            //{
-            //    case "de":
-            //        SystemVars.Language = Language.BS1_GERMAN;
-            //        break;
-            //    case "fr":
-            //        SystemVars.Language = Language.BS1_FRENCH;
-            //        break;
-            //    case "it":
-            //        SystemVars.Language = Language.BS1_ITALIAN;
-            //        break;
-            //    case "es":
-            //        SystemVars.Language = Language.BS1_SPANISH;
-            //        break;
-            //    case "pt":
-            //        SystemVars.Language = Language.BS1_PORT;
-            //        break;
-            //    case "cz":
-            //        SystemVars.Language = Language.BS1_CZECH;
-            //        break;
-            //    default:
-            //        SystemVars.Language = Language.BS1_ENGLISH;
-            //        break;
-            //}
+            switch (SystemVars.RealLanguage)
+            {
+                case Core.Language.DE_DEU:
+                    SystemVars.Language = Language.BS1_GERMAN;
+                    break;
+                case Core.Language.FR_FRA:
+                    SystemVars.Language = Language.BS1_FRENCH;
+                    break;
+                case Core.Language.IT_ITA:
+                    SystemVars.Language = Language.BS1_ITALIAN;
+                    break;
+                case Core.Language.ES_ESP:
+                    SystemVars.Language = Language.BS1_SPANISH;
+                    break;
+                case Core.Language.PT_BRA:
+                    SystemVars.Language = Language.BS1_PORT;
+                    break;
+                case Core.Language.CZ_CZE:
+                    SystemVars.Language = Language.BS1_CZECH;
+                    break;
+                default:
+                    SystemVars.Language = Language.BS1_ENGLISH;
+                    break;
+            }
 
             SystemVars.ShowText = (byte)(ConfigManager.Instance.Get<bool>("subtitles") ? 1 : 0);
 

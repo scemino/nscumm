@@ -1477,7 +1477,7 @@ namespace NScumm.Sword1
                 panelId = SwordRes.SR_DEATHPANEL;
             else
             {
-                if (SystemVars.RealLanguage.TwoLetterISOLanguageName == "en-US")
+                if (SystemVars.RealLanguage == Core.Language.EN_USA)
                     panelId = SwordRes.SR_PANEL_AMERICAN;
                 else if (SystemVars.Language <= Language.BS1_SPANISH)
                     panelId = (uint)(SwordRes.SR_PANEL_ENGLISH + SystemVars.Language);

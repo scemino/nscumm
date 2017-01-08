@@ -235,35 +235,34 @@ namespace NScumm.Sword1
         private const int STAT_OVERRIDE = 512;
 
 
-        private ISystem _system;
-        private ResMan _resMan;
-        private ObjectMan _objMan;
+        private readonly ISystem _system;
+        private readonly ResMan _resMan;
+        private readonly ObjectMan _objMan;
         private ushort _currentScreen;
         private byte[] _screenBuf;
         private bool _fullRefresh;
         private byte[] _screenGrid;
-        private ByteAccess[] _layerBlocks = new ByteAccess[4];
-        private byte[][] _parallax = new byte[2][];
-        private byte[] _rleBuffer = new byte[RLE_BUFFER_SIZE];
-        private byte[] _shrinkBuffer = new byte[SHRINK_BUFFER_SIZE];
+        private readonly ByteAccess[] _layerBlocks = new ByteAccess[4];
+        private readonly byte[][] _parallax = new byte[2][];
+        private readonly byte[] _rleBuffer = new byte[RLE_BUFFER_SIZE];
+        private readonly byte[] _shrinkBuffer = new byte[SHRINK_BUFFER_SIZE];
         private bool _updatePalette;
 
-        private uint[] _foreList = new uint[MAX_FORE];
-        private uint[] _backList = new uint[MAX_BACK];
-        private SortSpr[] _sortList = new SortSpr[MAX_SORT];
+        private readonly uint[] _foreList = new uint[MAX_FORE];
+        private readonly uint[] _backList = new uint[MAX_BACK];
+        private readonly SortSpr[] _sortList = new SortSpr[MAX_SORT];
         private byte _foreLength, _backLength, _sortLength;
         private ushort _scrnSizeX, _scrnSizeY, _gridSizeX, _gridSizeY;
         private readonly PSXDataCache _psxCache; // Cache used for PSX backgrounds
-        private string _directory;
 
-        private UShortAccess[] _layerGrid = new UShortAccess[4];
+        private readonly UShortAccess[] _layerGrid = new UShortAccess[4];
         private ushort _oldScrollX;
         private ushort _oldScrollY;
         private bool _isBlack;
         private int _fadingStep;
         private sbyte _fadingDirection;
-        private Color[] _currentPalette = new Color[256];
-        private Color[] _targetPalette = new Color[256];
+        private readonly Color[] _currentPalette = new Color[256];
+        private readonly Color[] _targetPalette = new Color[256];
         private Text _textMan;
 
 
@@ -273,9 +272,8 @@ namespace NScumm.Sword1
             set { _textMan = value; }
         }
 
-        public Screen(string directory, ISystem system, ResMan resMan, ObjectMan objMan)
+        public Screen(ISystem system, ResMan resMan, ObjectMan objMan)
         {
-            _directory = directory;
             _system = system;
             _resMan = resMan;
             _objMan = objMan;
@@ -702,8 +700,8 @@ namespace NScumm.Sword1
                 // FIXME: this should be handled in a cleaner way...
                 if (_psxCache.extPlxCache == null)
                 {
-                    var path = ScummHelper.LocatePath(_directory, "TRAIN.PLX");
-                    using (var parallax = new BinaryReader(ServiceLocator.FileStorage.OpenFileRead(path)))
+                    var stream = Engine.OpenFileRead("TRAIN.PLX");
+                    using (var parallax = new BinaryReader(stream))
                     {
                         _psxCache.extPlxCache = parallax.ReadBytes((int)parallax.BaseStream.Length);
                     }

@@ -99,7 +99,6 @@ namespace NScumm.Desktop
             }
 
             var game = new ScummGame(settings);
-            game.Services.AddService<IMenuService>(new MenuService(game));
             game.Run();
             return 0;
         }

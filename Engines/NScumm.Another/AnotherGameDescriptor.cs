@@ -24,15 +24,17 @@ namespace NScumm.Another
 {
     public class AnotherGameDescriptor : IGameDescriptor
     {
-        public AnotherGameDescriptor(string path)
+        public AnotherGameDescriptor(ADGameDescription desc, string path)
         {
+            Language = desc.language;
+            Platform = desc.platform;
             Path = path;
         }
 
         public string Id => "another";
-        public string Description => "Out of this World";
-        public Language Language => Language.EN_ANY;
-        public Platform Platform => Platform.DOS;
+        public string Description => "Another World";
+        public Language Language { get; }
+        public Platform Platform { get; }
         public int Width => Video.ScreenWidth;
         public int Height => Video.ScreenHeight;
         public PixelFormat PixelFormat => PixelFormat.Indexed8;

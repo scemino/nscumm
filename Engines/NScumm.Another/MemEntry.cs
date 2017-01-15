@@ -46,4 +46,24 @@ namespace NScumm.Another
         public ushort Unk10; // 0x10, unused
         public ushort Size; // 0x12
     }
+
+    class AmigaMemEntry
+    {
+        public byte type;
+        public byte bank;
+        public int offset;
+        public int packedSize;
+        public int unpackedSize;
+
+        public AmigaMemEntry(byte type, byte bank, int offset, int packedSize, int unpackedSize)
+        {
+            this.type = type;
+            this.bank = bank;
+            this.offset = offset;
+            this.packedSize = packedSize;
+            this.unpackedSize = unpackedSize;
+        }
+    }
+
+
 }

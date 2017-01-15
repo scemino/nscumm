@@ -26,10 +26,6 @@ namespace NScumm.Core
 {
     internal class DebugChannel
     {
-        public DebugChannel()
-        {
-        }
-
         public DebugChannel(int c, string n, string d)
         {
             name = n;

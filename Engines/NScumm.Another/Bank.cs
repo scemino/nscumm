@@ -44,7 +44,6 @@ namespace NScumm.Another
         {
             var bankName = $"bank{me.BankId:X2}";
             var f = Engine.OpenFileRead(bankName);
-
             if (f == null)
                 Error("Bank::read() unable to open '{0}'", bankName);
 

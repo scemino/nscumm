@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using NScumm.Core;
 using NScumm.Core.Graphics;
+using NScumm.Core.IO;
 using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Another
@@ -79,7 +80,7 @@ namespace NScumm.Another
         //     1 When a setVec is requested for the next vm frame.
         private readonly byte[][] _vmIsChannelActive = CreateVmIsChannelActive();
 
-        private static readonly ushort[] _frequenceTable =
+        private static readonly ushort[] FrequenceTable =
         {
             0x0CFF, 0x0DC3, 0x0E91, 0x0F6F, 0x1056, 0x114E, 0x1259, 0x136C,
             0x149F, 0x15D9, 0x1726, 0x1888, 0x19FD, 0x1B86, 0x1D21, 0x1EDE,
@@ -160,7 +161,7 @@ namespace NScumm.Another
             // bypass the protection
             _vmVariables[0xBC] = 0x10;
             _vmVariables[0xC6] = 0x80;
-            _vmVariables[0xF2] = 4000;
+            _vmVariables[0xF2] = (short) (Engine.Instance.Settings.Game.Platform == Platform.Amiga ? 6000 : 4000);
             _vmVariables[0xDC] = 33;
         }
 
@@ -622,12 +623,14 @@ namespace NScumm.Another
                 case 0: // jz
                     expr = (b == a);
 #if BYPASS_PROTECTION
-                    if (_res.CurrentPartId == 16000) {
+                    if (_res.CurrentPartId == 16000)
+                    {
                         //
                         // 0CB8: jmpIf(VAR(0x29) == VAR(0x1E) @0CD3)
                         // ...
                         //
-                        if (var == 0x29 && (opcode & 0x80) != 0) {
+                        if (var == 0x29 && (opcode & 0x80) != 0)
+                        {
                             // 4 symbols
                             _vmVariables[0x29] = _vmVariables[0x1E];
                             _vmVariables[0x2A] = _vmVariables[0x1F];
@@ -783,7 +786,32 @@ namespace NScumm.Another
 
         private void inp_handleSpecialKeys()
         {
-            // TODO: inp_handleSpecialKeys
+            if (_sys.Input.Pause)
+            {
+                if (_res.CurrentPartId != 16000 && _res.CurrentPartId != 16001)
+                {
+                    _sys.Input.Pause = false;
+                    while (!_sys.Input.Pause && !_sys.Input.Quit)
+                    {
+                        _sys.ProcessEvents();
+                        _sys.Sleep(50);
+                    }
+                }
+                _sys.Input.Pause = false;
+            }
+            if (_sys.Input.Code)
+            {
+                _sys.Input.Code = false;
+                if (_res.CurrentPartId != 16009 && _res.CurrentPartId != 16000)
+                {
+                    _res.RequestedNextPart = 16009;
+                }
+            }
+            if (_vmVariables[0xC9] == 1)
+            {
+                // this happens on french/europeans versions when the user does not select
+                // any symbols for the protection, the disassembly shows a simple 'hlt' here.
+            }
         }
 
         private void op_killThread()
@@ -929,7 +957,7 @@ namespace NScumm.Another
                     mc.LoopPos = mc.Len;
                 }
                 //assert(freq < 40);
-                _mixer.PlayChannel((byte) (channel & 3), mc, _frequenceTable[freq], (byte) Math.Min((int) vol, 0x3F));
+                _mixer.PlayChannel((byte) (channel & 3), mc, FrequenceTable[freq], (byte) Math.Min((int) vol, 0x3F));
             }
         }
 

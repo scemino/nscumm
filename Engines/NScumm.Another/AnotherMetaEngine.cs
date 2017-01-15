@@ -27,11 +27,22 @@ namespace NScumm.Another
 
         private static readonly ADGameDescription[] GameDescriptions =
         {
+            // Out of this World
             new ADGameDescription("another", "",
                 new[]
                 {
                     new ADGameFileDescription("MEMLIST.BIN"),
-                })
+                }),
+            new ADGameDescription("another", "",
+                new[]
+                {
+                    new ADGameFileDescription("bank01",fileSize:244674),
+                }, Language.FR_FRA, Platform.Amiga),
+            new ADGameDescription("another", "",
+                new[]
+                {
+                    new ADGameFileDescription("bank01",fileSize:244868),
+                }, Language.EN_ANY, Platform.Amiga)
         };
 
         public AnotherMetaEngine()
@@ -46,7 +57,7 @@ namespace NScumm.Another
 
         protected override IGameDescriptor CreateGameDescriptor(string path, ADGameDescription desc)
         {
-            return new AnotherGameDescriptor(path);
+            return new AnotherGameDescriptor(desc, path);
         }
     }
 }

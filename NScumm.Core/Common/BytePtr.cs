@@ -156,6 +156,131 @@ namespace NScumm.Core
         }
     }
 
+    public struct SBytePtr:IEnumerable<sbyte>
+    {
+        public int Offset;
+        public byte[] Data;
+
+        public static readonly SBytePtr Null = new SBytePtr();
+
+        public sbyte Value
+        {
+            get { return (sbyte) Data[Offset]; }
+            set { Data[Offset] = (byte) value; }
+        }
+
+        public sbyte this[int index]
+        {
+            get { return (sbyte) Data[Offset + index]; }
+            set { Data[Offset + index] = (byte) value; }
+        }
+
+        public SBytePtr(BytePtr ptr, int offset = 0)
+        {
+            Data = ptr.Data;
+            Offset = ptr.Offset + offset;
+        }
+
+        public SBytePtr(byte[] data, int offset = 0)
+        {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+            Data = data;
+            Offset = offset;
+        }
+
+        public static implicit operator SBytePtr(BytePtr ba)
+        {
+            return new SBytePtr(ba.Data, ba.Offset);
+        }
+
+        public static implicit operator SBytePtr(byte[] ba)
+        {
+            return new SBytePtr(ba);
+        }
+
+        public static implicit operator BytePtr(SBytePtr p)
+        {
+            return new BytePtr(p.Data, p.Offset);
+        }
+
+        public static bool operator ==(SBytePtr p1, SBytePtr p2)
+        {
+            return p1.Data == p2.Data &&
+                   p1.Offset == p2.Offset;
+        }
+
+        public static BytePtr operator +(SBytePtr p, int offset)
+        {
+            return new BytePtr(p, offset);
+        }
+
+        public static BytePtr operator -(SBytePtr p, int offset)
+        {
+            return new BytePtr(p, -offset);
+        }
+
+        public static bool operator >(SBytePtr p1, SBytePtr p2)
+        {
+            if (p1 != Null && p2 != Null && p1.Data != p2.Data)
+                throw new InvalidOperationException("Cannot compare the 2 pointers");
+
+            return p1.Offset > p2.Offset;
+        }
+
+        public static bool operator >=(SBytePtr p1, SBytePtr p2)
+        {
+            if (p1 != Null && p2 != Null && p1.Data != p2.Data)
+                throw new InvalidOperationException("Cannot compare the 2 pointers");
+
+            return p1.Offset >= p2.Offset;
+        }
+
+        public static bool operator <(SBytePtr p1, SBytePtr p2)
+        {
+            if (p1 != Null && p2 != Null && p1.Data != p2.Data)
+                throw new InvalidOperationException("Cannot compare the 2 pointers");
+
+            return p1.Offset < p2.Offset;
+        }
+
+        public static bool operator <=(SBytePtr p1, SBytePtr p2)
+        {
+            if (p1 != Null && p2 != Null && p1 != Null && p2 != Null && p1.Data != p2.Data)
+                throw new InvalidOperationException("Cannot compare the 2 pointers");
+
+            return p1.Offset <= p2.Offset;
+        }
+
+        public static bool operator !=(SBytePtr p1, SBytePtr p2)
+        {
+            return !(p1 == p2);
+        }
+
+        public IEnumerator<sbyte> GetEnumerator()
+        {
+            for (var i = Offset; i < Data.Length-Offset; i++)
+            {
+                yield return (sbyte) Data[i];
+            }
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is SBytePtr)) return false;
+            return this == (SBytePtr) obj;
+        }
+
+        public override int GetHashCode()
+        {
+            return Data?.GetHashCode() ^ Offset ?? 0;
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+    }
+
     public struct Int32Ptr
     {
         public int Offset;
@@ -229,7 +354,7 @@ namespace NScumm.Core
         }
     }
 
-    public struct Ptr<T>
+    public struct Ptr<T>: IEnumerable<T>
     {
         public int Offset;
         public readonly T[] Data;
@@ -317,6 +442,19 @@ namespace NScumm.Core
                 throw new InvalidOperationException("Cannot compare the 2 pointers");
 
             return p1.Offset <= p2.Offset;
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            for (var i = Offset; i < Data.Length; i++)
+            {
+                yield return Data[i];
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 

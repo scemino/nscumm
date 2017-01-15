@@ -124,6 +124,10 @@
       <Project>{024F3C9E-36B9-4A61-A210-54E265597D6E}</Project>
       <Name>NScumm.Agos</Name>
     </ProjectReference>
+      <ProjectReference Include="..\Engines\NScumm.Another\NScumm.Another.csproj">
+          <Project>{61D5BCA1-F785-460A-9C01-7C8B8519425E}</Project>
+          <Name>NScumm.Another</Name>
+      </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Services\" />

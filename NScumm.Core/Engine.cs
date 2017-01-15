@@ -26,6 +26,7 @@ using D = NScumm.Core.DebugHelper;
 using System.IO;
 using NScumm.Core.IO;
 using System.Collections.Generic;
+using NScumm.Core.Audio.SampleProviders;
 using NScumm.Core.Common;
 
 namespace NScumm.Core
@@ -128,43 +129,48 @@ namespace NScumm.Core
         /// to nest code which pauses the engine.
         /// </summary>
         private int _pauseLevel;
+
         /// <summary>
         /// The time when the pause was started.
         /// </summary>
         private int _pauseStartTime;
+
         /// <summary>
         /// The time when the engine was started. This value is used to calculate.
         /// </summary>
         private int _engineStartTime;
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="T:NScumm.Queen.Engine"/> class.
         /// All Engine subclasses should consider overloading some or all of the following methods.
         /// </summary>
         /// <param name="system">System.</param>
         /// <param name="settings"></param>
-        protected Engine(ISystem system, GameSettings settings)
+        protected Engine(ISystem system, GameSettings settings, bool useDefaultMixer = true)
         {
             Instance = this;
             OSystem = system;
             _targetName = ConfigManager.Instance.ActiveDomainName;
             _engineStartTime = Environment.TickCount;
             Settings = settings;
-            Mixer = new Mixer(44100);
-            // HACK:
-            ((Mixer)Mixer).Read(new byte[0], 0);
-            system.AudioOutput.SetSampleProvider(((Mixer)Mixer));
+            if (useDefaultMixer)
+            {
+                Mixer = new Mixer(44100);
+                // HACK:
+                ((Mixer) Mixer).Read(new byte[0], 0);
+                system.AudioOutput.SetSampleProvider((IAudioSampleProvider) Mixer);
 
-            // FIXME: Get rid of the following again. It is only here
-            // temporarily. We really should never run with a non-working Mixer,
-            // so ought to handle this at a much earlier stage. If we *really*
-            // want to support systems without a working mixer, then we need
-            // more work. E.g. we could modify the Mixer to immediately drop any
-            // streams passed to it. This way, at least we don't crash because
-            // heaps of (sound) memory get allocated but never freed. Of course,
-            // there still would be problems with many games...
-            if (!Mixer.IsReady)
-                D.Warning("Sound initialization failed. This may cause severe problems in some games");
+                // FIXME: Get rid of the following again. It is only here
+                // temporarily. We really should never run with a non-working Mixer,
+                // so ought to handle this at a much earlier stage. If we *really*
+                // want to support systems without a working mixer, then we need
+                // more work. E.g. we could modify the Mixer to immediately drop any
+                // streams passed to it. This way, at least we don't crash because
+                // heaps of (sound) memory get allocated but never freed. Of course,
+                // there still would be problems with many games...
+                if (!Mixer.IsReady)
+                    D.Warning("Sound initialization failed. This may cause severe problems in some games");
+            }
         }
 
         ~Engine()
@@ -180,7 +186,7 @@ namespace NScumm.Core
 
         protected virtual void Dispose(bool disposing)
         {
-            Mixer.StopAll();
+            Mixer?.StopAll();
         }
 
         public virtual void LoadGameState(int slot)
@@ -235,7 +241,7 @@ namespace NScumm.Core
         protected virtual void PauseEngineIntern(bool pause)
         {
             // By default, just (un)pause all digital sounds
-            Mixer.PauseAll(pause);
+            Mixer?.PauseAll(pause);
         }
 
         /// <summary>

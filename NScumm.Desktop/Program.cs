@@ -23,6 +23,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using NScumm.Another;
 using NScumm.Core;
 using NScumm.Core.Common;
 using NScumm.Core.IO;
@@ -68,6 +69,7 @@ namespace NScumm.Desktop
             gd.Add(new Sky.SkyMetaEngine());
             gd.Add(new Sword1.Sword1MetaEngine());
             gd.Add(new Agos.AgosMetaEngine());
+            gd.Add(new AnotherMetaEngine());
 
             var info = gd.DetectGame(path);
             if (info == null)

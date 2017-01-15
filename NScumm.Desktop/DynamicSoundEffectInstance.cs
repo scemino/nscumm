@@ -17,227 +17,100 @@ namespace Microsoft.Xna.Framework.Audio
         Stereo
     }
 
-    public enum SoundState
-    {
-        Stopped,
-        Playing,
-        Paused
-    }
-
     public sealed class DynamicSoundEffectInstance : IDisposable
     {
-        private const int BUFFERCOUNT = 2;
+        private const int Buffercount = 2;
 
-        private SoundState soundState = SoundState.Stopped;
-        private AudioChannels channels;
-        private int sampleRate;
-        private ALFormat format;
-        private bool looped = false;
-        private float volume = 1.0f;
-        private float pan = 0;
-        private float pitch = 0f;
-        private int sourceId;
-        private int[] bufferIds;
-        private int[] bufferIdsToFill;
-        private int currentBufferToFill;
-        private bool isDisposed = false;
-        private bool hasSourceId = false;
-        private Thread bufferFillerThread = null;
+        private readonly int _sampleRate;
+        private readonly ALFormat _format;
+        private int _sourceId;
+        private int[] _bufferIds;
+        private int[] _bufferIdsToFill;
+        private int _currentBufferToFill;
+        private bool _isDisposed;
+        private bool _hasSourceId;
+        private Thread _bufferFillerThread;
         private bool _done;
 
         // Events
         public event EventHandler<EventArgs> BufferNeeded;
 
-        internal void OnBufferNeeded(EventArgs args)
-        {
-            if (BufferNeeded != null)
-            {
-                BufferNeeded(this, args);
-            }
-        }
-
         public DynamicSoundEffectInstance(int sampleRate, AudioChannels channels)
         {
-            this.sampleRate = sampleRate;
-            this.channels = channels;
+            _sampleRate = sampleRate;
             switch (channels)
             {
                 case AudioChannels.Mono:
-                    this.format = ALFormat.Mono16;
+                    _format = ALFormat.Mono16;
                     break;
                 case AudioChannels.Stereo:
-                    this.format = ALFormat.Stereo16;
-                    break;
-                default:
+                    _format = ALFormat.Stereo16;
                     break;
             }
-        }
-
-        public bool IsDisposed
-        {
-            get
-            {
-                return isDisposed;
-            }
-        }
-
-        public float Pan
-        {
-            get
-            {
-                return pan;
-            }
-
-            set
-            {
-                pan = value;
-                if (hasSourceId)
-                {
-                    // Listener
-                    // Pan
-                    AL.Source(sourceId, ALSource3f.Position, pan, 0.0f, 0.1f);
-                }
-            }
-        }
-
-        public float Pitch
-        {
-            get
-            {
-                return pitch;
-            }
-            set
-            {
-                pitch = value;
-                if (hasSourceId)
-                {
-                    // Pitch
-                    AL.Source(sourceId, ALSourcef.Pitch, XnaPitchToAlPitch(pitch));
-                }
-            }
-        }
-
-        public float Volume
-        {
-            get
-            {
-                return volume;
-            }
-
-            set
-            {
-                volume = value;
-                if (hasSourceId)
-                {
-                    // Volume
-                    AL.Source(sourceId, ALSourcef.Gain, volume);
-                }
-
-            }
-        }
-
-        public SoundState State
-        {
-            get
-            {
-                return soundState;
-            }
-        }
-
-        private float XnaPitchToAlPitch(float pitch)
-        {
-            // pitch is different in XNA and OpenAL. XNA has a pitch between -1 and 1 for one octave down/up.
-            // openAL uses 0.5 to 2 for one octave down/up, while 1 is the default. The default value of 0 would make it completely silent.
-            return (float)Math.Exp(0.69314718 * pitch);
         }
 
         public void Play()
         {
-            if (!hasSourceId)
+            if (!_hasSourceId)
             {
-                bufferIds = AL.GenBuffers(BUFFERCOUNT);
-                sourceId = AL.GenSource();
-                hasSourceId = true;
+                _bufferIds = AL.GenBuffers(Buffercount);
+                _sourceId = AL.GenSource();
+                _hasSourceId = true;
             }
-            soundState = SoundState.Playing;
-
-            if (bufferFillerThread == null)
+            if (_bufferFillerThread == null)
             {
-                bufferIdsToFill = bufferIds;
-                currentBufferToFill = 0;
+                _bufferIdsToFill = _bufferIds;
+                _currentBufferToFill = 0;
                 OnBufferNeeded(EventArgs.Empty);
-                bufferFillerThread = new Thread(new ThreadStart(BufferFiller));
-                bufferFillerThread.Start();
+                _bufferFillerThread = new Thread(BufferFiller);
+                _bufferFillerThread.Start();
             }
 
-            AL.SourcePlay(sourceId);
+            AL.SourcePlay(_sourceId);
         }
 
         public void Pause()
         {
-            if (hasSourceId)
+            if (_hasSourceId)
             {
-                AL.SourcePause(sourceId);
-                soundState = SoundState.Paused;
+                AL.SourcePause(_sourceId);
             }
         }
 
         public void Dispose()
         {
-            if (!isDisposed)
+            if (!_isDisposed)
             {
-                Stop(true);
-                AL.DeleteBuffers(bufferIds);
-                AL.DeleteSource(sourceId);
-                bufferIdsToFill = null;
-                hasSourceId = false;
-                isDisposed = true;
+                Stop();
+                AL.DeleteBuffers(_bufferIds);
+                AL.DeleteSource(_sourceId);
+                _bufferIdsToFill = null;
+                _hasSourceId = false;
+                _isDisposed = true;
             }
         }
 
         public void Stop()
         {
-            if (hasSourceId)
+            if (_hasSourceId)
             {
                 _done = true;
-                AL.SourceStop(sourceId);
+                AL.SourceStop(_sourceId);
                 int pendingBuffers = PendingBufferCount;
                 if (pendingBuffers > 0)
-                    AL.SourceUnqueueBuffers(sourceId, PendingBufferCount);
+                    AL.SourceUnqueueBuffers(_sourceId, PendingBufferCount);
             }
-            soundState = SoundState.Stopped;
-        }
-
-        public void Stop(bool immediate)
-        {
-            Stop();
-        }
-
-        public TimeSpan GetSampleDuration(int sizeInBytes)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int GetSampleSizeInBytes(TimeSpan duration)
-        {
-            int size = (int)(duration.TotalMilliseconds * ((float)sampleRate / 1000.0f));
-            return (size + (size & 1)) * 16;
         }
 
         public void SubmitBuffer(byte[] buffer, int count)
         {
-            this.SubmitBuffer(buffer, 0, count);
-        }
-
-        public void SubmitBuffer(byte[] buffer, int offset, int count)
-        {
-            if (bufferIdsToFill != null)
+            if (_bufferIdsToFill != null)
             {
-                AL.BufferData(bufferIdsToFill[currentBufferToFill], format, buffer, count, sampleRate);
-                AL.SourceQueueBuffer(sourceId, bufferIdsToFill[currentBufferToFill]);
-                currentBufferToFill++;
-                if (currentBufferToFill >= bufferIdsToFill.Length)
-                    bufferIdsToFill = null;
+                AL.BufferData(_bufferIdsToFill[_currentBufferToFill], _format, buffer, count, _sampleRate);
+                AL.SourceQueueBuffer(_sourceId, _bufferIdsToFill[_currentBufferToFill]);
+                _currentBufferToFill++;
+                if (_currentBufferToFill >= _bufferIdsToFill.Length)
+                    _bufferIdsToFill = null;
                 else
                     OnBufferNeeded(EventArgs.Empty);
             }
@@ -246,53 +119,43 @@ namespace Microsoft.Xna.Framework.Audio
             }
         }
 
+        private void OnBufferNeeded(EventArgs args)
+        {
+            BufferNeeded?.Invoke(this, args);
+        }
+
         private void BufferFiller()
         {
             while (!_done)
             {
-                var state = AL.GetSourceState(sourceId);
+                var state = AL.GetSourceState(_sourceId);
                 if (state == ALSourceState.Stopped || state == ALSourceState.Initial)
-                    AL.SourcePlay(sourceId);
+                    AL.SourcePlay(_sourceId);
 
-                if (bufferIdsToFill != null)
+                if (_bufferIdsToFill != null)
                     continue;
 
                 int buffersProcessed;
-                AL.GetSource(sourceId, ALGetSourcei.BuffersProcessed, out buffersProcessed);
+                AL.GetSource(_sourceId, ALGetSourcei.BuffersProcessed, out buffersProcessed);
 
                 if (buffersProcessed == 0)
                     continue;
 
-                bufferIdsToFill = AL.SourceUnqueueBuffers(sourceId, buffersProcessed);
-                currentBufferToFill = 0;
+                _bufferIdsToFill = AL.SourceUnqueueBuffers(_sourceId, buffersProcessed);
+                _currentBufferToFill = 0;
                 OnBufferNeeded(EventArgs.Empty);
             }
         }
 
-        public bool IsLooped
+        private int PendingBufferCount
         {
             get
             {
-                return looped;
-            }
+                if (!_hasSourceId) return 0;
 
-            set
-            {
-                looped = value;
-            }
-        }
-
-        public int PendingBufferCount
-        {
-            get
-            {
-                if (hasSourceId)
-                {
-                    int buffersQueued;
-                    AL.GetSource(sourceId, ALGetSourcei.BuffersQueued, out buffersQueued);
-                    return buffersQueued;
-                }
-                return 0;
+                int buffersQueued;
+                AL.GetSource(_sourceId, ALGetSourcei.BuffersQueued, out buffersQueued);
+                return buffersQueued;
             }
         }
     }

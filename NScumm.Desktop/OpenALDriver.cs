@@ -34,7 +34,8 @@ namespace NScumm
             _audioFormat = new AudioFormat(44100);
 
             _buffer = new byte[13230 * 2];
-            _dsei = new DynamicSoundEffectInstance(_audioFormat.SampleRate, _audioFormat.Channels == 2 ? AudioChannels.Stereo : AudioChannels.Mono);
+            _dsei = new DynamicSoundEffectInstance(_audioFormat.SampleRate,
+                _audioFormat.Channels == 2 ? AudioChannels.Stereo : AudioChannels.Mono);
             _dsei.BufferNeeded += OnBufferNeeded;
         }
 
@@ -53,6 +54,7 @@ namespace NScumm
 
         public void Dispose()
         {
+            _dsei.BufferNeeded -= OnBufferNeeded;
             _dsei.Dispose();
         }
 
@@ -76,10 +78,11 @@ namespace NScumm
             Array.Clear(_buffer, 0, _buffer.Length);
             try
             {
-                _audioSampleProvider?.Read(_buffer, _buffer.Length);
-                _dsei.SubmitBuffer(_buffer, _buffer.Length);
+                var count = _audioSampleProvider?.Read(_buffer, _buffer.Length);
+                _dsei.SubmitBuffer(_buffer, count ?? _buffer.Length);
             }
-            catch (Exception ex){
+            catch (Exception ex)
+            {
                 Core.DebugHelper.Warning($"Audio error: {ex}");
             }
         }

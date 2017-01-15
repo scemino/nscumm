@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+        <ProjectGuid>{61D5BCA1-F785-460A-9C01-7C8B8519425E}</ProjectGuid>
+        <ProjectTypeGuids>{786C830F-07A1-408B-BD7F-6EE04809D6DB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}
+        </ProjectTypeGuids>
+        <OutputType>Library</OutputType>
+        <RootNamespace>NScumm.Another</RootNamespace>
+        <AssemblyName>NScumm.Another</AssemblyName>
+        <TargetFrameworkProfile>Profile344</TargetFrameworkProfile>
+        <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>full</DebugType>
+        <Optimize>false</Optimize>
+        <OutputPath>bin\Debug\</OutputPath>
+        <DefineConstants>DEBUG</DefineConstants>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+        <Optimize>true</Optimize>
+        <OutputPath>bin\Release\</OutputPath>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+    <ItemGroup>
+        <Compile Include="AnotherEngine.cs"/>
+        <Compile Include="AnotherMetaEngine.cs"/>
+        <Compile Include="AnotherGameDescriptor.cs"/>
+        <Compile Include="AnotherMixer.cs"/>
+        <Compile Include="Bank.cs"/>
+        <Compile Include="DebugLevels.cs"/>
+        <Compile Include="IAnotherSystem.cs"/>
+        <Compile Include="MemEntry.cs"/>
+        <Compile Include="PlayerInput.cs"/>
+        <Compile Include="Polygon.cs"/>
+        <Compile Include="Properties\AssemblyInfo.cs"/>
+        <Compile Include="Resource.cs"/>
+        <Compile Include="SdlStub.cs"/>
+        <Compile Include="Serializer.cs"/>
+        <Compile Include="SfxInstrument.cs"/>
+        <Compile Include="SfxModule.cs"/>
+        <Compile Include="SfxPattern.cs"/>
+        <Compile Include="SfxPlayer.cs"/>
+        <Compile Include="Video.cs"/>
+        <Compile Include="VirtualMachine.cs"/>
+    </ItemGroup>
+    <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets"/>
+    <ItemGroup>
+        <ProjectReference Include="..\..\NScumm.Core\NScumm.Core.csproj">
+            <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
+            <Name>NScumm.Core</Name>
+        </ProjectReference>
+    </ItemGroup>
+</Project>
